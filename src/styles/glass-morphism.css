@@ -1,0 +1,135 @@
+/* src/styles/glass-morphism.css */
+/* Estilos para efecto glass morphism inspirado en el diseño de Windows */
+
+:root {
+  --glass-bg: rgba(255, 255, 255, 0.15);
+  --glass-border: rgba(255, 255, 255, 0.2);
+  --glass-shadow: rgba(0, 0, 0, 0.1);
+  --primary-color: #0078d4;
+  --secondary-color: #005a9e;
+  --success-color: #107c10;
+  --warning-color: #d83b01;
+  --danger-color: #d13438;
+  --text-light: #ffffff;
+  --text-dark: #323130;
+  --text-muted: rgba(255, 255, 255, 0.7);
+}
+
+/* Contenedor principal */
+.glass-container {
+  background-color: rgba(15, 23, 42, 0.65);
+  min-height: 100vh;
+  padding: 2rem;
+}
+
+/* Tarjetas con efecto de cristal */
+.glass-card {
+  background: var(--glass-bg);
+  backdrop-filter: blur(15px);
+  -webkit-backdrop-filter: blur(15px);
+  border: 1px solid var(--glass-border);
+  box-shadow: 0 8px 32px 0 var(--glass-shadow);
+  transition: all 0.3s ease;
+}
+
+.glass-card:hover {
+  box-shadow: 0 12px 32px 0 rgba(0, 0, 0, 0.2);
+  transform: translateY(-2px);
+}
+
+.glass-card-header {
+  padding: 1.25rem 1.5rem;
+  border-bottom: 1px solid var(--glass-border);
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.glass-card-body {
+  padding: 1.5rem;
+}
+
+/* Formularios con estilo de cristal */
+.modern-form-control {
+  width: 100%;
+  padding: 0.75rem 1rem;
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid var(--glass-border);
+  border-radius: 0.5rem;
+  color: var(--text-light);
+  transition: all 0.2s ease;
+  backdrop-filter: blur(5px);
+  -webkit-backdrop-filter: blur(5px);
+}
+
+.modern-form-control:focus {
+  background: rgba(255, 255, 255, 0.15);
+  border-color: var(--primary-color);
+  box-shadow: 0 0 0 2px rgba(0, 120, 212, 0.25);
+  outline: none;
+}
+
+.modern-form-control::placeholder {
+  color: rgba(255, 255, 255, 0.5);
+}
+
+/* Para inputs de tipo select */
+.modern-form-control option {
+  background-color: #1f2937;
+  color: white;
+}
+
+/* Botones modernos */
+.modern-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.75rem 1.5rem;
+  background: var(--glass-bg);
+  border: 1px solid var(--glass-border);
+  border-radius: 0.5rem;
+  color: var(--text-light);
+  font-weight: 600;
+  transition: all 0.2s ease;
+  cursor: pointer;
+  backdrop-filter: blur(5px);
+  -webkit-backdrop-filter: blur(5px);
+  gap: 0.5rem;
+}
+
+.modern-btn:hover {
+  background: rgba(255, 255, 255, 0.25);
+  transform: translateY(-2px);
+}
+
+.btn-primary {
+  background: linear-gradient(to right, var(--primary-color), var(--secondary-color));
+  border: none;
+  box-shadow: 0 4px 15px rgba(0, 120, 212, 0.3);
+}
+
+.btn-primary:hover {
+  box-shadow: 0 8px 25px rgba(0, 120, 212, 0.4);
+}
+
+/* Fondos y variantes de tarjetas */
+.glass-bg-primary {
+  background: linear-gradient(135deg, rgba(0, 120, 212, 0.2), rgba(0, 90, 158, 0.2));
+}
+
+.glass-bg-dark {
+  background: rgba(0, 0, 0, 0.3);
+}
+
+/* Grupos de formularios */
+.form-group {
+  margin-bottom: 1rem;
+}
+
+/* Animaciones suaves */
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.animate-fade-in {
+  animation: fadeIn 0.3s ease-out forwards;
+}

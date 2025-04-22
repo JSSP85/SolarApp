@@ -1,0 +1,302 @@
+/* src/custom.css - Estilos mejorados y actualizados */
+
+/* Estilos globales */
+body {
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  background-color: #e7ecf3; /* Fondo más oscuro */
+  color: #333;
+  font-size: 16px; /* Tamaño base de fuente más grande */
+  line-height: 1.6;
+}
+
+/* Header mejorado */
+.app-header {
+  background: linear-gradient(to right, #005f83, #0077a9);
+  color: white;
+  padding: 1.25rem; /* Mayor padding */
+  border-bottom: 4px solid #004966;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25); /* Sombra más pronunciada */
+}
+
+.app-header h1 {
+  font-weight: 700;
+  letter-spacing: -0.5px;
+  margin: 0;
+  font-size: 1.75rem; /* Texto más grande */
+}
+
+/* Navegación mejorada */
+.tab-navigation {
+  background-color: white;
+  border-bottom: 1px solid #d1dbe6;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1); /* Sombra más visible */
+}
+
+.tab-button {
+  padding: 1.25rem 1.75rem; /* Botones más grandes */
+  font-weight: 600;
+  font-size: 1.125rem; /* Texto más grande */
+  color: #4b5563;
+  border: none;
+  background: none;
+  transition: all 0.2s;
+  position: relative;
+}
+
+.tab-button:hover {
+  color: #0f172a;
+  background-color: rgba(0, 0, 0, 0.03);
+}
+
+.tab-button.active {
+  color: #0369a1;
+}
+
+.tab-button.active::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 4px; /* Indicador más grueso */
+  background-color: #0369a1;
+}
+
+/* Contenedores y tarjetas */
+.card {
+  background-color: white;
+  border-radius: 10px; /* Bordes más redondeados */
+  box-shadow: 0 4px 12px rgba(0, 95, 131, 0.15), 0 12px 30px rgba(0, 95, 131, 0.12); /* Sombra más pronunciada */
+  overflow: hidden;
+  transition: all 0.3s;
+  border: 1px solid #d1dbe6;
+  margin-bottom: 1.5rem;
+}
+
+.card-header {
+  padding: 1.5rem 1.75rem; /* Más padding */
+  background-color: #f8fafc;
+  border-bottom: 1px solid #d1dbe6;
+}
+
+.card-title {
+  font-size: 1.5rem; /* Título más grande */
+  font-weight: 600;
+  color: #0f172a;
+  margin: 0;
+}
+
+.card-body {
+  padding: 1.75rem; /* Más padding */
+}
+
+/* Botones mejorados */
+.btn {
+  padding: 0.75rem 1.5rem; /* Botones más grandes */
+  font-weight: 600;
+  font-size: 1.125rem; /* Texto más grande */
+  border-radius: 8px; /* Más redondeados */
+  transition: all 0.2s;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+}
+
+.btn-primary {
+  background-color: #005f83;
+  color: white;
+  box-shadow: 0 2px 6px rgba(0, 95, 131, 0.3); /* Sombra más visible */
+}
+
+.btn-primary:hover {
+  background-color: #004966;
+  box-shadow: 0 6px 10px rgba(0, 95, 131, 0.3); /* Sombra más grande al hover */
+  transform: translateY(-2px);
+}
+
+.btn-secondary {
+  background-color: #64748b;
+  color: white;
+  box-shadow: 0 2px 6px rgba(100, 116, 139, 0.3);
+}
+
+.btn-secondary:hover {
+  background-color: #535f74;
+  box-shadow: 0 6px 10px rgba(100, 116, 139, 0.3);
+  transform: translateY(-2px);
+}
+
+.btn-success {
+  background-color: #0c9;
+  color: white;
+  box-shadow: 0 2px 6px rgba(0, 204, 153, 0.3);
+}
+
+.btn-success:hover {
+  background-color: #00ad8c;
+  box-shadow: 0 6px 10px rgba(0, 204, 153, 0.3);
+  transform: translateY(-2px);
+}
+
+/* Formularios mejorados */
+.form-group {
+  margin-bottom: 1.5rem;
+}
+
+.form-label {
+  display: block;
+  margin-bottom: 0.625rem;
+  font-weight: 500;
+  color: #4b5563;
+  font-size: 1.125rem; /* Etiquetas más grandes */
+}
+
+.form-control {
+  width: 100%;
+  padding: 0.75rem 1rem; /* Inputs más grandes */
+  border: 1px solid #d1d5db;
+  border-radius: 8px; /* Más redondeados */
+  font-size: 1rem; /* Texto más grande */
+  transition: all 0.15s;
+}
+
+.form-control:focus {
+  border-color: #005f83;
+  box-shadow: 0 0 0 4px rgba(0, 95, 131, 0.15); /* Más énfasis en el focus */
+  outline: none;
+}
+
+/* Tablas mejoradas */
+.table {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+  margin-bottom: 1.5rem;
+  font-size: 1.05rem; /* Texto de tabla más grande */
+}
+
+.table th,
+.table td {
+  padding: 1rem 1.25rem; /* Celdas más grandes */
+  text-align: left;
+}
+
+.table thead th {
+  background-color: #f0f5fa; /* Un poco más oscuro */
+  color: #374151;
+  font-weight: 600;
+  border-bottom: 2px solid #d1dbe6;
+}
+
+.table tbody tr {
+  border-bottom: 1px solid #e1e7ef;
+}
+
+.table tbody tr:hover {
+  background-color: #f0f5fa;
+}
+
+.table tbody td {
+  border-bottom: 1px solid #e1e7ef;
+}
+
+/* Específico para informes */
+.report-header {
+  text-align: center;
+  margin-bottom: 2rem;
+  padding: 1.5rem 0;
+}
+
+.report-title {
+  font-size: 2rem; /* Título más grande */
+  font-weight: 700;
+  margin-bottom: 0.75rem;
+  color: #0f172a;
+  letter-spacing: -0.5px;
+}
+
+.report-section {
+  margin-bottom: 2rem;
+}
+
+.report-section-title {
+  font-size: 1.5rem; /* Subtítulos más grandes */
+  font-weight: 600;
+  margin-bottom: 1.25rem;
+  padding-bottom: 0.625rem;
+  border-bottom: 2px solid #d1dbe6;
+  color: #005f83;
+}
+
+.report-info-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 1.75rem;
+  margin-bottom: 2rem;
+}
+
+.report-info-item {
+  display: flex;
+  flex-direction: column;
+}
+
+.report-info-label {
+  font-weight: 500;
+  color: #4b5563;
+  margin-bottom: 0.375rem;
+  font-size: 1.125rem; /* Etiquetas más grandes */
+}
+
+.report-info-value {
+  font-weight: 600;
+  color: #0f172a;
+  font-size: 1.25rem; /* Valores más grandes */
+}
+
+.report-status-passed {
+  color: #10b981;
+  font-weight: 600;
+  font-size: 1.125rem; /* Estados más visibles */
+}
+
+.report-status-failed {
+  color: #ef4444;
+  font-weight: 600;
+  font-size: 1.125rem; /* Estados más visibles */
+}
+
+.report-footer {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 2.5rem;
+  padding-top: 1.25rem;
+  border-top: 1px solid #d1dbe6;
+}
+
+/* Contenedor principal con fondo y sombra mejorados */
+.app-container {
+  background-color: white;
+  border-radius: 12px; /* Más redondeado */
+  box-shadow: 0 6px 24px rgba(0, 65, 91, 0.15), 0 12px 40px rgba(0, 65, 91, 0.1); /* Sombra mucho más pronunciada */
+  margin: 1.5rem 1rem;
+  overflow: hidden;
+}
+
+/* Utilidades actualizadas con tamaños más grandes */
+.text-center { text-align: center; }
+.text-right { text-align: right; }
+.flex { display: flex; }
+.items-center { align-items: center; }
+.justify-between { justify-content: space-between; }
+.w-full { width: 100%; }
+.m-auto { margin: 0 auto; }
+.py-4 { padding-top: 1.25rem; padding-bottom: 1.25rem; }
+.font-bold { font-weight: 700; }
+.font-medium { font-weight: 500; }
+.text-lg { font-size: 1.25rem; }
+.text-xl { font-size: 1.5rem; }
+.text-2xl { font-size: 1.75rem; }
+.text-sm { font-size: 0.95rem; }
+.truncate { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }

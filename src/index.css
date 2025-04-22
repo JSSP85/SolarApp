@@ -1,0 +1,37 @@
+/* Archivo de estilos personalizado para anular el tema oscuro predeterminado */
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Anular el tema oscuro */
+:root {
+  font-family: system-ui, Avenir, Helvetica, Arial, sans-serif;
+  color-scheme: light;
+  color: #213547;
+  background-color: #ffffff;
+}
+
+body {
+  margin: 0;
+  display: block;
+  min-width: 320px;
+  min-height: 100vh;
+  background-color: #f9fafb;
+}
+
+#root {
+  width: 100%;
+  max-width: 1280px;
+  margin: 0 auto;
+  padding: 0;
+  text-align: left;
+}
+
+/* Estilo específico para la aplicación solar */
+.bg-gray-50 {
+  background-color: #f9fafb;
+}
+
+.border {
+  border-color: #e5e7eb;
+}

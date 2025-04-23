@@ -1,25 +1,18 @@
 import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
+import path from 'path'
 
-// https://vitejs.dev/config/
+// https://vite.dev/config/
 export default defineConfig({
   plugins: [react()],
-  base: '/SolarApp/', // URL base para despliegue en GitHub Pages
-  server: {
-    port: 3000, // Puerto para desarrollo local
-    open: true, // Abre automáticamente el navegador al iniciar
-  },
-  build: {
-    outDir: 'dist', // Directorio de salida para la compilación
-    sourcemap: true, // Genera sourcemaps para depuración
-    chunkSizeWarningLimit: 1000, // Límite de tamaño de chunks para advertencias
-  },
   resolve: {
+    extensions: ['.js', '.jsx', '.ts', '.tsx'],
     alias: {
-      '@': '/src', // Permite usar '@' como alias para la carpeta src
-    },
+      '@': path.resolve(__dirname, './src')
+    }
   },
-  optimizeDeps: {
-    include: ['react', 'react-dom'], // Optimiza estas dependencias
+  server: {
+    host: '0.0.0.0', // Esto hace que Vite escuche en todas las interfaces
+    port: 5173, // Puerto predeterminado de Vite
   }
 })

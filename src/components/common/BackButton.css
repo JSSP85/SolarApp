@@ -1,7 +1,7 @@
 /* src/components/common/BackButton.css */
 .back-to-menu-btn {
   position: fixed;
-  top: 1rem;
+  top: 80px;  /* Cambiado de 1rem a 80px para moverlo debajo del logo */
   left: 1rem;
   background: rgba(0, 95, 131, 0.8);
   color: white;
@@ -19,6 +19,7 @@
   backdrop-filter: blur(4px);
 }
 
+/* El resto de los estilos permanecen igual */
 .back-to-menu-btn:hover {
   transform: translateY(-2px) scale(1.05);
   box-shadow: 0 6px 16px rgba(0, 0, 0, 0.3);

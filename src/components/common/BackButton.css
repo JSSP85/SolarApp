@@ -1,7 +1,7 @@
 /* src/components/common/BackButton.css */
 .back-to-menu-btn {
   position: fixed;
-  top: 100px;  /* Cambiado de 1rem a 80px para moverlo debajo del logo */
+  top: 95px;  /* Cambiado de 1rem a 80px para moverlo debajo del logo */
   left: 1rem;
   background: rgba(0, 95, 131, 0.8);
   color: white;

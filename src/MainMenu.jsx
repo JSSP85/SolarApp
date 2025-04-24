@@ -15,6 +15,9 @@ import {
   ClipboardEdit
 } from 'lucide-react';
 
+// Importar el nuevo componente BackButton
+import BackButton from './components/common/BackButton';
+
 // Custom SVG for the screw icon since it might not be available in lucide-react
 const ScrewNutIcon = () => (
   <svg 
@@ -191,13 +194,9 @@ const MainMenu = () => {
       case 'steel':
         return (
           <div className={styles.mainMenuAppWrapper}>
-            <button 
-              className={styles.mainMenuReturnBtn}
-              onClick={() => setSelectedOption(null)}
-              aria-label="Return to main menu"
-            >
-              <ArrowLeft size={24} />
-            </button>
+            {/* Reemplazar el botón original con el nuevo componente BackButton */}
+            <BackButton onClick={() => setSelectedOption(null)} />
+            
             <LanguageProvider>
               <InspectionProvider>
                 <DashboardApp />

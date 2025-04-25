@@ -27,8 +27,8 @@ html, body {
 }
 
 .mainMenuContent {
-  width: 75%;
-  max-width: 1050px;
+  width: 90%;
+  max-width: 1200px;
   padding: 2rem;
   position: relative;
   z-index: 1;
@@ -124,8 +124,8 @@ html, body {
 
 .mainMenuCards {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-  gap: 1.5rem;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 1rem;
 }
 
 .mainMenuCard {
@@ -144,7 +144,7 @@ html, body {
 }
 
 .mainMenuCardBody {
-  padding: 1.5rem;
+  padding: 1.25rem 1rem;
   display: flex;
   flex-direction: column;
   flex: 1;
@@ -157,13 +157,13 @@ html, body {
 }
 
 .mainMenuCardIconContainer {
-  width: 80px;
-  height: 80px;
+  width: 70px;
+  height: 70px;
   border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
-  margin: 0 auto 1.5rem;
+  margin: 0 auto 1.25rem;
   transition: transform 0.3s ease, box-shadow 0.3s ease;
   box-shadow: 0 4px 10px rgba(0,0,0,0.15);
   background: rgba(255,255,255,0.1);
@@ -189,8 +189,8 @@ html, body {
 }
 
 .mainMenuCardDescription {
-  font-size: 0.95rem;
-  margin-bottom: 1.5rem;
+  font-size: 0.9rem;
+  margin-bottom: 1.25rem;
   color: rgba(255, 255, 255, 0.8);
   flex-grow: 1;
 }

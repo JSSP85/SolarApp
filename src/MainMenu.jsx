@@ -30,8 +30,8 @@ import BackButton from './components/common/BackButton';
 const ScrewIcon = () => (
   <svg 
     xmlns="http://www.w3.org/2000/svg" 
-    width="38" 
-    height="38" 
+    width="32" 
+    height="32" 
     viewBox="0 0 24 24" 
     fill="none" 
     stroke="currentColor" 
@@ -50,8 +50,8 @@ const ScrewIcon = () => (
 const CaliperIcon = () => (
   <svg 
     xmlns="http://www.w3.org/2000/svg" 
-    width="38" 
-    height="38" 
+    width="32" 
+    height="32" 
     viewBox="0 0 24 24" 
     fill="none" 
     stroke="currentColor" 
@@ -363,7 +363,7 @@ const MainMenu = () => {
                 >
                   <div className={styles.mainMenuCardBody}>
                     <div className={styles.mainMenuCardIconContainer} style={{ background: 'rgba(72, 187, 120, 0.1)', border: '1px solid rgba(72, 187, 120, 0.2)' }}>
-                      <Cpu size={38} className={styles.mainMenuCardIcon} />
+                      <Cpu size={32} className={styles.mainMenuCardIcon} />
                     </div>
                     <h3 className={styles.mainMenuCardTitle}>Electrical & Electronic Components</h3>
                     <p className={styles.mainMenuCardDescription}>
@@ -383,7 +383,7 @@ const MainMenu = () => {
                 >
                   <div className={styles.mainMenuCardBody}>
                     <div className={styles.mainMenuCardIconContainer} style={{ background: 'rgba(168, 85, 247, 0.1)', border: '1px solid rgba(168, 85, 247, 0.2)' }}>
-                      <ClipboardEdit size={38} className={styles.mainMenuCardIcon} />
+                      <ClipboardEdit size={32} className={styles.mainMenuCardIcon} />
                     </div>
                     <h3 className={styles.mainMenuCardTitle}>Free Inspection</h3>
                     <p className={styles.mainMenuCardDescription}>
@@ -416,7 +416,7 @@ const MainMenu = () => {
                 >
                   <div className={styles.mainMenuCardBody}>
                     <div className={styles.mainMenuCardIconContainer} style={{ background: 'rgba(239, 68, 68, 0.1)', border: '1px solid rgba(239, 68, 68, 0.2)' }}>
-                      <AlertTriangle size={38} className={styles.mainMenuCardIcon} />
+                      <AlertTriangle size={32} className={styles.mainMenuCardIcon} />
                     </div>
                     <h3 className={styles.mainMenuCardTitle}>Non-Conformity Manager</h3>
                     <p className={styles.mainMenuCardDescription}>
@@ -438,7 +438,7 @@ const MainMenu = () => {
                 >
                   <div className={styles.mainMenuCardBody}>
                     <div className={styles.mainMenuCardIconContainer} style={{ background: 'rgba(59, 130, 246, 0.1)', border: '1px solid rgba(59, 130, 246, 0.2)' }}>
-                      <BarChart2 size={38} className={styles.mainMenuCardIcon} />
+                      <BarChart2 size={32} className={styles.mainMenuCardIcon} />
                     </div>
                     <h3 className={styles.mainMenuCardTitle}>Inspection Dashboard</h3>
                     <p className={styles.mainMenuCardDescription}>
@@ -460,7 +460,7 @@ const MainMenu = () => {
                 >
                   <div className={styles.mainMenuCardBody}>
                     <div className={styles.mainMenuCardIconContainer} style={{ background: 'rgba(99, 102, 241, 0.1)', border: '1px solid rgba(99, 102, 241, 0.2)' }}>
-                      <Database size={38} className={styles.mainMenuCardIcon} />
+                      <Database size={32} className={styles.mainMenuCardIcon} />
                     </div>
                     <h3 className={styles.mainMenuCardTitle}>Quality Database</h3>
                     <p className={styles.mainMenuCardDescription}>
@@ -482,7 +482,7 @@ const MainMenu = () => {
                 >
                   <div className={styles.mainMenuCardBody}>
                     <div className={styles.mainMenuCardIconContainer} style={{ background: 'rgba(124, 58, 237, 0.1)', border: '1px solid rgba(124, 58, 237, 0.2)' }}>
-                      <Briefcase size={38} className={styles.mainMenuCardIcon} />
+                      <Briefcase size={32} className={styles.mainMenuCardIcon} />
                     </div>
                     <h3 className={styles.mainMenuCardTitle}>Supplier Management</h3>
                     <p className={styles.mainMenuCardDescription}>

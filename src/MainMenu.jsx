@@ -12,7 +12,15 @@ import {
   Gauge,
   Cpu,
   FileText,
-  ClipboardEdit
+  ClipboardEdit,
+  AlertTriangle,
+  BarChart2,
+  UserCog,
+  Briefcase,
+  FileWarning,
+  PieChart,
+  Database,
+  Lock
 } from 'lucide-react';
 
 // Importar el nuevo componente BackButton
@@ -31,7 +39,6 @@ const ScrewNutIcon = () => (
     strokeLinecap="round" 
     strokeLinejoin="round"
     className={styles.mainMenuCardIcon}
-    style={{ color: 'white' }}
   >
     <path d="M12 6V12L14.5 14.5"></path>
     <path d="M16 8L12 4 8 8 4 12 8 16 12 20 16 16 20 12Z"></path>
@@ -55,7 +62,6 @@ const MeasurementGaugeIcon = () => (
     strokeLinecap="round" 
     strokeLinejoin="round"
     className={styles.mainMenuCardIcon}
-    style={{ color: 'white' }}
   >
     <path d="M12 15l3.5-3.5"></path>
     <path d="M20.3 18c.4-1 .7-2.2.7-3.4C21 9.8 17 6 12 6s-9 3.8-9 8.6c0 1.2.3 2.4.7 3.4"></path>
@@ -207,6 +213,8 @@ const MainMenu = () => {
       case 'hardware':
       case 'electrical':
       case 'free-inspection':
+      case 'non-conformity-manager':
+      case 'inspection-dashboard':
         return (
           <div className={styles.mainMenuContainer}>
             <div className={styles.mainMenuContent}>
@@ -251,7 +259,7 @@ const MainMenu = () => {
     return (
       <div className={styles.mainMenuContainer}>
         <div className={styles.mainMenuContent}>
-          {/* Header */}
+          {/* Header - MODIFICADO: más fino y separado */}
           <div className={`${styles.mainMenuHeader} ${styles.mainMenuFadeIn}`}>
             <div className={styles.headerContainer}>
               {/* Logo de la empresa */}
@@ -267,7 +275,7 @@ const MainMenu = () => {
             </p>
           </div>
 
-          {/* Main content */}
+          {/* Main content - Inspection modules */}
           <div className={`${styles.mainMenuSection} ${styles.mainMenuStagger1}`}>
             <div className={styles.mainMenuSectionHeader}>
               <h2 className={styles.mainMenuSectionTitle}>
@@ -277,14 +285,14 @@ const MainMenu = () => {
             </div>
             <div className={styles.mainMenuSectionBody}>
               <div className={styles.mainMenuCards}>
-                {/* Steel Components Card */}
+                {/* Steel Components Card - MEJORADO */}
                 <div 
                   className={`${styles.mainMenuCard} ${styles.mainMenuStagger1}`}
                   onClick={() => setSelectedOption('steel')}
                 >
                   <div className={styles.mainMenuCardBody}>
                     <div className={styles.mainMenuCardIconContainer} style={{ background: 'rgba(108, 207, 255, 0.1)', border: '1px solid rgba(108, 207, 255, 0.2)' }}>
-                      <MeasurementGaugeIcon />
+                      <Gauge size={38} className={styles.mainMenuCardIcon} />
                     </div>
                     <h3 className={styles.mainMenuCardTitle}>Steel Components</h3>
                     <p className={styles.mainMenuCardDescription}>
@@ -297,14 +305,14 @@ const MainMenu = () => {
                   </div>
                 </div>
 
-                {/* Hardware Components Card */}
+                {/* Hardware Components Card - MEJORADO */}
                 <div 
                   className={`${styles.mainMenuCard} ${styles.mainMenuStagger2}`}
                   onClick={() => setSelectedOption('hardware')}
                 >
                   <div className={styles.mainMenuCardBody}>
                     <div className={styles.mainMenuCardIconContainer} style={{ background: 'rgba(251, 211, 141, 0.1)', border: '1px solid rgba(251, 211, 141, 0.2)' }}>
-                      <ScrewNutIcon />
+                      <Settings size={38} className={styles.mainMenuCardIcon} />
                     </div>
                     <h3 className={styles.mainMenuCardTitle}>Hardware Components</h3>
                     <p className={styles.mainMenuCardDescription}>
@@ -324,7 +332,7 @@ const MainMenu = () => {
                 >
                   <div className={styles.mainMenuCardBody}>
                     <div className={styles.mainMenuCardIconContainer} style={{ background: 'rgba(72, 187, 120, 0.1)', border: '1px solid rgba(72, 187, 120, 0.2)' }}>
-                      <Cpu size={38} className={styles.mainMenuCardIcon} style={{ color: 'white' }} />
+                      <Cpu size={38} className={styles.mainMenuCardIcon} />
                     </div>
                     <h3 className={styles.mainMenuCardTitle}>Electrical & Electronic Components</h3>
                     <p className={styles.mainMenuCardDescription}>
@@ -344,7 +352,7 @@ const MainMenu = () => {
                 >
                   <div className={styles.mainMenuCardBody}>
                     <div className={styles.mainMenuCardIconContainer} style={{ background: 'rgba(168, 85, 247, 0.1)', border: '1px solid rgba(168, 85, 247, 0.2)' }}>
-                      <ClipboardEdit size={38} className={styles.mainMenuCardIcon} style={{ color: 'white' }} />
+                      <ClipboardEdit size={38} className={styles.mainMenuCardIcon} />
                     </div>
                     <h3 className={styles.mainMenuCardTitle}>Free Inspection</h3>
                     <p className={styles.mainMenuCardDescription}>
@@ -353,6 +361,97 @@ const MainMenu = () => {
                     <div className={styles.mainMenuCardFooter}>
                       <div className={`${styles.mainMenuBadge} ${styles.mainMenuBadgeWarning}`}>Page Under Construction</div>
                       <ChevronRight size={18} className={styles.mainMenuCardArrow} />
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* NUEVA SECCIÓN - Manager module */}
+          <div className={`${styles.mainMenuSection} ${styles.mainMenuStagger2}`} style={{ marginTop: '2rem' }}>
+            <div className={styles.mainMenuSectionHeader} style={{ background: 'rgba(0, 80, 120, 0.8)' }}>
+              <h2 className={styles.mainMenuSectionTitle}>
+                <UserCog size={20} />
+                Manager Module Selection
+              </h2>
+            </div>
+            <div className={styles.mainMenuSectionBody}>
+              <div className={styles.mainMenuCards}>
+                {/* Non-Conformity Manager Card */}
+                <div 
+                  className={`${styles.mainMenuCard} ${styles.mainMenuStagger1}`}
+                  onClick={() => setSelectedOption('non-conformity-manager')}
+                >
+                  <div className={styles.mainMenuCardBody}>
+                    <div className={styles.mainMenuCardIconContainer} style={{ background: 'rgba(239, 68, 68, 0.1)', border: '1px solid rgba(239, 68, 68, 0.2)' }}>
+                      <AlertTriangle size={38} className={styles.mainMenuCardIcon} />
+                    </div>
+                    <h3 className={styles.mainMenuCardTitle}>Non-Conformity Manager</h3>
+                    <p className={styles.mainMenuCardDescription}>
+                      Track, manage and resolve non-conformities across manufacturing plants
+                    </p>
+                    <div className={styles.mainMenuCardFooter}>
+                      <div className={`${styles.mainMenuBadge} ${styles.mainMenuBadgeWarning}`}>Page Under Construction</div>
+                      <ChevronRight size={18} className={styles.mainMenuCardArrow} />
+                    </div>
+                  </div>
+                </div>
+
+                {/* Inspection Dashboard Card */}
+                <div 
+                  className={`${styles.mainMenuCard} ${styles.mainMenuStagger2}`}
+                  onClick={() => setSelectedOption('inspection-dashboard')}
+                >
+                  <div className={styles.mainMenuCardBody}>
+                    <div className={styles.mainMenuCardIconContainer} style={{ background: 'rgba(59, 130, 246, 0.1)', border: '1px solid rgba(59, 130, 246, 0.2)' }}>
+                      <BarChart2 size={38} className={styles.mainMenuCardIcon} />
+                    </div>
+                    <h3 className={styles.mainMenuCardTitle}>Inspection Dashboard</h3>
+                    <p className={styles.mainMenuCardDescription}>
+                      Comprehensive analytics and reports for quality control performance
+                    </p>
+                    <div className={styles.mainMenuCardFooter}>
+                      <div className={`${styles.mainMenuBadge} ${styles.mainMenuBadgeWarning}`}>Page Under Construction</div>
+                      <ChevronRight size={18} className={styles.mainMenuCardArrow} />
+                    </div>
+                  </div>
+                </div>
+
+                {/* Future Option 1 */}
+                <div 
+                  className={`${styles.mainMenuCard} ${styles.mainMenuStagger3} ${styles.mainMenuCardDisabled}`}
+                >
+                  <div className={styles.mainMenuCardBody}>
+                    <div className={styles.mainMenuCardIconContainer} style={{ background: 'rgba(99, 102, 241, 0.1)', border: '1px solid rgba(99, 102, 241, 0.2)' }}>
+                      <Database size={38} className={styles.mainMenuCardIcon} />
+                    </div>
+                    <h3 className={styles.mainMenuCardTitle}>Quality Database</h3>
+                    <p className={styles.mainMenuCardDescription}>
+                      Centralized database for all quality control data and documentation
+                    </p>
+                    <div className={styles.mainMenuCardFooter}>
+                      <div className={`${styles.mainMenuBadge} ${styles.mainMenuBadgeDisabled}`}>Coming Soon</div>
+                      <Lock size={18} className={styles.mainMenuCardArrow} />
+                    </div>
+                  </div>
+                </div>
+
+                {/* Future Option 2 */}
+                <div 
+                  className={`${styles.mainMenuCard} ${styles.mainMenuStagger4} ${styles.mainMenuCardDisabled}`}
+                >
+                  <div className={styles.mainMenuCardBody}>
+                    <div className={styles.mainMenuCardIconContainer} style={{ background: 'rgba(124, 58, 237, 0.1)', border: '1px solid rgba(124, 58, 237, 0.2)' }}>
+                      <Briefcase size={38} className={styles.mainMenuCardIcon} />
+                    </div>
+                    <h3 className={styles.mainMenuCardTitle}>Supplier Management</h3>
+                    <p className={styles.mainMenuCardDescription}>
+                      Evaluate and manage supplier quality performance and documentation
+                    </p>
+                    <div className={styles.mainMenuCardFooter}>
+                      <div className={`${styles.mainMenuBadge} ${styles.mainMenuBadgeDisabled}`}>Coming Soon</div>
+                      <Lock size={18} className={styles.mainMenuCardArrow} />
                     </div>
                   </div>
                 </div>
@@ -369,6 +468,98 @@ const MainMenu = () => {
             <p>© 2025 Valmont Solar</p>
           </div>
         </div>
+
+        {/* Estilos adicionales para las mejoras de animación */}
+        <style jsx>{`
+          .${styles.mainMenuCard} {
+            transform: translateY(0);
+            transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+            overflow: hidden;
+            position: relative;
+          }
+          
+          .${styles.mainMenuCard}:hover {
+            transform: translateY(-8px);
+            box-shadow: 0 12px 24px rgba(0, 0, 0, 0.15);
+          }
+          
+          .${styles.mainMenuCard}:hover .${styles.mainMenuCardIconContainer} {
+            transform: scale(1.08);
+          }
+          
+          .${styles.mainMenuCard}:hover .${styles.mainMenuCardArrow} {
+            transform: translateX(4px);
+            opacity: 1;
+          }
+          
+          .${styles.mainMenuCardIconContainer} {
+            transition: transform 0.3s ease;
+          }
+          
+          .${styles.mainMenuCardArrow} {
+            transition: all 0.3s ease;
+            opacity: 0.7;
+          }
+          
+          .${styles.mainMenuCardDisabled} {
+            opacity: 0.6;
+            cursor: not-allowed;
+          }
+          
+          .${styles.mainMenuCardDisabled}:hover {
+            transform: translateY(0);
+            box-shadow: none;
+          }
+          
+          .${styles.mainMenuBadgeDisabled} {
+            background-color: rgba(107, 114, 128, 0.25);
+            border: 1px solid rgba(107, 114, 128, 0.4);
+          }
+          
+          .${styles.mainMenuCard}::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(
+              to right,
+              rgba(255, 255, 255, 0) 0%,
+              rgba(255, 255, 255, 0.2) 50%,
+              rgba(255, 255, 255, 0) 100%
+            );
+            transform: translateX(-100%);
+            transition: transform 0.6s ease;
+            z-index: 1;
+            pointer-events: none;
+          }
+          
+          .${styles.mainMenuCard}:hover::before {
+            transform: translateX(100%);
+          }
+          
+          .${styles.mainMenuHeader} {
+            padding: 1.25rem 2rem;
+            margin-bottom: 2.5rem;
+            background: rgba(0, 95, 131, 0.8);
+          }
+          
+          .${styles.mainMenuTitle} {
+            margin-top: 0.5rem;
+            text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+          }
+          
+          .${styles.mainMenuSectionHeader} {
+            border-left: 4px solid rgba(255, 255, 255, 0.4);
+          }
+          
+          .${styles.mainMenuSectionTitle} {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+          }
+        `}</style>
       </div>
     );
   }

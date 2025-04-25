@@ -220,25 +220,6 @@ const MainMenu = () => {
     }
   }, [selectedOption]);
 
-  // Aplicar escala al 75% cuando se cargue el componente
-  useEffect(() => {
-    const scaleElement = document.createElement('style');
-    scaleElement.id = 'scale-adjustment';
-    scaleElement.innerHTML = `
-      .${styles.mainMenuContainer} {
-        transform: scale(0.75);
-        transform-origin: center top;
-        height: 133.33vh; /* Compensar la escala para evitar cortes */
-      }
-    `;
-    document.head.appendChild(scaleElement);
-
-    return () => {
-      const element = document.getElementById('scale-adjustment');
-      if (element) element.remove();
-    };
-  }, []);
-
   // Function to render the selected application
   const renderSelectedApp = () => {
     switch (selectedOption) {
@@ -304,7 +285,7 @@ const MainMenu = () => {
     return (
       <div className={styles.mainMenuContainer}>
         <div className={styles.mainMenuContent}>
-          {/* Header - MODIFICADO: Logo a un lado y título al otro */}
+          {/* Header - Modificado: Logo a la izquierda, título centrado y espacio a la derecha para equilibrar */}
           <div className={`${styles.mainMenuHeader} ${styles.mainMenuFadeIn}`}>
             <div className={styles.headerContainer}>
               {/* Logo y título en línea */}
@@ -316,6 +297,8 @@ const MainMenu = () => {
                   className={styles.companyLogo} 
                 />
                 <h1 className={styles.mainMenuTitle}>TEST REPORTS - INSPECTION SYSTEM</h1>
+                {/* Elemento invisible para equilibrar el diseño */}
+                <div className={styles.logoPlaceholder}></div>
               </div>
               <p className={styles.mainMenuSubtitle}>
                 Advanced quality control solution for solar component manufacturing

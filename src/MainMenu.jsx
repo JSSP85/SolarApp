@@ -9,7 +9,7 @@ import {
   Settings,
   LayoutDashboard, 
   ArrowLeft,
-  Gauge,
+  Ruler,
   Cpu,
   FileText,
   ClipboardEdit,
@@ -26,8 +26,8 @@ import {
 // Importar el nuevo componente BackButton
 import BackButton from './components/common/BackButton';
 
-// Custom SVG for the screw icon since it might not be available in lucide-react
-const ScrewNutIcon = () => (
+// Custom SVG for the hardware components (screw icon)
+const ScrewIcon = () => (
   <svg 
     xmlns="http://www.w3.org/2000/svg" 
     width="38" 
@@ -40,17 +40,14 @@ const ScrewNutIcon = () => (
     strokeLinejoin="round"
     className={styles.mainMenuCardIcon}
   >
-    <path d="M12 6V12L14.5 14.5"></path>
-    <path d="M16 8L12 4 8 8 4 12 8 16 12 20 16 16 20 12Z"></path>
-    <path d="M12 1L12 4"></path>
-    <path d="M12 20L12 23"></path>
-    <path d="M4 12L1 12"></path>
-    <path d="M23 12L20 12"></path>
+    <path d="M12 2l4 4-1.5 1.5-2.5-2.5-7 7L3.5 14M9 9l3 3M14 12l2 2M12 18l-2-2m2 2l4-4" />
+    <path d="M16 16l4-4h-4v4" />
+    <path d="M12 22a3 3 0 0 1-3-3V12" />
   </svg>
 );
 
-// Custom SVG for the measurement gauge
-const MeasurementGaugeIcon = () => (
+// Custom SVG for measurement (caliper icon)
+const CaliperIcon = () => (
   <svg 
     xmlns="http://www.w3.org/2000/svg" 
     width="38" 
@@ -63,17 +60,20 @@ const MeasurementGaugeIcon = () => (
     strokeLinejoin="round"
     className={styles.mainMenuCardIcon}
   >
-    <path d="M12 15l3.5-3.5"></path>
-    <path d="M20.3 18c.4-1 .7-2.2.7-3.4C21 9.8 17 6 12 6s-9 3.8-9 8.6c0 1.2.3 2.4.7 3.4"></path>
-    <path d="M9 15L6 12 9 9"></path>
-    <path d="M15 9l3 3-3 3"></path>
-    <path d="M12 12v-3"></path>
-    <path d="M4 21h16"></path>
-    <path d="M4 21V18"></path>
-    <path d="M20 21V18"></path>
-    <path d="M7 18v3"></path>
-    <path d="M17 18v3"></path>
-    <path d="M4 18h16"></path>
+    <path d="M2 5h20v14H2z" />
+    <path d="M4 5v14" />
+    <path d="M20 5v14" />
+    <path d="M6.5 5v4" />
+    <path d="M6.5 13v6" />
+    <path d="M9 5v2" />
+    <path d="M9 11v8" />
+    <path d="M11.5 5v8" />
+    <path d="M11.5 17v2" />
+    <path d="M14 5v3" />
+    <path d="M14 12v7" />
+    <path d="M16.5 5v2" />
+    <path d="M16.5 11v8" />
+    <path d="M4 12h16" />
   </svg>
 );
 
@@ -84,6 +84,32 @@ import { LanguageProvider } from './context/LanguageContext';
 
 const MainMenu = () => {
   const [selectedOption, setSelectedOption] = useState(null);
+  const [showLoginModal, setShowLoginModal] = useState(false);
+  const [loginCredentials, setLoginCredentials] = useState({ username: '', password: '' });
+  const [loginError, setLoginError] = useState('');
+  const [pendingManagerOption, setPendingManagerOption] = useState(null);
+
+  // Function to handle authentication
+  const handleLogin = (e) => {
+    e.preventDefault();
+    
+    if (loginCredentials.username === 'Admin' && loginCredentials.password === '1234') {
+      setShowLoginModal(false);
+      setLoginError('');
+      // Proceed to the selected manager option after successful login
+      setSelectedOption(pendingManagerOption);
+    } else {
+      setLoginError('Invalid credentials. Please try again.');
+    }
+  };
+
+  // Function to handle manager option selection that requires authentication
+  const handleManagerOptionSelect = (option) => {
+    setPendingManagerOption(option);
+    setShowLoginModal(true);
+    setLoginCredentials({ username: '', password: '' });
+    setLoginError('');
+  };
 
   // Function to handle application background issue - MODIFICADO PARA USAR IMAGEN
   useEffect(() => {
@@ -194,6 +220,25 @@ const MainMenu = () => {
     }
   }, [selectedOption]);
 
+  // Aplicar escala al 75% cuando se cargue el componente
+  useEffect(() => {
+    const scaleElement = document.createElement('style');
+    scaleElement.id = 'scale-adjustment';
+    scaleElement.innerHTML = `
+      .${styles.mainMenuContainer} {
+        transform: scale(0.75);
+        transform-origin: center top;
+        height: 133.33vh; /* Compensar la escala para evitar cortes */
+      }
+    `;
+    document.head.appendChild(scaleElement);
+
+    return () => {
+      const element = document.getElementById('scale-adjustment');
+      if (element) element.remove();
+    };
+  }, []);
+
   // Function to render the selected application
   const renderSelectedApp = () => {
     switch (selectedOption) {
@@ -259,20 +304,23 @@ const MainMenu = () => {
     return (
       <div className={styles.mainMenuContainer}>
         <div className={styles.mainMenuContent}>
-          {/* Header - MODIFICADO: más fino y separado */}
+          {/* Header - MODIFICADO: Logo a un lado y título al otro */}
           <div className={`${styles.mainMenuHeader} ${styles.mainMenuFadeIn}`}>
             <div className={styles.headerContainer}>
-              {/* Logo de la empresa */}
-              <img 
-                src="/images/logo.png" 
-                alt="Company Logo" 
-                className={styles.companyLogo} 
-              />
-              <h1 className={styles.mainMenuTitle}>TEST REPORTS - INSPECTION SYSTEM</h1>
+              {/* Logo y título en línea */}
+              <div className={styles.headerRow}>
+                {/* Logo de la empresa */}
+                <img 
+                  src="/images/logo.png" 
+                  alt="Company Logo" 
+                  className={styles.companyLogo} 
+                />
+                <h1 className={styles.mainMenuTitle}>TEST REPORTS - INSPECTION SYSTEM</h1>
+              </div>
+              <p className={styles.mainMenuSubtitle}>
+                Advanced quality control solution for solar component manufacturing
+              </p>
             </div>
-            <p className={styles.mainMenuSubtitle}>
-              Advanced quality control solution for solar component manufacturing
-            </p>
           </div>
 
           {/* Main content - Inspection modules */}
@@ -285,14 +333,14 @@ const MainMenu = () => {
             </div>
             <div className={styles.mainMenuSectionBody}>
               <div className={styles.mainMenuCards}>
-                {/* Steel Components Card - MEJORADO */}
+                {/* Steel Components Card - MEJORADO con icono de calibre */}
                 <div 
                   className={`${styles.mainMenuCard} ${styles.mainMenuStagger1}`}
                   onClick={() => setSelectedOption('steel')}
                 >
                   <div className={styles.mainMenuCardBody}>
                     <div className={styles.mainMenuCardIconContainer} style={{ background: 'rgba(108, 207, 255, 0.1)', border: '1px solid rgba(108, 207, 255, 0.2)' }}>
-                      <Gauge size={38} className={styles.mainMenuCardIcon} />
+                      <CaliperIcon />
                     </div>
                     <h3 className={styles.mainMenuCardTitle}>Steel Components</h3>
                     <p className={styles.mainMenuCardDescription}>
@@ -305,14 +353,14 @@ const MainMenu = () => {
                   </div>
                 </div>
 
-                {/* Hardware Components Card - MEJORADO */}
+                {/* Hardware Components Card - MEJORADO con icono de tornillo */}
                 <div 
                   className={`${styles.mainMenuCard} ${styles.mainMenuStagger2}`}
                   onClick={() => setSelectedOption('hardware')}
                 >
                   <div className={styles.mainMenuCardBody}>
                     <div className={styles.mainMenuCardIconContainer} style={{ background: 'rgba(251, 211, 141, 0.1)', border: '1px solid rgba(251, 211, 141, 0.2)' }}>
-                      <Settings size={38} className={styles.mainMenuCardIcon} />
+                      <ScrewIcon />
                     </div>
                     <h3 className={styles.mainMenuCardTitle}>Hardware Components</h3>
                     <p className={styles.mainMenuCardDescription}>
@@ -381,7 +429,7 @@ const MainMenu = () => {
                 {/* Non-Conformity Manager Card */}
                 <div 
                   className={`${styles.mainMenuCard} ${styles.mainMenuStagger1}`}
-                  onClick={() => setSelectedOption('non-conformity-manager')}
+                  onClick={() => handleManagerOptionSelect('non-conformity-manager')}
                 >
                   <div className={styles.mainMenuCardBody}>
                     <div className={styles.mainMenuCardIconContainer} style={{ background: 'rgba(239, 68, 68, 0.1)', border: '1px solid rgba(239, 68, 68, 0.2)' }}>
@@ -393,7 +441,9 @@ const MainMenu = () => {
                     </p>
                     <div className={styles.mainMenuCardFooter}>
                       <div className={`${styles.mainMenuBadge} ${styles.mainMenuBadgeWarning}`}>Page Under Construction</div>
-                      <ChevronRight size={18} className={styles.mainMenuCardArrow} />
+                      <div className={styles.managerLockIndicator}>
+                        <Lock size={14} />
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -401,7 +451,7 @@ const MainMenu = () => {
                 {/* Inspection Dashboard Card */}
                 <div 
                   className={`${styles.mainMenuCard} ${styles.mainMenuStagger2}`}
-                  onClick={() => setSelectedOption('inspection-dashboard')}
+                  onClick={() => handleManagerOptionSelect('inspection-dashboard')}
                 >
                   <div className={styles.mainMenuCardBody}>
                     <div className={styles.mainMenuCardIconContainer} style={{ background: 'rgba(59, 130, 246, 0.1)', border: '1px solid rgba(59, 130, 246, 0.2)' }}>
@@ -413,7 +463,9 @@ const MainMenu = () => {
                     </p>
                     <div className={styles.mainMenuCardFooter}>
                       <div className={`${styles.mainMenuBadge} ${styles.mainMenuBadgeWarning}`}>Page Under Construction</div>
-                      <ChevronRight size={18} className={styles.mainMenuCardArrow} />
+                      <div className={styles.managerLockIndicator}>
+                        <Lock size={14} />
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -421,6 +473,7 @@ const MainMenu = () => {
                 {/* Future Option 1 */}
                 <div 
                   className={`${styles.mainMenuCard} ${styles.mainMenuStagger3} ${styles.mainMenuCardDisabled}`}
+                  onClick={() => handleManagerOptionSelect('quality-database')}
                 >
                   <div className={styles.mainMenuCardBody}>
                     <div className={styles.mainMenuCardIconContainer} style={{ background: 'rgba(99, 102, 241, 0.1)', border: '1px solid rgba(99, 102, 241, 0.2)' }}>
@@ -432,7 +485,9 @@ const MainMenu = () => {
                     </p>
                     <div className={styles.mainMenuCardFooter}>
                       <div className={`${styles.mainMenuBadge} ${styles.mainMenuBadgeDisabled}`}>Coming Soon</div>
-                      <Lock size={18} className={styles.mainMenuCardArrow} />
+                      <div className={styles.managerLockIndicator}>
+                        <Lock size={14} />
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -440,6 +495,7 @@ const MainMenu = () => {
                 {/* Future Option 2 */}
                 <div 
                   className={`${styles.mainMenuCard} ${styles.mainMenuStagger4} ${styles.mainMenuCardDisabled}`}
+                  onClick={() => handleManagerOptionSelect('supplier-management')}
                 >
                   <div className={styles.mainMenuCardBody}>
                     <div className={styles.mainMenuCardIconContainer} style={{ background: 'rgba(124, 58, 237, 0.1)', border: '1px solid rgba(124, 58, 237, 0.2)' }}>
@@ -451,7 +507,9 @@ const MainMenu = () => {
                     </p>
                     <div className={styles.mainMenuCardFooter}>
                       <div className={`${styles.mainMenuBadge} ${styles.mainMenuBadgeDisabled}`}>Coming Soon</div>
-                      <Lock size={18} className={styles.mainMenuCardArrow} />
+                      <div className={styles.managerLockIndicator}>
+                        <Lock size={14} />
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -467,99 +525,165 @@ const MainMenu = () => {
             </div>
             <p>© 2025 Valmont Solar</p>
           </div>
-        </div>
 
-        {/* Estilos adicionales para las mejoras de animación */}
-        <style jsx>{`
-          .${styles.mainMenuCard} {
-            transform: translateY(0);
-            transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
-            overflow: hidden;
-            position: relative;
-          }
-          
-          .${styles.mainMenuCard}:hover {
-            transform: translateY(-8px);
-            box-shadow: 0 12px 24px rgba(0, 0, 0, 0.15);
-          }
-          
-          .${styles.mainMenuCard}:hover .${styles.mainMenuCardIconContainer} {
-            transform: scale(1.08);
-          }
-          
-          .${styles.mainMenuCard}:hover .${styles.mainMenuCardArrow} {
-            transform: translateX(4px);
-            opacity: 1;
-          }
-          
-          .${styles.mainMenuCardIconContainer} {
-            transition: transform 0.3s ease;
-          }
-          
-          .${styles.mainMenuCardArrow} {
-            transition: all 0.3s ease;
-            opacity: 0.7;
-          }
-          
-          .${styles.mainMenuCardDisabled} {
-            opacity: 0.6;
-            cursor: not-allowed;
-          }
-          
-          .${styles.mainMenuCardDisabled}:hover {
-            transform: translateY(0);
-            box-shadow: none;
-          }
-          
-          .${styles.mainMenuBadgeDisabled} {
-            background-color: rgba(107, 114, 128, 0.25);
-            border: 1px solid rgba(107, 114, 128, 0.4);
-          }
-          
-          .${styles.mainMenuCard}::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: linear-gradient(
-              to right,
-              rgba(255, 255, 255, 0) 0%,
-              rgba(255, 255, 255, 0.2) 50%,
-              rgba(255, 255, 255, 0) 100%
-            );
-            transform: translateX(-100%);
-            transition: transform 0.6s ease;
-            z-index: 1;
-            pointer-events: none;
-          }
-          
-          .${styles.mainMenuCard}:hover::before {
-            transform: translateX(100%);
-          }
-          
-          .${styles.mainMenuHeader} {
-            padding: 1.25rem 2rem;
-            margin-bottom: 2.5rem;
-            background: rgba(0, 95, 131, 0.8);
-          }
-          
-          .${styles.mainMenuTitle} {
-            margin-top: 0.5rem;
-            text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
-          }
-          
-          .${styles.mainMenuSectionHeader} {
-            border-left: 4px solid rgba(255, 255, 255, 0.4);
-          }
-          
-          .${styles.mainMenuSectionTitle} {
-            display: flex;
-            align-items: center;
-            gap: 0.75rem;
-          }
-        `}</style>
+          {/* Modal de login para opciones de administrador */}
+          {showLoginModal && (
+            <div className={styles.modalOverlay}>
+              <div className={styles.modalContent}>
+                <h3 className={styles.modalTitle}>
+                  <Lock size={18} className="mr-2" /> Authentication Required
+                </h3>
+                <p className={styles.modalDescription}>
+                  Please enter your administrator credentials to access this module
+                </p>
+                
+                {loginError && (
+                  <div className={styles.loginError}>
+                    {loginError}
+                  </div>
+                )}
+
+                <form onSubmit={handleLogin}>
+                  <div className={styles.formGroup}>
+                    <label htmlFor="username">Username</label>
+                    <input 
+                      type="text" 
+                      id="username"
+                      value={loginCredentials.username}
+                      onChange={(e) => setLoginCredentials({...loginCredentials, username: e.target.value})}
+                      required
+                    />
+                  </div>
+                  <div className={styles.formGroup}>
+                    <label htmlFor="password">Password</label>
+                    <input 
+                      type="password" 
+                      id="password"
+                      value={loginCredentials.password}
+                      onChange={(e) => setLoginCredentials({...loginCredentials, password: e.target.value})}
+                      required
+                    />
+                  </div>
+                  <div className={styles.modalActions}>
+                    <button 
+                      type="button" 
+                      className={styles.cancelButton}
+                      onClick={() => setShowLoginModal(false)}
+                    >
+                      Cancel
+                    </button>
+                    <button 
+                      type="submit" 
+                      className={styles.loginButton}
+                    >
+                      Login
+                    </button>
+                  </div>
+                </form>
+              </div>
+            </div>
+          )}
+
+          {/* Estilos adicionales para las mejoras de animación */}
+          <style jsx>{`
+            .${styles.mainMenuCard} {
+              transform: translateY(0);
+              transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+              overflow: hidden;
+              position: relative;
+            }
+            
+            .${styles.mainMenuCard}:hover {
+              transform: translateY(-8px);
+              box-shadow: 0 12px 24px rgba(0, 0, 0, 0.15);
+            }
+            
+            .${styles.mainMenuCard}:hover .${styles.mainMenuCardIconContainer} {
+              transform: scale(1.08);
+            }
+            
+            .${styles.mainMenuCard}:hover .${styles.mainMenuCardArrow} {
+              transform: translateX(4px);
+              opacity: 1;
+            }
+            
+            .${styles.mainMenuCardIconContainer} {
+              transition: transform 0.3s ease;
+            }
+            
+            .${styles.mainMenuCardArrow} {
+              transition: all 0.3s ease;
+              opacity: 0.7;
+            }
+            
+            .${styles.mainMenuCardDisabled} {
+              opacity: 0.6;
+              cursor: not-allowed;
+            }
+            
+            .${styles.mainMenuCardDisabled}:hover {
+              transform: translateY(0);
+              box-shadow: none;
+            }
+            
+            .${styles.mainMenuBadgeDisabled} {
+              background-color: rgba(107, 114, 128, 0.25);
+              border: 1px solid rgba(107, 114, 128, 0.4);
+            }
+            
+            .${styles.mainMenuCard}::before {
+              content: '';
+              position: absolute;
+              top: 0;
+              left: 0;
+              width: 100%;
+              height: 100%;
+              background: linear-gradient(
+                to right,
+                rgba(255, 255, 255, 0) 0%,
+                rgba(255, 255, 255, 0.2) 50%,
+                rgba(255, 255, 255, 0) 100%
+              );
+              transform: translateX(-100%);
+              transition: transform 0.6s ease;
+              z-index: 1;
+              pointer-events: none;
+            }
+            
+            .${styles.mainMenuCard}:hover::before {
+              transform: translateX(100%);
+            }
+            
+            .${styles.mainMenuHeader} {
+              padding: 0.75rem 2rem;
+              margin-bottom: 2.5rem;
+              background: rgba(0, 95, 131, 0.8);
+              height: auto;
+            }
+            
+            .${styles.mainMenuTitle} {
+              margin: 0;
+              text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+            }
+            
+            .${styles.mainMenuSectionHeader} {
+              border-left: 4px solid rgba(255, 255, 255, 0.4);
+            }
+            
+            .${styles.mainMenuSectionTitle} {
+              display: flex;
+              align-items: center;
+              gap: 0.75rem;
+            }
+
+            .${styles.managerLockIndicator} {
+              display: flex;
+              align-items: center;
+              justify-content: center;
+              color: rgba(255, 255, 255, 0.7);
+            }
+          `}</style>
+        </div>
       </div>
     );
   }

@@ -4,14 +4,15 @@ html, body {
   margin: 0;
   padding: 0;
   height: 100%;
+  overflow-x: hidden;
 }
 
 .mainMenuContainer {
   position: fixed;
   top: 0;
   left: 0;
-  width: 100%;
-  height: 100%;
+  width: 100vw;
+  height: 100vh;
   background-image: url('/images/backgrounds/solar-background.jpg');
   background-size: cover;
   background-position: center;
@@ -21,12 +22,13 @@ html, body {
   z-index: 999;
   display: flex;
   justify-content: center;
-  align-items: center;
+  align-items: flex-start;
+  padding-top: 2vh;
 }
 
 .mainMenuContent {
-  max-width: 1400px;
-  width: 100%;
+  width: 75%;
+  max-width: 1050px;
   padding: 2rem;
   position: relative;
   z-index: 1;
@@ -73,14 +75,20 @@ html, body {
   letter-spacing: -0.5px;
   margin: 0;
   flex: 1;
-  text-align: left;
+  text-align: center;
+}
+
+.logoPlaceholder {
+  width: 45px; /* Mismo ancho que el logo para equilibrar */
+  height: 1px;
+  visibility: hidden;
 }
 
 .mainMenuSubtitle {
   font-size: 0.9rem;
   color: rgba(255, 255, 255, 0.9);
   margin: 0.25rem 0 0 0;
-  align-self: flex-end;
+  text-align: center;
 }
 
 .mainMenuSection {

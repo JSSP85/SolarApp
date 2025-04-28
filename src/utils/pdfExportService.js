@@ -3,13 +3,13 @@ import html2canvas from 'html2canvas';
 import jsPDF from 'jspdf';
 
 /**
- * Exporta un elemento DOM como PDF usando html2canvas y jsPDF
- * @param {string} elementId - ID del elemento DOM a exportar
- * @param {Object} options - Opciones de configuración
- * @param {string} options.filename - Nombre del archivo (sin extensión)
- * @param {string} options.orientation - Orientación del PDF ('portrait' o 'landscape')
- * @param {number} options.scale - Escala para html2canvas (recomendado 2-4 para mejor calidad)
- * @param {boolean} options.showNotification - Mostrar notificaciones durante el proceso
+ * Exports a DOM element as PDF using html2canvas and jsPDF
+ * @param {string} elementId - ID of the DOM element to export
+ * @param {Object} options - Configuration options
+ * @param {string} options.filename - Filename (without extension)
+ * @param {string} options.orientation - PDF orientation ('portrait' or 'landscape')
+ * @param {number} options.scale - Scale for html2canvas (recommended 2-4 for better quality)
+ * @param {boolean} options.showNotification - Show notifications during the process
  * @returns {Promise<void>}
  */
 export const exportToPDF = async (elementId, options = {}) => {
@@ -20,21 +20,21 @@ export const exportToPDF = async (elementId, options = {}) => {
     showNotification = true
   } = options;
 
-  // Elemento que se exportará
+  // Element to be exported
   const element = document.getElementById(elementId);
   if (!element) {
-    console.error(`Elemento con ID ${elementId} no encontrado`);
+    console.error(`Element with ID ${elementId} not found`);
     return;
   }
 
-  // Mostrar notificación de inicio si está habilitado
+  // Show start notification if enabled
   let notificationElement = null;
   if (showNotification) {
-    notificationElement = createNotification('Generando PDF, por favor espere...');
+    notificationElement = createNotification('Generating PDF, please wait...');
   }
 
   try {
-    // Capturar el elemento como imagen con html2canvas
+    // Capture the element as an image with html2canvas
     const canvas = await html2canvas(element, {
       scale: scale,
       useCORS: true,
@@ -43,32 +43,32 @@ export const exportToPDF = async (elementId, options = {}) => {
       backgroundColor: '#ffffff'
     });
 
-    // Crear PDF
+    // Create PDF
     const pdf = new jsPDF({
       orientation: orientation,
       unit: 'mm'
     });
 
-    // Obtener dimensiones
+    // Get dimensions
     const imgData = canvas.toDataURL('image/jpeg', 0.95);
     const imgProps = pdf.getImageProperties(imgData);
     const pdfWidth = pdf.internal.pageSize.getWidth();
     const pdfHeight = (imgProps.height * pdfWidth) / imgProps.width;
 
-    // Si la altura es mayor que una página, manejamos páginas múltiples
+    // If height is greater than one page, handle multiple pages
     const pageHeight = pdf.internal.pageSize.getHeight();
     
     if (pdfHeight > pageHeight) {
-      // Divide la imagen en múltiples páginas
+      // Divide the image into multiple pages
       let heightLeft = pdfHeight;
       let position = 0;
       let page = 1;
 
-      // Primera página
+      // First page
       pdf.addImage(imgData, 'JPEG', 0, position, pdfWidth, pdfHeight);
       heightLeft -= pageHeight;
       
-      // Páginas adicionales si es necesario
+      // Additional pages if needed
       while (heightLeft > 0) {
         position = -pageHeight * page;
         pdf.addPage();
@@ -77,45 +77,45 @@ export const exportToPDF = async (elementId, options = {}) => {
         page++;
       }
     } else {
-      // Cabe en una sola página
+      // Fits on a single page
       pdf.addImage(imgData, 'JPEG', 0, 0, pdfWidth, pdfHeight);
     }
 
-    // Guardar PDF
+    // Save PDF
     pdf.save(`${filename}.pdf`);
 
     if (showNotification) {
-      // Actualizar notificación a éxito
-      updateNotification(notificationElement, 'PDF generado correctamente', 'success');
+      // Update notification to success
+      updateNotification(notificationElement, 'PDF generated successfully', 'success');
     }
   } catch (error) {
-    console.error('Error al generar PDF:', error);
+    console.error('Error generating PDF:', error);
     
     if (showNotification) {
-      // Actualizar notificación a error
-      updateNotification(notificationElement, 'Error al generar PDF. Inténtelo de nuevo.', 'error');
+      // Update notification to error
+      updateNotification(notificationElement, 'Error generating PDF. Please try again.', 'error');
     }
   }
 };
 
 /**
- * Configura la impresión de un elemento con estilos personalizados
- * @param {Object} options - Opciones de configuración
- * @param {boolean} options.showNotification - Mostrar notificaciones durante el proceso
+ * Sets up printing of an element with custom styles
+ * @param {Object} options - Configuration options
+ * @param {boolean} options.showNotification - Show notifications during the process
  */
 export const printReport = (options = {}) => {
   const { showNotification = true } = options;
   
   try {
     if (showNotification) {
-      const notification = createNotification('Preparando para imprimir...');
+      const notification = createNotification('Preparing to print...');
       
-      // Damos tiempo para que la notificación se muestre antes de abrir el diálogo de impresión
+      // Allow time for the notification to display before opening the print dialog
       setTimeout(() => {
         window.print();
-        updateNotification(notification, 'Diálogo de impresión abierto', 'success');
+        updateNotification(notification, 'Print dialog opened', 'success');
         
-        // Eliminar la notificación después de unos segundos
+        // Remove the notification after a few seconds
         setTimeout(() => {
           if (notification.parentNode) {
             notification.parentNode.removeChild(notification);
@@ -126,9 +126,9 @@ export const printReport = (options = {}) => {
       window.print();
     }
   } catch (error) {
-    console.error('Error al imprimir:', error);
+    console.error('Error printing:', error);
     if (showNotification) {
-      const notification = createNotification('Error al abrir el diálogo de impresión', 'error');
+      const notification = createNotification('Error opening print dialog', 'error');
       setTimeout(() => {
         if (notification.parentNode) {
           notification.parentNode.removeChild(notification);
@@ -139,16 +139,16 @@ export const printReport = (options = {}) => {
 };
 
 /**
- * Crea una notificación temporal en la pantalla
- * @param {string} message - Mensaje a mostrar
- * @param {string} type - Tipo de notificación ('info', 'success', 'error')
- * @returns {HTMLElement} - Elemento de notificación creado
+ * Creates a temporary notification on screen
+ * @param {string} message - Message to display
+ * @param {string} type - Notification type ('info', 'success', 'error')
+ * @returns {HTMLElement} - Created notification element
  */
 function createNotification(message, type = 'info') {
-  // Crear el elemento de notificación
+  // Create notification element
   const notification = document.createElement('div');
   
-  // Estilo base
+  // Base style
   notification.style.cssText = `
     position: fixed;
     top: 20px;
@@ -165,7 +165,7 @@ function createNotification(message, type = 'info') {
     justify-content: center;
   `;
   
-  // Configurar color según el tipo
+  // Configure color based on type
   if (type === 'success') {
     notification.style.backgroundColor = 'rgba(39, 174, 96, 0.9)';
     notification.style.color = 'white';
@@ -177,28 +177,28 @@ function createNotification(message, type = 'info') {
     notification.style.color = 'white';
   }
   
-  // Añadir mensaje
+  // Add message
   notification.innerText = message;
   
-  // Añadir al DOM
+  // Add to DOM
   document.body.appendChild(notification);
   
   return notification;
 }
 
 /**
- * Actualiza una notificación existente
- * @param {HTMLElement} notification - Elemento de notificación a actualizar
- * @param {string} message - Nuevo mensaje
- * @param {string} type - Nuevo tipo ('info', 'success', 'error')
+ * Updates an existing notification
+ * @param {HTMLElement} notification - Notification element to update
+ * @param {string} message - New message
+ * @param {string} type - New type ('info', 'success', 'error')
  */
 function updateNotification(notification, message, type = 'info') {
   if (!notification) return;
   
-  // Actualizar mensaje
+  // Update message
   notification.innerText = message;
   
-  // Actualizar estilo según el tipo
+  // Update style based on type
   if (type === 'success') {
     notification.style.backgroundColor = 'rgba(39, 174, 96, 0.9)';
   } else if (type === 'error') {
@@ -207,11 +207,11 @@ function updateNotification(notification, message, type = 'info') {
     notification.style.backgroundColor = 'rgba(47, 128, 237, 0.9)';
   }
   
-  // Eliminar después de 3 segundos si es éxito o error
+  // Remove after 3 seconds if success or error
   if (type === 'success' || type === 'error') {
     setTimeout(() => {
       if (notification.parentNode) {
-        // Animación de desvanecimiento
+        // Fade out animation
         notification.style.opacity = '0';
         notification.style.transform = 'translateX(-50%) translateY(-20px)';
         
@@ -226,9 +226,9 @@ function updateNotification(notification, message, type = 'info') {
 }
 
 /**
- * Genera un nombre de archivo basado en los datos del reporte
- * @param {Object} reportData - Datos del reporte
- * @returns {string} - Nombre del archivo generado
+ * Generates a filename based on report data
+ * @param {Object} reportData - Report data
+ * @returns {string} - Generated filename
  */
 export const generateFilename = (reportData) => {
   const componentInfo = reportData.componentName || reportData.componentCode || 'Component';
@@ -240,68 +240,68 @@ export const generateFilename = (reportData) => {
 };
 
 /**
- * Genera un correo electrónico para compartir el reporte
- * @param {string} email - Correo electrónico del destinatario
- * @param {Object} reportData - Datos del reporte
+ * Generates an email to share the report
+ * @param {string} email - Recipient email address
+ * @param {Object} reportData - Report data
  */
 export const sendReportByEmail = (email, reportData) => {
   if (!email) {
-    console.error('No se proporcionó una dirección de correo electrónico');
+    console.error('No email address provided');
     return;
   }
   
   try {
-    // Preparar datos para el asunto del correo
+    // Prepare data for email subject
     const componentInfo = reportData.componentName || reportData.componentCode || 'Component';
     const dateStr = new Date().toLocaleDateString();
     const statusText = reportData.inspectionStatus === 'pass' ? 'ACCEPTED' : 
                       (reportData.inspectionStatus === 'reject' ? 'REJECTED' : 'IN PROGRESS');
     
-    // Construir el cuerpo del correo con un resumen del reporte
+    // Build email body with report summary
     const emailBody = `
-      Reporte de Inspección: ${componentInfo}
-      Fecha: ${dateStr}
-      Estado: ${statusText}
+      Inspection Report: ${componentInfo}
+      Date: ${dateStr}
+      Status: ${statusText}
       
-      Este correo contiene un resumen del reporte de inspección generado por el sistema de Control de Calidad de Valmont Solar.
+      This email contains a summary of the inspection report generated by the Valmont Solar Quality Control system.
       
-      * Información del Componente:
-      - Proyecto: ${reportData.projectName || "NEPI"}
-      - Familia: ${reportData.componentFamily || "TORQUE TUBES"}
-      - Código: ${reportData.componentCode || "ttg45720"}
-      - Nombre: ${reportData.componentName || "Torque tube 140x100x3.5mm"}
+      * Component Information:
+      - Project: ${reportData.projectName || "NEPI"}
+      - Family: ${reportData.componentFamily || "TORQUE TUBES"}
+      - Code: ${reportData.componentCode || "ttg45720"}
+      - Name: ${reportData.componentName || "Torque tube 140x100x3.5mm"}
       
-      * Información de Inspección:
+      * Inspection Information:
       - Inspector: ${reportData.inspector || "John Smith"}
-      - Fecha: ${reportData.inspectionDate || dateStr}
-      - Ubicación: ${reportData.inspectionCity && reportData.inspectionCountry ? 
+      - Date: ${reportData.inspectionDate || dateStr}
+      - Location: ${reportData.inspectionCity && reportData.inspectionCountry ? 
                   `${reportData.inspectionCity}, ${reportData.inspectionCountry}` : "Madrid, Spain"}
       
-      * Resultado:
-      - Estado final: ${statusText}
-      - No conformidades: ${calculateTotalNonConformities(reportData)}
+      * Result:
+      - Final status: ${statusText}
+      - Non-conformities: ${calculateTotalNonConformities(reportData)}
       
-      Nota: Este es un correo automático generado por el sistema. Para obtener el reporte completo en PDF, por favor contacte con el departamento de calidad.
+      Note: This is an automated email generated by the system. For the complete PDF report, please contact the quality department.
     `;
     
-    // Codificar el asunto y cuerpo para mailto
-    const encodedSubject = encodeURIComponent(`Reporte de Inspección: ${componentInfo} - ${statusText}`);
+    // Encode subject and body for mailto
+    const encodedSubject = encodeURIComponent(`Inspection Report: ${componentInfo} - ${statusText}`);
     const encodedBody = encodeURIComponent(emailBody);
     
-    // Abrir cliente de correo del usuario
+    // Open user's email client
     window.location.href = `mailto:${email}?subject=${encodedSubject}&body=${encodedBody}`;
     
     return true;
   } catch (error) {
-    console.error('Error al preparar el correo electrónico:', error);
+    console.error('Error preparing email:', error);
     return false;
   }
 };
 
 /**
- * Calcula el total de no conformidades de un reporte
- * @param {Object} reportData - Datos del reporte
- * @returns {number} - Total de no conformidades
+ * Calculates total non-conformities in a report
+ * @param {Object} reportData - Report data
+ * @returns {number} - Total non-conformities
  */
 function calculateTotalNonConformities(reportData) {
   if (!reportData.dimensionNonConformities) return 0;

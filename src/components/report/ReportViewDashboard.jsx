@@ -422,72 +422,91 @@ const ReportViewDashboard = () => {
     style.id = 'pdf-print-styles';
     style.innerHTML = `
       @media print {
-        /* Corregir el problema de la página en blanco */
+        /* Reducir márgenes y optimizar tamaño de página */
         @page {
           size: auto;
-          margin: 10mm;
-          margin-top: 5mm;  /* Reducir el margen superior */
+          margin: 10mm 5mm; /* Reducimos márgenes laterales */
         }
         
         html, body {
           height: auto !important;
           overflow: visible !important;
           background: white !important;
+          width: 100% !important;
+          margin: 0 !important;
+          padding: 0 !important;
         }
         
-        /* Hide sidebar and adjust main content */
+        /* Hacer que el contenido ocupe todo el ancho disponible */
         .sidebar, .btn-group, .main-menu-return-btn, .tab-navigation, .app-header { 
           display: none !important; 
         }
         
         .main-content {
-          margin-left: 0 !important;
+          margin: 0 !important;
           padding: 0 !important;
           width: 100% !important;
+          max-width: 100% !important;
           overflow: visible !important;
         }
         
-        /* Hide navigation elements and buttons */
-        .btn:not(.badge) {
-          display: none !important;
+        /* Ajustar ancho máximo de contenedores para aprovechar el espacio */
+        .dashboard-card, .report-section, .card-body {
+          width: 100% !important;
+          max-width: 100% !important;
+          margin-left: 0 !important;
+          margin-right: 0 !important;
+          padding-left: 5mm !important;
+          padding-right: 5mm !important;
+          box-sizing: border-box !important;
         }
         
-        /* Make sure charts and tables fit well */
+        /* Ajustar tamaño de fuentes para mejor legibilidad */
+        body {
+          font-size: 12pt !important;
+        }
+        
+        .report-title {
+          font-size: 18pt !important;
+        }
+        
+        .report-section-title {
+          font-size: 14pt !important;
+        }
+        
+        /* Mejorar visualización de tablas y gráficos */
+        .data-table {
+          width: 100% !important;
+          margin: 0 auto !important;
+        }
+        
         .chart-container {
           page-break-inside: avoid;
           height: auto !important;
           max-height: 70vh !important;
+          width: 100% !important;
+          margin: 0 auto !important;
         }
         
-        /* Improve colors and borders */
-        * {
-          -webkit-print-color-adjust: exact !important;
-          color-adjust: exact !important;
-          print-color-adjust: exact !important;
+        /* Ajustar grids para mejor disposición */
+        .cards-grid-2, .grid-cols-2, .grid-cols-4 {
+          display: grid !important;
+          grid-template-columns: repeat(2, 1fr) !important;
+          width: 100% !important;
         }
         
-        /* Reset all floats and positions for printing */
-        .dashboard-card {
-          float: none !important;
-          position: static !important;
-          overflow: visible !important;
-          box-shadow: none !important;
-          border: 1px solid #e5e7eb !important;
-          break-inside: avoid;
-          page-break-inside: avoid;
-          background: white !important;
-        }
-        
-        /* Make sure sections break nicely */
-        .report-section {
-          margin-bottom: 10mm;
-          page-break-inside: avoid;
-          overflow: visible !important;
-        }
-        
-        /* Make photos print well */
+        /* Imágenes y gráficos más grandes */
         img, .chart-container svg {
           max-width: 100% !important;
+          margin: 0 auto !important;
+          display: block !important;
+        }
+        
+        /* Espaciado adecuado entre elementos */
+        .report-section {
+          margin-bottom: 8mm !important;
+          page-break-inside: avoid;
+          overflow: visible !important;
         }
       }
     `;

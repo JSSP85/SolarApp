@@ -1,6 +1,6 @@
 // src/components/report/ReportViewDashboard.jsx
 import React from 'react';
-import { Download, Printer, Mail, FileText, Calendar, User, Clipboard, Package, Layers, BarChart2, CheckCircle, XCircle, MapPin, Info } from 'lucide-react';
+import { Layers, BarChart2, CheckCircle, MapPin, Info } from 'lucide-react';
 import { useInspection } from '../../context/InspectionContext';
 import { getSampleCount, getSampleLetter } from '../../utils/samplePlanHelper';
 import { formatDate } from '../../utils/dateFormatter';
@@ -11,8 +11,8 @@ import {
 } from 'recharts';
 import StaticMapReport from './StaticMapReport';
 import ReportTechnicalDrawing from './ReportTechnicalDrawing';
+import ReportExportOptions from './ReportExportOptions'; // Import the new component
 
-// Componente para los mini gráficos dimensionales
 // Componente para los mini gráficos dimensionales con tamaño reducido
 const DimensionMiniChart = ({ dimension, measurements, index }) => {
   // Preparar datos para el gráfico sin limitar el número de muestras
@@ -416,259 +416,6 @@ const ReportViewDashboard = () => {
     mapCoords
   } = state;
   
-  const handleDownloadPDF = () => {
-    // Create a temporary stylesheet for PDF printing
-    const style = document.createElement('style');
-    style.id = 'pdf-print-styles';
-    style.innerHTML = `
-      @media print {
-        /* Reducir márgenes y optimizar tamaño de página */
-        @page {
-          size: auto;
-          margin: 10mm 5mm; /* Reducimos márgenes laterales */
-        }
-        
-        html, body {
-          height: auto !important;
-          overflow: visible !important;
-          background: white !important;
-          width: 100% !important;
-          margin: 0 !important;
-          padding: 0 !important;
-        }
-        
-        /* Hacer que el contenido ocupe todo el ancho disponible */
-        .sidebar, .btn-group, .main-menu-return-btn, .tab-navigation, .app-header { 
-          display: none !important; 
-        }
-        
-        .main-content {
-          margin: 0 !important;
-          padding: 0 !important;
-          width: 100% !important;
-          max-width: 100% !important;
-          overflow: visible !important;
-        }
-        
-        /* Ajustar ancho máximo de contenedores para aprovechar el espacio */
-        .dashboard-card, .report-section, .card-body {
-          width: 100% !important;
-          max-width: 100% !important;
-          margin-left: 0 !important;
-          margin-right: 0 !important;
-          padding-left: 5mm !important;
-          padding-right: 5mm !important;
-          box-sizing: border-box !important;
-        }
-        
-        /* Ajustar tamaño de fuentes para mejor legibilidad */
-        body {
-          font-size: 12pt !important;
-        }
-        
-        .report-title {
-          font-size: 18pt !important;
-        }
-        
-        .report-section-title {
-          font-size: 14pt !important;
-        }
-        
-        /* Mejorar visualización de tablas y gráficos */
-        .data-table {
-          width: 100% !important;
-          margin: 0 auto !important;
-        }
-        
-        .chart-container {
-          page-break-inside: avoid;
-          height: auto !important;
-          max-height: 70vh !important;
-          width: 100% !important;
-          margin: 0 auto !important;
-        }
-        
-        /* Ajustar grids para mejor disposición */
-        .cards-grid-2, .grid-cols-2, .grid-cols-4 {
-          display: grid !important;
-          grid-template-columns: repeat(2, 1fr) !important;
-          width: 100% !important;
-        }
-        
-        /* Imágenes y gráficos más grandes */
-        img, .chart-container svg {
-          max-width: 100% !important;
-          margin: 0 auto !important;
-          display: block !important;
-        }
-        
-        /* Espaciado adecuado entre elementos */
-        .report-section {
-          margin-bottom: 8mm !important;
-          page-break-inside: avoid;
-          overflow: visible !important;
-        }
-      }
-    `;
-    document.head.appendChild(style);
-    
-    // Set document title for the PDF filename
-    const originalTitle = document.title;
-    const componentInfo = componentName || componentCode || 'Component';
-    const dateStr = new Date().toLocaleDateString().replace(/\//g, '-');
-    document.title = `Inspection_Report_${componentInfo}_${dateStr}`;
-    
-    // Show a message to explain how to save as PDF
-    const instructionMsg = document.createElement('div');
-    instructionMsg.style.cssText = 'position:fixed;top:20px;left:50%;transform:translateX(-50%);background:rgba(0,0,0,0.8);color:white;padding:10px 20px;border-radius:8px;z-index:9999;font-weight:bold;';
-    instructionMsg.innerText = 'Select "Save as PDF" from the destination dropdown to download the report';
-    document.body.appendChild(instructionMsg);
-    
-    // Let the instruction message display before printing
-    setTimeout(() => {
-      // Trigger print dialog
-      window.print();
-      
-      // Clean up after printing
-      document.body.removeChild(instructionMsg);
-      document.head.removeChild(style);
-      document.title = originalTitle;
-    }, 500);
-  };
-  
-  const handlePrintReport = () => {
-    window.print();
-  };
-  
-  const handleSendEmail = () => {
-    // Crear un modal para ingresar el correo electrónico
-    const modalOverlay = document.createElement('div');
-    modalOverlay.style.cssText = `
-      position: fixed;
-      top: 0;
-      left: 0;
-      right: 0;
-      bottom: 0;
-      background-color: rgba(0, 0, 0, 0.5);
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      z-index: 1000;
-    `;
-    
-    const modalContent = document.createElement('div');
-    modalContent.style.cssText = `
-      background-color: white;
-      padding: 20px;
-      border-radius: 8px;
-      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-      width: 400px;
-      max-width: 90%;
-    `;
-    
-    modalContent.innerHTML = `
-      <h3 style="margin-top: 0; margin-bottom: 16px; font-size: 18px; font-weight: 600;">Enviar Reporte por Email</h3>
-      <p style="margin-bottom: 16px; font-size: 14px; color: #4b5563;">Introduce el correo electrónico del destinatario para enviar el reporte.</p>
-      <input type="email" id="recipient-email" placeholder="Email del destinatario" style="width: 100%; padding: 8px 12px; border: 1px solid #d1d5db; border-radius: 6px; margin-bottom: 16px; font-size: 14px;">
-      <div style="display: flex; justify-content: flex-end; gap: 8px;">
-        <button id="cancel-email" style="padding: 8px 16px; background-color: #f3f4f6; border: none; border-radius: 6px; font-weight: 500; cursor: pointer;">Cancelar</button>
-        <button id="send-email" style="padding: 8px 16px; background-color: #3b82f6; color: white; border: none; border-radius: 6px; font-weight: 500; cursor: pointer;">Enviar</button>
-      </div>
-    `;
-    
-    modalOverlay.appendChild(modalContent);
-    document.body.appendChild(modalOverlay);
-    
-    // Enfocar el campo de email automáticamente
-    setTimeout(() => {
-      document.getElementById('recipient-email').focus();
-    }, 100);
-    
-    // Manejar el cierre del modal
-    document.getElementById('cancel-email').addEventListener('click', () => {
-      document.body.removeChild(modalOverlay);
-    });
-    
-    // Manejar el envío del email
-    document.getElementById('send-email').addEventListener('click', () => {
-      const email = document.getElementById('recipient-email').value.trim();
-      
-      if (!email) {
-        alert('Por favor, introduce un correo electrónico válido.');
-        return;
-      }
-      
-      // En una implementación real, aquí enviarías el PDF por email
-      // Para esta demo, usaremos mailto: como prueba de concepto
-      
-      // Preparar datos para el asunto del correo
-      const componentInfo = componentName || componentCode || 'Component';
-      const dateStr = new Date().toLocaleDateString();
-      const statusText = inspectionStatus === 'pass' ? 'ACCEPTED' : (inspectionStatus === 'reject' ? 'REJECTED' : 'IN PROGRESS');
-      
-      // Construir el cuerpo del correo con un resumen del reporte
-      const emailBody = `
-        Reporte de Inspección: ${componentInfo}
-        Fecha: ${dateStr}
-        Estado: ${statusText}
-        
-        Este correo contiene un reporte de inspección generado por el sistema de Control de Calidad de Valmont Solar.
-        
-        * Información del Componente:
-        - Proyecto: ${projectName || "NEPI"}
-        - Familia: ${componentFamily || "TORQUE TUBES"}
-        - Código: ${componentCode || "ttg45720"}
-        - Nombre: ${componentName || "Torque tube 140x100x3.5mm"}
-        
-        * Información de Inspección:
-        - Inspector: ${inspector || "John Smith"}
-        - Fecha: ${inspectionDate ? formatDate(inspectionDate) : dateStr}
-        - Ubicación: ${inspectionCity && inspectionCountry ? `${inspectionCity}, ${inspectionCountry}` : "Madrid, Spain"}
-        
-        * Resultado:
-        - Estado final: ${statusText}
-        - No conformidades: ${getTotalNonConformities()}
-        
-        Nota: Este es un correo automático generado por el sistema. Para obtener el reporte completo en PDF, por favor contacte con el departamento de calidad.
-      `;
-      
-      // Codificar el asunto y cuerpo para mailto
-      const encodedSubject = encodeURIComponent(`Reporte de Inspección: ${componentInfo} - ${statusText}`);
-      const encodedBody = encodeURIComponent(emailBody);
-      
-      // Abrir cliente de correo del usuario
-      window.location.href = `mailto:${email}?subject=${encodedSubject}&body=${encodedBody}`;
-      
-      // Cerrar el modal
-      document.body.removeChild(modalOverlay);
-      
-      // Mostrar mensaje de confirmación
-      const confirmationMsg = document.createElement('div');
-      confirmationMsg.style.cssText = 'position:fixed;top:20px;left:50%;transform:translateX(-50%);background:rgba(22, 163, 74, 0.9);color:white;padding:10px 20px;border-radius:8px;z-index:9999;font-weight:bold;';
-      confirmationMsg.innerText = 'Se ha abierto tu cliente de correo para enviar el reporte';
-      document.body.appendChild(confirmationMsg);
-      
-      // Ocultar el mensaje después de 3 segundos
-      setTimeout(() => {
-        document.body.removeChild(confirmationMsg);
-      }, 3000);
-    });
-    
-    // Permitir cerrar el modal presionando Esc
-    document.addEventListener('keydown', (e) => {
-      if (e.key === 'Escape' && document.body.contains(modalOverlay)) {
-        document.body.removeChild(modalOverlay);
-      }
-    });
-    
-    // Permitir cerrar el modal haciendo clic fuera de él
-    modalOverlay.addEventListener('click', (e) => {
-      if (e.target === modalOverlay) {
-        document.body.removeChild(modalOverlay);
-      }
-    });
-  };
-  
   const renderStatusBadge = (status) => {
     if (status === 'pass') {
       return <span className="badge badge-success">ACCEPTED</span>;
@@ -683,20 +430,14 @@ const ReportViewDashboard = () => {
   };
   
   return (
-    <div>
+    <div id="report-container"> {/* Add ID for the export functionality */}
       <div className="flex justify-between items-center mb-4">
         <p className="text-sm text-gray-500">Generated on {new Date().toLocaleDateString()}</p>
-        <div className="flex space-x-2">
-          <button className="btn btn-secondary" onClick={handlePrintReport}>
-            <Printer size={16} /> Print
-          </button>
-          <button className="btn btn-primary" onClick={handleDownloadPDF}>
-            <Download size={16} /> Download PDF
-          </button>
-          <button className="btn btn-success" onClick={handleSendEmail}>
-            <Mail size={16} /> Enviar via Mail
-          </button>
-        </div>
+        {/* Replace the old buttons with the new ReportExportOptions component */}
+        <ReportExportOptions 
+          reportData={state} 
+          reportContainerId="report-container"
+        />
       </div>
       
       {/* INSPECTION OVERVIEW CON LAYOUT SIMILAR AL SETUP */}
@@ -826,7 +567,7 @@ const ReportViewDashboard = () => {
                     </span>
                   </div>
                   
-                  {/* Mapa estático - MODIFICADO: Usar el componente nuevo */}
+                  {/* Mapa estático */}
                   <div>
                     <span className="report-info-label">Location Map</span>
                     <StaticMapReport coords={mapCoords} />

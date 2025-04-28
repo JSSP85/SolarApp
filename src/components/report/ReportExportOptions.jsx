@@ -1,22 +1,22 @@
 // src/components/report/ReportExportOptions.jsx
 import React, { useState } from 'react';
-import { Download, Printer, Mail, Share2, FileText } from 'lucide-react';
+import { Download, Save, Mail, Share2, FileText } from 'lucide-react';
 import { exportToPDF, printReport, sendReportByEmail, generateFilename } from '../../utils/pdfExportService';
 
 /**
- * Componente que proporciona opciones para exportar, imprimir y compartir un informe
+ * Component that provides options to export, print and share a report
  * 
- * @param {Object} props - Propiedades del componente
- * @param {Object} props.reportData - Datos del informe para generar nombres de archivo y compartir
- * @param {string} props.reportContainerId - ID del contenedor DOM que contiene el informe a exportar
- * @param {string} props.className - Clases CSS adicionales
+ * @param {Object} props - Component properties
+ * @param {Object} props.reportData - Report data to generate filenames and share
+ * @param {string} props.reportContainerId - DOM container ID that contains the report to export
+ * @param {string} props.className - Additional CSS classes
  */
 const ReportExportOptions = ({ reportData, reportContainerId = 'report-container', className = '' }) => {
   const [isEmailModalOpen, setIsEmailModalOpen] = useState(false);
   const [email, setEmail] = useState('');
   const [isProcessing, setIsProcessing] = useState(false);
 
-  // Manejar descarga de PDF
+  // Handle PDF download
   const handleDownloadPDF = async () => {
     if (isProcessing) return;
     
@@ -33,23 +33,32 @@ const ReportExportOptions = ({ reportData, reportContainerId = 'report-container
     setIsProcessing(false);
   };
 
-  // Manejar impresión
-  const handlePrintReport = () => {
-    if (isProcessing) return;
-    printReport({ showNotification: true });
+  // Handle save (formerly print function)
+  const handleSave = () => {
+    // This will be used for a different function in the future
+    // For now, we'll just show a notification
+    const confirmationMsg = document.createElement('div');
+    confirmationMsg.style.cssText = 'position:fixed;top:20px;left:50%;transform:translateX(-50%);background:rgba(22, 163, 74, 0.9);color:white;padding:10px 20px;border-radius:8px;z-index:9999;font-weight:bold;';
+    confirmationMsg.innerText = 'Save functionality will be implemented soon';
+    document.body.appendChild(confirmationMsg);
+    
+    // Hide the message after 3 seconds
+    setTimeout(() => {
+      document.body.removeChild(confirmationMsg);
+    }, 3000);
   };
 
-  // Manejar envío por correo electrónico
+  // Handle email sending
   const handleSendEmail = () => {
     setIsEmailModalOpen(true);
   };
 
-  // Enviar el correo después de introducir la dirección
+  // Send email after entering address
   const handleSendEmailSubmit = (e) => {
     e.preventDefault();
     
     if (!email.trim()) {
-      alert('Por favor, introduce un correo electrónico válido.');
+      alert('Please enter a valid email address.');
       return;
     }
     
@@ -59,13 +68,13 @@ const ReportExportOptions = ({ reportData, reportContainerId = 'report-container
       setIsEmailModalOpen(false);
       setEmail('');
       
-      // Mostrar mensaje de confirmación
+      // Show confirmation message
       const confirmationMsg = document.createElement('div');
       confirmationMsg.style.cssText = 'position:fixed;top:20px;left:50%;transform:translateX(-50%);background:rgba(22, 163, 74, 0.9);color:white;padding:10px 20px;border-radius:8px;z-index:9999;font-weight:bold;';
-      confirmationMsg.innerText = 'Se ha abierto tu cliente de correo para enviar el reporte';
+      confirmationMsg.innerText = 'Your email client has been opened to send the report';
       document.body.appendChild(confirmationMsg);
       
-      // Ocultar el mensaje después de 3 segundos
+      // Hide the message after 3 seconds
       setTimeout(() => {
         document.body.removeChild(confirmationMsg);
       }, 3000);
@@ -77,11 +86,11 @@ const ReportExportOptions = ({ reportData, reportContainerId = 'report-container
       <div className="flex flex-wrap gap-2 items-center justify-end">
         <button 
           className="btn btn-secondary flex items-center gap-2" 
-          onClick={handlePrintReport}
+          onClick={handleSave}
           disabled={isProcessing}
         >
-          <Printer size={16} /> 
-          <span className="hidden sm:inline">Imprimir</span>
+          <Save size={16} /> 
+          <span className="hidden sm:inline">Save</span>
         </button>
         
         <button 
@@ -90,7 +99,7 @@ const ReportExportOptions = ({ reportData, reportContainerId = 'report-container
           disabled={isProcessing}
         >
           <Download size={16} /> 
-          <span className="hidden sm:inline">Descargar PDF</span>
+          <span className="hidden sm:inline">Download PDF</span>
         </button>
         
         <button 
@@ -99,27 +108,27 @@ const ReportExportOptions = ({ reportData, reportContainerId = 'report-container
           disabled={isProcessing}
         >
           <Mail size={16} /> 
-          <span className="hidden sm:inline">Enviar via Email</span>
+          <span className="hidden sm:inline">Email</span>
         </button>
       </div>
 
-      {/* Modal de correo electrónico */}
+      {/* Email modal */}
       {isEmailModalOpen && (
         <div className="modal-overlay fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
           <div className="modal-content bg-white rounded-lg shadow-xl p-6 max-w-md w-full mx-4">
             <h3 className="text-lg font-semibold text-gray-800 mb-4 flex items-center">
               <Mail size={18} className="mr-2 text-blue-600" /> 
-              Enviar Reporte por Email
+              Send Report by Email
             </h3>
             
             <p className="text-gray-600 mb-4 text-sm">
-              Introduce la dirección de correo electrónico a la que deseas enviar este reporte.
+              Enter the email address to which you'd like to send this report.
             </p>
             
             <form onSubmit={handleSendEmailSubmit}>
               <input 
                 type="email"
-                placeholder="Email del destinatario"
+                placeholder="Recipient's email"
                 className="w-full px-3 py-2 border border-gray-300 rounded-md mb-4 focus:outline-none focus:ring-2 focus:ring-blue-500"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
@@ -132,13 +141,13 @@ const ReportExportOptions = ({ reportData, reportContainerId = 'report-container
                   className="px-4 py-2 bg-gray-100 text-gray-700 rounded-md hover:bg-gray-200 transition"
                   onClick={() => setIsEmailModalOpen(false)}
                 >
-                  Cancelar
+                  Cancel
                 </button>
                 <button 
                   type="submit"
                   className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition"
                 >
-                  Enviar
+                  Send
                 </button>
               </div>
             </form>
@@ -146,7 +155,7 @@ const ReportExportOptions = ({ reportData, reportContainerId = 'report-container
         </div>
       )}
 
-      {/* Estilos CSS para asegurar compatibilidad con el tema actual */}
+      {/* CSS styles to ensure compatibility with current theme */}
       <style jsx>{`
         .btn {
           display: inline-flex;

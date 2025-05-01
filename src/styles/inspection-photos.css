@@ -1,72 +1,76 @@
-/* src/styles/inspection-photos.css */
-/* Estilos globales para fotos de inspección que funcionarán en todos los componentes y PDF */
-
+/* src/styles/inspection-photos.css - versión mejorada */
 .inspection-photo-grid {
-    display: grid;
-    grid-template-columns: repeat(2, 1fr);
-    gap: 8px;
-    width: 100%;
-    page-break-inside: avoid;
-  }
-  
-  .inspection-photo-item {
-    break-inside: avoid;
-    page-break-inside: avoid;
-    width: 100%;
-    max-width: 100%;
+  display: grid !important;
+  grid-template-columns: repeat(2, 1fr) !important;
+  gap: 8px !important;
+  width: 100% !important;
+  page-break-inside: avoid !important;
+}
+
+.inspection-photo-item {
+  break-inside: avoid !important;
+  page-break-inside: avoid !important;
+  width: 100% !important;
+  max-width: 100% !important;
+}
+
+.inspection-photo-container {
+  position: relative !important;
+  width: 100% !important;
+  /* Cambiamos el enfoque: en lugar de usar padding-bottom fijo */
+  height: 180px !important; /* Altura fija en lugar de padding-bottom */
+  background-color: #f8f9fa !important;
+  border: 1px solid #e2e8f0 !important;
+  border-radius: 4px !important;
+  overflow: hidden !important;
+}
+
+.inspection-photo-img {
+  position: absolute !important;
+  top: 0 !important;
+  left: 0 !important;
+  right: 0 !important;
+  bottom: 0 !important;
+  margin: auto !important; /* Centrar la imagen */
+  max-width: 100% !important;
+  max-height: 100% !important;
+  width: auto !important; /* Importante: no forzar ancho */
+  height: auto !important; /* Importante: no forzar altura */
+  object-fit: contain !important;
+}
+
+.inspection-photo-caption {
+  position: absolute !important;
+  bottom: 0 !important;
+  left: 0 !important;
+  right: 0 !important;
+  background-color: rgba(0, 0, 0, 0.7) !important;
+  color: white !important;
+  font-size: 10px !important;
+  padding: 2px 4px !important;
+  white-space: nowrap !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+}
+
+/* Estilos específicos para impresión/PDF */
+@media print {
+  .inspection-photo-grid {
+    grid-template-columns: repeat(2, 1fr) !important;
+    page-break-inside: avoid !important;
   }
   
   .inspection-photo-container {
-    position: relative;
-    width: 100%;
-    height: 0;
-    padding-bottom: 75%; /* Mantiene el aspecto 4:3 */
-    background-color: #f8f9fa;
-    border: 1px solid #e2e8f0;
-    border-radius: 4px;
-    overflow: hidden;
-    max-height: 180px; /* Control crítico para el PDF */
+    height: 2in !important; /* Altura máxima en pulgadas para impresión */
   }
   
   .inspection-photo-img {
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    object-fit: contain !important; /* Crítico para no cortar la imagen */
-    max-width: 100%;
-    max-height: 100%;
+    width: auto !important;
+    height: auto !important;
+    max-width: 100% !important;
+    max-height: 95% !important; /* Dejar espacio para el caption */
+    object-fit: contain !important;
+    position: relative !important;
+    display: block !important;
   }
-  
-  .inspection-photo-caption {
-    position: absolute;
-    bottom: 0;
-    left: 0;
-    right: 0;
-    background-color: rgba(0, 0, 0, 0.7);
-    color: white;
-    font-size: 10px;
-    padding: 2px 4px;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-  }
-  
-  /* Estilos específicos para impresión/PDF */
-  @media print {
-    .inspection-photo-grid {
-      grid-template-columns: repeat(2, 1fr);
-      page-break-inside: avoid;
-    }
-    
-    .inspection-photo-container {
-      max-height: 2in !important; /* Altura máxima en pulgadas para impresión */
-    }
-    
-    .inspection-photo-img {
-      object-fit: contain !important;
-      max-width: 100% !important;
-      max-height: 100% !important;
-    }
-  }
+}

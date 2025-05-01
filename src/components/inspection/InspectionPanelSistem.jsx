@@ -1,30 +1,92 @@
 // src/components/inspection/InspectionPanelSistem.jsx
-import React from 'react';
-import { ArrowLeft, CheckCircle } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import '../../styles/inspection-wizard.css'; // Ruta relativa desde el componente
 import { useInspection } from '../../context/InspectionContext';
 
-// Import only the necessary panels, excluding the chart panel
+// Importar los componentes de inspección
 import { 
   EquipmentPanel, 
   DimensionMeasurementPanel, 
-  // DimensionalChartPanel - Removed
   CoatingMeasurementPanel, 
   VisualInspectionPanel 
 } from './';
 
-// Import the component for technical drawing
+// Importar el componente para dibujo técnico
 import TechnicalDrawingComponent from '../common/TechnicalDrawingComponent';
 
+// Importar los nuevos componentes para el wizard
+import InspectionProgressIndicator from './InspectionProgressIndicator';
+import StageNavigationButtons from './StageNavigationButtons';
+
 const InspectionPanelSistem = () => {
-  const { state, dispatch } = useInspection();
+  const { state } = useInspection();
+  const { inspectionStage, componentName, componentCode } = state;
   
-  // Navigation functions
-  const handleBackToSetup = () => {
-    dispatch({ type: 'SET_ACTIVE_TAB', payload: 'setup' });
-  };
+  // Estado para controlar las animaciones de transición
+  const [animation, setAnimation] = useState({
+    fadeOut: false,
+    currentStage: inspectionStage
+  });
   
-  const handleCompleteInspection = () => {
-    dispatch({ type: 'SET_ACTIVE_TAB', payload: 'report' });
+  // Efecto para manejar las transiciones animadas entre etapas
+  useEffect(() => {
+    if (animation.currentStage !== inspectionStage) {
+      // Primero desvanecemos la etapa actual
+      setAnimation(prev => ({ ...prev, fadeOut: true }));
+      
+      // Después de un breve delay, cambiamos a la nueva etapa y hacemos fade in
+      setTimeout(() => {
+        setAnimation({
+          fadeOut: false,
+          currentStage: inspectionStage
+        });
+      }, 300); // Tiempo de la animación de desvanecimiento
+    }
+  }, [inspectionStage]);
+  
+  // Método para renderizar el contenido según la etapa actual
+  const renderStageContent = () => {
+    // Aplicamos las clases de animación
+    const animationClass = animation.fadeOut ? 'stage-fadeout' : 'stage-fadein';
+    
+    switch (animation.currentStage) {
+      case 'dimensional':
+        return (
+          <div className={`stage-content ${animationClass}`}>
+            {/* Panel de equipamiento siempre visible */}
+            <EquipmentPanel />
+            
+            {/* Dibujo técnico */}
+            <TechnicalDrawingComponent />
+            
+            {/* Mediciones dimensionales */}
+            <DimensionMeasurementPanel />
+          </div>
+        );
+        
+      case 'coating':
+        return (
+          <div className={`stage-content ${animationClass}`}>
+            {/* Mediciones de recubrimiento */}
+            <CoatingMeasurementPanel />
+          </div>
+        );
+        
+      case 'visual':
+        return (
+          <div className={`stage-content ${animationClass}`}>
+            {/* Inspección visual */}
+            <VisualInspectionPanel />
+          </div>
+        );
+        
+      default:
+        return (
+          <div className="p-4 text-center text-gray-500">
+            Error: Unknown inspection stage
+          </div>
+        );
+    }
   };
   
   return (
@@ -32,89 +94,52 @@ const InspectionPanelSistem = () => {
       <div className="dashboard-card mb-4">
         <div className="card-header" style={{background: 'linear-gradient(to right, #667eea, #764ba2)'}}>
           <div className="flex justify-between items-center">
-            <h3 className="card-title text-white">Inspección de Componente</h3>
+            <h3 className="card-title text-white">Component Inspection</h3>
             <div>
               <span className="badge bg-blue-100 text-blue-800">
-                Componente: {state.componentName || state.componentCode || "No seleccionado"}
+                Component: {componentName || componentCode || "Not selected"}
               </span>
             </div>
           </div>
         </div>
         
         <div className="card-body">
-          {/* Measurement equipment panel */}
-          <EquipmentPanel />
+          {/* Indicador de progreso */}
+          <InspectionProgressIndicator />
           
-          {/* Technical drawing - shown only when relevant */}
-          <TechnicalDrawingComponent />
+          {/* Contenido de la etapa actual */}
+          {renderStageContent()}
           
-          {/* Dimensional measurement panel */}
-          <DimensionMeasurementPanel />
-          
-          {/* Dimensional charts panel removed */}
-          
-          {/* Coating measurement panel */}
-          <CoatingMeasurementPanel />
-          
-          {/* Visual inspection panel */}
-          <VisualInspectionPanel />
-          
-          {/* Navigation buttons */}
-          <div className="flex justify-between mt-6">
-            <button 
-              className="inspection-nav-btn back-btn"
-              onClick={handleBackToSetup}
-            >
-              <ArrowLeft size={18} className="mr-2" /> Volver a Configuración
-            </button>
-            <button 
-              className="inspection-nav-btn complete-btn"
-              onClick={handleCompleteInspection}
-            >
-              Completar Inspección <CheckCircle size={18} className="ml-2" />
-            </button>
-          </div>
-          
-          {/* Specific styles for navigation buttons */}
-          <style jsx>{`
-            .inspection-nav-btn {
-              display: flex;
-              align-items: center;
-              justify-content: center;
-              padding: 10px 20px;
-              border-radius: 8px;
-              font-weight: 600;
-              font-size: 0.95rem;
-              transition: all 0.2s ease;
-              border: none;
-              cursor: pointer;
-              box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-            }
-            
-            .back-btn {
-              background: linear-gradient(to right, #64748b, #94a3b8);
-              color: white;
-            }
-            
-            .back-btn:hover {
-              background: linear-gradient(to right, #475569, #64748b);
-              transform: translateY(-1px);
-              box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-            }
-            
-            .complete-btn {
-              background: linear-gradient(to right, #16a34a, #22c55e);
-              color: white;
-            }
-            
-            .complete-btn:hover {
-              background: linear-gradient(to right, #15803d, #16a34a);
-              transform: translateY(-1px);
-              box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-            }
-          `}</style>
+          {/* Botones de navegación */}
+          <StageNavigationButtons />
         </div>
       </div>
+      
+      {/* Estilos para las animaciones */}
+      <style jsx>{`
+        .stage-content {
+          transition: opacity 0.3s ease, transform 0.3s ease;
+        }
+        
+        .stage-fadeout {
+          opacity: 0;
+          transform: translateY(10px);
+        }
+        
+        .stage-fadein {
+          opacity: 1;
+          transform: translateY(0);
+        }
+        
+        .badge {
+          display: inline-flex;
+          align-items: center;
+          padding: 0.25rem 0.75rem;
+          border-radius: 9999px;
+          font-size: 0.75rem;
+          font-weight: 600;
+        }
+      `}</style>
     </div>
   );
 };

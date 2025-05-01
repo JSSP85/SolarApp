@@ -23,9 +23,9 @@ function inspectionReducer(state, action) {
       
     case 'UPDATE_SETUP_FIELD':
       return { ...state, [action.payload.field]: action.payload.value };
-	  
-	  case 'UPDATE_MAP_COORDS':
-      return { ...state, mapCoords: action.payload };
+      
+      case 'UPDATE_MAP_COORDS':
+  return { ...state, mapCoords: action.payload };
       
     case 'SET_COMPONENT_FAMILIES':
       return { ...state, availableComponentFamilies: action.payload };
@@ -437,54 +437,6 @@ function inspectionReducer(state, action) {
         ...state,
         coatingRequirements: action.payload
       };
-    
-    // NUEVOS CASOS PARA MANEJO DE ETAPAS
-    case 'SET_INSPECTION_STAGE':
-      return {
-        ...state,
-        inspectionStage: action.payload
-      };
-      
-    case 'SET_STAGE_COMPLETION':
-      return {
-        ...state,
-        stageCompletion: {
-          ...state.stageCompletion,
-          [action.payload.stage]: action.payload.completed
-        }
-      };
-
-    case 'NEXT_INSPECTION_STAGE': {
-      const currentStage = state.inspectionStage;
-      let nextStage = currentStage;
-      
-      if (currentStage === 'dimensional') {
-        nextStage = 'coating';
-      } else if (currentStage === 'coating') {
-        nextStage = 'visual';
-      }
-      
-      return {
-        ...state,
-        inspectionStage: nextStage
-      };
-    }
-
-    case 'PREVIOUS_INSPECTION_STAGE': {
-      const currentStage = state.inspectionStage;
-      let prevStage = currentStage;
-      
-      if (currentStage === 'visual') {
-        prevStage = 'coating';
-      } else if (currentStage === 'coating') {
-        prevStage = 'dimensional';
-      }
-      
-      return {
-        ...state,
-        inspectionStage: prevStage
-      };
-    }
       
     default:
       return state;
@@ -493,16 +445,7 @@ function inspectionReducer(state, action) {
 
 // Provider component
 export const InspectionProvider = ({ children }) => {
-  const [state, dispatch] = useReducer(inspectionReducer, {
-    ...defaultInspectionState,
-    // Añadir estado inicial para las etapas de inspección
-    inspectionStage: 'dimensional', // valores posibles: 'dimensional', 'coating', 'visual'
-    stageCompletion: {
-      dimensional: false,
-      coating: false,
-      visual: false
-    }
-  });
+  const [state, dispatch] = useReducer(inspectionReducer, defaultInspectionState);
   
   // Cargar datos iniciales al montar el componente
   useEffect(() => {
@@ -608,51 +551,6 @@ export const InspectionProvider = ({ children }) => {
     state.totalSamplesChecked, 
     state.inspectionStep, 
     state.sampleInfo
-  ]);
-  
-  // Efecto para comprobar la finalización de etapas
-  useEffect(() => {
-    // Verificar si la etapa dimensional está completa
-    if (state.dimensions && state.dimensions.length > 0) {
-      const allDimensionsComplete = Object.values(state.completedDimensions).every(complete => complete);
-      
-      if (allDimensionsComplete !== state.stageCompletion.dimensional) {
-        dispatch({
-          type: 'SET_STAGE_COMPLETION',
-          payload: { stage: 'dimensional', completed: allDimensionsComplete }
-        });
-      }
-    }
-    
-    // Verificar si la etapa coating está completa
-    if (state.localCoatingMeasurements) {
-      const allCoatingComplete = state.localCoatingMeasurements.every(value => value !== '');
-      
-      if (allCoatingComplete !== state.stageCompletion.coating) {
-        dispatch({
-          type: 'SET_STAGE_COMPLETION',
-          payload: { stage: 'coating', completed: allCoatingComplete }
-        });
-      }
-    }
-    
-    // Verificar si la etapa visual está completa
-    const visualComplete = state.visualConformity !== null && state.visualConformity !== '';
-    
-    if (visualComplete !== state.stageCompletion.visual) {
-      dispatch({
-        type: 'SET_STAGE_COMPLETION',
-        payload: { stage: 'visual', completed: visualComplete }
-      });
-    }
-  }, [
-    state.dimensions, 
-    state.completedDimensions, 
-    state.localCoatingMeasurements,
-    state.visualConformity,
-    state.stageCompletion.dimensional,
-    state.stageCompletion.coating,
-    state.stageCompletion.visual
   ]);
   
   return (

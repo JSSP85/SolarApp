@@ -52,5 +52,13 @@ export const defaultInspectionState = {
   photos: [],
   
   // Map coordinates - Coordenadas predeterminadas (Roma)
-  mapCoords: { lat: 41.9028, lng: 12.4964 }
+  mapCoords: { lat: 41.9028, lng: 12.4964 },
+  
+  // Nuevos estados para el flujo de inspección por etapas
+  inspectionStage: 'dimensional', // valores posibles: 'dimensional', 'coating', 'visual'
+  stageCompletion: {
+    dimensional: false,
+    coating: false,
+    visual: false
+  }
 };

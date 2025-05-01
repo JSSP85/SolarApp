@@ -1,0 +1,107 @@
+/* src/styles/inspection-wizard.css */
+
+/* Estilos para las animaciones de transición entre etapas */
+.stage-transition-container {
+    position: relative;
+    overflow: hidden;
+    min-height: 100px;
+  }
+  
+  .stage-content {
+    transition: opacity 0.3s ease, transform 0.3s ease;
+  }
+  
+  .stage-fadeout {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  
+  .stage-fadein {
+    opacity: 1;
+    transform: translateY(0);
+    animation: slideUp 0.4s ease-out;
+  }
+  
+  @keyframes slideUp {
+    from {
+      opacity: 0;
+      transform: translateY(20px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+  
+  /* Estilos para los indicadores de progreso */
+  .progress-dot {
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    transition: all 0.3s ease;
+  }
+  
+  .progress-dot.active {
+    background-color: #3b82f6;
+    box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.2);
+  }
+  
+  .progress-dot.completed {
+    background-color: #10b981;
+  }
+  
+  .progress-line {
+    height: 2px;
+    flex-grow: 1;
+    background-color: #e5e7eb;
+    transition: all 0.3s ease;
+  }
+  
+  .progress-line.active {
+    background-color: #3b82f6;
+  }
+  
+  /* Estilos para cards de etapas */
+  .stage-card {
+    border-radius: 0.75rem;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+    background-color: white;
+    padding: 1.5rem;
+    margin-bottom: 1.5rem;
+    transition: all 0.3s ease;
+  }
+  
+  .stage-card:hover {
+    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+  }
+  
+  /* Estilos para los botones de navegación */
+  .nav-button {
+    display: inline-flex;
+    align-items: center;
+    padding: 0.75rem 1.5rem;
+    border-radius: 0.5rem;
+    font-weight: 600;
+    transition: all 0.2s ease;
+    cursor: pointer;
+  }
+  
+  .nav-button.primary {
+    background-color: #3b82f6;
+    color: white;
+  }
+  
+  .nav-button.primary:hover {
+    background-color: #2563eb;
+    transform: translateY(-1px);
+  }
+  
+  .nav-button.secondary {
+    background-color: #f3f4f6;
+    color: #4b5563;
+  }
+  
+  .nav-button.secondary:hover {
+    background-color: #e5e7eb;
+    transform: translateY(-1px);
+  }

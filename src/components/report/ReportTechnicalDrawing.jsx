@@ -116,7 +116,7 @@ const ReportTechnicalDrawing = () => {
           
           {/* Nota de referencia */}
           <div className="mt-4 text-xs text-gray-500 text-center">
-            Este dibujo se incluye como referencia. Para más detalles, consulte la documentación técnica completa.
+          This drawing is included as a reference. For more details, please consult the complete technical documentation.
           </div>
         </div>
       </div>

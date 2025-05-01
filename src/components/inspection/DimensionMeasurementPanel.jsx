@@ -6,6 +6,7 @@ import { getSampleCount, getSampleLetter } from '../../utils/samplePlanHelper';
 import VoiceRecognitionButton from '../common/VoiceRecognitionButton';
 
 // Componente para la sección de Overall Status - ahora en inglés
+// Componente para la sección de Overall Status - ahora en inglés
 const OverallStatusSection = () => {
   const { state } = useInspection();
   const { 
@@ -107,6 +108,15 @@ const OverallStatusSection = () => {
   const progressPercentage = getInspectionProgress();
   const progressValue = Math.round(progressPercentage);
 
+  // Total de muestras completadas
+  const completedSamplesCount = dimensions && dimensionMeasurements ? 
+    dimensions.reduce((count, dim) => {
+      if (dimensionMeasurements[dim.code]) {
+        return count + dimensionMeasurements[dim.code].filter(v => v !== '' && v !== null && v !== undefined).length;
+      }
+      return count;
+    }, 0) : 0;
+
   return (
     <div className="report-section mb-4">
       <h3 className="report-section-title">
@@ -188,47 +198,44 @@ const OverallStatusSection = () => {
             </div>
           </div>
           
-          {/* Grid de información detallada */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
-            <div className="bg-white p-3 rounded shadow-sm">
-              <div className="text-sm text-gray-500 mb-1">Total Non-Conformities</div>
-              <div className={`text-xl font-bold ${totalNonConformities > 0 ? 'text-red-600' : ''}`}>
-                {totalNonConformities}
-              </div>
-            </div>
-            
-            <div className="bg-white p-3 rounded shadow-sm">
-              <div className="text-sm text-gray-500 mb-1">Sample Letter</div>
-              <div className="text-xl font-bold">{getSampleLetter(sampleInfo)}</div>
-            </div>
-            
-            <div className="bg-white p-3 rounded shadow-sm">
-              <div className="text-sm text-gray-500 mb-1">Samples Checked</div>
-              <div className="text-xl font-bold">
-                {/* Mostrar cuántas medidas se han tomado */}
-                {dimensions && dimensionMeasurements ? 
-                  dimensions.reduce((count, dim) => {
-                    if (dimensionMeasurements[dim.code]) {
-                      return count + dimensionMeasurements[dim.code].filter(v => v !== '' && v !== null && v !== undefined).length;
-                    }
-                    return count;
-                  }, 0) : 0}
-                <span className="text-gray-500 text-lg font-normal"> of </span>
-                {/* Usar la función corregida para mostrar el total correcto */}
-                <span className="text-lg">{getTotalRequiredSamplesForAllSteps()}</span>
-              </div>
-            </div>
-            
-            <div className="bg-white p-3 rounded shadow-sm">
-              <div className="text-sm text-gray-500 mb-1">Acceptance Criteria</div>
-              <div className="flex flex-col">
-                <div className="flex items-center">
-                  <span className="text-sm">Min NC:</span>
-                  <span className="ml-2 font-medium">{minText !== "N/A" ? minText : "0"}</span>
+          {/* NUEVA VERSIÓN: Grid horizontal para métricas */}
+          <div className="bg-white p-3 rounded shadow-sm mt-4">
+            <div className="grid grid-cols-4 gap-2">
+              {/* Columna 1: Non-Conformities */}
+              <div className="text-center">
+                <div className="text-xs text-gray-500 font-medium mb-1">Total Non-Conformities</div>
+                <div className={`text-xl font-bold ${totalNonConformities > 0 ? 'text-red-600' : 'text-gray-800'}`}>
+                  {totalNonConformities}
                 </div>
-                <div className="flex items-center">
-                  <span className="text-sm">Max NC:</span>
-                  <span className="ml-2 font-medium">{maxText !== "N/A" ? maxText : "2"}</span>
+              </div>
+              
+              {/* Columna 2: Sample Letter */}
+              <div className="text-center">
+                <div className="text-xs text-gray-500 font-medium mb-1">Sample Letter</div>
+                <div className="text-xl font-bold text-gray-800">
+                  {getSampleLetter(sampleInfo)}
+                </div>
+              </div>
+              
+              {/* Columna 3: Samples Checked */}
+              <div className="text-center">
+                <div className="text-xs text-gray-500 font-medium mb-1">Samples Checked</div>
+                <div className="text-xl font-bold text-gray-800">
+                  {completedSamplesCount}
+                  <span className="text-gray-500 text-sm font-normal"> / </span>
+                  <span className="text-sm">{getTotalRequiredSamplesForAllSteps()}</span>
+                </div>
+              </div>
+              
+              {/* Columna 4: Acceptance Criteria */}
+              <div className="text-center">
+                <div className="text-xs text-gray-500 font-medium mb-1">Acceptance Criteria</div>
+                <div className="text-sm text-gray-800">
+                  <span className="font-medium">Min NC: </span>
+                  <span>{minText !== "N/A" ? minText : "0"}</span>
+                  <span className="mx-1">|</span>
+                  <span className="font-medium">Max NC: </span>
+                  <span>{maxText !== "N/A" ? maxText : "2"}</span>
                 </div>
               </div>
             </div>

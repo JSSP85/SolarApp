@@ -35,64 +35,66 @@ const VisualInspectionPanel = () => {
     styleEl.innerHTML = `
       /* Estilos para controlar el tamaño de las imágenes - importante para el PDF */
       .inspection-photo-grid {
-        display: grid;
-        grid-template-columns: repeat(2, 1fr);
-        gap: 8px;
-        width: 100%;
+        display: grid !important;
+        grid-template-columns: repeat(2, 1fr) !important;
+        gap: 8px !important;
+        width: 100% !important;
+        page-break-inside: avoid !important;
       }
       
       .inspection-photo-item {
-        break-inside: avoid;
-        page-break-inside: avoid;
-        width: 100%;
-        max-width: 100%;
+        break-inside: avoid !important;
+        page-break-inside: avoid !important;
+        width: 100% !important;
+        max-width: 100% !important;
       }
       
       .inspection-photo-container {
-        position: relative;
-        width: 100%;
-        height: 0;
-        padding-bottom: 75%; /* Mantiene el aspecto 4:3 */
-        background-color: #f8f9fa;
-        border: 1px solid #e2e8f0;
-        border-radius: 4px;
-        overflow: hidden;
+        position: relative !important;
+        width: 100% !important;
+        height: 0 !important;
+        padding-bottom: 75% !important; /* Mantiene el aspecto 4:3 */
+        background-color: #f8f9fa !important;
+        border: 1px solid #e2e8f0 !important;
+        border-radius: 4px !important;
+        overflow: hidden !important;
+        max-height: 180px !important; /* Control crítico para el PDF */
       }
       
       .inspection-photo-img {
-        position: absolute;
-        top: 0;
-        left: 0;
-        width: 100%;
-        height: 100%;
-        object-fit: contain; /* contain en lugar de cover para no cortar la imagen */
-        max-width: 100%;
-        max-height: 100%;
+        position: absolute !important;
+        top: 0 !important;
+        left: 0 !important;
+        width: 100% !important;
+        height: 100% !important;
+        object-fit: contain !important; /* contain en lugar de cover para no cortar la imagen */
+        max-width: 100% !important;
+        max-height: 100% !important;
       }
       
       .inspection-photo-caption {
-        position: absolute;
-        bottom: 0;
-        left: 0;
-        right: 0;
-        background-color: rgba(0, 0, 0, 0.7);
-        color: white;
-        font-size: 10px;
-        padding: 2px 4px;
-        white-space: nowrap;
-        overflow: hidden;
-        text-overflow: ellipsis;
+        position: absolute !important;
+        bottom: 0 !important;
+        left: 0 !important;
+        right: 0 !important;
+        background-color: rgba(0, 0, 0, 0.7) !important;
+        color: white !important;
+        font-size: 10px !important;
+        padding: 2px 4px !important;
+        white-space: nowrap !important;
+        overflow: hidden !important;
+        text-overflow: ellipsis !important;
       }
       
       /* Estilos para impresión */
       @media print {
         .inspection-photo-grid {
-          grid-template-columns: repeat(2, 1fr);
-          page-break-inside: avoid;
+          grid-template-columns: repeat(2, 1fr) !important;
+          page-break-inside: avoid !important;
         }
         
         .inspection-photo-container {
-          max-height: 2.5in; /* Limitar altura en impresión */
+          max-height: 2in !important; /* Limitar altura en impresión */
         }
         
         .inspection-photo-img {
@@ -103,12 +105,13 @@ const VisualInspectionPanel = () => {
     `;
     document.head.appendChild(styleEl);
     
-    // Limpiar al desmontar
+    // No eliminar los estilos al desmontar para que persistan en Report y PDF
     return () => {
-      const existingStyle = document.getElementById('visual-inspection-styles');
-      if (existingStyle) {
-        document.head.removeChild(existingStyle);
-      }
+      // Comentado para que los estilos persistan incluso cuando este componente se desmonte
+      // const existingStyle = document.getElementById('visual-inspection-styles');
+      // if (existingStyle) {
+      //   document.head.removeChild(existingStyle);
+      // }
     };
   }, []);
   

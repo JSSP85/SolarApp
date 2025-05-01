@@ -12,6 +12,7 @@ import {
 import StaticMapReport from './StaticMapReport';
 import ReportTechnicalDrawing from './ReportTechnicalDrawing';
 import ReportExportOptions from './ReportExportOptions'; // Import the new component
+import '../../styles/inspection-photos.css'; // Importar el CSS global para fotos
 
 // Componente para los mini gráficos dimensionales con tamaño reducido
 const DimensionMiniChart = ({ dimension, measurements, index }) => {
@@ -733,13 +734,24 @@ const ReportViewDashboard = () => {
               <p className="mt-2">{visualNotes || "No visual defects observed."}</p>
             </div>
             
+            {/* MODIFICADO: Galería de fotos usando las clases del CSS global */}
             {(photos && photos.length > 0) && (
               <div className="mt-4">
                 <span className="report-info-label">Photos</span>
-                <div className="grid grid-cols-4 gap-3 mt-2">
+                <div className="inspection-photo-grid">
                   {photos.map((photo, index) => (
-                    <div key={index} className="overflow-hidden rounded">
-                      <img src={photo.src} alt={`Inspection photo ${index + 1}`} className="w-full" />
+                    <div key={index} className="inspection-photo-item">
+                      <div className="inspection-photo-container">
+                        <img 
+                          src={photo.src} 
+                          alt={`Inspection photo ${index + 1}`} 
+                          className="inspection-photo-img"
+                        />
+                        <div className="inspection-photo-caption">
+                          Photo {index + 1}
+                          {photo.dimensions && ` • ${photo.dimensions}`}
+                        </div>
+                      </div>
                     </div>
                   ))}
                 </div>

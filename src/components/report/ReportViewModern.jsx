@@ -4,6 +4,7 @@ import { Download, ArrowLeft } from 'lucide-react';
 import { useInspection } from '../../context/InspectionContext';
 import { getSampleCount, getSampleLetter } from '../../utils/samplePlanHelper';
 import { formatDate } from '../../utils/dateFormatter';
+import '../../styles/inspection-photos.css'; // Importar el CSS global para fotos
 
 const ReportViewFixed = () => {
   const { state, dispatch } = useInspection();
@@ -260,12 +261,22 @@ const ReportViewFixed = () => {
                 </p>
                 <p className="mt-2"><span className="font-medium">Notes:</span> {visualNotes || "No visual defects observed."}</p>
                 
+                {/* SECCIÓN MODIFICADA: Galería de fotos usando las clases del CSS global */}
                 {(photos && photos.length > 0) && (
                   <div className="mt-3">
-                    <div className="grid grid-cols-4 gap-2">
+                    <div className="inspection-photo-grid">
                       {photos.map((photo, index) => (
-                        <div key={index} className="border rounded p-1">
-                          <img src={photo.src} alt={`Inspection photo ${index + 1}`} className="w-full" />
+                        <div key={index} className="inspection-photo-item">
+                          <div className="inspection-photo-container">
+                            <img 
+                              src={photo.src} 
+                              alt={`Inspection photo ${index + 1}`} 
+                              className="inspection-photo-img"
+                            />
+                            <div className="inspection-photo-caption">
+                              Photo {index + 1}
+                            </div>
+                          </div>
                         </div>
                       ))}
                     </div>

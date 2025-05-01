@@ -1,7 +1,8 @@
 // src/components/inspection/VisualInspectionPanel.jsx
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef } from 'react';
 import { Camera, Upload, X, Check, ImagePlus, Info } from 'lucide-react';
 import { useInspection } from '../../context/InspectionContext';
+import '../../styles/inspection-photos.css'; // Importar el CSS global para fotos
 
 // Configuración más agresiva para imágenes más ligeras
 const MAX_IMAGE_WIDTH = 500; // Reducido de 800
@@ -26,94 +27,6 @@ const VisualInspectionPanel = () => {
   const [processing, setProcessing] = useState(false);
   // Estado para mostrar estadísticas de procesamiento
   const [processStats, setProcessStats] = useState(null);
-  
-  // Efecto para cargar el estilo del componente en el head
-  useEffect(() => {
-    // Crear estilos específicos para este componente que también afectarán al PDF
-    const styleEl = document.createElement('style');
-    styleEl.id = 'visual-inspection-styles';
-    styleEl.innerHTML = `
-      /* Estilos para controlar el tamaño de las imágenes - importante para el PDF */
-      .inspection-photo-grid {
-        display: grid !important;
-        grid-template-columns: repeat(2, 1fr) !important;
-        gap: 8px !important;
-        width: 100% !important;
-        page-break-inside: avoid !important;
-      }
-      
-      .inspection-photo-item {
-        break-inside: avoid !important;
-        page-break-inside: avoid !important;
-        width: 100% !important;
-        max-width: 100% !important;
-      }
-      
-      .inspection-photo-container {
-        position: relative !important;
-        width: 100% !important;
-        height: 0 !important;
-        padding-bottom: 75% !important; /* Mantiene el aspecto 4:3 */
-        background-color: #f8f9fa !important;
-        border: 1px solid #e2e8f0 !important;
-        border-radius: 4px !important;
-        overflow: hidden !important;
-        max-height: 180px !important; /* Control crítico para el PDF */
-      }
-      
-      .inspection-photo-img {
-        position: absolute !important;
-        top: 0 !important;
-        left: 0 !important;
-        width: 100% !important;
-        height: 100% !important;
-        object-fit: contain !important; /* contain en lugar de cover para no cortar la imagen */
-        max-width: 100% !important;
-        max-height: 100% !important;
-      }
-      
-      .inspection-photo-caption {
-        position: absolute !important;
-        bottom: 0 !important;
-        left: 0 !important;
-        right: 0 !important;
-        background-color: rgba(0, 0, 0, 0.7) !important;
-        color: white !important;
-        font-size: 10px !important;
-        padding: 2px 4px !important;
-        white-space: nowrap !important;
-        overflow: hidden !important;
-        text-overflow: ellipsis !important;
-      }
-      
-      /* Estilos para impresión */
-      @media print {
-        .inspection-photo-grid {
-          grid-template-columns: repeat(2, 1fr) !important;
-          page-break-inside: avoid !important;
-        }
-        
-        .inspection-photo-container {
-          max-height: 2in !important; /* Limitar altura en impresión */
-        }
-        
-        .inspection-photo-img {
-          max-width: 100% !important;
-          max-height: 100% !important;
-        }
-      }
-    `;
-    document.head.appendChild(styleEl);
-    
-    // No eliminar los estilos al desmontar para que persistan en Report y PDF
-    return () => {
-      // Comentado para que los estilos persistan incluso cuando este componente se desmonte
-      // const existingStyle = document.getElementById('visual-inspection-styles');
-      // if (existingStyle) {
-      //   document.head.removeChild(existingStyle);
-      // }
-    };
-  }, []);
   
   // Manejar cambio en conformidad visual
   const handleVisualConformityChange = (value) => {
@@ -560,7 +473,7 @@ const VisualInspectionPanel = () => {
             </div>
           )}
           
-          {/* Galería de fotos mejorada - asegurarse que las clases específicas son usadas */}
+          {/* Galería de fotos mejorada - usando las clases del CSS global */}
           <div>
             {photos && photos.length > 0 ? (
               <div className="inspection-photo-grid">

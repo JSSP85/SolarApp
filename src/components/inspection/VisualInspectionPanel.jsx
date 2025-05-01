@@ -1,11 +1,13 @@
 // src/components/inspection/VisualInspectionPanel.jsx
-import React, { useState, useRef } from 'react';
-import { Camera, Upload, X, Check, ImagePlus } from 'lucide-react';
+import React, { useState, useRef, useEffect } from 'react';
+import { Camera, Upload, X, Check, ImagePlus, Info } from 'lucide-react';
 import { useInspection } from '../../context/InspectionContext';
 
-const MAX_IMAGE_WIDTH = 800; // Tamaño máximo de ancho en píxeles
-const MAX_IMAGE_HEIGHT = 600; // Tamaño máximo de alto en píxeles
-const IMAGE_QUALITY = 0.7; // Calidad de compresión JPEG (0-1)
+// Configuración más agresiva para imágenes más ligeras
+const MAX_IMAGE_WIDTH = 500; // Reducido de 800
+const MAX_IMAGE_HEIGHT = 375; // Reducido de 600 (mantiene proporción 4:3)
+const IMAGE_QUALITY = 0.6; // Reducido de 0.7 para mejor compresión
+const THUMB_SIZE = 150; // Tamaño para miniaturas en la interfaz
 
 const VisualInspectionPanel = () => {
   const { state, dispatch } = useInspection();
@@ -22,6 +24,93 @@ const VisualInspectionPanel = () => {
   
   // Estado para mostrar un mensaje de procesamiento
   const [processing, setProcessing] = useState(false);
+  // Estado para mostrar estadísticas de procesamiento
+  const [processStats, setProcessStats] = useState(null);
+  
+  // Efecto para cargar el estilo del componente en el head
+  useEffect(() => {
+    // Crear estilos específicos para este componente que también afectarán al PDF
+    const styleEl = document.createElement('style');
+    styleEl.id = 'visual-inspection-styles';
+    styleEl.innerHTML = `
+      /* Estilos para controlar el tamaño de las imágenes - importante para el PDF */
+      .inspection-photo-grid {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 8px;
+        width: 100%;
+      }
+      
+      .inspection-photo-item {
+        break-inside: avoid;
+        page-break-inside: avoid;
+        width: 100%;
+        max-width: 100%;
+      }
+      
+      .inspection-photo-container {
+        position: relative;
+        width: 100%;
+        height: 0;
+        padding-bottom: 75%; /* Mantiene el aspecto 4:3 */
+        background-color: #f8f9fa;
+        border: 1px solid #e2e8f0;
+        border-radius: 4px;
+        overflow: hidden;
+      }
+      
+      .inspection-photo-img {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        object-fit: contain; /* contain en lugar de cover para no cortar la imagen */
+        max-width: 100%;
+        max-height: 100%;
+      }
+      
+      .inspection-photo-caption {
+        position: absolute;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        background-color: rgba(0, 0, 0, 0.7);
+        color: white;
+        font-size: 10px;
+        padding: 2px 4px;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+      
+      /* Estilos para impresión */
+      @media print {
+        .inspection-photo-grid {
+          grid-template-columns: repeat(2, 1fr);
+          page-break-inside: avoid;
+        }
+        
+        .inspection-photo-container {
+          max-height: 2.5in; /* Limitar altura en impresión */
+        }
+        
+        .inspection-photo-img {
+          max-width: 100% !important;
+          max-height: 100% !important;
+        }
+      }
+    `;
+    document.head.appendChild(styleEl);
+    
+    // Limpiar al desmontar
+    return () => {
+      const existingStyle = document.getElementById('visual-inspection-styles');
+      if (existingStyle) {
+        document.head.removeChild(existingStyle);
+      }
+    };
+  }, []);
   
   // Manejar cambio en conformidad visual
   const handleVisualConformityChange = (value) => {
@@ -39,43 +128,81 @@ const VisualInspectionPanel = () => {
     });
   };
   
-  // Función para redimensionar y comprimir una imagen
+  // Función mejorada para redimensionar y comprimir una imagen
   const processImage = (imageDataUrl) => {
-    return new Promise((resolve) => {
-      setProcessing(true);
-      const img = new Image();
-      img.onload = () => {
-        // Calcular nuevas dimensiones manteniendo la proporción
-        let newWidth = img.width;
-        let newHeight = img.height;
+    return new Promise((resolve, reject) => {
+      try {
+        console.log("Procesando imagen...");
+        setProcessing(true);
         
-        if (newWidth > MAX_IMAGE_WIDTH) {
-          newHeight = (MAX_IMAGE_WIDTH / newWidth) * newHeight;
-          newWidth = MAX_IMAGE_WIDTH;
-        }
+        // Guardar tamaño original para estadísticas
+        let originalSize = Math.round(imageDataUrl.length / 1024);
         
-        if (newHeight > MAX_IMAGE_HEIGHT) {
-          newWidth = (MAX_IMAGE_HEIGHT / newHeight) * newWidth;
-          newHeight = MAX_IMAGE_HEIGHT;
-        }
+        const img = new Image();
+        img.onload = () => {
+          console.log(`Dimensiones originales: ${img.width}x${img.height}`);
+          
+          // Calcular nuevas dimensiones manteniendo la proporción
+          let newWidth = img.width;
+          let newHeight = img.height;
+          
+          if (newWidth > MAX_IMAGE_WIDTH) {
+            newHeight = Math.round((MAX_IMAGE_WIDTH / newWidth) * newHeight);
+            newWidth = MAX_IMAGE_WIDTH;
+          }
+          
+          if (newHeight > MAX_IMAGE_HEIGHT) {
+            newWidth = Math.round((MAX_IMAGE_HEIGHT / newHeight) * newWidth);
+            newHeight = MAX_IMAGE_HEIGHT;
+          }
+          
+          console.log(`Dimensiones nuevas: ${newWidth}x${newHeight}`);
+          
+          // Crear un canvas para redimensionar la imagen
+          const canvas = document.createElement('canvas');
+          canvas.width = newWidth;
+          canvas.height = newHeight;
+          
+          // Dibujar la imagen redimensionada en el canvas
+          const ctx = canvas.getContext('2d');
+          ctx.fillStyle = 'white'; // Fondo blanco
+          ctx.fillRect(0, 0, newWidth, newHeight);
+          ctx.drawImage(img, 0, 0, newWidth, newHeight);
+          
+          // Convertir a JPEG con la calidad especificada
+          const compressedDataUrl = canvas.toDataURL('image/jpeg', IMAGE_QUALITY);
+          
+          // Calcular el nuevo tamaño para estadísticas
+          const newSize = Math.round(compressedDataUrl.length / 1024);
+          const reduction = Math.round((1 - (newSize / originalSize)) * 100);
+          
+          console.log(`Tamaño original: ${originalSize}KB, Nuevo tamaño: ${newSize}KB, Reducción: ${reduction}%`);
+          
+          // Actualizar estadísticas para mostrar al usuario
+          setProcessStats({
+            originalSize,
+            newSize,
+            reduction,
+            originalDimensions: `${img.width}x${img.height}`,
+            newDimensions: `${newWidth}x${newHeight}`
+          });
+          
+          setProcessing(false);
+          resolve(compressedDataUrl);
+        };
         
-        // Crear un canvas para redimensionar la imagen
-        const canvas = document.createElement('canvas');
-        canvas.width = newWidth;
-        canvas.height = newHeight;
+        img.onerror = (error) => {
+          console.error("Error al cargar la imagen:", error);
+          setProcessing(false);
+          reject(new Error("No se pudo cargar la imagen"));
+        };
         
-        // Dibujar la imagen redimensionada en el canvas
-        const ctx = canvas.getContext('2d');
-        ctx.drawImage(img, 0, 0, newWidth, newHeight);
-        
-        // Convertir a JPEG con la calidad especificada
-        const compressedDataUrl = canvas.toDataURL('image/jpeg', IMAGE_QUALITY);
-        
+        img.src = imageDataUrl;
+      } catch (error) {
+        console.error("Error en procesamiento de imagen:", error);
         setProcessing(false);
-        resolve(compressedDataUrl);
-      };
-      
-      img.src = imageDataUrl;
+        reject(error);
+      }
     });
   };
   
@@ -156,7 +283,9 @@ const VisualInspectionPanel = () => {
         src: processedImage,
         caption: `Photo ${(photos?.length || 0) + 1}`,
         type: 'capture',
-        timestamp: new Date().toISOString()
+        timestamp: new Date().toISOString(),
+        dimensions: processStats?.newDimensions || '',
+        size: processStats?.newSize || 0
       };
       
       dispatch({
@@ -199,42 +328,75 @@ const VisualInspectionPanel = () => {
         return null;
       }
       
+      // Verificar tamaño máximo (10MB)
+      if (file.size > 10 * 1024 * 1024) {
+        alert(`${file.name} is too large. Maximum size is 10MB.`);
+        return null;
+      }
+      
       // Leer el archivo
       return new Promise((resolve) => {
         const reader = new FileReader();
         reader.onload = async (event) => {
-          // Procesar la imagen para reducir tamaño y calidad
-          const processedImage = await processImage(event.target.result);
-          
-          const newPhoto = {
-            id: Date.now() + Math.random(), // Garantizar ID único
-            src: processedImage,
-            caption: file.name,
-            type: 'upload',
-            timestamp: new Date().toISOString()
-          };
-          
-          resolve(newPhoto);
+          try {
+            // Procesar la imagen para reducir tamaño y calidad
+            const processedImage = await processImage(event.target.result);
+            
+            const newPhoto = {
+              id: Date.now() + Math.random(), // Garantizar ID único
+              src: processedImage,
+              caption: file.name,
+              type: 'upload',
+              timestamp: new Date().toISOString(),
+              dimensions: processStats?.newDimensions || '',
+              size: processStats?.newSize || 0
+            };
+            
+            resolve(newPhoto);
+          } catch (error) {
+            console.error(`Error processing image ${file.name}:`, error);
+            alert(`Error processing image ${file.name}. Please try another image.`);
+            resolve(null);
+          }
+        };
+        reader.onerror = () => {
+          console.error(`Error reading file ${file.name}`);
+          alert(`Error reading file ${file.name}. Please try another image.`);
+          resolve(null);
         };
         reader.readAsDataURL(file);
       });
     };
     
     // Procesar todos los archivos
-    const photoPromises = Array.from(files).map(processFile);
-    const newPhotos = (await Promise.all(photoPromises)).filter(photo => photo !== null);
-    
-    // Agregar todas las fotos procesadas al estado
-    newPhotos.forEach(photo => {
-      dispatch({
-        type: 'ADD_PHOTO',
-        payload: photo
+    try {
+      const photoPromises = Array.from(files).map(processFile);
+      const newPhotos = (await Promise.all(photoPromises)).filter(photo => photo !== null);
+      
+      // Agregar todas las fotos procesadas al estado
+      newPhotos.forEach(photo => {
+        dispatch({
+          type: 'ADD_PHOTO',
+          payload: photo
+        });
       });
-    });
-    
-    // Limpiar el input para permitir seleccionar el mismo archivo nuevamente
-    e.target.value = '';
-    setProcessing(false);
+      
+      // Mostrar mensaje de éxito
+      if (newPhotos.length > 0) {
+        const message = document.createElement('div');
+        message.style.cssText = 'position:fixed;top:20px;left:50%;transform:translateX(-50%);background:rgba(16,185,129,0.9);color:white;padding:8px 16px;border-radius:4px;font-size:14px;z-index:9999;box-shadow:0 4px 8px rgba(0,0,0,0.2);';
+        message.textContent = `${newPhotos.length} photo${newPhotos.length > 1 ? 's' : ''} processed successfully`;
+        document.body.appendChild(message);
+        setTimeout(() => document.body.removeChild(message), 3000);
+      }
+    } catch (error) {
+      console.error('Error processing photos:', error);
+      alert('Error processing photos. Please try again.');
+    } finally {
+      // Limpiar el input para permitir seleccionar el mismo archivo nuevamente
+      e.target.value = '';
+      setProcessing(false);
+    }
   };
   
   // Eliminar foto
@@ -332,6 +494,19 @@ const VisualInspectionPanel = () => {
             )}
           </div>
           
+          {/* Mostrar estadísticas de procesamiento */}
+          {processStats && (
+            <div className="p-2 mb-3 bg-blue-50 border border-blue-100 rounded text-xs text-blue-800 flex items-start">
+              <Info size={14} className="mr-1 mt-0.5 flex-shrink-0" />
+              <div>
+                <p className="font-medium">Image processed</p>
+                <p>Original: {processStats.originalDimensions} ({processStats.originalSize}KB)</p>
+                <p>Optimized: {processStats.newDimensions} ({processStats.newSize}KB)</p>
+                <p>Reduction: {processStats.reduction}%</p>
+              </div>
+            </div>
+          )}
+          
           {/* Interfaz de la cámara */}
           {showCamera && (
             <div className="mb-4 border p-2 rounded bg-gray-50">
@@ -382,20 +557,21 @@ const VisualInspectionPanel = () => {
             </div>
           )}
           
-          {/* Galería de fotos - GRID MEJORADO */}
-          <div className="photo-gallery">
+          {/* Galería de fotos mejorada - asegurarse que las clases específicas son usadas */}
+          <div>
             {photos && photos.length > 0 ? (
-              <div className="grid grid-cols-2 gap-3">
+              <div className="inspection-photo-grid">
                 {photos.map((photo, index) => (
-                  <div key={photo.id || index} className="photo-item">
-                    <div className="relative aspect-[4/3] overflow-hidden bg-gray-100 rounded border">
+                  <div key={photo.id || index} className="inspection-photo-item">
+                    <div className="inspection-photo-container">
                       <img 
                         src={photo.src} 
                         alt={photo.caption || `Photo ${index + 1}`} 
-                        className="w-full h-full object-cover"
+                        className="inspection-photo-img"
                       />
-                      <div className="absolute bottom-0 left-0 right-0 bg-black bg-opacity-60 text-white text-xs p-1 truncate">
+                      <div className="inspection-photo-caption">
                         {photo.caption || `Photo ${index + 1}`}
+                        {photo.dimensions && ` • ${photo.dimensions}`}
                       </div>
                       <button 
                         className="absolute top-1 right-1 bg-red-500 text-white rounded-full w-6 h-6 flex items-center justify-center opacity-80 hover:opacity-100 transition-opacity"
@@ -408,48 +584,57 @@ const VisualInspectionPanel = () => {
                 ))}
               </div>
             ) : (
-              <div className="photo-empty-state">
-                <div className="flex flex-col items-center justify-center py-10 bg-gray-50 border border-dashed border-gray-300 rounded text-gray-500">
-                  <ImagePlus size={48} className="mb-3 text-gray-400" />
-                  <p className="text-sm mb-2">No photos yet</p>
-                  <p className="text-xs">Use the buttons above to capture or upload photos</p>
-                </div>
+              <div className="flex flex-col items-center justify-center py-10 bg-gray-50 border border-dashed border-gray-300 rounded text-gray-500">
+                <ImagePlus size={48} className="mb-3 text-gray-400" />
+                <p className="text-sm mb-2">No photos yet</p>
+                <p className="text-xs">Use the buttons above to capture or upload photos</p>
               </div>
             )}
           </div>
         </div>
       </div>
       
-      {/* Estilos adicionales */}
+      {/* Estilos adicionales para compatibilidad */}
       <style jsx>{`
-        .photo-gallery {
-          margin-top: 1rem;
+        .btn {
+          display: inline-flex;
+          align-items: center;
+          padding: 0.5rem 1rem;
+          border-radius: 0.375rem;
+          font-weight: 500;
+          cursor: pointer;
         }
         
-        .photo-item {
-          break-inside: avoid;
-          margin-bottom: 0.75rem;
+        .btn:disabled {
+          opacity: 0.6;
+          cursor: not-allowed;
         }
         
-        .aspect-[4/3] {
-          position: relative;
-          padding-bottom: 75%; /* 4:3 aspect ratio */
-          height: 0;
+        .btn-primary {
+          background-color: #4f46e5;
+          color: white;
         }
         
-        .aspect-[4/3] img {
-          position: absolute;
-          top: 0;
-          left: 0;
+        .btn-secondary {
+          background-color: #f3f4f6;
+          color: #4b5563;
+        }
+        
+        .btn-success {
+          background-color: #10b981;
+          color: white;
+        }
+        
+        .btn-danger {
+          background-color: #ef4444;
+          color: white;
+        }
+        
+        .form-control {
           width: 100%;
-          height: 100%;
-          object-fit: cover;
-        }
-        
-        @media (max-width: 640px) {
-          .grid-cols-2 {
-            grid-template-columns: 1fr;
-          }
+          padding: 0.5rem 0.75rem;
+          border: 1px solid #d1d5db;
+          border-radius: 0.375rem;
         }
       `}</style>
     </div>

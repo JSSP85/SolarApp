@@ -6,7 +6,6 @@ import { getSampleCount, getSampleLetter } from '../../utils/samplePlanHelper';
 import VoiceRecognitionButton from '../common/VoiceRecognitionButton';
 
 // Componente para la sección de Overall Status - ahora en inglés
-// Componente para la sección de Overall Status - ahora en inglés
 const OverallStatusSection = () => {
   const { state } = useInspection();
   const { 
@@ -118,29 +117,63 @@ const OverallStatusSection = () => {
     }, 0) : 0;
 
   return (
-    <div className="report-section mb-4">
-      <h3 className="report-section-title">
-        <Activity size={18} className="mr-2" /> Overall Inspection Status
+    <div style={{
+      marginBottom: '1rem',
+      borderRadius: '0.375rem',
+      overflow: 'hidden'
+    }}>
+      <h3 style={{
+        display: 'flex',
+        alignItems: 'center',
+        fontSize: '1.125rem',
+        fontWeight: '600',
+        marginBottom: '1rem',
+        paddingBottom: '0.625rem',
+        borderBottom: '1px solid #e5e7eb',
+        color: '#3D4A5C'
+      }}>
+        <Activity size={18} style={{ marginRight: '0.5rem' }} /> 
+        Overall Inspection Status
       </h3>
       
       {/* Diseño mejorado para Overall Status */}
-      <div className="dashboard-card bg-blue-50 shadow-sm">
-        <div className="card-body p-4">
+      <div style={{
+        backgroundColor: '#EBF8FF',
+        borderRadius: '0.5rem',
+        boxShadow: '0 1px 2px 0 rgba(0, 0, 0, 0.05)',
+        overflow: 'hidden'
+      }}>
+        <div style={{ padding: '1rem' }}>
           {/* Cabecera de estado general con progreso */}
-          <div className="flex items-center justify-between mb-4">
-            <div className="flex items-center">
-              <div className={`rounded-full w-10 h-10 flex items-center justify-center mr-3 ${
-                inspectionStatus === 'pass' ? 'bg-green-100 text-green-600' : 
-                inspectionStatus === 'reject' ? 'bg-red-100 text-red-600' : 
-                'bg-blue-100 text-blue-600'
-              }`}>
+          <div style={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            marginBottom: '1rem'
+          }}>
+            <div style={{ display: 'flex', alignItems: 'center' }}>
+              <div style={{
+                width: '2.5rem',
+                height: '2.5rem',
+                borderRadius: '9999px',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                marginRight: '0.75rem',
+                backgroundColor: inspectionStatus === 'pass' ? '#D1FAE5' : 
+                                inspectionStatus === 'reject' ? '#FEE2E2' : 
+                                '#DBEAFE',
+                color: inspectionStatus === 'pass' ? '#059669' : 
+                      inspectionStatus === 'reject' ? '#DC2626' : 
+                      '#3B82F6'
+              }}>
                 {inspectionStatus === 'pass' && <CheckCircle size={20} />}
                 {inspectionStatus === 'reject' && <AlertTriangle size={20} />}
                 {inspectionStatus === 'in-progress' && <Activity size={20} />}
               </div>
               <div>
-                <div className="text-sm text-gray-500">Current Status</div>
-                <div className="font-bold text-xl">
+                <div style={{ fontSize: '0.875rem', color: '#6B7280' }}>Current Status</div>
+                <div style={{ fontWeight: '700', fontSize: '1.25rem' }}>
                   {inspectionStatus === 'pass' ? 'ACCEPTED' : 
                    inspectionStatus === 'reject' ? 'REJECTED' : 
                   'IN PROGRESS'}
@@ -148,93 +181,156 @@ const OverallStatusSection = () => {
               </div>
             </div>
             
-            <div className="text-right">
-              <div className="text-sm text-gray-500">Current Step</div>
-              <div className="font-medium text-lg">{inspectionStep.charAt(0).toUpperCase() + inspectionStep.slice(1)}</div>
+            <div style={{ textAlign: 'right' }}>
+              <div style={{ fontSize: '0.875rem', color: '#6B7280' }}>Current Step</div>
+              <div style={{ fontWeight: '500', fontSize: '1.125rem' }}>
+                {inspectionStep.charAt(0).toUpperCase() + inspectionStep.slice(1)}
+              </div>
             </div>
           </div>
           
-          <div className="mb-4">
-            <div className="flex justify-between text-sm mb-1">
-              <span className="font-medium">Inspection Progress</span>
-              <span className="font-medium">{Math.round(progressPercentage)}%</span>
+          <div style={{ marginBottom: '1rem' }}>
+            <div style={{
+              display: 'flex',
+              justifyContent: 'space-between',
+              fontSize: '0.875rem',
+              marginBottom: '0.25rem'
+            }}>
+              <span style={{ fontWeight: '500' }}>Inspection Progress</span>
+              <span style={{ fontWeight: '500' }}>{Math.round(progressPercentage)}%</span>
             </div>
-            <div 
-              style={{
-                width: '100%',
-                height: '24px',
-                backgroundColor: '#E5E7EB',
-                borderRadius: '2px',
-                border: '1px solid #D1D5DB',
-                overflow: 'hidden',
-                position: 'relative'
-              }}
-            >
-              <div 
-                style={{
-                  height: '100%',
-                  width: `${progressPercentage > 0 ? progressPercentage : 1}%`, // Mínimo 1% para visibilidad
-                  backgroundColor: inspectionStatus === 'pass' ? '#10B981' : 
-                                 inspectionStatus === 'reject' ? '#EF4444' : 
-                                 '#3B82F6',
-                  transition: 'width 0.5s ease-in-out'
-                }}
-              ></div>
-              <div 
-                style={{
-                  position: 'absolute',
-                  inset: 0,
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  color: progressPercentage > 30 ? '#FFFFFF' : '#000000',
-                  fontSize: '12px',
-                  fontWeight: 'bold',
-                  textShadow: progressPercentage > 30 ? '0 1px 2px rgba(0,0,0,0.2)' : 'none'
-                }}
-              >
+            <div style={{
+              width: '100%',
+              height: '24px',
+              backgroundColor: '#E5E7EB',
+              borderRadius: '2px',
+              border: '1px solid #D1D5DB',
+              overflow: 'hidden',
+              position: 'relative'
+            }}>
+              <div style={{
+                height: '100%',
+                width: `${progressPercentage > 0 ? progressPercentage : 1}%`, // Mínimo 1% para visibilidad
+                backgroundColor: inspectionStatus === 'pass' ? '#10B981' : 
+                              inspectionStatus === 'reject' ? '#EF4444' : 
+                              '#3B82F6',
+                transition: 'width 0.5s ease-in-out'
+              }}></div>
+              <div style={{
+                position: 'absolute',
+                top: 0,
+                left: 0,
+                right: 0,
+                bottom: 0,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                color: progressPercentage > 30 ? '#FFFFFF' : '#000000',
+                fontSize: '12px',
+                fontWeight: 'bold',
+                textShadow: progressPercentage > 30 ? '0 1px 2px rgba(0,0,0,0.2)' : 'none'
+              }}>
                 {Math.round(progressPercentage)}%
               </div>
             </div>
           </div>
           
           {/* NUEVA VERSIÓN: Grid horizontal para métricas */}
-          <div className="bg-white p-3 rounded shadow-sm mt-4">
-            <div className="grid grid-cols-4 gap-2">
+          <div style={{
+            backgroundColor: '#FFFFFF',
+            padding: '0.75rem',
+            borderRadius: '0.375rem',
+            boxShadow: '0 1px 2px rgba(0,0,0,0.05)',
+            marginTop: '1rem'
+          }}>
+            <div style={{
+              display: 'grid',
+              gridTemplateColumns: 'repeat(4, 1fr)',
+              gap: '0.5rem'
+            }}>
               {/* Columna 1: Non-Conformities */}
-              <div className="text-center">
-                <div className="text-xs text-gray-500 font-medium mb-1">Total Non-Conformities</div>
-                <div className={`text-xl font-bold ${totalNonConformities > 0 ? 'text-red-600' : 'text-gray-800'}`}>
+              <div style={{ textAlign: 'center' }}>
+                <div style={{
+                  fontSize: '0.75rem',
+                  color: '#6B7280',
+                  fontWeight: '500',
+                  marginBottom: '0.25rem'
+                }}>
+                  Total Non-Conformities
+                </div>
+                <div style={{
+                  fontSize: '1.25rem',
+                  fontWeight: '700',
+                  color: totalNonConformities > 0 ? '#DC2626' : '#1F2937'
+                }}>
                   {totalNonConformities}
                 </div>
               </div>
               
               {/* Columna 2: Sample Letter */}
-              <div className="text-center">
-                <div className="text-xs text-gray-500 font-medium mb-1">Sample Letter</div>
-                <div className="text-xl font-bold text-gray-800">
+              <div style={{ textAlign: 'center' }}>
+                <div style={{
+                  fontSize: '0.75rem',
+                  color: '#6B7280',
+                  fontWeight: '500',
+                  marginBottom: '0.25rem'
+                }}>
+                  Sample Letter
+                </div>
+                <div style={{
+                  fontSize: '1.25rem',
+                  fontWeight: '700',
+                  color: '#1F2937'
+                }}>
                   {getSampleLetter(sampleInfo)}
                 </div>
               </div>
               
               {/* Columna 3: Samples Checked */}
-              <div className="text-center">
-                <div className="text-xs text-gray-500 font-medium mb-1">Samples Checked</div>
-                <div className="text-xl font-bold text-gray-800">
+              <div style={{ textAlign: 'center' }}>
+                <div style={{
+                  fontSize: '0.75rem',
+                  color: '#6B7280',
+                  fontWeight: '500',
+                  marginBottom: '0.25rem'
+                }}>
+                  Samples Checked
+                </div>
+                <div style={{
+                  fontSize: '1.25rem',
+                  fontWeight: '700',
+                  color: '#1F2937'
+                }}>
                   {completedSamplesCount}
-                  <span className="text-gray-500 text-sm font-normal"> / </span>
-                  <span className="text-sm">{getTotalRequiredSamplesForAllSteps()}</span>
+                  <span style={{
+                    color: '#6B7280',
+                    fontSize: '0.875rem',
+                    fontWeight: 'normal'
+                  }}> / </span>
+                  <span style={{ fontSize: '0.875rem' }}>
+                    {getTotalRequiredSamplesForAllSteps()}
+                  </span>
                 </div>
               </div>
               
               {/* Columna 4: Acceptance Criteria */}
-              <div className="text-center">
-                <div className="text-xs text-gray-500 font-medium mb-1">Acceptance Criteria</div>
-                <div className="text-sm text-gray-800">
-                  <span className="font-medium">Min NC: </span>
+              <div style={{ textAlign: 'center' }}>
+                <div style={{
+                  fontSize: '0.75rem',
+                  color: '#6B7280',
+                  fontWeight: '500',
+                  marginBottom: '0.25rem'
+                }}>
+                  Acceptance Criteria
+                </div>
+                <div style={{
+                  fontSize: '0.875rem',
+                  color: '#1F2937'
+                }}>
+                  <span style={{ fontWeight: '500' }}>Min NC: </span>
                   <span>{minText !== "N/A" ? minText : "0"}</span>
-                  <span className="mx-1">|</span>
-                  <span className="font-medium">Max NC: </span>
+                  <span style={{ margin: '0 0.25rem' }}>|</span>
+                  <span style={{ fontWeight: '500' }}>Max NC: </span>
                   <span>{maxText !== "N/A" ? maxText : "2"}</span>
                 </div>
               </div>

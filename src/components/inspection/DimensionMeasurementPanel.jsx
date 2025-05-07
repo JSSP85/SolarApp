@@ -6,6 +6,7 @@ import { getSampleCount, getSampleLetter } from '../../utils/samplePlanHelper';
 import VoiceRecognitionButton from '../common/VoiceRecognitionButton';
 
 // Componente para la sección de Overall Status - ahora en inglés
+// Componente para la sección de Overall Status - ahora en inglés
 const OverallStatusSection = () => {
   const { state } = useInspection();
   const { 
@@ -15,7 +16,6 @@ const OverallStatusSection = () => {
     totalSamplesChecked, 
     dimensions, 
     sampleInfo, 
-    iso2859Table,
     dimensionMeasurements
   } = state;
 
@@ -72,8 +72,10 @@ const OverallStatusSection = () => {
   
   // Obtener valores de aceptación y rechazo con texto descriptivo
   const getAcceptanceInfo = () => {
-    // Verificación de datos
-    if (!sampleInfo || !iso2859Table || !inspectionStep) {
+    // Verificación de datos - importamos directamente la tabla ISO
+    const { iso2859Table } = require('../../constants/iso2859Tables');
+    
+    if (!sampleInfo || !inspectionStep) {
       console.log("Datos insuficientes para criterio de aceptación");
       return { minText: "0", maxText: "0" };
     }
@@ -86,8 +88,8 @@ const OverallStatusSection = () => {
     console.log("Step actual:", inspectionStep);
     
     // Verificar que tenemos datos para esta combinación
-    if (!iso2859Table[sampleLetter] || !iso2859Table[sampleLetter][inspectionStep]) {
-      console.log("No hay datos para esta combinación de letra/step");
+    if (!iso2859Table || !iso2859Table[sampleLetter] || !iso2859Table[sampleLetter][inspectionStep]) {
+      console.log("No hay datos para esta combinación de letra/step:", sampleLetter, inspectionStep);
       return { minText: "0", maxText: "2" }; // Valores de respaldo razonables
     }
     
@@ -235,7 +237,7 @@ const OverallStatusSection = () => {
             </div>
           </div>
           
-          {/* NUEVA VERSIÓN: Grid horizontal para métricas */}
+          {/* NUEVA VERSIÓN: Grid horizontal para métricas con 3 columnas (eliminando Sample Letter) */}
           <div style={{
             backgroundColor: '#FFFFFF',
             padding: '0.75rem',
@@ -245,7 +247,7 @@ const OverallStatusSection = () => {
           }}>
             <div style={{
               display: 'grid',
-              gridTemplateColumns: 'repeat(4, 1fr)',
+              gridTemplateColumns: 'repeat(3, 1fr)',
               gap: '0.5rem'
             }}>
               {/* Columna 1: Non-Conformities */}
@@ -267,26 +269,7 @@ const OverallStatusSection = () => {
                 </div>
               </div>
               
-              {/* Columna 2: Sample Letter */}
-              <div style={{ textAlign: 'center' }}>
-                <div style={{
-                  fontSize: '0.75rem',
-                  color: '#6B7280',
-                  fontWeight: '500',
-                  marginBottom: '0.25rem'
-                }}>
-                  Sample Letter
-                </div>
-                <div style={{
-                  fontSize: '1.25rem',
-                  fontWeight: '700',
-                  color: '#1F2937'
-                }}>
-                  {getSampleLetter(sampleInfo)}
-                </div>
-              </div>
-              
-              {/* Columna 3: Samples Checked */}
+              {/* Columna 2: Samples Checked */}
               <div style={{ textAlign: 'center' }}>
                 <div style={{
                   fontSize: '0.75rem',
@@ -313,7 +296,7 @@ const OverallStatusSection = () => {
                 </div>
               </div>
               
-              {/* Columna 4: Acceptance Criteria */}
+              {/* Columna 3: Acceptance Criteria */}
               <div style={{ textAlign: 'center' }}>
                 <div style={{
                   fontSize: '0.75rem',

@@ -17,62 +17,97 @@ const ReportTechnicalDrawing = () => {
     imageCode: ""
   });
 
-  // Usamos el mismo efecto que en TechnicalDrawingComponent pero con algunos ajustes para el reporte
   useEffect(() => {
-    if (!componentCode) {
-      setDrawingState({
-        loading: false,
-        error: true,
-        errorMessage: "No component selected",
-        src: "",
-        alt: "",
-        imageCode: ""
-      });
-      return;
-    }
+    let isMounted = true;
+    
+    const fetchDrawing = async () => {
+      if (!componentCode) {
+        if (isMounted) {
+          setDrawingState({
+            loading: false,
+            error: true,
+            errorMessage: "No component selected",
+            src: "",
+            alt: "",
+            imageCode: ""
+          });
+        }
+        return;
+      }
 
-    setDrawingState(prev => ({ ...prev, loading: true }));
+      if (isMounted) {
+        setDrawingState(prev => ({ ...prev, loading: true }));
+      }
 
-    // Obtener información del dibujo
-    const drawingInfo = getComponentDrawing(componentCode);
-    
-    if (!drawingInfo.found) {
-      setDrawingState({
-        loading: false,
-        error: true,
-        errorMessage: drawingInfo.errorMessage,
-        src: "",
-        alt: "",
-        imageCode: ""
-      });
-      return;
-    }
-    
-    // Verificar si la imagen existe
-    const img = new Image();
-    img.onload = () => {
-      setDrawingState({
-        loading: false,
-        error: false,
-        errorMessage: "",
-        src: drawingInfo.src,
-        alt: drawingInfo.alt,
-        imageCode: drawingInfo.imageCode
-      });
+      try {
+        // Obtener información del dibujo
+        const drawingInfo = await getComponentDrawing(componentCode);
+        
+        if (!drawingInfo.found) {
+          if (isMounted) {
+            setDrawingState({
+              loading: false,
+              error: true,
+              errorMessage: drawingInfo.errorMessage,
+              src: "",
+              alt: "",
+              imageCode: ""
+            });
+          }
+          return;
+        }
+        
+        // Verificar si la imagen existe
+        const img = new Image();
+        img.onload = () => {
+          if (isMounted) {
+            setDrawingState({
+              loading: false,
+              error: false,
+              errorMessage: "",
+              src: drawingInfo.src,
+              alt: drawingInfo.alt,
+              imageCode: drawingInfo.imageCode,
+              componentName: drawingInfo.componentName
+            });
+          }
+        };
+        
+        img.onerror = () => {
+          if (isMounted) {
+            setDrawingState({
+              loading: false,
+              error: true,
+              errorMessage: `Technical drawing file not found: ${drawingInfo.imageCode}`,
+              src: "",
+              alt: "",
+              imageCode: drawingInfo.imageCode
+            });
+          }
+        };
+        
+        img.src = drawingInfo.src;
+      } catch (error) {
+        console.error("Error loading drawing:", error);
+        if (isMounted) {
+          setDrawingState({
+            loading: false,
+            error: true,
+            errorMessage: "Error loading technical drawing",
+            src: "",
+            alt: "",
+            imageCode: ""
+          });
+        }
+      }
     };
+
+    fetchDrawing();
     
-    img.onerror = () => {
-      setDrawingState({
-        loading: false,
-        error: true,
-        errorMessage: "Technical drawing file not found",
-        src: "",
-        alt: "",
-        imageCode: ""
-      });
+    // Limpiar al desmontar
+    return () => {
+      isMounted = false;
     };
-    
-    img.src = drawingInfo.src;
   }, [componentCode]);
 
   return (
@@ -85,7 +120,7 @@ const ReportTechnicalDrawing = () => {
           {componentName && (
             <div className="text-center mb-3">
               <h4 className="font-medium text-gray-700">
-                {componentName} - {componentCode}
+                {drawingState.componentName || componentName} - {componentCode}
               </h4>
             </div>
           )}
@@ -111,7 +146,7 @@ const ReportTechnicalDrawing = () => {
             )}
           </div>
           
-          {/* Si hay imagen y código, mostrar detalles adicionales */}
+          {/* Mostrar el código de imagen si está disponible */}
           {!drawingState.error && !drawingState.loading && drawingState.imageCode && (
             <div className="mt-2 text-xs text-gray-500 text-center">
               Drawing reference: {drawingState.imageCode}

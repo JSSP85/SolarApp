@@ -13,60 +13,100 @@ const TechnicalDrawingComponent = () => {
     error: false,
     errorMessage: "",
     src: "",
-    alt: ""
+    alt: "",
+    imageCode: ""
   });
 
   useEffect(() => {
-    if (!componentCode) {
-      setDrawingState({
-        loading: false,
-        error: true,
-        errorMessage: "No component selected",
-        src: "",
-        alt: ""
-      });
-      return;
-    }
+    let isMounted = true;
+    
+    const fetchDrawing = async () => {
+      if (!componentCode) {
+        if (isMounted) {
+          setDrawingState({
+            loading: false,
+            error: true,
+            errorMessage: "No component selected",
+            src: "",
+            alt: "",
+            imageCode: ""
+          });
+        }
+        return;
+      }
 
-    setDrawingState(prev => ({ ...prev, loading: true }));
+      if (isMounted) {
+        setDrawingState(prev => ({ ...prev, loading: true }));
+      }
 
-    // Obtener información del dibujo
-    const drawingInfo = getComponentDrawing(componentCode);
-    
-    if (!drawingInfo.found) {
-      setDrawingState({
-        loading: false,
-        error: true,
-        errorMessage: drawingInfo.errorMessage,
-        src: "",
-        alt: ""
-      });
-      return;
-    }
-    
-    // Verificar si la imagen existe
-    const img = new Image();
-    img.onload = () => {
-      setDrawingState({
-        loading: false,
-        error: false,
-        errorMessage: "",
-        src: drawingInfo.src,
-        alt: drawingInfo.alt
-      });
+      try {
+        // Obtener información del dibujo
+        const drawingInfo = await getComponentDrawing(componentCode);
+        
+        if (!drawingInfo.found) {
+          if (isMounted) {
+            setDrawingState({
+              loading: false,
+              error: true,
+              errorMessage: drawingInfo.errorMessage,
+              src: "",
+              alt: "",
+              imageCode: ""
+            });
+          }
+          return;
+        }
+        
+        // Verificar si la imagen existe
+        const img = new Image();
+        img.onload = () => {
+          if (isMounted) {
+            setDrawingState({
+              loading: false,
+              error: false,
+              errorMessage: "",
+              src: drawingInfo.src,
+              alt: drawingInfo.alt,
+              imageCode: drawingInfo.imageCode
+            });
+          }
+        };
+        
+        img.onerror = () => {
+          if (isMounted) {
+            setDrawingState({
+              loading: false,
+              error: true,
+              errorMessage: `Technical drawing file not found: ${drawingInfo.imageCode}`,
+              src: "",
+              alt: "",
+              imageCode: drawingInfo.imageCode
+            });
+          }
+        };
+        
+        img.src = drawingInfo.src;
+      } catch (error) {
+        console.error("Error loading drawing:", error);
+        if (isMounted) {
+          setDrawingState({
+            loading: false,
+            error: true,
+            errorMessage: "Error loading technical drawing",
+            src: "",
+            alt: "",
+            imageCode: ""
+          });
+        }
+      }
     };
+
+    fetchDrawing();
     
-    img.onerror = () => {
-      setDrawingState({
-        loading: false,
-        error: true,
-        errorMessage: "Technical drawing file not found",
-        src: "",
-        alt: ""
-      });
+    // Limpiar al desmontar
+    return () => {
+      isMounted = false;
     };
-    
-    img.src = drawingInfo.src;
   }, [componentCode]);
 
   return (
@@ -92,6 +132,12 @@ const TechnicalDrawingComponent = () => {
               alt={drawingState.alt} 
               className="max-h-64 max-w-full object-contain" 
             />
+          </div>
+        )}
+        
+        {drawingState.imageCode && !drawingState.loading && !drawingState.error && (
+          <div className="mt-2 text-xs text-center text-gray-500">
+            Drawing reference: {drawingState.imageCode}
           </div>
         )}
       </div>

@@ -1,11 +1,24 @@
 // src/utils/drawingService.js
-import { getComponentData } from './databaseService'; // Servicio que ya debe existir para acceder al Excel
+import { getComponentData } from './databaseService';
 
-export const getComponentDrawing = (componentCode) => {
+/**
+ * Obtiene información del dibujo técnico para un componente
+ * @param {string} componentCode - Código del componente
+ * @returns {Promise<Object>} - Información del dibujo
+ */
+export const getComponentDrawing = async (componentCode) => {
   try {
-    // Obtener datos del componente desde el servicio de base de datos
-    const componentData = getComponentData(componentCode);
+    if (!componentCode) {
+      return {
+        found: false,
+        errorMessage: "No component code provided"
+      };
+    }
     
+    // Obtener datos del componente desde el Excel
+    const componentData = await getComponentData(componentCode);
+    
+    // Verificar si tenemos datos y el campo Imagen
     if (!componentData || !componentData.Imagen) {
       return {
         found: false,
@@ -13,14 +26,15 @@ export const getComponentDrawing = (componentCode) => {
       };
     }
     
-    // Construir la ruta al archivo de imagen
+    // Construir la ruta a la imagen usando el valor de la columna "Imagen"
     const imagePath = `/images/drawings/${componentData.Imagen}.jpeg`;
     
     return {
       found: true,
       src: imagePath,
       alt: `Technical drawing for ${componentCode}`,
-      imageCode: componentData.Imagen
+      imageCode: componentData.Imagen,
+      componentName: componentData.Nombre || componentCode
     };
   } catch (error) {
     console.error("Error fetching component drawing:", error);

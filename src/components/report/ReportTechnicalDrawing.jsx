@@ -1,68 +1,84 @@
 // src/components/report/ReportTechnicalDrawing.jsx
-import React from 'react';
+import React, { useState, useEffect } from 'react';
+import { Package, AlertTriangle } from 'lucide-react';
 import { useInspection } from '../../context/InspectionContext';
-import { Package } from 'lucide-react';
+import { getComponentDrawing } from '../../utils/drawingService';
 
 const ReportTechnicalDrawing = () => {
   const { state } = useInspection();
-  const { componentCode, componentFamily, componentName } = state;
+  const { componentCode, componentName } = state;
   
-  // Function to get the appropriate image based on component details
-  const getDrawingImage = () => {
-    // Corregir extensión a .jpeg para mayor consistencia
-    const basePath = "/images/drawings/torque-tube-technical.jpeg";
+  const [drawingState, setDrawingState] = useState({
+    loading: true,
+    error: false,
+    errorMessage: "",
+    src: "",
+    alt: "",
+    imageCode: ""
+  });
+
+  // Usamos el mismo efecto que en TechnicalDrawingComponent pero con algunos ajustes para el reporte
+  useEffect(() => {
+    if (!componentCode) {
+      setDrawingState({
+        loading: false,
+        error: true,
+        errorMessage: "No component selected",
+        src: "",
+        alt: "",
+        imageCode: ""
+      });
+      return;
+    }
+
+    setDrawingState(prev => ({ ...prev, loading: true }));
+
+    // Obtener información del dibujo
+    const drawingInfo = getComponentDrawing(componentCode);
     
-    if (componentFamily === 'TORQUE TUBES') {
-      if (componentCode === 'ttg45720') {
-        return {
-          src: basePath,
-          alt: "Dibujo técnico para Torque tube 140x100x3.5mm"
-        };
-      } else if (componentCode === 'ttg45721') {
-        return {
-          src: basePath,
-          alt: "Dibujo técnico para Torque tube 140x100x4.0mm"
-        };
-      }
-    } else if (componentFamily === 'POSTS') {
-      return {
-        src: basePath,
-        alt: "Dibujo técnico para Posts"
-      };
-    } else if (componentFamily === 'MODULE RAILS') {
-      return {
-        src: basePath,
-        alt: "Dibujo técnico para Module Rails"
-      };
-    } else if (componentFamily === 'KIT') {
-      return {
-        src: basePath,
-        alt: "Dibujo técnico para Kit"
-      };
+    if (!drawingInfo.found) {
+      setDrawingState({
+        loading: false,
+        error: true,
+        errorMessage: drawingInfo.errorMessage,
+        src: "",
+        alt: "",
+        imageCode: ""
+      });
+      return;
     }
     
-    // Imagen predeterminada si no hay coincidencia específica
-    return {
-      src: basePath,
-      alt: `Dibujo técnico para ${componentName || componentCode || "componente"}`
+    // Verificar si la imagen existe
+    const img = new Image();
+    img.onload = () => {
+      setDrawingState({
+        loading: false,
+        error: false,
+        errorMessage: "",
+        src: drawingInfo.src,
+        alt: drawingInfo.alt,
+        imageCode: drawingInfo.imageCode
+      });
     };
-  };
-
-  // Obtener la imagen apropiada
-  const drawing = getDrawingImage();
-
-  // Mock dimensions table data - solo para componentes específicos
-  const mockDimensions = componentCode === 'ttg45720' ? [
-    { code: 'A', description: 'Longitud', nominal: 4570, tolerancePlus: 10, toleranceMinus: 3 },
-    { code: 'B', description: 'Anchura', nominal: 100, tolerancePlus: 1, toleranceMinus: 1 },
-    { code: 'C', description: 'Altura', nominal: 140, tolerancePlus: 1, toleranceMinus: 1 },
-    { code: 'D', description: 'Espesor', nominal: 3.5, tolerancePlus: 0.2, toleranceMinus: 0.2 },
-  ] : [];
+    
+    img.onerror = () => {
+      setDrawingState({
+        loading: false,
+        error: true,
+        errorMessage: "Technical drawing file not found",
+        src: "",
+        alt: "",
+        imageCode: ""
+      });
+    };
+    
+    img.src = drawingInfo.src;
+  }, [componentCode]);
 
   return (
     <div className="report-section">
       <h3 className="report-section-title">
-        <Package size={18} className="mr-2" /> Dibujo Técnico
+        <Package size={18} className="mr-2" /> Technical Drawing
       </h3>
       <div className="dashboard-card">
         <div className="card-body p-4">
@@ -76,52 +92,40 @@ const ReportTechnicalDrawing = () => {
           
           {/* Contenedor de imagen mejorado con dimensiones controladas */}
           <div className="technical-drawing-container">
-            <img 
-              src={drawing.src} 
-              alt={drawing.alt} 
-              className="technical-drawing-image"
-            />
+            {drawingState.loading ? (
+              <div className="flex items-center justify-center h-full w-full">
+                <div className="animate-spin h-8 w-8 border-4 border-blue-500 rounded-full border-t-transparent"></div>
+              </div>
+            ) : drawingState.error ? (
+              <div className="flex flex-col items-center justify-center h-full w-full bg-gray-50 text-gray-500 text-center p-4">
+                <AlertTriangle size={48} className="text-amber-500 mb-4" />
+                <p className="font-medium">{drawingState.errorMessage}</p>
+                <p className="mt-2 text-sm">Please check component information in the database.</p>
+              </div>
+            ) : (
+              <img 
+                src={drawingState.src} 
+                alt={drawingState.alt} 
+                className="technical-drawing-image"
+              />
+            )}
           </div>
           
-          {/* Mostrar dimensiones solo para componentes específicos */}
-          {componentCode === 'ttg45720' && mockDimensions.length > 0 && (
-            <div className="mt-4 text-sm">
-              <h5 className="font-medium text-gray-700 mb-2">Dimensiones principales:</h5>
-              <div className="overflow-x-auto">
-                <table className="min-w-full border">
-                  <thead className="bg-gray-50">
-                    <tr>
-                      <th className="px-4 py-2 border text-sm font-medium text-gray-700">Código</th>
-                      <th className="px-4 py-2 border text-sm font-medium text-gray-700">Descripción</th>
-                      <th className="px-4 py-2 border text-sm font-medium text-gray-700">Nominal (mm)</th>
-                      <th className="px-4 py-2 border text-sm font-medium text-gray-700">Tolerancia +</th>
-                      <th className="px-4 py-2 border text-sm font-medium text-gray-700">Tolerancia -</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {mockDimensions.map(dim => (
-                      <tr key={dim.code}>
-                        <td className="px-4 py-2 border text-sm font-medium">{dim.code}</td>
-                        <td className="px-4 py-2 border text-sm">{dim.description}</td>
-                        <td className="px-4 py-2 border text-sm text-right">{dim.nominal}</td>
-                        <td className="px-4 py-2 border text-sm text-right text-green-600">+{dim.tolerancePlus}</td>
-                        <td className="px-4 py-2 border text-sm text-right text-red-600">-{dim.toleranceMinus}</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
+          {/* Si hay imagen y código, mostrar detalles adicionales */}
+          {!drawingState.error && !drawingState.loading && drawingState.imageCode && (
+            <div className="mt-2 text-xs text-gray-500 text-center">
+              Drawing reference: {drawingState.imageCode}
             </div>
           )}
           
           {/* Nota de referencia */}
           <div className="mt-4 text-xs text-gray-500 text-center">
-          This drawing is included as a reference. For more details, please consult the complete technical documentation.
+            This drawing is included as a reference. For more details, please consult the complete technical documentation.
           </div>
         </div>
       </div>
 
-      {/* Estilos específicos para controlar las dimensiones de la imagen */}
+      {/* Mantenemos los estilos existentes */}
       <style jsx>{`
         .technical-drawing-container {
           width: 100%;

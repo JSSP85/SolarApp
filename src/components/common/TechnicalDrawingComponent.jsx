@@ -1,104 +1,100 @@
 // src/components/common/TechnicalDrawingComponent.jsx
-import React from 'react';
+import React, { useState, useEffect } from 'react';
+import { AlertTriangle } from 'lucide-react';
 import { useInspection } from '../../context/InspectionContext';
-import { FileText } from 'lucide-react';
+import { getComponentDrawing } from '../../utils/drawingService';
 
 const TechnicalDrawingComponent = () => {
   const { state } = useInspection();
-  const { componentCode, componentFamily, componentName } = state;
+  const { componentCode } = state;
   
-  // Function to get the appropriate image based on component details
-  const getDrawingImage = () => {
-    // Path to the image - FIXED: Correct path and extension
-    const basePath = "/images/drawings/torque-tube-technical.jpeg";
+  const [drawingState, setDrawingState] = useState({
+    loading: true,
+    error: false,
+    errorMessage: "",
+    src: "",
+    alt: ""
+  });
+
+  useEffect(() => {
+    if (!componentCode) {
+      setDrawingState({
+        loading: false,
+        error: true,
+        errorMessage: "No component selected",
+        src: "",
+        alt: ""
+      });
+      return;
+    }
+
+    setDrawingState(prev => ({ ...prev, loading: true }));
+
+    // Obtener información del dibujo
+    const drawingInfo = getComponentDrawing(componentCode);
     
-    if (componentFamily === 'TORQUE TUBES') {
-      if (componentCode === 'ttg45720') {
-        return {
-          src: basePath,
-          alt: "Technical drawing for Torque tube 140x100x3.5mm"
-        };
-      } else if (componentCode === 'ttg45721') {
-        return {
-          src: basePath, // Same image for this component
-          alt: "Technical drawing for Torque tube 140x100x4.0mm"
-        };
-      }
-    } else if (componentFamily === 'POSTS') {
-      return {
-        src: basePath, // Same image for this component
-        alt: "Technical drawing for Posts"
-      };
+    if (!drawingInfo.found) {
+      setDrawingState({
+        loading: false,
+        error: true,
+        errorMessage: drawingInfo.errorMessage,
+        src: "",
+        alt: ""
+      });
+      return;
     }
     
-    // Default image if no specific match
-    return {
-      src: basePath, // Same image as fallback
-      alt: `Technical drawing for ${componentName || componentCode || "component"}`
+    // Verificar si la imagen existe
+    const img = new Image();
+    img.onload = () => {
+      setDrawingState({
+        loading: false,
+        error: false,
+        errorMessage: "",
+        src: drawingInfo.src,
+        alt: drawingInfo.alt
+      });
     };
-  };
+    
+    img.onerror = () => {
+      setDrawingState({
+        loading: false,
+        error: true,
+        errorMessage: "Technical drawing file not found",
+        src: "",
+        alt: ""
+      });
+    };
+    
+    img.src = drawingInfo.src;
+  }, [componentCode]);
 
-  // Get the appropriate image
-  const drawing = getDrawingImage();
-  
   return (
     <div className="dashboard-card mb-4">
-      <div className="card-header" style={{ background: 'linear-gradient(to right, #4a6fa0, #6f8cb6)' }}>
-        <div className="flex justify-between items-center">
-          <h3 className="card-title text-white flex items-center">
-            <FileText size={18} className="mr-2" /> Technical Drawing
-          </h3>
-        </div>
+      <div className="card-header" style={{background: 'linear-gradient(to right, #5a67d8, #6875f5)'}}>
+        <h3 className="card-title text-white">Technical Drawing</h3>
       </div>
-      
       <div className="card-body">
-        <div className="text-center">
-          {componentName && (
-            <h4 className="font-medium text-gray-700 mb-2">
-              {componentName} - {componentCode}
-            </h4>
-          )}
-          
-          <div className="technical-drawing-container">
+        {drawingState.loading ? (
+          <div className="flex items-center justify-center h-64 bg-gray-100">
+            <div className="animate-spin h-8 w-8 border-4 border-blue-500 rounded-full border-t-transparent"></div>
+          </div>
+        ) : drawingState.error ? (
+          <div className="flex flex-col items-center justify-center h-64 bg-gray-50 text-gray-500 text-center p-4">
+            <AlertTriangle size={48} className="text-amber-500 mb-4" />
+            <p className="font-medium text-lg">{drawingState.errorMessage}</p>
+            <p className="mt-2 text-sm">Please check component information in the database.</p>
+          </div>
+        ) : (
+          <div className="flex items-center justify-center p-4">
             <img 
-              src={drawing.src}
-              alt={drawing.alt}
-              className="technical-drawing-image"
+              src={drawingState.src} 
+              alt={drawingState.alt} 
+              className="max-h-64 max-w-full object-contain" 
             />
           </div>
-        </div>
+        )}
       </div>
-      
-      {/* Custom styles for the technical drawing */}
-      <style jsx>{`
-        .technical-drawing-container {
-          width: 100%;
-          padding: 1rem;
-          background-color: #f8fafc;
-          border-radius: 0.5rem;
-          border: 1px solid #e2e8f0;
-          overflow: hidden;
-          box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
-          transition: all 0.3s ease;
-        }
-        
-        .technical-drawing-container:hover {
-          box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
-        }
-        
-        .technical-drawing-image {
-          width: 100%;
-          max-width: 800px;
-          height: auto;
-          display: block;
-          margin: 0 auto;
-          transition: transform 0.3s ease;
-        }
-        
-        .technical-drawing-container:hover .technical-drawing-image {
-          transform: scale(1.03);
-        }
-      `}</style>
     </div>
   );
 };

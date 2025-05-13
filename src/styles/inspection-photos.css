@@ -59,8 +59,8 @@
   }
   
   .inspection-photo-container {
-    height: 100mm !important; /* Usar mm en lugar de in */
-    max-height: 100mm !important;
+    height: 120mm !important; /* Usar mm en lugar de in */
+    max-height: 120mm !important;
     width: 100% !important;
     max-width: none !important;
     aspect-ratio: auto !important; /* Evitar que el aspect ratio interfiera */

@@ -127,12 +127,12 @@ const TechnicalDrawingComponent = () => {
           </div>
         ) : (
           <div className="technical-drawing-image-container">
-  <img 
-    src={drawingState.src} 
-    alt={drawingState.alt} 
-    className="technical-drawing-fixed-image-contain" 
-  />
-</div>
+            <img 
+              src={drawingState.src} 
+              alt={drawingState.alt} 
+              className="technical-drawing-fixed-image-contain" 
+            />
+          </div>
         )}
         
         {drawingState.imageCode && !drawingState.loading && !drawingState.error && (
@@ -141,8 +141,7 @@ const TechnicalDrawingComponent = () => {
           </div>
         )}
       </div>
-    </div>
-    {/* AÑADIR ESTOS ESTILOS */}
+
       <style jsx>{`
         .technical-drawing-image-container {
           width: 100%;
@@ -168,7 +167,7 @@ const TechnicalDrawingComponent = () => {
           cursor: zoom-out;
         }
       `}</style>
-      </div> 
+    </div>
   );
 }; 
 

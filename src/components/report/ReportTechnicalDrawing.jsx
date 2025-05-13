@@ -209,6 +209,7 @@ const ReportTechnicalDrawing = () => {
   }
 `}</style>
     </div>
+     </div>
   );
 }; 
 

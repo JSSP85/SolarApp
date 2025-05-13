@@ -1,6 +1,6 @@
 // src/components/common/TechnicalDrawingComponent.jsx
-import React, { useState, useEffect } from 'react';
-import { AlertTriangle } from 'lucide-react';
+import React, { useState, useEffect, useRef } from 'react';
+import { AlertTriangle, ZoomIn, ZoomOut, Maximize, RotateCcw } from 'lucide-react';
 import { useInspection } from '../../context/InspectionContext';
 import { getComponentDrawing } from '../../utils/drawingService';
 
@@ -16,6 +16,16 @@ const TechnicalDrawingComponent = () => {
     alt: "",
     imageCode: ""
   });
+
+  // Estados para el zoom y navegación
+  const [zoomLevel, setZoomLevel] = useState(1);
+  const [isDragging, setIsDragging] = useState(false);
+  const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
+  const [imagePosition, setImagePosition] = useState({ x: 0, y: 0 });
+  
+  // Referencias
+  const containerRef = useRef(null);
+  const imageRef = useRef(null);
 
   useEffect(() => {
     let isMounted = true;
@@ -109,6 +119,85 @@ const TechnicalDrawingComponent = () => {
     };
   }, [componentCode]);
 
+  // Manejar zoom
+  const handleZoom = (direction) => {
+    const zoomLevels = [1, 2, 3];
+    const currentIndex = zoomLevels.indexOf(zoomLevel);
+    
+    if (direction === 'in' && currentIndex < zoomLevels.length - 1) {
+      setZoomLevel(zoomLevels[currentIndex + 1]);
+    } else if (direction === 'out' && currentIndex > 0) {
+      setZoomLevel(zoomLevels[currentIndex - 1]);
+    }
+    
+    // Resetear posición cuando cambia el zoom
+    if (direction === 'reset') {
+      setZoomLevel(1);
+      setImagePosition({ x: 0, y: 0 });
+    }
+  };
+
+  // Manejar inicio del arrastre
+  const handleMouseDown = (e) => {
+    if (zoomLevel > 1) {
+      setIsDragging(true);
+      setDragStart({
+        x: e.clientX - imagePosition.x,
+        y: e.clientY - imagePosition.y
+      });
+    }
+  };
+
+  // Manejar movimiento del mouse
+  const handleMouseMove = (e) => {
+    if (isDragging && zoomLevel > 1) {
+      e.preventDefault();
+      
+      const newPosition = {
+        x: e.clientX - dragStart.x,
+        y: e.clientY - dragStart.y
+      };
+      
+      // Limitar el movimiento para que la imagen no se salga del contenedor
+      if (containerRef.current && imageRef.current) {
+        const containerRect = containerRef.current.getBoundingClientRect();
+        const imageRect = imageRef.current.getBoundingClientRect();
+        
+        const maxX = (imageRect.width * zoomLevel - containerRect.width) / 2;
+        const maxY = (imageRect.height * zoomLevel - containerRect.height) / 2;
+        
+        newPosition.x = Math.max(-maxX, Math.min(maxX, newPosition.x));
+        newPosition.y = Math.max(-maxY, Math.min(maxY, newPosition.y));
+      }
+      
+      setImagePosition(newPosition);
+    }
+  };
+
+  // Manejar fin del arrastre
+  const handleMouseUp = () => {
+    setIsDragging(false);
+  };
+
+  // Event listeners para el mouse
+  useEffect(() => {
+    if (isDragging) {
+      document.addEventListener('mousemove', handleMouseMove);
+      document.addEventListener('mouseup', handleMouseUp);
+      
+      return () => {
+        document.removeEventListener('mousemove', handleMouseMove);
+        document.removeEventListener('mouseup', handleMouseUp);
+      };
+    }
+  }, [isDragging, dragStart, imagePosition, zoomLevel]);
+
+  // Resetear zoom cuando cambia la imagen
+  useEffect(() => {
+    setZoomLevel(1);
+    setImagePosition({ x: 0, y: 0 });
+  }, [drawingState.src]);
+
   return (
     <div className="dashboard-card mb-4">
       <div className="card-header" style={{background: 'linear-gradient(to right, #5a67d8, #6875f5)'}}>
@@ -126,12 +215,56 @@ const TechnicalDrawingComponent = () => {
             <p className="mt-2 text-sm">Please check component information in the database.</p>
           </div>
         ) : (
-          <div className="technical-drawing-image-container">
-            <img 
-              src={drawingState.src} 
-              alt={drawingState.alt} 
-              className="technical-drawing-fixed-image-contain" 
-            />
+          <div className="technical-drawing-viewer">
+            {/* Controles de zoom */}
+            <div className="zoom-controls">
+              <button 
+                onClick={() => handleZoom('out')}
+                disabled={zoomLevel <= 1}
+                className="zoom-btn"
+                title="Zoom Out"
+              >
+                <ZoomOut size={20} />
+              </button>
+              <span className="zoom-level">{zoomLevel}x</span>
+              <button 
+                onClick={() => handleZoom('in')}
+                disabled={zoomLevel >= 3}
+                className="zoom-btn"
+                title="Zoom In"
+              >
+                <ZoomIn size={20} />
+              </button>
+              <button 
+                onClick={() => handleZoom('reset')}
+                className="zoom-btn"
+                title="Reset Zoom"
+              >
+                <RotateCcw size={20} />
+              </button>
+            </div>
+            
+            {/* Contenedor de la imagen */}
+            <div 
+              ref={containerRef}
+              className="technical-drawing-container"
+              style={{
+                cursor: zoomLevel > 1 ? (isDragging ? 'grabbing' : 'grab') : 'zoom-in'
+              }}
+            >
+              <img 
+                ref={imageRef}
+                src={drawingState.src} 
+                alt={drawingState.alt} 
+                className="technical-drawing-image"
+                style={{
+                  transform: `scale(${zoomLevel}) translate(${imagePosition.x}px, ${imagePosition.y}px)`,
+                  transformOrigin: 'center center'
+                }}
+                onMouseDown={handleMouseDown}
+                draggable={false}
+              />
+            </div>
           </div>
         )}
         
@@ -143,28 +276,92 @@ const TechnicalDrawingComponent = () => {
       </div>
 
       <style jsx>{`
-        .technical-drawing-image-container {
+        .technical-drawing-viewer {
+          position: relative;
           width: 100%;
-          height: 300px;
+        }
+        
+        .zoom-controls {
           display: flex;
           align-items: center;
           justify-content: center;
-          overflow: hidden;
+          gap: 8px;
+          margin-bottom: 12px;
+          padding: 8px;
+          background-color: #f8f9fa;
           border-radius: 8px;
-          position: relative;
-          cursor: zoom-in;
         }
         
-        .technical-drawing-fixed-image-contain {
+        .zoom-btn {
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          width: 40px;
+          height: 40px;
+          border: 1px solid #d1d5db;
+          border-radius: 6px;
+          background-color: white;
+          cursor: pointer;
+          transition: all 0.2s;
+        }
+        
+        .zoom-btn:hover:not(:disabled) {
+          background-color: #f3f4f6;
+          border-color: #9ca3af;
+        }
+        
+        .zoom-btn:disabled {
+          opacity: 0.5;
+          cursor: not-allowed;
+        }
+        
+        .zoom-level {
+          font-weight: 600;
+          color: #374151;
+          min-width: 30px;
+          text-align: center;
+        }
+        
+        .technical-drawing-container {
           width: 100%;
-          height: 100%;
-          object-fit: contain;
-          transition: transform 0.3s ease;
+          height: 400px;
+          overflow: hidden;
+          border: 2px solid #e5e7eb;
+          border-radius: 8px;
+          background-color: #f8f9fa;
+          position: relative;
+          display: flex;
+          align-items: center;
+          justify-content: center;
         }
         
-        .technical-drawing-image-container:hover .technical-drawing-fixed-image-contain {
-          transform: scale(3);
-          cursor: zoom-out;
+        .technical-drawing-image {
+          max-width: 100%;
+          max-height: 100%;
+          transition: transform 0.2s ease-out;
+          user-select: none;
+          -webkit-user-drag: none;
+        }
+        
+        /* Instrucciones de uso */
+        .technical-drawing-container::after {
+          content: attr(data-instructions);
+          position: absolute;
+          bottom: 10px;
+          right: 10px;
+          background-color: rgba(0, 0, 0, 0.7);
+          color: white;
+          padding: 4px 8px;
+          border-radius: 4px;
+          font-size: 12px;
+          opacity: 0;
+          pointer-events: none;
+          transition: opacity 0.3s;
+        }
+        
+        .technical-drawing-container:hover::after {
+          opacity: ${zoomLevel > 1 ? 1 : 0};
+          content: "${zoomLevel > 1 ? 'Click and drag to navigate' : ''}";
         }
       `}</style>
     </div>

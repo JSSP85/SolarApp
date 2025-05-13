@@ -32,7 +32,7 @@ const ReportTechnicalDrawing = () => {
             imageCode: ""
           });
         }
-        return;
+        return; 
       }
 
       if (isMounted) {

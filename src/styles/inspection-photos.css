@@ -1,4 +1,4 @@
-/* src/styles/inspection-photos.css - versión mejorada */
+/* src/styles/inspection-photos.css - versión mejorada con dimensiones uniformes */
 .inspection-photo-grid {
   display: grid !important;
   grid-template-columns: repeat(2, 1fr) !important;
@@ -17,8 +17,7 @@
 .inspection-photo-container {
   position: relative !important;
   width: 100% !important;
-  /* Cambiamos el enfoque: en lugar de usar padding-bottom fijo */
-  height: 180px !important; /* Altura fija en lugar de padding-bottom */
+  height: 180px !important; /* Altura fija para todas las imágenes */
   background-color: #f8f9fa !important;
   border: 1px solid #e2e8f0 !important;
   border-radius: 4px !important;
@@ -29,14 +28,9 @@
   position: absolute !important;
   top: 0 !important;
   left: 0 !important;
-  right: 0 !important;
-  bottom: 0 !important;
-  margin: auto !important; /* Centrar la imagen */
-  max-width: 100% !important;
-  max-height: 100% !important;
-  width: auto !important; /* Importante: no forzar ancho */
-  height: auto !important; /* Importante: no forzar altura */
-  object-fit: contain !important;
+  width: 100% !important; /* Forzar anchura completa */
+  height: 100% !important; /* Forzar altura completa */
+  object-fit: cover !important; /* Cubrir completamente el contenedor */
 }
 
 .inspection-photo-caption {
@@ -65,12 +59,31 @@
   }
   
   .inspection-photo-img {
-    width: auto !important;
-    height: auto !important;
-    max-width: 100% !important;
-    max-height: 95% !important; /* Dejar espacio para el caption */
-    object-fit: contain !important;
-    position: relative !important;
-    display: block !important;
+    width: 100% !important;
+    height: 100% !important;
+    object-fit: cover !important; /* Mantener cover para impresión */
   }
+}
+
+/* Variante alternativa para mantener proporciones (opcional) */
+.inspection-photo-img-contain {
+  position: absolute !important;
+  top: 50% !important;
+  left: 50% !important;
+  transform: translate(-50%, -50%) !important;
+  max-width: 100% !important;
+  max-height: 100% !important;
+  width: auto !important;
+  height: auto !important;
+  object-fit: contain !important;
+}
+
+/* Si prefieres que las imágenes pequeñas se estiren para llenar el contenedor */
+.inspection-photo-img-stretch {
+  position: absolute !important;
+  top: 0 !important;
+  left: 0 !important;
+  width: 100% !important;
+  height: 100% !important;
+  object-fit: fill !important; /* Estirar para llenar completamente */
 }

@@ -126,13 +126,13 @@ const TechnicalDrawingComponent = () => {
             <p className="mt-2 text-sm">Please check component information in the database.</p>
           </div>
         ) : (
-          <div className="flex items-center justify-center p-4">
-            <img 
-              src={drawingState.src} 
-              alt={drawingState.alt} 
-              className="max-h-64 max-w-full object-contain" 
-            />
-          </div>
+          <div className="technical-drawing-image-container">
+  <img 
+    src={drawingState.src} 
+    alt={drawingState.alt} 
+    className="technical-drawing-fixed-image-contain" 
+  />
+</div>
         )}
         
         {drawingState.imageCode && !drawingState.loading && !drawingState.error && (
@@ -142,6 +142,33 @@ const TechnicalDrawingComponent = () => {
         )}
       </div>
     </div>
+    {/* AÑADIR ESTOS ESTILOS */}
+      <style jsx>{`
+        .technical-drawing-image-container {
+          width: 100%;
+          height: 300px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          overflow: hidden;
+          border-radius: 8px;
+          position: relative;
+          cursor: zoom-in;
+        }
+        
+        .technical-drawing-fixed-image-contain {
+          width: 100%;
+          height: 100%;
+          object-fit: contain;
+          transition: transform 0.3s ease;
+        }
+        
+        .technical-drawing-image-container:hover .technical-drawing-fixed-image-contain {
+          transform: scale(3);
+          cursor: zoom-out;
+        }
+      `}</style>
+      </div> 
   );
 };
 

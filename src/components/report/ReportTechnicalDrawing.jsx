@@ -141,7 +141,7 @@ const ReportTechnicalDrawing = () => {
               <img 
                 src={drawingState.src} 
                 alt={drawingState.alt} 
-                className="technical-drawing-image"
+                className="technical-drawing-fixed-report-contain"
               />
             )}
           </div>
@@ -164,45 +164,50 @@ const ReportTechnicalDrawing = () => {
       <style jsx>{`
         .technical-drawing-container {
           width: 100%;
-          height: 300px;
-          padding: 1rem;
-          background-color: #f8fafc;
-          border-radius: 0.5rem;
-          border: 1px solid #e2e8f0;
-          overflow: hidden;
-          margin: 0 auto;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
-        }
-        
-        .technical-drawing-image {
-          max-height: 280px;
-          max-width: 100%;
-          object-fit: contain;
-          display: block;
-          transition: transform 0.3s ease;
-        }
-        
-        .technical-drawing-container:hover .technical-drawing-image {
-          transform: scale(1.02);
-        }
-        
-        /* Ajustes para impresión */
-        @media print {
-          .technical-drawing-container {
-            height: auto;
-            max-height: 300px;
-            page-break-inside: avoid;
-            box-shadow: none;
-          }
-          
-          .technical-drawing-image {
-            max-height: 280px;
-          }
-        }
-      `}</style>
+    height: 400px;
+    padding: 1rem;
+    background-color: #f8fafc;
+    border-radius: 0.5rem;
+    border: 1px solid #e2e8f0;
+    overflow: hidden;
+    margin: 0 auto;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+    position: relative;
+    cursor: zoom-in;
+  }
+  
+  .technical-drawing-fixed-report-contain {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+    display: block;
+    transition: transform 0.3s ease;
+  }
+  
+  .technical-drawing-container:hover .technical-drawing-fixed-report-contain {
+    transform: scale(3.2);
+    cursor: zoom-out;
+  }
+  
+  /* Ajustes para impresión */
+  @media print {
+    .technical-drawing-container {
+      height: auto;
+      max-height: 400px;
+      page-break-inside: avoid;
+      box-shadow: none;
+      cursor: default;
+    }
+    
+    .technical-drawing-fixed-report-contain {
+      transform: none !important;
+      max-height: 380px;
+    }
+  }
+`}</style>
     </div>
   );
 };

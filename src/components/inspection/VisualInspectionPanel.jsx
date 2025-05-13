@@ -93,7 +93,7 @@ const VisualInspectionPanel = () => {
         }
         
         .inspection-photo-container {
-          max-height: 2.5in; /* Limitar altura en impresión */
+          max-height: 3.5in; /* Limitar altura en impresión */
         }
         
         .inspection-photo-img {

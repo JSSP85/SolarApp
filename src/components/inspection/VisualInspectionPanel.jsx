@@ -1,8 +1,6 @@
 // src/components/inspection/VisualInspectionPanel.jsx
 import React, { useState, useRef, useEffect } from 'react';
 import { Camera, Upload, X, Check, ImagePlus, Info } from 'lucide-react';
-import { useInspection } from '../../context/InspectionContext';
-import '../../styles/inspection-photos.css';
 
 // Configuración más agresiva para imágenes más ligeras
 const MAX_IMAGE_WIDTH = 500; // Reducido de 800
@@ -28,7 +26,91 @@ const VisualInspectionPanel = () => {
   // Estado para mostrar estadísticas de procesamiento
   const [processStats, setProcessStats] = useState(null);
   
-   
+    // Efecto para cargar el estilo del componente en el head
+  useEffect(() => {
+    // Crear estilos específicos para este componente que también afectarán al PDF
+    const styleEl = document.createElement('style');
+    styleEl.id = 'visual-inspection-styles';
+    styleEl.innerHTML = `
+      /* Estilos para controlar el tamaño de las imágenes - importante para el PDF */
+      .inspection-photo-grid {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 8px;
+        width: 100%;
+      }
+      
+      .inspection-photo-item {
+        break-inside: avoid;
+        page-break-inside: avoid;
+        width: 100%;
+        max-width: 100%;
+      }
+      
+      .inspection-photo-container {
+        position: relative;
+        width: 100%;
+        height: 0;
+        padding-bottom: 75%; /* Mantiene el aspecto 4:3 */
+        background-color: #f8f9fa;
+        border: 1px solid #e2e8f0;
+        border-radius: 4px;
+        overflow: hidden;
+      }
+      
+      .inspection-photo-img {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        object-fit: contain; /* contain en lugar de cover para no cortar la imagen */
+        max-width: 100%;
+        max-height: 100%;
+      }
+      
+      .inspection-photo-caption {
+        position: absolute;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        background-color: rgba(0, 0, 0, 0.7);
+        color: white;
+        font-size: 10px;
+        padding: 2px 4px;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+      
+      /* Estilos para impresión */
+      @media print {
+        .inspection-photo-grid {
+          grid-template-columns: repeat(2, 1fr);
+          page-break-inside: avoid;
+        }
+        
+        .inspection-photo-container {
+          max-height: 2.5in; /* Limitar altura en impresión */
+        }
+        
+        .inspection-photo-img {
+          max-width: 100% !important;
+          max-height: 100% !important;
+        }
+      }
+    `;
+    document.head.appendChild(styleEl);
+    
+    // Limpiar al desmontar
+    return () => {
+      const existingStyle = document.getElementById('visual-inspection-styles');
+      if (existingStyle) {
+        document.head.removeChild(existingStyle);
+      }
+    };
+  }, []);
+  
   // Manejar cambio en conformidad visual
   const handleVisualConformityChange = (value) => {
     dispatch({

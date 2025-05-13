@@ -328,6 +328,20 @@ const SetupForm = () => {
             </div>
             
             <div className="card-body">
+              {/* NUEVO CAMPO: Client */}
+              <div className="form-group">
+                <label className="form-label">
+                  Client
+                </label>
+                <input
+                  type="text"
+                  className="form-control"
+                  placeholder="Enter client name"
+                  value={state.client || ''}
+                  onChange={(e) => handleInputChange('client', e.target.value)}
+                />
+              </div>
+              
               {/* Project */}
               <div className="form-group">
                 <label className="form-label">

@@ -55,10 +55,16 @@
   .inspection-photo-grid {
     grid-template-columns: repeat(2, 1fr) !important;
     page-break-inside: avoid !important;
+    gap: 5mm !important; /* Usar unidades mm para impresión */
   }
   
   .inspection-photo-container {
-    height: 3in !important;
+    height: 60mm !important; /* Usar mm en lugar de in */
+    max-height: 60mm !important;
+    width: 100% !important;
+    max-width: none !important;
+    aspect-ratio: auto !important; /* Evitar que el aspect ratio interfiera */
+    box-sizing: border-box !important;
   }
   
   .inspection-photo-img {
@@ -67,5 +73,11 @@
     width: auto !important;
     height: auto !important;
     object-fit: contain !important;
+  }
+  
+  /* Evitar que el contenido se divida entre páginas */
+  .inspection-photo-item {
+    page-break-inside: avoid !important;
+    break-inside: avoid !important;
   }
 }

@@ -170,6 +170,6 @@ const TechnicalDrawingComponent = () => {
       `}</style>
       </div> 
   );
-};
+}; 
 
 export default TechnicalDrawingComponent;

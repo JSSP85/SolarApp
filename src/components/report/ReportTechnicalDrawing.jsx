@@ -210,6 +210,6 @@ const ReportTechnicalDrawing = () => {
 `}</style>
     </div>
   );
-};
+}; 
 
 export default ReportTechnicalDrawing;

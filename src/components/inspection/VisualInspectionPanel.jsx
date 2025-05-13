@@ -2,6 +2,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Camera, Upload, X, Check, ImagePlus, Info } from 'lucide-react';
 import { useInspection } from '../../context/InspectionContext';
+import '../../styles/inspection-photos.css';
 
 // Configuración más agresiva para imágenes más ligeras
 const MAX_IMAGE_WIDTH = 500; // Reducido de 800

@@ -1,6 +1,6 @@
 // src/components/report/ReportViewDashboard.jsx
 import React from 'react';
-import { Layers, BarChart2, CheckCircle, MapPin, Info } from 'lucide-react';
+import { Layers, BarChart2, CheckCircle, MapPin, Info, Settings } from 'lucide-react'; // Agregado Settings
 import { useInspection } from '../../context/InspectionContext';
 import { getSampleCount, getSampleLetter } from '../../utils/samplePlanHelper';
 import { formatDate } from '../../utils/dateFormatter';
@@ -11,8 +11,8 @@ import {
 } from 'recharts';
 import StaticMapReport from './StaticMapReport';
 import ReportTechnicalDrawing from './ReportTechnicalDrawing';
-import ReportExportOptions from './ReportExportOptions'; // Import the new component
-import '../../styles/inspection-photos.css'; // Importar el CSS global para fotos
+import ReportExportOptions from './ReportExportOptions';
+import '../../styles/inspection-photos.css';
 
 // Componente para los mini gráficos dimensionales con tamaño reducido
 const DimensionMiniChart = ({ dimension, measurements, index }) => {
@@ -50,7 +50,6 @@ const DimensionMiniChart = ({ dimension, measurements, index }) => {
   const yMax = maxAllowed + margin;
   
   // Generar paleta de colores basada en tendencias profesionales
-  // Usamos colores distintos para cada cota para fácil diferenciación
   const colorPalettes = [
     ['#4364D3', '#7698FA', '#C5D3FF'], // Azul profesional
     ['#219653', '#6FCF97', '#D5F2E3'], // Verde sofisticado
@@ -60,7 +59,7 @@ const DimensionMiniChart = ({ dimension, measurements, index }) => {
     ['#6B7280', '#9CA3AF', '#E5E7EB']  // Gris neutral
   ];
   
-  // Seleccionar paleta basada en el índice (repetir si hay más dimensiones que paletas)
+  // Seleccionar paleta basada en el índice
   const colorIndex = index % colorPalettes.length;
   const [primaryColor, secondaryColor, lightColor] = colorPalettes[colorIndex];
   
@@ -84,7 +83,6 @@ const DimensionMiniChart = ({ dimension, measurements, index }) => {
       </div>
       
       <div style={{ height: '80px', position: 'relative', background: 'rgba(255, 255, 255, 0.85)', borderRadius: '4px' }}>
-        {/* Añadir stats dentro del área del gráfico */}
         <div 
           style={{ 
             position: 'absolute', 
@@ -151,7 +149,6 @@ const DimensionMiniChart = ({ dimension, measurements, index }) => {
             />
             <CartesianGrid vertical={false} strokeDasharray="2 2" stroke="#F3F4F6" />
             
-            {/* Área para resaltar la zona de tolerancia */}
             <Area 
               type="monotone" 
               dataKey="value" 
@@ -160,7 +157,6 @@ const DimensionMiniChart = ({ dimension, measurements, index }) => {
               activeDot={false}
             />
             
-            {/* Línea de valor nominal */}
             <ReferenceLine 
               y={nominal} 
               stroke={primaryColor} 
@@ -168,7 +164,6 @@ const DimensionMiniChart = ({ dimension, measurements, index }) => {
               strokeWidth={1.5}
             />
             
-            {/* Líneas de tolerancia */}
             <ReferenceLine 
               y={minAllowed} 
               stroke="#E5E7EB" 
@@ -182,7 +177,6 @@ const DimensionMiniChart = ({ dimension, measurements, index }) => {
               strokeWidth={1}
             />
             
-            {/* Línea de valores medidos */}
             <Line 
               type="monotone" 
               dataKey="value" 
@@ -213,11 +207,9 @@ const DimensionMiniChart = ({ dimension, measurements, index }) => {
 
 // Componente para el gráfico de coating
 const CoatingChart = ({ measurements, requirements }) => {
-  // Preparar datos para el gráfico
   const prepareChartData = () => {
     if (!measurements) return [];
     
-    // Tomar solo valores válidos
     return measurements
       .filter(value => value !== '' && value !== null)
       .map((value, index) => ({
@@ -230,13 +222,11 @@ const CoatingChart = ({ measurements, requirements }) => {
   const chartData = prepareChartData();
   if (chartData.length === 0) return null;
   
-  // Calcular estadísticas
   const values = chartData.map(d => d.thickness);
   const mean = values.reduce((a, b) => a + b, 0) / values.length;
   const min = Math.min(...values);
   const max = Math.max(...values);
   
-  // Calcular límites para el gráfico
   const minLimit = Math.max(0, min - 5);
   const maxLimit = max + 5;
 
@@ -256,7 +246,6 @@ const CoatingChart = ({ measurements, requirements }) => {
       </div>
       
       <div style={{ height: '150px', position: 'relative', background: 'rgba(255, 255, 255, 0.85)', borderRadius: '4px' }}>
-        {/* Añadir stats dentro del área del gráfico */}
         <div 
           style={{ 
             position: 'absolute', 
@@ -325,7 +314,6 @@ const CoatingChart = ({ measurements, requirements }) => {
             />
             <CartesianGrid vertical={false} strokeDasharray="2 2" stroke="#F3F4F6" />
             
-            {/* Área para resaltar la zona válida */}
             <Area 
               type="monotone" 
               dataKey="thickness" 
@@ -334,7 +322,6 @@ const CoatingChart = ({ measurements, requirements }) => {
               activeDot={false}
             />
             
-            {/* Línea de requerimiento mínimo local */}
             {requirements?.local && (
               <ReferenceLine 
                 y={requirements.local} 
@@ -349,7 +336,6 @@ const CoatingChart = ({ measurements, requirements }) => {
               />
             )}
             
-            {/* Línea de media */}
             <ReferenceLine 
               y={mean} 
               stroke="#3B82F6" 
@@ -362,7 +348,6 @@ const CoatingChart = ({ measurements, requirements }) => {
               }}
             />
             
-            {/* Barras de mediciones */}
             <Bar 
               dataKey="thickness" 
               barSize={10} 
@@ -431,568 +416,566 @@ const ReportViewDashboard = () => {
   };
   
   return (
-  <div id="report-container"> {/* Add ID for the export functionality */}
-    <div className="flex justify-between items-center mb-4 no-print">
-      <p className="text-sm text-gray-500">Generated on {new Date().toLocaleDateString()}</p>
-      <ReportExportOptions 
-        reportData={state} 
-        reportContainerId="report-container"
-      />
-    </div>
-    
-    {/* PÁGINA 1: INFORMACIÓN GENERAL */}
-    <div className="pdf-page-section" data-page="1">
-      {/* INSPECTION OVERVIEW CON LAYOUT SIMILAR AL SETUP */}
-      <div className="dashboard-card mb-4">
-        <div className="card-header" style={{background: 'linear-gradient(to right, #667eea, #764ba2)'}}>
-          <div className="flex justify-between items-center">
-            <h3 className="card-title text-white">Inspection Overview</h3>
-            <div>
-              {renderStatusBadge(inspectionStatus)}
+    <div id="report-container">
+      <div className="flex justify-between items-center mb-4 no-print">
+        <p className="text-sm text-gray-500">Generated on {new Date().toLocaleDateString()}</p>
+        <ReportExportOptions 
+          reportData={state} 
+          reportContainerId="report-container"
+        />
+      </div>
+      
+      {/* PÁGINA 1: INFORMACIÓN GENERAL */}
+      <div className="pdf-page-section" data-page="1">
+        <div className="dashboard-card mb-4">
+          <div className="card-header" style={{background: 'linear-gradient(to right, #667eea, #764ba2)'}}>
+            <div className="flex justify-between items-center">
+              <h3 className="card-title text-white">Inspection Overview</h3>
+              <div>
+                {renderStatusBadge(inspectionStatus)}
+              </div>
             </div>
           </div>
-        </div>
-        
-        <div className="card-body">
-          {/* Two-column container similar al Setup */}
-          <div className="cards-grid-2">
-            {/* LEFT COLUMN: Component Information */}
-            <div className="dashboard-card">
-              <div className="card-header" style={{background: 'linear-gradient(to right, #5a67d8, #6875f5)'}}>
-                <h3 className="card-title text-white">
-                  Component Information
-                </h3>
-              </div>
-              
-              <div className="card-body">
-                <div className="grid gap-4">
-                  <div className="report-info-item">
-                    <span className="report-info-label">Project Name</span>
-                    <span className="report-info-value">{projectName || "NEPI"}</span>
-                  </div>
-                  
-                  <div className="report-info-item">
-                    <span className="report-info-label">Component Family</span>
-                    <span className="report-info-value">{componentFamily || "TORQUE TUBES"}</span>
-                  </div>
-                  
-                  <div className="report-info-item">
-                    <span className="report-info-label">Component Code</span>
-                    <span className="report-info-value">{componentCode || "ttg45720"}</span>
-                  </div>
-                  
-                  <div className="report-info-item">
-                    <span className="report-info-label">Component Name</span>
-                    <span className="report-info-value">{componentName || "Torque tube 140x100x3.5mm"}</span>
-                  </div>
-                  
-                  <div className="report-info-item">
-                    <span className="report-info-label">Surface Protection</span>
-                    <span className="report-info-value">{surfaceProtection || "Z275 - According to EN 10346:2015"}</span>
-                  </div>
-                  
-                  {surfaceProtection === 'ISO1461' && (
+          
+          <div className="card-body">
+            <div className="cards-grid-2">
+              {/* LEFT COLUMN: Component Information */}
+              <div className="dashboard-card">
+                <div className="card-header" style={{background: 'linear-gradient(to right, #5a67d8, #6875f5)'}}>
+                  <h3 className="card-title text-white">
+                    Component Information
+                  </h3>
+                </div>
+                
+                <div className="card-body">
+                  <div className="grid gap-4">
                     <div className="report-info-item">
-                      <span className="report-info-label">Material Thickness</span>
-                      <span className="report-info-value">{thickness || "2.0"} mm</span>
+                      <span className="report-info-label">Project Name</span>
+                      <span className="report-info-value">{projectName || "NEPI"}</span>
                     </div>
-                  )}
-                  
-                  {surfaceProtection === 'special coating' && (
+                    
                     <div className="report-info-item">
-                      <span className="report-info-label">Special Coating Value</span>
-                      <span className="report-info-value">{specialCoating || "45"} µm</span>
+                      <span className="report-info-label">Component Family</span>
+                      <span className="report-info-value">{componentFamily || "TORQUE TUBES"}</span>
                     </div>
-                  )}
-                  
-                  <div className="report-info-item">
-                    <span className="report-info-label">Batch Quantity</span>
-                    <span className="report-info-value">{batchQuantity || "280"}</span>
-                  </div>
-                  
-                  <div className="report-info-item">
-                    <span className="report-info-label">Sampling Info</span>
-                    <span className="report-info-value">{sampleInfo || "Letter: G - Sample: 3"}</span>
+                    
+                    <div className="report-info-item">
+                      <span className="report-info-label">Component Code</span>
+                      <span className="report-info-value">{componentCode || "ttg45720"}</span>
+                    </div>
+                    
+                    <div className="report-info-item">
+                      <span className="report-info-label">Component Name</span>
+                      <span className="report-info-value">{componentName || "Torque tube 140x100x3.5mm"}</span>
+                    </div>
+                    
+                    <div className="report-info-item">
+                      <span className="report-info-label">Surface Protection</span>
+                      <span className="report-info-value">{surfaceProtection || "Z275 - According to EN 10346:2015"}</span>
+                    </div>
+                    
+                    {surfaceProtection === 'ISO1461' && (
+                      <div className="report-info-item">
+                        <span className="report-info-label">Material Thickness</span>
+                        <span className="report-info-value">{thickness || "2.0"} mm</span>
+                      </div>
+                    )}
+                    
+                    {surfaceProtection === 'special coating' && (
+                      <div className="report-info-item">
+                        <span className="report-info-label">Special Coating Value</span>
+                        <span className="report-info-value">{specialCoating || "45"} µm</span>
+                      </div>
+                    )}
+                    
+                    <div className="report-info-item">
+                      <span className="report-info-label">Batch Quantity</span>
+                      <span className="report-info-value">{batchQuantity || "280"}</span>
+                    </div>
+                    
+                    <div className="report-info-item">
+                      <span className="report-info-label">Sampling Info</span>
+                      <span className="report-info-value">{sampleInfo || "Letter: G - Sample: 3"}</span>
+                    </div>
                   </div>
                 </div>
               </div>
-            </div>
-            
-            {/* RIGHT COLUMN: Inspection Information */}
-            <div className="dashboard-card">
-              <div className="card-header" style={{background: 'linear-gradient(to right, #667eea, #764ba2)'}}>
-                <h3 className="card-title text-white">
-                  Inspection Information
-                </h3>
-              </div>
               
-              <div className="card-body">
-                <div className="grid gap-4">
-                  <div className="report-info-item">
-                    <span className="report-info-label">Inspector Name</span>
-                    <span className="report-info-value">{inspector || "John Smith"}</span>
-                  </div>
-                  
-                  <div className="report-info-item">
-                    <span className="report-info-label">Inspection Date</span>
-                    <span className="report-info-value">
-                      {inspectionDate ? formatDate(inspectionDate) : new Date().toLocaleDateString()}
-                    </span>
-                  </div>
-                  
-                  <div className="report-info-item">
-                    <span className="report-info-label">Inspection Location</span>
-                    <span className="report-info-value">
-                      {inspectionCity && inspectionCountry ? `${inspectionCity}, ${inspectionCountry}` : "Madrid, Spain"}
-                    </span>
-                  </div>
-                  
-                  <div className="report-info-item">
-                    <span className="report-info-label">Site Name</span>
-                    <span className="report-info-value">{inspectionSite || "Factory 3"}</span>
-                  </div>
-                  
-                  <div className="report-info-item">
-                    <span className="report-info-label">Address</span>
-                    <span className="report-info-value">{inspectionAddress || "Calle Mayor 123, Madrid"}</span>
-                  </div>
-                  
-                  <div className="report-info-item">
-                    <span className="report-info-label">Final Result</span>
-                    <span className="report-info-value">
-                      {renderStatusBadge(inspectionStatus)}
-                      <span className="ml-2 text-sm text-gray-500">
-                        Non-Conformities: <span className={getTotalNonConformities() > 0 ? "text-red-600 font-bold" : ""}>
-                          {getTotalNonConformities()}
+              {/* RIGHT COLUMN: Inspection Information */}
+              <div className="dashboard-card">
+                <div className="card-header" style={{background: 'linear-gradient(to right, #667eea, #764ba2)'}}>
+                  <h3 className="card-title text-white">
+                    Inspection Information
+                  </h3>
+                </div>
+                
+                <div className="card-body">
+                  <div className="grid gap-4">
+                    <div className="report-info-item">
+                      <span className="report-info-label">Inspector Name</span>
+                      <span className="report-info-value">{inspector || "John Smith"}</span>
+                    </div>
+                    
+                    <div className="report-info-item">
+                      <span className="report-info-label">Inspection Date</span>
+                      <span className="report-info-value">
+                        {inspectionDate ? formatDate(inspectionDate) : new Date().toLocaleDateString()}
+                      </span>
+                    </div>
+                    
+                    <div className="report-info-item">
+                      <span className="report-info-label">Inspection Location</span>
+                      <span className="report-info-value">
+                        {inspectionCity && inspectionCountry ? `${inspectionCity}, ${inspectionCountry}` : "Madrid, Spain"}
+                      </span>
+                    </div>
+                    
+                    <div className="report-info-item">
+                      <span className="report-info-label">Site Name</span>
+                      <span className="report-info-value">{inspectionSite || "Factory 3"}</span>
+                    </div>
+                    
+                    <div className="report-info-item">
+                      <span className="report-info-label">Address</span>
+                      <span className="report-info-value">{inspectionAddress || "Calle Mayor 123, Madrid"}</span>
+                    </div>
+                    
+                    <div className="report-info-item">
+                      <span className="report-info-label">Final Result</span>
+                      <span className="report-info-value">
+                        {renderStatusBadge(inspectionStatus)}
+                        <span className="ml-2 text-sm text-gray-500">
+                          Non-Conformities: <span className={getTotalNonConformities() > 0 ? "text-red-600 font-bold" : ""}>
+                            {getTotalNonConformities()}
+                          </span>
                         </span>
                       </span>
-                    </span>
-                  </div>
-                  
-                  {/* Mapa estático */}
-                  <div>
-                    <span className="report-info-label">Location Map</span>
-                    <StaticMapReport coords={mapCoords} />
+                    </div>
+                    
+                    {/* Mapa estático */}
+                    <div>
+                      <span className="report-info-label">Location Map</span>
+                      <StaticMapReport coords={mapCoords} />
+                    </div>
                   </div>
                 </div>
               </div>
             </div>
           </div>
         </div>
-      </div>
-      
-      {/* Equipment Section para la primera página */}
-      <div className="report-section">
-        <h3 className="report-section-title" style={{ color: '#3D4A5C', background: 'rgba(249, 250, 251, 0.8)', padding: '0.5rem', borderRadius: '0.25rem' }}>
-          <Settings size={18} style={{ marginRight: '0.5rem' }} /> Measurement Equipment
-        </h3>
-        <div className="dashboard-card">
-          <div className="card-body">
-            {measurementEquipment && measurementEquipment.length > 0 ? (
-              <div className="space-y-1">
-                {measurementEquipment.map((equip, index) => (
-                  <p key={index}>
-                    <span className="font-medium">Tool {index + 1}:</span> {equip.toolType || "Coating Meter"} - {equip.toolId || `CM-${789 + index}`}
-                  </p>
-                ))}
-              </div>
-            ) : (
-              <p>No measurement equipment recorded.</p>
-            )}
-          </div>
-        </div>
-      </div>
-    </div>
-
-    {/* PÁGINA 2: DIBUJO TÉCNICO Y MEDICIONES DIMENSIONALES */}
-    <div className="pdf-page-section" data-page="2">
-      {/* Utilizamos el componente especializado ReportTechnicalDrawing */}
-      <ReportTechnicalDrawing />
-      
-      <div className="report-section">
-        <h3 className="report-section-title" style={{ color: '#3D4A5C', background: 'rgba(249, 250, 251, 0.8)', padding: '0.5rem', borderRadius: '0.25rem' }}>
-          <Layers size={18} style={{ marginRight: '0.5rem' }} /> Dimensional Measurements
-        </h3>
         
-        {dimensions && dimensions.length > 0 ? (
-          <>
-            <div className="dashboard-card">
-              <div className="card-body p-0">
-                <div>
-                  <table className="data-table w-full" style={{ fontSize: '0.75rem' }}>
-                    <thead>
-                      <tr>
-                        <th className="text-center">Sample</th>
-                        {dimensions.map((dim) => (
-                          <th key={dim.code} className="text-center">
-                            <div>{dim.code}: {dim.description}</div>
-                            <div className="text-xs">
-                              {dim.nominal} mm ({dim.tolerancePlus > 0 ? '+' : ''}{dim.tolerancePlus}, {dim.toleranceMinus > 0 ? '+' : ''}{dim.toleranceMinus})
-                            </div>
-                          </th>
-                        ))}
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {Array.from({ length: getSampleCount(sampleInfo) || 3 }).map((_, sampleIndex) => (
-                        <tr key={sampleIndex}>
-                          <td className="font-medium text-center">Sample {sampleIndex + 1}</td>
-                          {dimensions.map((dim) => {
-                            const value = dimensionMeasurements?.[dim.code]?.[sampleIndex] || "-";
-                            const isValid = value !== "-" && (
-                              parseFloat(value) >= (dim.nominal - dim.toleranceMinus) &&
-                              parseFloat(value) <= (dim.nominal + dim.tolerancePlus)
-                            );
-                            
-                            return (
-                              <td 
-                                key={dim.code} 
-                                className={`text-center ${value !== "-" && !isValid ? 'text-red-600 font-medium bg-red-50' : ''}`}
-                              >
-                                {value}
-                              </td>
-                            );
-                          })}
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              </div>
-            </div>
-            
-            {/* Mini Gráficos Dimensionales - MEJORADOS */}
-            <div className="mt-4">
-              <h4 className="text-sm font-semibold mb-2 text-gray-500">Dimensional Analysis Charts</h4>
-              <div style={{
-                display: 'grid',
-                gridTemplateColumns: 'repeat(2, 1fr)',
-                gap: '10px',
-                width: '100%'
-              }}>
-                {dimensions.map((dim, index) => (
-                  <div key={dim.code} style={{width: '100%'}}>
-                    <DimensionMiniChart 
-                      dimension={dim} 
-                      measurements={dimensionMeasurements?.[dim.code]} 
-                      index={index}
-                    />
-                  </div>
-                ))}
-              </div>
-            </div>
-          </>
-        ) : (
+        {/* Equipment Section para la primera página */}
+        <div className="report-section">
+          <h3 className="report-section-title" style={{ color: '#3D4A5C', background: 'rgba(249, 250, 251, 0.8)', padding: '0.5rem', borderRadius: '0.25rem' }}>
+            <Settings size={18} style={{ marginRight: '0.5rem' }} /> Measurement Equipment
+          </h3>
           <div className="dashboard-card">
-            <div className="card-body text-center text-gray-500">
-              No dimensional data available.
+            <div className="card-body">
+              {measurementEquipment && measurementEquipment.length > 0 ? (
+                <div className="space-y-1">
+                  {measurementEquipment.map((equip, index) => (
+                    <p key={index}>
+                      <span className="font-medium">Tool {index + 1}:</span> {equip.toolType || "Coating Meter"} - {equip.toolId || `CM-${789 + index}`}
+                    </p>
+                  ))}
+                </div>
+              ) : (
+                <p>No measurement equipment recorded.</p>
+              )}
             </div>
-          </div>
-        )}
-      </div>
-    </div>
-
-    {/* PÁGINA 3: COATING Y INSPECCIÓN VISUAL */}
-    <div className="pdf-page-section" data-page="3">
-      <div className="report-section">
-        <h3 className="report-section-title" style={{ color: '#3D4A5C', background: 'rgba(249, 250, 251, 0.8)', padding: '0.5rem', borderRadius: '0.25rem' }}>
-          <BarChart2 size={18} style={{ marginRight: '0.5rem' }} /> Coating Measurements
-        </h3>
-        <div className="dashboard-card">
-          <div className="card-body">
-            {/* Tabla de recubrimiento */}
-            <table className="data-table mb-4">
-              <thead>
-                <tr>
-                  <th>Type</th>
-                  <th>Required</th>
-                  <th>Measured</th>
-                  <th>Status</th>
-                </tr>
-              </thead>
-              <tbody>
-                <tr>
-                  <td className="font-medium">Mean</td>
-                  <td>{coatingRequirements?.mean || "-"} µm</td>
-                  <td>{meanCoating || "-"} µm</td>
-                  <td>
-                    {meanCoating && coatingRequirements?.mean && parseFloat(meanCoating) >= coatingRequirements.mean ? (
-                      <span className="badge badge-success">PASS</span>
-                    ) : meanCoating ? (
-                      <span className="badge badge-danger">FAIL</span>
-                    ) : (
-                      <span>-</span>
-                    )}
-                  </td>
-                </tr>
-              </tbody>
-            </table>
-            
-            {/* Gráfico de recubrimiento - MEJORADO */}
-            {localCoatingMeasurements && localCoatingMeasurements.filter(v => v).length > 0 && (
-              <CoatingChart 
-                measurements={localCoatingMeasurements} 
-                requirements={coatingRequirements}
-              />
-            )}
           </div>
         </div>
       </div>
-      
-      <div className="report-section">
-        <h3 className="report-section-title" style={{ color: '#3D4A5C', background: 'rgba(249, 250, 251, 0.8)', padding: '0.5rem', borderRadius: '0.25rem' }}>
-          <CheckCircle size={18} style={{ marginRight: '0.5rem' }} /> Visual Inspection
-        </h3>
-        <div className="dashboard-card">
-          <div className="card-body">
-            <div className="mb-4">
-              <span className="report-info-label">Result</span>
-              <div className="mt-2">
-                {visualConformity === 'conforming' ? (
-                  <span className="badge badge-success">CONFORMING</span>
-                ) : visualConformity === 'non-conforming' ? (
-                  <span className="badge badge-danger">NON-CONFORMING</span>
-                ) : (
-                  <span className="badge badge-warning">NOT EVALUATED</span>
-                )}
+
+      {/* PÁGINA 2: DIBUJO TÉCNICO Y MEDICIONES DIMENSIONALES */}
+      <div className="pdf-page-section" data-page="2">
+        <ReportTechnicalDrawing />
+        
+        <div className="report-section">
+          <h3 className="report-section-title" style={{ color: '#3D4A5C', background: 'rgba(249, 250, 251, 0.8)', padding: '0.5rem', borderRadius: '0.25rem' }}>
+            <Layers size={18} style={{ marginRight: '0.5rem' }} /> Dimensional Measurements
+          </h3>
+          
+          {dimensions && dimensions.length > 0 ? (
+            <>
+              <div className="dashboard-card">
+                <div className="card-body p-0">
+                  <div>
+                    <table className="data-table w-full" style={{ fontSize: '0.75rem' }}>
+                      <thead>
+                        <tr>
+                          <th className="text-center">Sample</th>
+                          {dimensions.map((dim) => (
+                            <th key={dim.code} className="text-center">
+                              <div>{dim.code}: {dim.description}</div>
+                              <div className="text-xs">
+                                {dim.nominal} mm ({dim.tolerancePlus > 0 ? '+' : ''}{dim.tolerancePlus}, {dim.toleranceMinus > 0 ? '+' : ''}{dim.toleranceMinus})
+                              </div>
+                            </th>
+                          ))}
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {Array.from({ length: getSampleCount(sampleInfo) || 3 }).map((_, sampleIndex) => (
+                          <tr key={sampleIndex}>
+                            <td className="font-medium text-center">Sample {sampleIndex + 1}</td>
+                            {dimensions.map((dim) => {
+                              const value = dimensionMeasurements?.[dim.code]?.[sampleIndex] || "-";
+                              const isValid = value !== "-" && (
+                                parseFloat(value) >= (dim.nominal - dim.toleranceMinus) &&
+                                parseFloat(value) <= (dim.nominal + dim.tolerancePlus)
+                              );
+                              
+                              return (
+                                <td 
+                                  key={dim.code} 
+                                  className={`text-center ${value !== "-" && !isValid ? 'text-red-600 font-medium bg-red-50' : ''}`}
+                                >
+                                  {value}
+                                </td>
+                              );
+                            })}
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
               </div>
-            </div>
-            
-            <div className="mb-4">
-              <span className="report-info-label">Notes</span>
-              <p className="mt-2">{visualNotes || "No visual defects observed."}</p>
-            </div>
-            
-            {/* MODIFICADO: Galería de fotos usando las clases del CSS global */}
-            {(photos && photos.length > 0) && (
+              
+              {/* Mini Gráficos Dimensionales */}
               <div className="mt-4">
-                <span className="report-info-label">Photos</span>
-                <div className="inspection-photo-grid-pdf">
-                  {photos.map((photo, index) => (
-                    <div key={index} className="inspection-photo-item-pdf">
-                      <div className="inspection-photo-container">
-                        <img 
-                          src={photo.src} 
-                          alt={`Inspection photo ${index + 1}`} 
-                          className="inspection-photo-img"
-                        />
-                        <div className="inspection-photo-caption">
-                          Photo {index + 1}
-                          {photo.dimensions && ` • ${photo.dimensions}`}
-                        </div>
-                      </div>
+                <h4 className="text-sm font-semibold mb-2 text-gray-500">Dimensional Analysis Charts</h4>
+                <div style={{
+                  display: 'grid',
+                  gridTemplateColumns: 'repeat(2, 1fr)',
+                  gap: '10px',
+                  width: '100%'
+                }}>
+                  {dimensions.map((dim, index) => (
+                    <div key={dim.code} style={{width: '100%'}}>
+                      <DimensionMiniChart 
+                        dimension={dim} 
+                        measurements={dimensionMeasurements?.[dim.code]} 
+                        index={index}
+                      />
                     </div>
                   ))}
                 </div>
               </div>
-            )}
+            </>
+          ) : (
+            <div className="dashboard-card">
+              <div className="card-body text-center text-gray-500">
+                No dimensional data available.
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* PÁGINA 3: COATING Y INSPECCIÓN VISUAL */}
+      <div className="pdf-page-section" data-page="3">
+        <div className="report-section">
+          <h3 className="report-section-title" style={{ color: '#3D4A5C', background: 'rgba(249, 250, 251, 0.8)', padding: '0.5rem', borderRadius: '0.25rem' }}>
+            <BarChart2 size={18} style={{ marginRight: '0.5rem' }} /> Coating Measurements
+          </h3>
+          <div className="dashboard-card">
+            <div className="card-body">
+              {/* Tabla de recubrimiento */}
+              <table className="data-table mb-4">
+                <thead>
+                  <tr>
+                    <th>Type</th>
+                    <th>Required</th>
+                    <th>Measured</th>
+                    <th>Status</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td className="font-medium">Mean</td>
+                    <td>{coatingRequirements?.mean || "-"} µm</td>
+                    <td>{meanCoating || "-"} µm</td>
+                    <td>
+                      {meanCoating && coatingRequirements?.mean && parseFloat(meanCoating) >= coatingRequirements.mean ? (
+                        <span className="badge badge-success">PASS</span>
+                      ) : meanCoating ? (
+                        <span className="badge badge-danger">FAIL</span>
+                      ) : (
+                        <span>-</span>
+                      )}
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+              
+              {/* Gráfico de recubrimiento */}
+              {localCoatingMeasurements && localCoatingMeasurements.filter(v => v).length > 0 && (
+                <CoatingChart 
+                  measurements={localCoatingMeasurements} 
+                  requirements={coatingRequirements}
+                />
+              )}
+            </div>
+          </div>
+        </div>
+        
+        <div className="report-section">
+          <h3 className="report-section-title" style={{ color: '#3D4A5C', background: 'rgba(249, 250, 251, 0.8)', padding: '0.5rem', borderRadius: '0.25rem' }}>
+            <CheckCircle size={18} style={{ marginRight: '0.5rem' }} /> Visual Inspection
+          </h3>
+          <div className="dashboard-card">
+            <div className="card-body">
+              <div className="mb-4">
+                <span className="report-info-label">Result</span>
+                <div className="mt-2">
+                  {visualConformity === 'conforming' ? (
+                    <span className="badge badge-success">CONFORMING</span>
+                  ) : visualConformity === 'non-conforming' ? (
+                    <span className="badge badge-danger">NON-CONFORMING</span>
+                  ) : (
+                    <span className="badge badge-warning">NOT EVALUATED</span>
+                  )}
+                </div>
+              </div>
+              
+              <div className="mb-4">
+                <span className="report-info-label">Notes</span>
+                <p className="mt-2">{visualNotes || "No visual defects observed."}</p>
+              </div>
+              
+              {/* Galería de fotos */}
+              {(photos && photos.length > 0) && (
+                <div className="mt-4">
+                  <span className="report-info-label">Photos</span>
+                  <div className="inspection-photo-grid-pdf">
+                    {photos.map((photo, index) => (
+                      <div key={index} className="inspection-photo-item-pdf">
+                        <div className="inspection-photo-container">
+                          <img 
+                            src={photo.src} 
+                            alt={`Inspection photo ${index + 1}`} 
+                            className="inspection-photo-img"
+                          />
+                          <div className="inspection-photo-caption">
+                            Photo {index + 1}
+                            {photo.dimensions && ` • ${photo.dimensions}`}
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+        
+        <div className="dashboard-card">
+          <div className="report-footer p-4">
+            <div>
+              <p className="font-bold">VALMONT SOLAR</p>
+            </div>
+            <div>
+              <p className="font-medium">
+                Final Result: {renderStatusBadge(inspectionStatus)}
+              </p>
+            </div>
           </div>
         </div>
       </div>
       
-      <div className="dashboard-card">
-        <div className="report-footer p-4">
-          <div>
-            <p className="font-bold">VALMONT SOLAR</p>
-          </div>
-          <div>
-            <p className="font-medium">
-              Final Result: {renderStatusBadge(inspectionStatus)}
-            </p>
-          </div>
-        </div>
-      </div>
-    </div>
-    
-    {/* Estilos para tabla transpuesta */}
-    <style jsx global>{`
-      /* Estilos para tabla transpuesta */
-      .data-table {
-        table-layout: fixed;
-        width: 100%;
-        border-collapse: collapse;
-      }
-      
-      .data-table th, .data-table td {
-        padding: 4px;
-        font-size: 0.75rem;
-        border: 1px solid #e5e7eb;
-        overflow: hidden;
-        text-overflow: ellipsis;
-      }
-      
-      .data-table th {
-        background-color: #f3f4f6;
-      }
-      
-      .data-table tr:nth-child(even) td {
-        background-color: #f9fafb;
-      }
-      
-      /* Estilos para gráficos densos */
-      .dimension-chart .recharts-dot {
-        r: 2;
-      }
-      
-      .dimension-chart .recharts-line-curve {
-        stroke-width: 1.5;
-      }
-      
-      /* Estilos para títulos de sección */
-      .report-section-title {
-        font-size: 1.25rem;
-        font-weight: 600;
-        margin-bottom: 1rem;
-        padding-bottom: 0.625rem;
-        border-bottom: 1px solid #e5e7eb;
-        background-color: rgba(249, 250, 251, 0.8);
-        padding: 0.5rem;
-        border-radius: 0.25rem;
-        color: #3D4A5C;
-        box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
-      }
-      
-      @media print {
-        body {
-          font-size: 10pt;
-          margin: 0;
-          padding: 0;
-        }
-        
-        .dashboard-card {
-          box-shadow: none !important;
-          border: 1px solid #e5e7eb !important;
-          break-inside: avoid;
-          page-break-inside: avoid;
-        }
-        
-        .btn, .card-options {
-          display: none !important;
-        }
-        
-        .report-section {
-          margin-bottom: 10mm;
-          page-break-inside: avoid;
-        }
-        
-        .report-section-title {
-          font-size: 12pt;
-          color: #000 !important;
-          border-bottom: 1px solid #000;
+      {/* Estilos CSS */}
+      <style jsx global>{`
+        /* Estilos para tabla transpuesta */
+        .data-table {
+          table-layout: fixed;
+          width: 100%;
+          border-collapse: collapse;
         }
         
         .data-table th, .data-table td {
-          padding: 2mm;
-          font-size: 8pt;
+          padding: 4px;
+          font-size: 0.75rem;
+          border: 1px solid #e5e7eb;
+          overflow: hidden;
+          text-overflow: ellipsis;
         }
         
-        .grid-cols-3 {
-          grid-template-columns: repeat(3, 1fr) !important;
+        .data-table th {
+          background-color: #f3f4f6;
         }
         
-        img {
-          max-width: 50mm !important;
-        }
-      }
-      
-      /* Clases para manejo de páginas PDF */
-      .pdf-page-section {
-        page-break-before: always;
-        page-break-after: always;
-        break-before: page;
-        break-after: page;
-        min-height: 100vh;
-        padding: 20px;
-        background: white;
-      }
-      
-      .pdf-page-section:first-child {
-        page-break-before: avoid;
-        break-before: avoid;
-      }
-      
-      /* Evitar que ciertos elementos se corten */
-      .dashboard-card,
-      .inspection-photo-container,
-      .dimension-mini-chart {
-        page-break-inside: avoid;
-        break-inside: avoid;
-      }
-      
-      /* Grid específico para fotos en PDF */
-      .inspection-photo-grid-pdf {
-        display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-        gap: 15px;
-        margin-top: 15px;
-      }
-      
-      .inspection-photo-item-pdf {
-        page-break-inside: avoid;
-        break-inside: avoid;
-      }
-      
-      /* Ocultar controles en PDF */
-      .no-print {
-        display: block;
-      }
-      
-      /* Estilos para impresión específicos */
-      @media print {
-        .no-print {
-          display: none !important;
+        .data-table tr:nth-child(even) td {
+          background-color: #f9fafb;
         }
         
+        /* Estilos para gráficos densos */
+        .dimension-chart .recharts-dot {
+          r: 2;
+        }
+        
+        .dimension-chart .recharts-line-curve {
+          stroke-width: 1.5;
+        }
+        
+        /* Estilos para títulos de sección */
+        .report-section-title {
+          font-size: 1.25rem;
+          font-weight: 600;
+          margin-bottom: 1rem;
+          padding-bottom: 0.625rem;
+          border-bottom: 1px solid #e5e7eb;
+          background-color: rgba(249, 250, 251, 0.8);
+          padding: 0.5rem;
+          border-radius: 0.25rem;
+          color: #3D4A5C;
+          box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+        }
+        
+        @media print {
+          body {
+            font-size: 10pt;
+            margin: 0;
+            padding: 0;
+          }
+          
+          .dashboard-card {
+            box-shadow: none !important;
+            border: 1px solid #e5e7eb !important;
+            break-inside: avoid;
+            page-break-inside: avoid;
+          }
+          
+          .btn, .card-options {
+            display: none !important;
+          }
+          
+          .report-section {
+            margin-bottom: 10mm;
+            page-break-inside: avoid;
+          }
+          
+          .report-section-title {
+            font-size: 12pt;
+            color: #000 !important;
+            border-bottom: 1px solid #000;
+          }
+          
+          .data-table th, .data-table td {
+            padding: 2mm;
+            font-size: 8pt;
+          }
+          
+          .grid-cols-3 {
+            grid-template-columns: repeat(3, 1fr) !important;
+          }
+          
+          img {
+            max-width: 50mm !important;
+          }
+        }
+        
+        /* Clases para manejo de páginas PDF */
         .pdf-page-section {
           page-break-before: always;
           page-break-after: always;
+          break-before: page;
+          break-after: page;
           min-height: 100vh;
+          padding: 20px;
+          background: white;
         }
         
         .pdf-page-section:first-child {
           page-break-before: avoid;
+          break-before: avoid;
         }
         
-        body {
-          font-size: 10pt;
-          margin: 0;
-          padding: 0;
-        }
-        
-        .dashboard-card {
-          box-shadow: none !important;
-          border: 1px solid #e5e7eb !important;
+        /* Evitar que ciertos elementos se corten */
+        .dashboard-card,
+        .inspection-photo-container,
+        .dimension-mini-chart {
+          page-break-inside: avoid;
           break-inside: avoid;
-          page-break-inside: avoid;
         }
         
-        .report-section {
-          margin-bottom: 10mm;
-          page-break-inside: avoid;
-        }
-        
-        .report-section-title {
-          font-size: 12pt;
-          color: #000 !important;
-          border-bottom: 1px solid #000;
-        }
-        
-        .data-table th, .data-table td {
-          padding: 2mm;
-          font-size: 8pt;
-        }
-        
+        /* Grid específico para fotos en PDF */
         .inspection-photo-grid-pdf {
-          grid-template-columns: repeat(2, 1fr) !important;
+          display: grid;
+          grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+          gap: 15px;
+          margin-top: 15px;
         }
         
-        .inspection-photo-item-pdf img {
-          max-width: 80mm !important;
-          max-height: 60mm !important;
+        .inspection-photo-item-pdf {
+          page-break-inside: avoid;
+          break-inside: avoid;
         }
-      }
-  `}</style>
+        
+        /* Ocultar controles en PDF */
+        .no-print {
+          display: block;
+        }
+        
+        /* Estilos para impresión específicos */
+        @media print {
+          .no-print {
+            display: none !important;
+          }
+          
+          .pdf-page-section {
+            page-break-before: always;
+            page-break-after: always;
+            min-height: 100vh;
+          }
+          
+          .pdf-page-section:first-child {
+            page-break-before: avoid;
+          }
+          
+          body {
+            font-size: 10pt;
+            margin: 0;
+            padding: 0;
+          }
+          
+          .dashboard-card {
+            box-shadow: none !important;
+            border: 1px solid #e5e7eb !important;
+            break-inside: avoid;
+            page-break-inside: avoid;
+          }
+          
+          .report-section {
+            margin-bottom: 10mm;
+            page-break-inside: avoid;
+          }
+          
+          .report-section-title {
+            font-size: 12pt;
+            color: #000 !important;
+            border-bottom: 1px solid #000;
+          }
+          
+          .data-table th, .data-table td {
+            padding: 2mm;
+            font-size: 8pt;
+          }
+          
+          .inspection-photo-grid-pdf {
+            grid-template-columns: repeat(2, 1fr) !important;
+          }
+          
+          .inspection-photo-item-pdf img {
+            max-width: 80mm !important;
+            max-height: 60mm !important;
+          }
+        }
+      `}</style>
     </div>
   );
 };
+
 export default ReportViewDashboard;

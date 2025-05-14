@@ -1,6 +1,6 @@
 // src/components/report/ReportViewDashboard.jsx
 import React from 'react';
-import { Layers, BarChart2, CheckCircle, MapPin, Info, Settings } from 'lucide-react'; // Agregado Settings
+import { Layers, BarChart2, CheckCircle, MapPin, Info, Settings } from 'lucide-react';
 import { useInspection } from '../../context/InspectionContext';
 import { getSampleCount, getSampleLetter } from '../../utils/samplePlanHelper';
 import { formatDate } from '../../utils/dateFormatter';
@@ -11,8 +11,8 @@ import {
 } from 'recharts';
 import StaticMapReport from './StaticMapReport';
 import ReportTechnicalDrawing from './ReportTechnicalDrawing';
-import ReportExportOptions from './ReportExportOptions';
-import '../../styles/inspection-photos.css';
+import ReportExportOptions from './ReportExportOptions'; // Import the new component
+import '../../styles/inspection-photos.css'; // Importar el CSS global para fotos
 
 // Componente para los mini gráficos dimensionales con tamaño reducido
 const DimensionMiniChart = ({ dimension, measurements, index }) => {
@@ -50,6 +50,7 @@ const DimensionMiniChart = ({ dimension, measurements, index }) => {
   const yMax = maxAllowed + margin;
   
   // Generar paleta de colores basada en tendencias profesionales
+  // Usamos colores distintos para cada cota para fácil diferenciación
   const colorPalettes = [
     ['#4364D3', '#7698FA', '#C5D3FF'], // Azul profesional
     ['#219653', '#6FCF97', '#D5F2E3'], // Verde sofisticado
@@ -59,7 +60,7 @@ const DimensionMiniChart = ({ dimension, measurements, index }) => {
     ['#6B7280', '#9CA3AF', '#E5E7EB']  // Gris neutral
   ];
   
-  // Seleccionar paleta basada en el índice
+  // Seleccionar paleta basada en el índice (repetir si hay más dimensiones que paletas)
   const colorIndex = index % colorPalettes.length;
   const [primaryColor, secondaryColor, lightColor] = colorPalettes[colorIndex];
   
@@ -83,6 +84,7 @@ const DimensionMiniChart = ({ dimension, measurements, index }) => {
       </div>
       
       <div style={{ height: '80px', position: 'relative', background: 'rgba(255, 255, 255, 0.85)', borderRadius: '4px' }}>
+        {/* Añadir stats dentro del área del gráfico */}
         <div 
           style={{ 
             position: 'absolute', 
@@ -149,6 +151,7 @@ const DimensionMiniChart = ({ dimension, measurements, index }) => {
             />
             <CartesianGrid vertical={false} strokeDasharray="2 2" stroke="#F3F4F6" />
             
+            {/* Área para resaltar la zona de tolerancia */}
             <Area 
               type="monotone" 
               dataKey="value" 
@@ -157,6 +160,7 @@ const DimensionMiniChart = ({ dimension, measurements, index }) => {
               activeDot={false}
             />
             
+            {/* Línea de valor nominal */}
             <ReferenceLine 
               y={nominal} 
               stroke={primaryColor} 
@@ -164,6 +168,7 @@ const DimensionMiniChart = ({ dimension, measurements, index }) => {
               strokeWidth={1.5}
             />
             
+            {/* Líneas de tolerancia */}
             <ReferenceLine 
               y={minAllowed} 
               stroke="#E5E7EB" 
@@ -177,6 +182,7 @@ const DimensionMiniChart = ({ dimension, measurements, index }) => {
               strokeWidth={1}
             />
             
+            {/* Línea de valores medidos */}
             <Line 
               type="monotone" 
               dataKey="value" 
@@ -207,9 +213,11 @@ const DimensionMiniChart = ({ dimension, measurements, index }) => {
 
 // Componente para el gráfico de coating
 const CoatingChart = ({ measurements, requirements }) => {
+  // Preparar datos para el gráfico
   const prepareChartData = () => {
     if (!measurements) return [];
     
+    // Tomar solo valores válidos
     return measurements
       .filter(value => value !== '' && value !== null)
       .map((value, index) => ({
@@ -222,11 +230,13 @@ const CoatingChart = ({ measurements, requirements }) => {
   const chartData = prepareChartData();
   if (chartData.length === 0) return null;
   
+  // Calcular estadísticas
   const values = chartData.map(d => d.thickness);
   const mean = values.reduce((a, b) => a + b, 0) / values.length;
   const min = Math.min(...values);
   const max = Math.max(...values);
   
+  // Calcular límites para el gráfico
   const minLimit = Math.max(0, min - 5);
   const maxLimit = max + 5;
 
@@ -246,6 +256,7 @@ const CoatingChart = ({ measurements, requirements }) => {
       </div>
       
       <div style={{ height: '150px', position: 'relative', background: 'rgba(255, 255, 255, 0.85)', borderRadius: '4px' }}>
+        {/* Añadir stats dentro del área del gráfico */}
         <div 
           style={{ 
             position: 'absolute', 
@@ -314,6 +325,7 @@ const CoatingChart = ({ measurements, requirements }) => {
             />
             <CartesianGrid vertical={false} strokeDasharray="2 2" stroke="#F3F4F6" />
             
+            {/* Área para resaltar la zona válida */}
             <Area 
               type="monotone" 
               dataKey="thickness" 
@@ -322,6 +334,7 @@ const CoatingChart = ({ measurements, requirements }) => {
               activeDot={false}
             />
             
+            {/* Línea de requerimiento mínimo local */}
             {requirements?.local && (
               <ReferenceLine 
                 y={requirements.local} 
@@ -336,6 +349,7 @@ const CoatingChart = ({ measurements, requirements }) => {
               />
             )}
             
+            {/* Línea de media */}
             <ReferenceLine 
               y={mean} 
               stroke="#3B82F6" 
@@ -348,6 +362,7 @@ const CoatingChart = ({ measurements, requirements }) => {
               }}
             />
             
+            {/* Barras de mediciones */}
             <Bar 
               dataKey="thickness" 
               barSize={10} 
@@ -427,6 +442,7 @@ const ReportViewDashboard = () => {
       
       {/* PÁGINA 1: INFORMACIÓN GENERAL */}
       <div className="pdf-page-section" data-page="1">
+        {/* INSPECTION OVERVIEW CON LAYOUT SIMILAR AL SETUP */}
         <div className="dashboard-card mb-4">
           <div className="card-header" style={{background: 'linear-gradient(to right, #667eea, #764ba2)'}}>
             <div className="flex justify-between items-center">
@@ -438,6 +454,7 @@ const ReportViewDashboard = () => {
           </div>
           
           <div className="card-body">
+            {/* Two-column container similar al Setup */}
             <div className="cards-grid-2">
               {/* LEFT COLUMN: Component Information */}
               <div className="dashboard-card">
@@ -589,6 +606,7 @@ const ReportViewDashboard = () => {
 
       {/* PÁGINA 2: DIBUJO TÉCNICO Y MEDICIONES DIMENSIONALES */}
       <div className="pdf-page-section" data-page="2">
+        {/* Utilizamos el componente especializado ReportTechnicalDrawing */}
         <ReportTechnicalDrawing />
         
         <div className="report-section">
@@ -643,7 +661,7 @@ const ReportViewDashboard = () => {
                 </div>
               </div>
               
-              {/* Mini Gráficos Dimensionales */}
+              {/* Mini Gráficos Dimensionales - MEJORADOS */}
               <div className="mt-4">
                 <h4 className="text-sm font-semibold mb-2 text-gray-500">Dimensional Analysis Charts</h4>
                 <div style={{
@@ -710,7 +728,7 @@ const ReportViewDashboard = () => {
                 </tbody>
               </table>
               
-              {/* Gráfico de recubrimiento */}
+              {/* Gráfico de recubrimiento - MEJORADO */}
               {localCoatingMeasurements && localCoatingMeasurements.filter(v => v).length > 0 && (
                 <CoatingChart 
                   measurements={localCoatingMeasurements} 
@@ -745,7 +763,7 @@ const ReportViewDashboard = () => {
                 <p className="mt-2">{visualNotes || "No visual defects observed."}</p>
               </div>
               
-              {/* Galería de fotos */}
+              {/* MODIFICADO: Galería de fotos usando las clases del CSS global */}
               {(photos && photos.length > 0) && (
                 <div className="mt-4">
                   <span className="report-info-label">Photos</span>
@@ -786,7 +804,7 @@ const ReportViewDashboard = () => {
         </div>
       </div>
       
-      {/* Estilos CSS */}
+      {/* Estilos para tabla transpuesta */}
       <style jsx global>{`
         /* Estilos para tabla transpuesta */
         .data-table {

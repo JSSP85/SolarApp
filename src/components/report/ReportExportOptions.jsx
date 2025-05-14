@@ -21,6 +21,57 @@ const ReportExportOptions = ({ reportData, reportContainerId = 'report-container
   const { saveCurrentInspection, state } = useInspection();
   const [saveStatus, setSaveStatus] = useState(null); // 'saving', 'success', 'error'
 
+  // Función para mostrar notificaciones
+  const showNotification = (message, type = 'success', icon = null) => {
+    const notification = document.createElement('div');
+    const bgColor = type === 'success' ? 'rgba(16, 185, 129, 0.95)' : 
+                   type === 'error' ? 'rgba(239, 68, 68, 0.95)' : 
+                   'rgba(59, 130, 246, 0.95)';
+    
+    notification.style.cssText = `
+      position: fixed;
+      top: 20px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: ${bgColor};
+      color: white;
+      padding: 12px 24px;
+      border-radius: 8px;
+      z-index: 9999;
+      font-weight: 600;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+      animation: slideDown 0.3s ease-out;
+    `;
+    
+    const iconSvg = icon || (type === 'success' ? 
+      `<svg width="18" height="18" fill="currentColor" viewBox="0 0 16 16">
+        <path d="M10.97 4.97a.75.75 0 0 1 1.07 1.06l-3.99 4.99a.75.75 0 0 1-1.08.02L4.324 8.384a.75.75 0 1 1 1.06-1.06l2.094 2.093 3.473-4.425a.267.267 0 0 1 .02-.022z"/>
+      </svg>` : 
+      `<svg width="18" height="18" fill="currentColor" viewBox="0 0 16 16">
+        <path d="M8 15A7 7 0 1 1 8 1a7 7 0 0 1 0 14zm0 1A8 8 0 1 0 8 0a8 8 0 0 0 0 16z"/>
+        <path d="M4.646 4.646a.5.5 0 0 1 .708 0L8 7.293l2.646-2.647a.5.5 0 0 1 .708.708L8.707 8l2.647 2.646a.5.5 0 0 1-.708.708L8 8.707l-2.646 2.647a.5.5 0 0 1-.708-.708L7.293 8 4.646 5.354a.5.5 0 0 1 0-.708z"/>
+      </svg>`
+    );
+    
+    notification.innerHTML = `${iconSvg}${message}`;
+    document.body.appendChild(notification);
+    
+    // Auto-hide after 4 seconds
+    setTimeout(() => {
+      if (notification.parentNode) {
+        notification.style.animation = 'slideUp 0.3s ease-out';
+        setTimeout(() => {
+          if (notification.parentNode) {
+            document.body.removeChild(notification);
+          }
+        }, 300);
+      }
+    }, 4000);
+  };
+
   // Handle PDF download - Guardar primero luego generar PDF
   const handleDownloadPDF = async () => {
     if (isProcessing) return;
@@ -34,36 +85,14 @@ const ReportExportOptions = ({ reportData, reportContainerId = 'report-container
       const inspectionId = await saveCurrentInspection();
       setSaveStatus('success');
       
-      // Mostrar mensaje de éxito temporal
-      const successMsg = document.createElement('div');
-      successMsg.style.cssText = `
-        position: fixed;
-        top: 20px;
-        left: 50%;
-        transform: translateX(-50%);
-        background: rgba(16, 185, 129, 0.9);
-        color: white;
-        padding: 10px 20px;
-        border-radius: 8px;
-        z-index: 9999;
-        font-weight: bold;
-        display: flex;
-        align-items: center;
-        gap: 8px;
-      `;
-      successMsg.innerHTML = `
-        <svg width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
-          <path d="M10.97 4.97a.75.75 0 0 1 1.07 1.06l-3.99 4.99a.75.75 0 0 1-1.08.02L4.324 8.384a.75.75 0 1 1 1.06-1.06l2.094 2.093 3.473-4.425a.267.267 0 0 1 .02-.022z"/>
-        </svg>
-        Inspection saved successfully! (ID: ${inspectionId.substring(0, 8)}...)
-      `;
-      document.body.appendChild(successMsg);
+      // Mensaje de confirmación de guardado mejorado
+      showNotification(
+        `Data saved successfully! (ID: ${inspectionId.substring(0, 8)}...)`,
+        'success'
+      );
       
-      setTimeout(() => {
-        if (successMsg.parentNode) {
-          document.body.removeChild(successMsg);
-        }
-      }, 3000);
+      // Esperar un momento para que el usuario vea la confirmación
+      await new Promise(resolve => setTimeout(resolve, 1000));
       
       // 2. Luego generar el PDF
       console.log('Generando PDF...');
@@ -76,41 +105,21 @@ const ReportExportOptions = ({ reportData, reportContainerId = 'report-container
         showNotification: true
       });
       
+      // Mensaje de confirmación de PDF
+      showNotification(
+        'PDF generated and downloaded successfully!',
+        'success'
+      );
+      
     } catch (error) {
       console.error('Error en el proceso:', error);
       setSaveStatus('error');
       
-      // Mostrar mensaje de error
-      const errorMsg = document.createElement('div');
-      errorMsg.style.cssText = `
-        position: fixed;
-        top: 20px;
-        left: 50%;
-        transform: translateX(-50%);
-        background: rgba(239, 68, 68, 0.9);
-        color: white;
-        padding: 10px 20px;
-        border-radius: 8px;
-        z-index: 9999;
-        font-weight: bold;
-        display: flex;
-        align-items: center;
-        gap: 8px;
-      `;
-      errorMsg.innerHTML = `
-        <svg width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
-          <path d="M8 15A7 7 0 1 1 8 1a7 7 0 0 1 0 14zm0 1A8 8 0 1 0 8 0a8 8 0 0 0 0 16z"/>
-          <path d="M4.646 4.646a.5.5 0 0 1 .708 0L8 7.293l2.646-2.647a.5.5 0 0 1 .708.708L8.707 8l2.647 2.646a.5.5 0 0 1-.708.708L8 8.707l-2.646 2.647a.5.5 0 0 1-.708-.708L7.293 8 4.646 5.354a.5.5 0 0 1 0-.708z"/>
-        </svg>
-        Error saving inspection: ${error.message}
-      `;
-      document.body.appendChild(errorMsg);
-      
-      setTimeout(() => {
-        if (errorMsg.parentNode) {
-          document.body.removeChild(errorMsg);
-        }
-      }, 5000);
+      // Mensaje de error mejorado
+      showNotification(
+        `Error: ${error.message || 'Failed to save inspection and generate PDF'}`,
+        'error'
+      );
     } finally {
       setIsProcessing(false);
       // Resetear estado después de unos segundos
@@ -130,70 +139,21 @@ const ReportExportOptions = ({ reportData, reportContainerId = 'report-container
       const inspectionId = await saveCurrentInspection();
       setSaveStatus('success');
       
-      // Mostrar mensaje de éxito
-      const confirmationMsg = document.createElement('div');
-      confirmationMsg.style.cssText = `
-        position: fixed;
-        top: 20px;
-        left: 50%;
-        transform: translateX(-50%);
-        background: rgba(16, 185, 129, 0.9);
-        color: white;
-        padding: 10px 20px;
-        border-radius: 8px;
-        z-index: 9999;
-        font-weight: bold;
-        display: flex;
-        align-items: center;
-        gap: 8px;
-      `;
-      confirmationMsg.innerHTML = `
-        <svg width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
-          <path d="M10.97 4.97a.75.75 0 0 1 1.07 1.06l-3.99 4.99a.75.75 0 0 1-1.08.02L4.324 8.384a.75.75 0 1 1 1.06-1.06l2.094 2.093 3.473-4.425a.267.267 0 0 1 .02-.022z"/>
-        </svg>
-        Inspection saved successfully! (ID: ${inspectionId.substring(0, 8)}...)
-      `;
-      document.body.appendChild(confirmationMsg);
+      // Mensaje de confirmación de guardado mejorado
+      showNotification(
+        `Inspection saved successfully! (ID: ${inspectionId.substring(0, 8)}...)`,
+        'success'
+      );
       
-      setTimeout(() => {
-        if (confirmationMsg.parentNode) {
-          document.body.removeChild(confirmationMsg);
-        }
-      }, 3000);
     } catch (error) {
       console.error('Error saving inspection:', error);
       setSaveStatus('error');
       
-      const errorMsg = document.createElement('div');
-      errorMsg.style.cssText = `
-        position: fixed;
-        top: 20px;
-        left: 50%;
-        transform: translateX(-50%);
-        background: rgba(239, 68, 68, 0.9);
-        color: white;
-        padding: 10px 20px;
-        border-radius: 8px;
-        z-index: 9999;
-        font-weight: bold;
-        display: flex;
-        align-items: center;
-        gap: 8px;
-      `;
-      errorMsg.innerHTML = `
-        <svg width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
-          <path d="M8 15A7 7 0 1 1 8 1a7 7 0 0 1 0 14zm0 1A8 8 0 1 0 8 0a8 8 0 0 0 0 16z"/>
-          <path d="M4.646 4.646a.5.5 0 0 1 .708 0L8 7.293l2.646-2.647a.5.5 0 0 1 .708.708L8.707 8l2.647 2.646a.5.5 0 0 1-.708.708L8 8.707l-2.646 2.647a.5.5 0 0 1-.708-.708L7.293 8 4.646 5.354a.5.5 0 0 1 0-.708z"/>
-        </svg>
-        Error saving inspection: ${error.message}
-      `;
-      document.body.appendChild(errorMsg);
-      
-      setTimeout(() => {
-        if (errorMsg.parentNode) {
-          document.body.removeChild(errorMsg);
-        }
-      }, 5000);
+      // Mensaje de error mejorado
+      showNotification(
+        `Error saving inspection: ${error.message || 'Unknown error'}`,
+        'error'
+      );
     } finally {
       setIsProcessing(false);
       setTimeout(() => setSaveStatus(null), 3000);
@@ -210,7 +170,7 @@ const ReportExportOptions = ({ reportData, reportContainerId = 'report-container
     e.preventDefault();
     
     if (!email.trim()) {
-      alert('Please enter a valid email address.');
+      showNotification('Please enter a valid email address.', 'error');
       return;
     }
     
@@ -220,16 +180,15 @@ const ReportExportOptions = ({ reportData, reportContainerId = 'report-container
       setIsEmailModalOpen(false);
       setEmail('');
       
-      // Show confirmation message
-      const confirmationMsg = document.createElement('div');
-      confirmationMsg.style.cssText = 'position:fixed;top:20px;left:50%;transform:translateX(-50%);background:rgba(22, 163, 74, 0.9);color:white;padding:10px 20px;border-radius:8px;z-index:9999;font-weight:bold;';
-      confirmationMsg.innerText = 'Your email client has been opened to send the report';
-      document.body.appendChild(confirmationMsg);
-      
-      // Hide the message after 3 seconds
-      setTimeout(() => {
-        document.body.removeChild(confirmationMsg);
-      }, 3000);
+      showNotification(
+        'Your email client has been opened to send the report',
+        'success'
+      );
+    } else {
+      showNotification(
+        'Failed to open email client. Please try again.',
+        'error'
+      );
     }
   };
 
@@ -246,7 +205,7 @@ const ReportExportOptions = ({ reportData, reportContainerId = 'report-container
           {saveStatus === 'error' && <AlertTriangle size={16} className="text-red-600" />}
           {!saveStatus && <Save size={16} />}
           <span className="hidden sm:inline">
-            {saveStatus === 'saving' ? 'Saving...' : 'Save'}
+            {saveStatus === 'saving' ? 'Saving...' : 'Save Inspection'}
           </span>
         </button>
         
@@ -255,9 +214,9 @@ const ReportExportOptions = ({ reportData, reportContainerId = 'report-container
           onClick={handleDownloadPDF}
           disabled={isProcessing}
         >
-          {saveStatus === 'saving' && <div className="animate-spin rounded-full h-4 w-4 border-t-2 border-b-2 border-blue-500"></div>}
-          {saveStatus === 'success' && <CheckCircle size={16} className="text-green-600" />}
-          {saveStatus === 'error' && <AlertTriangle size={16} className="text-red-600" />}
+          {saveStatus === 'saving' && <div className="animate-spin rounded-full h-4 w-4 border-t-2 border-b-2 border-white"></div>}
+          {saveStatus === 'success' && <CheckCircle size={16} className="text-green-200" />}
+          {saveStatus === 'error' && <AlertTriangle size={16} className="text-red-200" />}
           {!saveStatus && <Download size={16} />}
           <span className="hidden sm:inline">
             {saveStatus === 'saving' ? 'Saving & Exporting...' : 'Save & Export PDF'}
@@ -380,6 +339,28 @@ const ReportExportOptions = ({ reportData, reportContainerId = 'report-container
           to {
             opacity: 1;
             transform: translateY(0);
+          }
+        }
+
+        @keyframes slideDown {
+          from {
+            opacity: 0;
+            transform: translateX(-50%) translateY(-20px);
+          }
+          to {
+            opacity: 1;
+            transform: translateX(-50%) translateY(0);
+          }
+        }
+
+        @keyframes slideUp {
+          from {
+            opacity: 1;
+            transform: translateX(-50%) translateY(0);
+          }
+          to {
+            opacity: 0;
+            transform: translateX(-50%) translateY(-20px);
           }
         }
 

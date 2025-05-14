@@ -991,6 +991,8 @@ const ReportViewDashboard = () => {
           max-height: 60mm !important;
         }
       }
-    `}</style>
-  </div>
-);
+  `}</style>
+    </div>
+  );
+};
+export default ReportViewDashboard;

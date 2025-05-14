@@ -431,8 +431,8 @@ const ReportViewDashboard = () => {
   };
   
   return (
-    <div id="report-container"> {/* Add ID for the export functionality */}
-      <div className="flex justify-between items-center mb-4 no-print">
+  <div id="report-container"> {/* Add ID for the export functionality */}
+    <div className="flex justify-between items-center mb-4 no-print">
       <p className="text-sm text-gray-500">Generated on {new Date().toLocaleDateString()}</p>
       <ReportExportOptions 
         reportData={state} 
@@ -442,7 +442,6 @@ const ReportViewDashboard = () => {
     
     {/* PÁGINA 1: INFORMACIÓN GENERAL */}
     <div className="pdf-page-section" data-page="1">
-      
       {/* INSPECTION OVERVIEW CON LAYOUT SIMILAR AL SETUP */}
       <div className="dashboard-card mb-4">
         <div className="card-header" style={{background: 'linear-gradient(to right, #667eea, #764ba2)'}}>
@@ -581,8 +580,31 @@ const ReportViewDashboard = () => {
           </div>
         </div>
       </div>
+      
+      {/* Equipment Section para la primera página */}
+      <div className="report-section">
+        <h3 className="report-section-title" style={{ color: '#3D4A5C', background: 'rgba(249, 250, 251, 0.8)', padding: '0.5rem', borderRadius: '0.25rem' }}>
+          <Settings size={18} style={{ marginRight: '0.5rem' }} /> Measurement Equipment
+        </h3>
+        <div className="dashboard-card">
+          <div className="card-body">
+            {measurementEquipment && measurementEquipment.length > 0 ? (
+              <div className="space-y-1">
+                {measurementEquipment.map((equip, index) => (
+                  <p key={index}>
+                    <span className="font-medium">Tool {index + 1}:</span> {equip.toolType || "Coating Meter"} - {equip.toolId || `CM-${789 + index}`}
+                  </p>
+                ))}
+              </div>
+            ) : (
+              <p>No measurement equipment recorded.</p>
+            )}
+          </div>
+        </div>
+      </div>
+    </div>
 
-       {/* PÁGINA 2: DIBUJO TÉCNICO Y MEDICIONES DIMENSIONALES */}
+    {/* PÁGINA 2: DIBUJO TÉCNICO Y MEDICIONES DIMENSIONALES */}
     <div className="pdf-page-section" data-page="2">
       {/* Utilizamos el componente especializado ReportTechnicalDrawing */}
       <ReportTechnicalDrawing />
@@ -668,10 +690,10 @@ const ReportViewDashboard = () => {
           </div>
         )}
       </div>
-      
-        {/* PÁGINA 3: COATING Y INSPECCIÓN VISUAL */}
-    <div className="pdf-page-section" data-page="3">
+    </div>
 
+    {/* PÁGINA 3: COATING Y INSPECCIÓN VISUAL */}
+    <div className="pdf-page-section" data-page="3">
       <div className="report-section">
         <h3 className="report-section-title" style={{ color: '#3D4A5C', background: 'rgba(249, 250, 251, 0.8)', padding: '0.5rem', borderRadius: '0.25rem' }}>
           <BarChart2 size={18} style={{ marginRight: '0.5rem' }} /> Coating Measurements
@@ -745,9 +767,9 @@ const ReportViewDashboard = () => {
             {(photos && photos.length > 0) && (
               <div className="mt-4">
                 <span className="report-info-label">Photos</span>
-                <div className="inspection-photo-grid">
+                <div className="inspection-photo-grid-pdf">
                   {photos.map((photo, index) => (
-                    <div key={index} className="inspection-photo-item">
+                    <div key={index} className="inspection-photo-item-pdf">
                       <div className="inspection-photo-container">
                         <img 
                           src={photo.src} 
@@ -780,196 +802,195 @@ const ReportViewDashboard = () => {
           </div>
         </div>
       </div>
-        </div>
-      {/* Estilos para tabla transpuesta */}
-      <style jsx global>{`
-        /* Estilos para tabla transpuesta */
-        .data-table {
-          table-layout: fixed;
-          width: 100%;
-          border-collapse: collapse;
+    </div>
+    
+    {/* Estilos para tabla transpuesta */}
+    <style jsx global>{`
+      /* Estilos para tabla transpuesta */
+      .data-table {
+        table-layout: fixed;
+        width: 100%;
+        border-collapse: collapse;
+      }
+      
+      .data-table th, .data-table td {
+        padding: 4px;
+        font-size: 0.75rem;
+        border: 1px solid #e5e7eb;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+      
+      .data-table th {
+        background-color: #f3f4f6;
+      }
+      
+      .data-table tr:nth-child(even) td {
+        background-color: #f9fafb;
+      }
+      
+      /* Estilos para gráficos densos */
+      .dimension-chart .recharts-dot {
+        r: 2;
+      }
+      
+      .dimension-chart .recharts-line-curve {
+        stroke-width: 1.5;
+      }
+      
+      /* Estilos para títulos de sección */
+      .report-section-title {
+        font-size: 1.25rem;
+        font-weight: 600;
+        margin-bottom: 1rem;
+        padding-bottom: 0.625rem;
+        border-bottom: 1px solid #e5e7eb;
+        background-color: rgba(249, 250, 251, 0.8);
+        padding: 0.5rem;
+        border-radius: 0.25rem;
+        color: #3D4A5C;
+        box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+      }
+      
+      @media print {
+        body {
+          font-size: 10pt;
+          margin: 0;
+          padding: 0;
+        }
+        
+        .dashboard-card {
+          box-shadow: none !important;
+          border: 1px solid #e5e7eb !important;
+          break-inside: avoid;
+          page-break-inside: avoid;
+        }
+        
+        .btn, .card-options {
+          display: none !important;
+        }
+        
+        .report-section {
+          margin-bottom: 10mm;
+          page-break-inside: avoid;
+        }
+        
+        .report-section-title {
+          font-size: 12pt;
+          color: #000 !important;
+          border-bottom: 1px solid #000;
         }
         
         .data-table th, .data-table td {
-          padding: 4px;
-          font-size: 0.75rem;
-          border: 1px solid #e5e7eb;
-          overflow: hidden;
-          text-overflow: ellipsis;
+          padding: 2mm;
+          font-size: 8pt;
         }
         
-        .data-table th {
-          background-color: #f3f4f6;
+        .grid-cols-3 {
+          grid-template-columns: repeat(3, 1fr) !important;
         }
         
-        .data-table tr:nth-child(even) td {
-          background-color: #f9fafb;
+        img {
+          max-width: 50mm !important;
+        }
+      }
+      
+      /* Clases para manejo de páginas PDF */
+      .pdf-page-section {
+        page-break-before: always;
+        page-break-after: always;
+        break-before: page;
+        break-after: page;
+        min-height: 100vh;
+        padding: 20px;
+        background: white;
+      }
+      
+      .pdf-page-section:first-child {
+        page-break-before: avoid;
+        break-before: avoid;
+      }
+      
+      /* Evitar que ciertos elementos se corten */
+      .dashboard-card,
+      .inspection-photo-container,
+      .dimension-mini-chart {
+        page-break-inside: avoid;
+        break-inside: avoid;
+      }
+      
+      /* Grid específico para fotos en PDF */
+      .inspection-photo-grid-pdf {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 15px;
+        margin-top: 15px;
+      }
+      
+      .inspection-photo-item-pdf {
+        page-break-inside: avoid;
+        break-inside: avoid;
+      }
+      
+      /* Ocultar controles en PDF */
+      .no-print {
+        display: block;
+      }
+      
+      /* Estilos para impresión específicos */
+      @media print {
+        .no-print {
+          display: none !important;
         }
         
-        /* Estilos para gráficos densos */
-        .dimension-chart .recharts-dot {
-          r: 2;
-        }
-        
-        .dimension-chart .recharts-line-curve {
-          stroke-width: 1.5;
-        }
-        
-        /* Estilos para títulos de sección */
-        .report-section-title {
-          font-size: 1.25rem;
-          font-weight: 600;
-          margin-bottom: 1rem;
-          padding-bottom: 0.625rem;
-          border-bottom: 1px solid #e5e7eb;
-          background-color: rgba(249, 250, 251, 0.8);
-          padding: 0.5rem;
-          border-radius: 0.25rem;
-          color: #3D4A5C;
-          box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
-        }
-        
-        @media print {
-          body {
-            font-size: 10pt;
-            margin: 0;
-            padding: 0;
-          }
-          
-          .dashboard-card {
-            box-shadow: none !important;
-            border: 1px solid #e5e7eb !important;
-            break-inside: avoid;
-            page-break-inside: avoid;
-          }
-          
-          .btn, .card-options {
-            display: none !important;
-          }
-          
-          .report-section {
-            margin-bottom: 10mm;
-            page-break-inside: avoid;
-          }
-          
-          .report-section-title {
-            font-size: 12pt;
-            color: #000 !important;
-            border-bottom: 1px solid #000;
-          }
-          
-          .data-table th, .data-table td {
-            padding: 2mm;
-            font-size: 8pt;
-          }
-          
-          .grid-cols-3 {
-            grid-template-columns: repeat(3, 1fr) !important;
-          }
-          
-          img {
-            max-width: 50mm !important;
-          }
-        }
-          /* Clases para manejo de páginas PDF */
         .pdf-page-section {
           page-break-before: always;
           page-break-after: always;
-          break-before: page;
-          break-after: page;
           min-height: 100vh;
-          padding: 20px;
-          background: white;
         }
         
         .pdf-page-section:first-child {
           page-break-before: avoid;
-          break-before: avoid;
         }
         
-        /* Evitar que ciertos elementos se corten */
-        .dashboard-card,
-        .inspection-photo-container,
-        .dimension-mini-chart {
-          page-break-inside: avoid;
+        body {
+          font-size: 10pt;
+          margin: 0;
+          padding: 0;
+        }
+        
+        .dashboard-card {
+          box-shadow: none !important;
+          border: 1px solid #e5e7eb !important;
           break-inside: avoid;
+          page-break-inside: avoid;
         }
         
-        /* Grid específico para fotos en PDF */
+        .report-section {
+          margin-bottom: 10mm;
+          page-break-inside: avoid;
+        }
+        
+        .report-section-title {
+          font-size: 12pt;
+          color: #000 !important;
+          border-bottom: 1px solid #000;
+        }
+        
+        .data-table th, .data-table td {
+          padding: 2mm;
+          font-size: 8pt;
+        }
+        
         .inspection-photo-grid-pdf {
-          display: grid;
-          grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-          gap: 15px;
-          margin-top: 15px;
+          grid-template-columns: repeat(2, 1fr) !important;
         }
         
-        .inspection-photo-item-pdf {
-          page-break-inside: avoid;
-          break-inside: avoid;
+        .inspection-photo-item-pdf img {
+          max-width: 80mm !important;
+          max-height: 60mm !important;
         }
-        
-        /* Ocultar controles en PDF */
-        .no-print {
-          display: block;
-        }
-        
-        /* Estilos para impresión específicos */
-        @media print {
-          .no-print {
-            display: none !important;
-          }
-          
-          .pdf-page-section {
-            page-break-before: always;
-            page-break-after: always;
-            min-height: 100vh;
-          }
-          
-          .pdf-page-section:first-child {
-            page-break-before: avoid;
-          }
-          
-          body {
-            font-size: 10pt;
-            margin: 0;
-            padding: 0;
-          }
-          
-          .dashboard-card {
-            box-shadow: none !important;
-            border: 1px solid #e5e7eb !important;
-            break-inside: avoid;
-            page-break-inside: avoid;
-          }
-          
-          .report-section {
-            margin-bottom: 10mm;
-            page-break-inside: avoid;
-          }
-          
-          .report-section-title {
-            font-size: 12pt;
-            color: #000 !important;
-            border-bottom: 1px solid #000;
-          }
-          
-          .data-table th, .data-table td {
-            padding: 2mm;
-            font-size: 8pt;
-          }
-          
-          .inspection-photo-grid-pdf {
-            grid-template-columns: repeat(2, 1fr) !important;
-          }
-          
-          .inspection-photo-item-pdf img {
-            max-width: 80mm !important;
-            max-height: 60mm !important;
-          }
-        }
-      `}</style>
-    </div>
-  );
-};
-
-export default ReportViewDashboard;
+      }
+    `}</style>
+  </div>
+);

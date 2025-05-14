@@ -66,7 +66,7 @@ const DimensionMiniChart = ({ dimension, measurements, index }) => {
   
   // Calcular estadísticas para mostrar
   const values = chartData.map(d => d.value);
-  const mean = values.reduce((a, b) => a + b, 0) / values.length;
+  const mean = values.reduce((a, b) => a + b, 0) / values.length; 
   const min = Math.min(...values);
   const max = Math.max(...values);
 
@@ -432,7 +432,7 @@ const ReportViewDashboard = () => {
   
   return (
     <div id="report-container"> {/* Add ID for the export functionality */}
-      <<div className="flex justify-between items-center mb-4 no-print">
+      <div className="flex justify-between items-center mb-4 no-print">
       <p className="text-sm text-gray-500">Generated on {new Date().toLocaleDateString()}</p>
       <ReportExportOptions 
         reportData={state} 
@@ -441,7 +441,7 @@ const ReportViewDashboard = () => {
     </div>
     
     {/* PÁGINA 1: INFORMACIÓN GENERAL */}
-    <div className="pdf-page-section" data-page="1"></div>
+    <div className="pdf-page-section" data-page="1">
       
       {/* INSPECTION OVERVIEW CON LAYOUT SIMILAR AL SETUP */}
       <div className="dashboard-card mb-4">
@@ -583,7 +583,7 @@ const ReportViewDashboard = () => {
       </div>
 
        {/* PÁGINA 2: DIBUJO TÉCNICO Y MEDICIONES DIMENSIONALES */}
-    <div className="pdf-page-section" data-page="2"></div>
+    <div className="pdf-page-section" data-page="2">
       {/* Utilizamos el componente especializado ReportTechnicalDrawing */}
       <ReportTechnicalDrawing />
       
@@ -670,7 +670,7 @@ const ReportViewDashboard = () => {
       </div>
       
         {/* PÁGINA 3: COATING Y INSPECCIÓN VISUAL */}
-    <div className="pdf-page-section" data-page="3"></div>
+    <div className="pdf-page-section" data-page="3">
 
       <div className="report-section">
         <h3 className="report-section-title" style={{ color: '#3D4A5C', background: 'rgba(249, 250, 251, 0.8)', padding: '0.5rem', borderRadius: '0.25rem' }}>

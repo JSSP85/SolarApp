@@ -3,7 +3,7 @@ import html2canvas from 'html2canvas';
 import jsPDF from 'jspdf';
 
 /**
- * Exports a DOM element as PDF using html2canvas and jsPDF
+ * Exports a DOM element as PDF with better page management
  * @param {string} elementId - ID of the DOM element to export
  * @param {Object} options - Configuration options
  * @param {string} options.filename - Filename (without extension)
@@ -34,51 +34,84 @@ export const exportToPDF = async (elementId, options = {}) => {
   }
 
   try {
-    // Capture the element as an image with html2canvas
-    const canvas = await html2canvas(element, {
-      scale: scale,
-      useCORS: true,
-      allowTaint: true,
-      logging: false,
-      backgroundColor: '#ffffff'
-    });
-
     // Create PDF
     const pdf = new jsPDF({
       orientation: orientation,
-      unit: 'mm'
+      unit: 'mm',
+      format: 'a4'
     });
 
-    // Get dimensions
-    const imgData = canvas.toDataURL('image/jpeg', 0.95);
-    const imgProps = pdf.getImageProperties(imgData);
-    const pdfWidth = pdf.internal.pageSize.getWidth();
-    const pdfHeight = (imgProps.height * pdfWidth) / imgProps.width;
-
-    // If height is greater than one page, handle multiple pages
+    const pageWidth = pdf.internal.pageSize.getWidth();
     const pageHeight = pdf.internal.pageSize.getHeight();
-    
-    if (pdfHeight > pageHeight) {
-      // Divide the image into multiple pages
-      let heightLeft = pdfHeight;
-      let position = 0;
-      let page = 1;
+    const margin = 10; // 10mm margin
+    const contentWidth = pageWidth - (margin * 2);
+    const contentHeight = pageHeight - (margin * 2);
 
-      // First page
-      pdf.addImage(imgData, 'JPEG', 0, position, pdfWidth, pdfHeight);
-      heightLeft -= pageHeight;
+    // Look for page sections
+    const pagesSections = element.querySelectorAll('.pdf-page-section');
+    
+    if (pagesSections.length === 0) {
+      // Fallback: export everything as before if no sections are defined
+      return await exportSinglePage(element, pdf, options);
+    }
+
+    let isFirstPage = true;
+
+    for (let i = 0; i < pagesSections.length; i++) {
+      const section = pagesSections[i];
       
-      // Additional pages if needed
-      while (heightLeft > 0) {
-        position = -pageHeight * page;
+      // Add new page if not the first
+      if (!isFirstPage) {
         pdf.addPage();
-        pdf.addImage(imgData, 'JPEG', 0, position, pdfWidth, pdfHeight);
-        heightLeft -= pageHeight;
-        page++;
       }
-    } else {
-      // Fits on a single page
-      pdf.addImage(imgData, 'JPEG', 0, 0, pdfWidth, pdfHeight);
+      
+      try {
+        // Capture the specific section
+        const canvas = await html2canvas(section, {
+          scale: scale,
+          useCORS: true,
+          allowTaint: true,
+          logging: false,
+          backgroundColor: '#ffffff',
+          x: 0,
+          y: 0,
+          width: section.scrollWidth,
+          height: section.scrollHeight
+        });
+
+        const imgData = canvas.toDataURL('image/jpeg', 0.95);
+        const imgProps = pdf.getImageProperties(imgData);
+        
+        // Calculate dimensions maintaining aspect ratio
+        let imgWidth = contentWidth;
+        let imgHeight = (imgProps.height * imgWidth) / imgProps.width;
+        
+        // If image is too tall, adjust to available height
+        if (imgHeight > contentHeight) {
+          imgHeight = contentHeight;
+          imgWidth = (imgProps.width * imgHeight) / imgProps.height;
+        }
+        
+        // Center the image on the page
+        const x = margin + (contentWidth - imgWidth) / 2;
+        const y = margin + (contentHeight - imgHeight) / 2;
+        
+        pdf.addImage(imgData, 'JPEG', x, y, imgWidth, imgHeight);
+        
+        isFirstPage = false;
+        
+        // Update progress notification
+        if (showNotification) {
+          updateNotification(
+            notificationElement, 
+            `Processing page ${i + 1} of ${pagesSections.length}...`,
+            'info'
+          );
+        }
+        
+      } catch (error) {
+        console.error(`Error processing page section ${i}:`, error);
+      }
     }
 
     // Save PDF
@@ -95,6 +128,58 @@ export const exportToPDF = async (elementId, options = {}) => {
       // Update notification to error
       updateNotification(notificationElement, 'Error generating PDF. Please try again.', 'error');
     }
+  }
+};
+
+/**
+ * Function to export a single page (fallback)
+ * @param {HTMLElement} element - DOM element to export
+ * @param {jsPDF} pdf - PDF instance
+ * @param {Object} options - Configuration options
+ */
+const exportSinglePage = async (element, pdf, options) => {
+  const { scale = 2 } = options;
+  
+  // Capture the element as an image with html2canvas
+  const canvas = await html2canvas(element, {
+    scale: scale,
+    useCORS: true,
+    allowTaint: true,
+    logging: false,
+    backgroundColor: '#ffffff'
+  });
+
+  // Create PDF
+  const imgData = canvas.toDataURL('image/jpeg', 0.95);
+  const imgProps = pdf.getImageProperties(imgData);
+  const pdfWidth = pdf.internal.pageSize.getWidth();
+  const pdfHeight = (imgProps.height * pdfWidth) / imgProps.width;
+
+  // Get dimensions
+  const pageHeight = pdf.internal.pageSize.getHeight();
+  
+  // If height is greater than one page, handle multiple pages
+  if (pdfHeight > pageHeight) {
+    // Divide the image into multiple pages
+    let heightLeft = pdfHeight;
+    let position = 0;
+    let page = 1;
+
+    // First page
+    pdf.addImage(imgData, 'JPEG', 0, position, pdfWidth, pdfHeight);
+    heightLeft -= pageHeight;
+    
+    // Additional pages if needed
+    while (heightLeft > 0) {
+      position = -pageHeight * page;
+      pdf.addPage();
+      pdf.addImage(imgData, 'JPEG', 0, position, pdfWidth, pdfHeight);
+      heightLeft -= pageHeight;
+      page++;
+    }
+  } else {
+    // Fits on a single page
+    pdf.addImage(imgData, 'JPEG', 0, 0, pdfWidth, pdfHeight);
   }
 };
 

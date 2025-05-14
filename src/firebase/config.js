@@ -1,23 +1,23 @@
-
 // src/firebase/config.js
-import { initializeApp } from 'firebase/app';
+import { initializeApp } from "firebase/app";
 import { getFirestore } from 'firebase/firestore';
 import { getAuth } from 'firebase/auth';
 
-// Tu configuración de Firebase (obtienes esto de tu consola Firebase)
+// Your web app's Firebase configuration
 const firebaseConfig = {
-  apiKey: "tu-api-key",
-  authDomain: "tu-proyecto.firebaseapp.com",
-  projectId: "tu-proyecto-id",
-  storageBucket: "tu-proyecto.appspot.com",
-  messagingSenderId: "123456789",
-  appId: "tu-app-id"
+  apiKey: "AIzaSyDrSh_P2JjyOlveC1rkPS2_WBl2hY6E8ig",
+  authDomain: "solarapp-12b70.firebaseapp.com",
+  projectId: "solarapp-12b70",
+  storageBucket: "solarapp-12b70.firebasestorage.app",
+  messagingSenderId: "780419471456",
+  appId: "1:780419471456:web:7fa3c5e1c01fbe1f6c8b05",
+  measurementId: "G-R3304E46HX"
 };
 
-// Inicializar Firebase
+// Initialize Firebase
 const app = initializeApp(firebaseConfig);
 
-// Obtener referencias a servicios
+// Initialize Firebase services
 export const db = getFirestore(app);
 export const auth = getAuth(app);
 

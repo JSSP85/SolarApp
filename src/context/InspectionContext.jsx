@@ -12,8 +12,27 @@ import {
   fetchCoatingRequirements
 } from '../utils/googleSheetsService';
 
+// Importaciones de Firebase
+import { 
+  saveInspection, 
+  updateInspection, 
+  getInspection,
+  getInspections 
+} from '../firebase/inspectionService';
+
 // Crear el contexto
 const InspectionContext = createContext();
+
+// Estado inicial actualizado con campos de Firebase
+const inspectionStateWithFirebase = {
+  ...defaultInspectionState,
+  // Nuevos campos para Firestore
+  currentInspectionId: null,
+  isSaving: false,
+  saveError: null,
+  lastSaved: null,
+  hasUnsavedChanges: false,
+};
 
 // Reducer para manejar las actualizaciones de estado
 function inspectionReducer(state, action) {
@@ -485,6 +504,50 @@ function inspectionReducer(state, action) {
         inspectionStage: prevStage
       };
     }
+
+    // NUEVAS ACCIONES PARA FIREBASE
+    case 'SET_CURRENT_INSPECTION_ID':
+      return {
+        ...state,
+        currentInspectionId: action.payload,
+        hasUnsavedChanges: false
+      };
+
+    case 'SET_SAVING_STATE':
+      return {
+        ...state,
+        isSaving: action.payload
+      };
+
+    case 'SET_SAVE_ERROR':
+      return {
+        ...state,
+        saveError: action.payload,
+        isSaving: false
+      };
+
+    case 'SET_LAST_SAVED':
+      return {
+        ...state,
+        lastSaved: action.payload,
+        isSaving: false,
+        saveError: null,
+        hasUnsavedChanges: false
+      };
+
+    case 'SET_UNSAVED_CHANGES':
+      return {
+        ...state,
+        hasUnsavedChanges: action.payload
+      };
+
+    case 'LOAD_INSPECTION_DATA':
+      return {
+        ...action.payload,
+        isSaving: false,
+        saveError: null,
+        hasUnsavedChanges: false
+      };
       
     default:
       return state;
@@ -493,16 +556,7 @@ function inspectionReducer(state, action) {
 
 // Provider component
 export const InspectionProvider = ({ children }) => {
-  const [state, dispatch] = useReducer(inspectionReducer, {
-    ...defaultInspectionState,
-    // Añadir estado inicial para las etapas de inspección
-    inspectionStage: 'dimensional', // valores posibles: 'dimensional', 'coating', 'visual'
-    stageCompletion: {
-      dimensional: false,
-      coating: false,
-      visual: false
-    }
-  });
+  const [state, dispatch] = useReducer(inspectionReducer, inspectionStateWithFirebase);
   
   // Cargar datos iniciales al montar el componente
   useEffect(() => {
@@ -654,9 +708,97 @@ export const InspectionProvider = ({ children }) => {
     state.stageCompletion.coating,
     state.stageCompletion.visual
   ]);
+
+  // Marcar cambios no guardados cuando se actualiza el state
+  useEffect(() => {
+    // Solo marcar como no guardado si ya hay una inspección y no estamos cargando
+    if (state.currentInspectionId && !state.isSaving) {
+      dispatch({ type: 'SET_UNSAVED_CHANGES', payload: true });
+    }
+  }, [
+    state.componentCode, state.componentName, state.componentFamily,
+    state.inspector, state.batchQuantity, state.dimensionMeasurements,
+    state.localCoatingMeasurements, state.visualConformity, state.visualNotes
+  ]);
+  
+  // FUNCIONES DE FIRESTORE
+
+  // Función para guardar inspección
+  const saveCurrentInspection = async () => {
+    try {
+      dispatch({ type: 'SET_SAVING_STATE', payload: true });
+      dispatch({ type: 'SET_SAVE_ERROR', payload: null });
+      
+      let inspectionId;
+      
+      if (state.currentInspectionId) {
+        // Actualizar inspección existente
+        await updateInspection(state.currentInspectionId, state);
+        inspectionId = state.currentInspectionId;
+        console.log('Inspección actualizada:', inspectionId);
+      } else {
+        // Crear nueva inspección
+        inspectionId = await saveInspection(state);
+        dispatch({ type: 'SET_CURRENT_INSPECTION_ID', payload: inspectionId });
+        console.log('Nueva inspección creada:', inspectionId);
+      }
+      
+      dispatch({ type: 'SET_LAST_SAVED', payload: new Date() });
+      
+      return inspectionId;
+    } catch (error) {
+      console.error('Error guardando inspección:', error);
+      dispatch({ type: 'SET_SAVE_ERROR', payload: error.message });
+      throw error;
+    }
+  };
+
+  // Función para cargar inspección
+  const loadInspection = async (inspectionId) => {
+    try {
+      dispatch({ type: 'SET_SAVING_STATE', payload: true });
+      dispatch({ type: 'SET_SAVE_ERROR', payload: null });
+      
+      const inspectionData = await getInspection(inspectionId);
+      
+      if (inspectionData) {
+        dispatch({ type: 'LOAD_INSPECTION_DATA', payload: inspectionData });
+        dispatch({ type: 'SET_CURRENT_INSPECTION_ID', payload: inspectionId });
+        console.log('Inspección cargada:', inspectionId);
+        return inspectionData;
+      } else {
+        throw new Error('Inspección no encontrada');
+      }
+    } catch (error) {
+      console.error('Error cargando inspección:', error);
+      dispatch({ type: 'SET_SAVE_ERROR', payload: error.message });
+      throw error;
+    }
+  };
+
+  // Función para crear nueva inspección (resetear state)
+  const createNewInspection = () => {
+    // Resetear al estado inicial pero mantener algunas configuraciones
+    const newState = {
+      ...inspectionStateWithFirebase,
+      // Mantener estas configuraciones del usuario
+      inspector: state.inspector,
+      inspectionDate: new Date().toISOString().slice(0, 10)
+    };
+    
+    dispatch({ type: 'LOAD_INSPECTION_DATA', payload: newState });
+    console.log('Nueva inspección creada');
+  };
   
   return (
-    <InspectionContext.Provider value={{ state, dispatch }}>
+    <InspectionContext.Provider value={{ 
+      state, 
+      dispatch,
+      // Funciones de Firestore
+      saveCurrentInspection,
+      loadInspection,
+      createNewInspection
+    }}>
       {children}
     </InspectionContext.Provider>
   );

@@ -82,33 +82,130 @@ import DashboardApp from './DashboardApp';
 import { InspectionProvider } from './context/InspectionContext';
 import { LanguageProvider } from './context/LanguageContext';
 
+// Configuración de usuarios y permisos
+const USER_CREDENTIALS = {
+  'Admin': {
+    password: '1234',
+    role: 'admin',
+    permissions: ['steel', 'hardware', 'electrical', 'free-inspection', 'non-conformity-manager', 'inspection-dashboard', 'quality-database', 'supplier-management']
+  },
+  'Inspector1': {
+    password: '4321',
+    role: 'inspect1',
+    permissions: ['steel', 'hardware', 'electrical', 'free-inspection']
+  },
+  'Inspector2': {
+    password: '0099',
+    role: 'inspect2', 
+    permissions: ['steel', 'hardware', 'electrical', 'free-inspection']
+  },
+  'Inspector3': {
+    password: '1199',
+    role: 'inspect3',
+    permissions: ['steel', 'hardware', 'electrical', 'free-inspection']
+  },
+  'Inspector4': {
+    password: '9900',
+    role: 'inspect4',
+    permissions: ['steel', 'hardware', 'electrical', 'free-inspection']
+  },
+  'Inspector5': {
+    password: '6789',
+    role: 'inspect5',
+    permissions: ['steel', 'hardware', 'electrical', 'free-inspection']
+  }
+};
+
 const MainMenu = () => {
   const [selectedOption, setSelectedOption] = useState(null);
   const [showLoginModal, setShowLoginModal] = useState(false);
   const [loginCredentials, setLoginCredentials] = useState({ username: '', password: '' });
   const [loginError, setLoginError] = useState('');
   const [pendingManagerOption, setPendingManagerOption] = useState(null);
+  const [pendingModuleType, setPendingModuleType] = useState(null);
 
   // Function to handle authentication
   const handleLogin = (e) => {
     e.preventDefault();
     
-    if (loginCredentials.username === 'Admin' && loginCredentials.password === '1234') {
-      setShowLoginModal(false);
-      setLoginError('');
-      // Proceed to the selected manager option after successful login
-      setSelectedOption(pendingManagerOption);
+    const user = USER_CREDENTIALS[loginCredentials.username];
+    
+    if (user && user.password === loginCredentials.password) {
+      // Verificar si el usuario tiene permisos para el módulo solicitado
+      if (user.permissions.includes(pendingManagerOption)) {
+        setShowLoginModal(false);
+        setLoginError('');
+        setSelectedOption(pendingManagerOption);
+      } else {
+        setLoginError(`Access denied. Your role (${user.role}) does not have permission to access this module.`);
+      }
     } else {
-      setLoginError('Invalid credentials. Please try again.');
+      setLoginError('Invalid username or password. Please try again.');
     }
   };
 
   // Function to handle manager option selection that requires authentication
   const handleManagerOptionSelect = (option) => {
     setPendingManagerOption(option);
+    setPendingModuleType('manager');
     setShowLoginModal(true);
     setLoginCredentials({ username: '', password: '' });
     setLoginError('');
+  };
+
+  // Function to handle Steel Components selection with authentication
+  const handleSteelSelection = () => {
+    setPendingManagerOption('steel');
+    setPendingModuleType('inspector');
+    setShowLoginModal(true);
+    setLoginCredentials({ username: '', password: '' });
+    setLoginError('');
+  };
+
+  // Function to handle Hardware Components selection with authentication
+  const handleHardwareSelection = () => {
+    setPendingManagerOption('hardware');
+    setPendingModuleType('inspector');
+    setShowLoginModal(true);
+    setLoginCredentials({ username: '', password: '' });
+    setLoginError('');
+  };
+
+  // Function to handle Electrical Components selection with authentication
+  const handleElectricalSelection = () => {
+    setPendingManagerOption('electrical');
+    setPendingModuleType('inspector');
+    setShowLoginModal(true);
+    setLoginCredentials({ username: '', password: '' });
+    setLoginError('');
+  };
+
+  // Function to handle Free Inspection selection with authentication
+  const handleFreeInspectionSelection = () => {
+    setPendingManagerOption('free-inspection');
+    setPendingModuleType('inspector');
+    setShowLoginModal(true);
+    setLoginCredentials({ username: '', password: '' });
+    setLoginError('');
+  };
+
+  // Function to get required access level
+  const getRequiredAccessLevel = (module) => {
+    switch(module) {
+      case 'steel':
+      case 'hardware':
+      case 'electrical':
+      case 'free-inspection':
+        return 'Inspector Level Access Required';
+      case 'non-conformity-manager':
+      case 'inspection-dashboard':
+        return 'Manager Level Access Required';
+      case 'quality-database':
+      case 'supplier-management':
+        return 'Administrator Access Required';
+      default:
+        return 'Authentication Required';
+    }
   };
 
   // Function to handle application background issue - MODIFICADO PARA USAR IMAGEN
@@ -316,10 +413,10 @@ const MainMenu = () => {
             </div>
             <div className={styles.mainMenuSectionBody}>
               <div className={styles.mainMenuCards}>
-                {/* Steel Components Card - MEJORADO con icono de calibre */}
+                {/* Steel Components Card - CON AUTENTICACIÓN */}
                 <div 
                   className={`${styles.mainMenuCard} ${styles.mainMenuStagger1}`}
-                  onClick={() => setSelectedOption('steel')}
+                  onClick={() => handleSteelSelection()}
                 >
                   <div className={styles.mainMenuCardBody}>
                     <div className={styles.mainMenuCardIconContainer} style={{ background: 'rgba(108, 207, 255, 0.1)', border: '1px solid rgba(108, 207, 255, 0.2)' }}>
@@ -330,16 +427,21 @@ const MainMenu = () => {
                       Structural steel components inspection for solar mounting systems
                     </p>
                     <div className={styles.mainMenuCardFooter}>
-                      <div className={`${styles.mainMenuBadge} ${styles.mainMenuBadgeInfo}`}>Available</div>
-                      <ChevronRight size={18} className={styles.mainMenuCardArrow} />
+                      <div className={`${styles.mainMenuBadge} ${styles.mainMenuBadgeAuth}`}>
+                        <Lock size={12} />
+                        Inspector Access
+                      </div>
+                      <div className={styles.managerLockIndicator}>
+                        <Lock size={14} />
+                      </div>
                     </div>
                   </div>
                 </div>
 
-                {/* Hardware Components Card - MEJORADO con icono de tornillo */}
+                {/* Hardware Components Card - CON AUTENTICACIÓN */}
                 <div 
                   className={`${styles.mainMenuCard} ${styles.mainMenuStagger2}`}
-                  onClick={() => setSelectedOption('hardware')}
+                  onClick={() => handleHardwareSelection()}
                 >
                   <div className={styles.mainMenuCardBody}>
                     <div className={styles.mainMenuCardIconContainer} style={{ background: 'rgba(251, 211, 141, 0.1)', border: '1px solid rgba(251, 211, 141, 0.2)' }}>
@@ -350,16 +452,21 @@ const MainMenu = () => {
                       Fasteners and mounting hardware inspection for solar systems
                     </p>
                     <div className={styles.mainMenuCardFooter}>
-                      <div className={`${styles.mainMenuBadge} ${styles.mainMenuBadgeWarning}`}>Page Under Construction</div>
-                      <ChevronRight size={18} className={styles.mainMenuCardArrow} />
+                      <div className={`${styles.mainMenuBadge} ${styles.mainMenuBadgeAuth}`}>
+                        <Lock size={12} />
+                        Inspector Access
+                      </div>
+                      <div className={styles.managerLockIndicator}>
+                        <Lock size={14} />
+                      </div>
                     </div>
                   </div>
                 </div>
 
-                {/* Electrical & Electronic Components Card */}
+                {/* Electrical & Electronic Components Card - CON AUTENTICACIÓN */}
                 <div 
                   className={`${styles.mainMenuCard} ${styles.mainMenuStagger3}`}
-                  onClick={() => setSelectedOption('electrical')}
+                  onClick={() => handleElectricalSelection()}
                 >
                   <div className={styles.mainMenuCardBody}>
                     <div className={styles.mainMenuCardIconContainer} style={{ background: 'rgba(72, 187, 120, 0.1)', border: '1px solid rgba(72, 187, 120, 0.2)' }}>
@@ -370,16 +477,21 @@ const MainMenu = () => {
                       Electrical and electronic components inspection for solar systems
                     </p>
                     <div className={styles.mainMenuCardFooter}>
-                      <div className={`${styles.mainMenuBadge} ${styles.mainMenuBadgeWarning}`}>Page Under Construction</div>
-                      <ChevronRight size={18} className={styles.mainMenuCardArrow} />
+                      <div className={`${styles.mainMenuBadge} ${styles.mainMenuBadgeAuth}`}>
+                        <Lock size={12} />
+                        Inspector Access
+                      </div>
+                      <div className={styles.managerLockIndicator}>
+                        <Lock size={14} />
+                      </div>
                     </div>
                   </div>
                 </div>
 
-                {/* Free Inspection Card */}
+                {/* Free Inspection Card - CON AUTENTICACIÓN */}
                 <div 
                   className={`${styles.mainMenuCard} ${styles.mainMenuStagger4}`}
-                  onClick={() => setSelectedOption('free-inspection')}
+                  onClick={() => handleFreeInspectionSelection()}
                 >
                   <div className={styles.mainMenuCardBody}>
                     <div className={styles.mainMenuCardIconContainer} style={{ background: 'rgba(168, 85, 247, 0.1)', border: '1px solid rgba(168, 85, 247, 0.2)' }}>
@@ -390,8 +502,13 @@ const MainMenu = () => {
                       Flexible inspection framework for custom notes and photo documentation
                     </p>
                     <div className={styles.mainMenuCardFooter}>
-                      <div className={`${styles.mainMenuBadge} ${styles.mainMenuBadgeWarning}`}>Page Under Construction</div>
-                      <ChevronRight size={18} className={styles.mainMenuCardArrow} />
+                      <div className={`${styles.mainMenuBadge} ${styles.mainMenuBadgeAuth}`}>
+                        <Lock size={12} />
+                        Inspector Access
+                      </div>
+                      <div className={styles.managerLockIndicator}>
+                        <Lock size={14} />
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -509,15 +626,18 @@ const MainMenu = () => {
             <p>© 2025 Valmont Solar</p>
           </div>
 
-          {/* Modal de login para opciones de administrador */}
+          {/* Modal de login mejorado */}
           {showLoginModal && (
             <div className={styles.modalOverlay}>
               <div className={styles.modalContent}>
                 <h3 className={styles.modalTitle}>
                   <Lock size={18} className="mr-2" /> Authentication Required
                 </h3>
+                <div className={styles.modalAccessLevel}>
+                  {getRequiredAccessLevel(pendingManagerOption)}
+                </div>
                 <p className={styles.modalDescription}>
-                  Please enter your administrator credentials to access this module
+                  Please enter your credentials to access the {pendingManagerOption?.replace('-', ' ')} module
                 </p>
                 
                 {loginError && (
@@ -534,6 +654,7 @@ const MainMenu = () => {
                       id="username"
                       value={loginCredentials.username}
                       onChange={(e) => setLoginCredentials({...loginCredentials, username: e.target.value})}
+                      placeholder="Enter your username"
                       required
                     />
                   </div>
@@ -544,6 +665,7 @@ const MainMenu = () => {
                       id="password"
                       value={loginCredentials.password}
                       onChange={(e) => setLoginCredentials({...loginCredentials, password: e.target.value})}
+                      placeholder="Enter your password"
                       required
                     />
                   </div>
@@ -551,7 +673,11 @@ const MainMenu = () => {
                     <button 
                       type="button" 
                       className={styles.cancelButton}
-                      onClick={() => setShowLoginModal(false)}
+                      onClick={() => {
+                        setShowLoginModal(false);
+                        setLoginError('');
+                        setLoginCredentials({ username: '', password: '' });
+                      }}
                     >
                       Cancel
                     </button>
@@ -563,6 +689,20 @@ const MainMenu = () => {
                     </button>
                   </div>
                 </form>
+
+                {/* Información de roles disponibles */}
+                <div style={{ 
+                  marginTop: '1rem', 
+                  padding: '0.75rem', 
+                  background: '#f8fafc', 
+                  borderRadius: '0.5rem',
+                  fontSize: '0.875rem',
+                  color: '#64748b'
+                }}>
+                  <strong>Available Roles:</strong><br />
+                  • Admin: Full system access<br />
+                  • Inspector1-5: Steel, Hardware, Electrical, Free Inspection access
+                </div>
               </div>
             </div>
           )}

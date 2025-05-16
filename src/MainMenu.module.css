@@ -225,6 +225,24 @@ html, body {
   border: 1px solid rgba(107, 114, 128, 0.4);
 }
 
+/* Nuevo badge para autenticación */
+.mainMenuBadgeAuth {
+  background-color: rgba(168, 85, 247, 0.25);
+  border: 1px solid rgba(168, 85, 247, 0.4);
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0.25rem 0.625rem;
+  border-radius: 9999px;
+  font-weight: 500;
+  font-size: 0.75rem;
+  transition: all 0.3s ease;
+}
+
+.mainMenuBadgeAuth svg {
+  opacity: 0.8;
+}
+
 .mainMenuCardArrow {
   opacity: 0.7;
   transition: transform 0.3s ease, opacity 0.3s ease;
@@ -385,6 +403,18 @@ html, body {
   align-items: center;
 }
 
+/* Nuevo estilo para mostrar el nivel de acceso requerido */
+.modalAccessLevel {
+  background-color: #f7fafc;
+  color: #2d3748;
+  padding: 0.5rem 0.75rem;
+  border-radius: 0.375rem;
+  font-size: 0.875rem;
+  margin-bottom: 1rem;
+  border-left: 3px solid #6b46c1;
+  font-weight: 500;
+}
+
 .modalDescription {
   color: #4a5568;
   margin-bottom: 1.5rem;
@@ -410,6 +440,7 @@ html, body {
   border-radius: 0.5rem;
   font-size: 1rem;
   transition: all 0.2s;
+  box-sizing: border-box;
 }
 
 .formGroup input:focus {
@@ -471,4 +502,32 @@ html, body {
   align-items: center;
   justify-content: center;
   border-radius: 50%;
+  color: rgba(255, 255, 255, 0.7);
+}
+
+/* Media queries para responsive design */
+@media (max-width: 1024px) {
+  .mainMenuCards {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 768px) {
+  .mainMenuCards {
+    grid-template-columns: 1fr;
+  }
+  
+  .mainMenuContent {
+    width: 95%;
+    padding: 1rem;
+  }
+  
+  .headerRow {
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+  
+  .mainMenuTitle {
+    font-size: 1.5rem;
+  }
 }

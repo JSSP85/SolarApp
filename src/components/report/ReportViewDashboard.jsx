@@ -470,32 +470,32 @@ const ReportViewDashboard = () => {
                     
    <div className="report-info-item">
       <span className="report-info-label">Client</span>
-      <span className="report-info-value">{client || "Valmont Solar"}</span>
+      <span className="report-info-value">{client || "NA"}</span>
     </div>
                     
                     <div className="report-info-item">
                       <span className="report-info-label">Project Name</span>
-                      <span className="report-info-value">{projectName || "NEPI"}</span>
+                      <span className="report-info-value">{projectName || "NA"}</span>
                     </div>
                     
                     <div className="report-info-item">
                       <span className="report-info-label">Component Family</span>
-                      <span className="report-info-value">{componentFamily || "TORQUE TUBES"}</span>
+                      <span className="report-info-value">{componentFamily || "NA"}</span>
                     </div>
                     
                     <div className="report-info-item">
                       <span className="report-info-label">Component Code</span>
-                      <span className="report-info-value">{componentCode || "ttg45720"}</span>
+                      <span className="report-info-value">{componentCode || "NA"}</span>
                     </div>
                     
                     <div className="report-info-item">
                       <span className="report-info-label">Component Name</span>
-                      <span className="report-info-value">{componentName || "Torque tube 140x100x3.5mm"}</span>
+                      <span className="report-info-value">{componentName || "NA"}</span>
                     </div>
                     
                     <div className="report-info-item">
                       <span className="report-info-label">Surface Protection</span>
-                      <span className="report-info-value">{surfaceProtection || "Z275 - According to EN 10346:2015"}</span>
+                      <span className="report-info-value">{surfaceProtection || "NA"}</span>
                     </div>
                     
                     {surfaceProtection === 'ISO1461' && (

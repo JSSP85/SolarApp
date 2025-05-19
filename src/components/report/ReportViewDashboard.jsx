@@ -514,12 +514,12 @@ const ReportViewDashboard = () => {
                     
                     <div className="report-info-item">
                       <span className="report-info-label">Batch Quantity</span>
-                      <span className="report-info-value">{batchQuantity || "280"}</span>
+                      <span className="report-info-value">{batchQuantity || "NA"}</span>
                     </div>
                     
                     <div className="report-info-item">
                       <span className="report-info-label">Sampling Info</span>
-                      <span className="report-info-value">{sampleInfo || "Letter: G - Sample: 3"}</span>
+                      <span className="report-info-value">{sampleInfo || "NA"}</span>
                     </div>
                   </div>
                 </div>
@@ -537,7 +537,7 @@ const ReportViewDashboard = () => {
                   <div className="grid gap-4">
                     <div className="report-info-item">
                       <span className="report-info-label">Inspector Name</span>
-                      <span className="report-info-value">{inspector || "John Smith"}</span>
+                      <span className="report-info-value">{inspector || "NA"}</span>
                     </div>
                     
                     <div className="report-info-item">
@@ -556,12 +556,12 @@ const ReportViewDashboard = () => {
                     
                     <div className="report-info-item">
                       <span className="report-info-label">Site Name</span>
-                      <span className="report-info-value">{inspectionSite || "Factory 3"}</span>
+                      <span className="report-info-value">{inspectionSite || "NA"}</span>
                     </div>
                     
                     <div className="report-info-item">
                       <span className="report-info-label">Address</span>
-                      <span className="report-info-value">{inspectionAddress || "Calle Mayor 123, Madrid"}</span>
+                      <span className="report-info-value">{inspectionAddress || "NA"}</span>
                     </div>
                     
                     <div className="report-info-item">

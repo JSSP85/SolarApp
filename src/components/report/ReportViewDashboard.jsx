@@ -407,6 +407,7 @@ const ReportViewDashboard = () => {
     photos,
     measurementEquipment,
     projectName,
+    client,
     surfaceProtection,
     specialCoating,
     thickness,
@@ -466,6 +467,12 @@ const ReportViewDashboard = () => {
                 
                 <div className="card-body">
                   <div className="grid gap-4">
+                    
+   <div className="report-info-item">
+      <span className="report-info-label">Client</span>
+      <span className="report-info-value">{client || "Valmont Solar"}</span>
+    </div>
+                    
                     <div className="report-info-item">
                       <span className="report-info-label">Project Name</span>
                       <span className="report-info-value">{projectName || "NEPI"}</span>

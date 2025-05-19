@@ -433,19 +433,6 @@ const ReportViewDashboard = () => {
   
   return (
     <div id="report-container">
-      {/* Encabezado para PDF */}
-      <div className="pdf-header">
-        <div className="pdf-header-content">
-          <div className="pdf-logo-container">
-            <img src="/images/logo.png" alt="Valmont Logo" className="pdf-logo" />
-          </div>
-          <div className="pdf-title-container">
-            <h1 className="pdf-title">INSPECTION REPORT</h1>
-            <h2 className="pdf-subtitle">Steel Components</h2>
-          </div>
-        </div>
-      </div>
-
       <div className="flex justify-between items-center mb-4 no-print">
         <p className="text-sm text-gray-500">Generated on {new Date().toLocaleDateString()}</p>
         <ReportExportOptions 
@@ -481,14 +468,14 @@ const ReportViewDashboard = () => {
                 <div className="card-body">
                   <div className="grid gap-4">
                     
-                    <div className="report-info-item">
-                      <span className="report-info-label">Client</span>
-                      <span className="report-info-value">{client || "Valmont Solar"}</span>
-                    </div>
+   <div className="report-info-item">
+      <span className="report-info-label">Client</span>
+      <span className="report-info-value">{client || "NA"}</span>
+    </div>
                     
                     <div className="report-info-item">
                       <span className="report-info-label">Project Name</span>
-                      <span className="report-info-value">{projectName || "NEPI"}</span>
+                      <span className="report-info-value">{projectName || "NA"}</span>
                     </div>
                     
                     <div className="report-info-item">
@@ -872,222 +859,92 @@ const ReportViewDashboard = () => {
           box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
         }
         
-        /* PDF Header Styles - solo visibles en PDF */
-        .pdf-header {
-          display: none; /* Oculto por defecto en la web */
-        }
-        
-        /* Mejoras para PDF */
         @media print {
-          /* Mostrar encabezado en PDF */
-          .pdf-header {
-            display: block;
-            width: 100%;
-            padding: 20mm 10mm 5mm 10mm;
-            margin-bottom: 5mm;
-            page-break-after: avoid;
-            border-bottom: 3px solid #005F83;
-          }
-          
-          .pdf-header-content {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-          }
-          
-          .pdf-logo-container {
-            width: 30mm;
-          }
-          
-          .pdf-logo {
-            width: 100%;
-            height: auto;
-          }
-          
-          .pdf-title-container {
-            text-align: right;
-          }
-          
-          .pdf-title {
-            font-size: 24pt;
-            font-weight: bold;
+          body {
+            font-size: 10pt;
             margin: 0;
-            color: #005F83;
+            padding: 0;
           }
           
-          .pdf-subtitle {
-            font-size: 16pt;
-            font-weight: normal;
-            margin: 0;
-            color: #666;
-          }
-          
-          /* Mejoras a las tarjetas para más contraste y claridad */
           .dashboard-card {
             box-shadow: none !important;
-            border: 1.5pt solid #000000 !important; /* Borde más oscuro y grueso */
-            margin-bottom: 5mm !important;
-            padding: 0 !important;
-            background-color: white !important;
-            page-break-inside: avoid !important;
+            border: 1px solid #e5e7eb !important;
+            break-inside: avoid;
+            page-break-inside: avoid;
           }
           
-          .card-header {
-            border-bottom: 1.5pt solid #000000 !important;
-            background: #005F83 !important; /* Color consistente */
-            color: white !important;
-            padding: 3mm !important;
-            font-weight: bold !important;
+          .btn, .card-options {
+            display: none !important;
           }
           
-          .card-body {
-            padding: 4mm !important;
+          .report-section {
+            margin-bottom: 10mm;
+            page-break-inside: avoid;
           }
           
-          /* Mejoras en la tabla */
-          .data-table {
-            border-collapse: collapse !important;
-            width: 100% !important;
-          }
-          
-          .data-table th {
-            background-color: #EEF2F6 !important;
-            color: #000000 !important;
-            font-weight: bold !important;
-            border: 1pt solid #000000 !important;
-            padding: 2mm !important;
-            font-size: 9pt !important;
-          }
-          
-          .data-table td {
-            border: 1pt solid #000000 !important;
-            padding: 2mm !important;
-            font-size: 9pt !important;
-          }
-          
-          .data-table tr:nth-child(even) td {
-            background-color: #F8FAFC !important;
-          }
-          
-          /* Fondos de gráficos */
-          .dimension-chart, 
-          .chart-container,
-          .technical-drawing-container,
-          .technical-drawing-container-report {
-            background-color: #F8FAFC !important;
-            border: 1pt solid #000000 !important;
-            padding: 2mm !important;
-          }
-          
-          /* Mejoras para fotos */
-          .inspection-photo-grid-pdf {
-            grid-template-columns: repeat(2, 1fr) !important;
-            gap: 5mm !important;
-          }
-          
-          .inspection-photo-container {
-            border: 1pt solid #000000 !important;
-            box-shadow: 0 1mm 2mm rgba(0,0,0,0.2) !important;
-          }
-          
-          .inspection-photo-caption {
-            background-color: #005F83 !important;
-            color: white !important;
-            padding: 1mm 2mm !important;
-            font-weight: bold !important;
-          }
-          
-          /* Otras mejoras */
           .report-section-title {
-            background-color: #EEF2F6 !important;
-            color: #000000 !important;
-            padding: 2mm !important;
-            border-left: 3mm solid #005F83 !important;
-            font-weight: bold !important;
-            font-size: 12pt !important;
-            margin-bottom: 3mm !important;
+            font-size: 12pt;
+            color: #000 !important;
+            border-bottom: 1px solid #000;
           }
           
-          .report-info-label {
-            font-weight: bold !important;
-            color: #005F83 !important;
+          .data-table th, .data-table td {
+            padding: 2mm;
+            font-size: 8pt;
           }
           
-          .report-info-value {
-            font-weight: normal !important;
+          .grid-cols-3 {
+            grid-template-columns: repeat(3, 1fr) !important;
           }
           
-          .report-info-item {
-            margin-bottom: 2mm !important;
-            border-bottom: 0.5pt dotted #999 !important;
-            padding-bottom: 1mm !important;
-          }
-          
-          /* Badges/etiquetas mejoradas */
-          .badge {
-            padding: 1mm 2mm !important;
-            border-radius: 2mm !important;
-            font-weight: bold !important;
-            display: inline-block !important;
-          }
-          
-          .badge-success {
-            background-color: #10B981 !important;
-            color: white !important;
-          }
-          
-          .badge-danger {
-            background-color: #EF4444 !important;
-            color: white !important;
-          }
-          
-          .badge-warning {
-            background-color: #F59E0B !important;
-            color: white !important;
-          }
-          
-          /* Página y márgenes */
-          body {
-            font-size: 10pt !important;
-            margin: 0 !important;
-            padding: 0 !important;
-            font-family: Arial, sans-serif !important; /* Fuente más profesional */
-          }
-          
-          .pdf-page-section {
-            page-break-before: always !important;
-            page-break-after: always !important;
-            min-height: 100vh !important;
-            padding: 0 !important; /* Quitamos el padding original */
-          }
-          
-          /* Pie de página para cada página */
-          .pdf-page-section::after {
-            content: "VALMONT SOLAR - Inspection Report - Page " counter(page) !important;
-            display: block !important;
-            text-align: center !important;
-            font-size: 8pt !important;
-            color: #666 !important;
-            margin-top: 5mm !important;
-            border-top: 1pt solid #CCC !important;
-            padding-top: 2mm !important;
-          }
-          
-          /* Mini gráficos dimensionales */
-          [class*="DimensionMiniChart"] {
-            background-color: #F8FAFC !important;
-            border: 1pt solid #000000 !important;
-            page-break-inside: avoid !important;
-          }
-          
-          /* Gráfico de coating */
-          [class*="CoatingChart"] {
-            background-color: #F8FAFC !important;
-            border: 1pt solid #000000 !important;
-            page-break-inside: avoid !important;
+          img {
+            max-width: 50mm !important;
           }
         }
         
+        /* Clases para manejo de páginas PDF */
+        .pdf-page-section {
+          page-break-before: always;
+          page-break-after: always;
+          break-before: page;
+          break-after: page;
+          min-height: 100vh;
+          padding: 20px;
+          background: white;
+        }
+        
+        .pdf-page-section:first-child {
+          page-break-before: avoid;
+          break-before: avoid;
+        }
+        
+        /* Evitar que ciertos elementos se corten */
+        .dashboard-card,
+        .inspection-photo-container,
+        .dimension-mini-chart {
+          page-break-inside: avoid;
+          break-inside: avoid;
+        }
+        
+        /* Grid específico para fotos en PDF */
+        .inspection-photo-grid-pdf {
+          display: grid;
+          grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+          gap: 15px;
+          margin-top: 15px;
+        }
+        
+        .inspection-photo-item-pdf {
+          page-break-inside: avoid;
+          break-inside: avoid;
+        }
+        
+        /* Ocultar controles en PDF */
+        .no-print {
+          display: block;
+        }
+        
+        /* Estilos para impresión específicos */
         @media print {
           .no-print {
             display: none !important;

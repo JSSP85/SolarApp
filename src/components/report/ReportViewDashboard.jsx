@@ -13,6 +13,7 @@ import StaticMapReport from './StaticMapReport';
 import ReportTechnicalDrawing from './ReportTechnicalDrawing';
 import ReportExportOptions from './ReportExportOptions'; // Import the new component
 import '../../styles/inspection-photos.css'; // Importar el CSS global para fotos
+import '../../styles/report-print.css'; // Importar el CSS para impresión
 
 // Componente para los mini gráficos dimensionales con tamaño reducido
 const DimensionMiniChart = ({ dimension, measurements, index }) => {
@@ -71,7 +72,7 @@ const DimensionMiniChart = ({ dimension, measurements, index }) => {
   const max = Math.max(...values);
 
   return (
-    <div className="bg-white rounded-lg shadow-sm p-3 border border-gray-100" style={{background: 'rgba(255, 255, 255, 0.9)'}}>
+    <div className="bg-white rounded-lg shadow-sm p-3 border border-gray-100 dimension-mini-chart" style={{background: 'rgba(255, 255, 255, 0.9)'}}>
       <div className="flex justify-between items-start mb-2">
         <div>
           <h4 className="text-sm font-bold" style={{ color: primaryColor }}>{dimension.code}</h4>
@@ -241,7 +242,7 @@ const CoatingChart = ({ measurements, requirements }) => {
   const maxLimit = max + 5;
 
   return (
-    <div className="bg-white rounded-lg shadow-sm p-3 border border-gray-100" style={{background: 'rgba(255, 255, 255, 0.9)'}}>
+    <div className="bg-white rounded-lg shadow-sm p-3 border border-gray-100 coating-chart" style={{background: 'rgba(255, 255, 255, 0.9)'}}>
       <div className="flex justify-between items-start mb-2">
         <div>
           <h4 className="text-sm font-bold text-blue-600">Coating Thickness</h4>
@@ -433,6 +434,19 @@ const ReportViewDashboard = () => {
   
   return (
     <div id="report-container">
+      {/* Encabezado para PDF - Solo visible en la exportación */}
+      <div className="pdf-header">
+        <div className="pdf-header-content">
+          <div className="pdf-logo-container">
+            <img src="/images/logo.png" alt="Valmont Logo" className="pdf-logo" />
+          </div>
+          <div className="pdf-title-container">
+            <h1 className="pdf-title">INSPECTION REPORT</h1>
+            <h2 className="pdf-subtitle">Steel Components</h2>
+          </div>
+        </div>
+      </div>
+
       <div className="flex justify-between items-center mb-4 no-print">
         <p className="text-sm text-gray-500">Generated on {new Date().toLocaleDateString()}</p>
         <ReportExportOptions 
@@ -468,14 +482,14 @@ const ReportViewDashboard = () => {
                 <div className="card-body">
                   <div className="grid gap-4">
                     
-   <div className="report-info-item">
-      <span className="report-info-label">Client</span>
-      <span className="report-info-value">{client || "NA"}</span>
-    </div>
+                    <div className="report-info-item">
+                      <span className="report-info-label">Client</span>
+                      <span className="report-info-value">{client || "Valmont Solar"}</span>
+                    </div>
                     
                     <div className="report-info-item">
                       <span className="report-info-label">Project Name</span>
-                      <span className="report-info-value">{projectName || "NA"}</span>
+                      <span className="report-info-value">{projectName || "NEPI"}</span>
                     </div>
                     
                     <div className="report-info-item">
@@ -671,7 +685,7 @@ const ReportViewDashboard = () => {
               {/* Mini Gráficos Dimensionales - MEJORADOS */}
               <div className="mt-4">
                 <h4 className="text-sm font-semibold mb-2 text-gray-500">Dimensional Analysis Charts</h4>
-                <div style={{
+                <div className="dimension-charts-grid" style={{
                   display: 'grid',
                   gridTemplateColumns: 'repeat(2, 1fr)',
                   gap: '10px',
@@ -859,74 +873,7 @@ const ReportViewDashboard = () => {
           box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
         }
         
-        @media print {
-          body {
-            font-size: 10pt;
-            margin: 0;
-            padding: 0;
-          }
-          
-          .dashboard-card {
-            box-shadow: none !important;
-            border: 1px solid #e5e7eb !important;
-            break-inside: avoid;
-            page-break-inside: avoid;
-          }
-          
-          .btn, .card-options {
-            display: none !important;
-          }
-          
-          .report-section {
-            margin-bottom: 10mm;
-            page-break-inside: avoid;
-          }
-          
-          .report-section-title {
-            font-size: 12pt;
-            color: #000 !important;
-            border-bottom: 1px solid #000;
-          }
-          
-          .data-table th, .data-table td {
-            padding: 2mm;
-            font-size: 8pt;
-          }
-          
-          .grid-cols-3 {
-            grid-template-columns: repeat(3, 1fr) !important;
-          }
-          
-          img {
-            max-width: 50mm !important;
-          }
-        }
-        
-        /* Clases para manejo de páginas PDF */
-        .pdf-page-section {
-          page-break-before: always;
-          page-break-after: always;
-          break-before: page;
-          break-after: page;
-          min-height: 100vh;
-          padding: 20px;
-          background: white;
-        }
-        
-        .pdf-page-section:first-child {
-          page-break-before: avoid;
-          break-before: avoid;
-        }
-        
-        /* Evitar que ciertos elementos se corten */
-        .dashboard-card,
-        .inspection-photo-container,
-        .dimension-mini-chart {
-          page-break-inside: avoid;
-          break-inside: avoid;
-        }
-        
-        /* Grid específico para fotos en PDF */
+        /* Estilo para galería de fotos en PDF */
         .inspection-photo-grid-pdf {
           display: grid;
           grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
@@ -939,64 +886,9 @@ const ReportViewDashboard = () => {
           break-inside: avoid;
         }
         
-        /* Ocultar controles en PDF */
-        .no-print {
-          display: block;
-        }
-        
-        /* Estilos para impresión específicos */
-        @media print {
-          .no-print {
-            display: none !important;
-          }
-          
-          .pdf-page-section {
-            page-break-before: always;
-            page-break-after: always;
-            min-height: 100vh;
-          }
-          
-          .pdf-page-section:first-child {
-            page-break-before: avoid;
-          }
-          
-          body {
-            font-size: 10pt;
-            margin: 0;
-            padding: 0;
-          }
-          
-          .dashboard-card {
-            box-shadow: none !important;
-            border: 1px solid #e5e7eb !important;
-            break-inside: avoid;
-            page-break-inside: avoid;
-          }
-          
-          .report-section {
-            margin-bottom: 10mm;
-            page-break-inside: avoid;
-          }
-          
-          .report-section-title {
-            font-size: 12pt;
-            color: #000 !important;
-            border-bottom: 1px solid #000;
-          }
-          
-          .data-table th, .data-table td {
-            padding: 2mm;
-            font-size: 8pt;
-          }
-          
-          .inspection-photo-grid-pdf {
-            grid-template-columns: repeat(2, 1fr) !important;
-          }
-          
-          .inspection-photo-item-pdf img {
-            max-width: 80mm !important;
-            max-height: 60mm !important;
-          }
+        /* Encabezado PDF - Oculto por defecto en la vista web */
+        .pdf-header {
+          display: none;
         }
       `}</style>
     </div>

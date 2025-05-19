@@ -1,0 +1,231 @@
+/* src/styles/report-print.css */
+/* Estilos específicos para la exportación e impresión del PDF */
+
+/* Por defecto el encabezado PDF está oculto en la vista web */
+.pdf-header {
+  display: none;
+}
+
+/* Todos los estilos aquí solo se aplicarán cuando se imprima o exporte a PDF */
+@media print {
+  /* ENCABEZADO DEL PDF */
+  .pdf-header {
+    display: block !important;
+    width: 100%;
+    padding: 15mm 10mm 5mm 10mm;
+    margin-bottom: 5mm;
+    border-bottom: 3px solid #005F83;
+  }
+  
+  .pdf-header-content {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+  
+  .pdf-logo-container {
+    width: 30mm;
+  }
+  
+  .pdf-logo {
+    width: 100%;
+    height: auto;
+  }
+  
+  .pdf-title-container {
+    text-align: right;
+  }
+  
+  .pdf-title {
+    font-size: 24pt;
+    font-weight: bold;
+    margin: 0;
+    color: #005F83;
+  }
+  
+  .pdf-subtitle {
+    font-size: 16pt;
+    font-weight: normal;
+    margin: 0;
+    color: #666;
+  }
+  
+  /* MEJORAS A LAS TARJETAS */
+  .dashboard-card {
+    box-shadow: none !important;
+    border: 1.5pt solid #000000 !important; /* Borde más oscuro y grueso */
+    margin-bottom: 5mm !important;
+    padding: 0 !important;
+    background-color: white !important;
+    page-break-inside: avoid !important;
+  }
+  
+  .card-header {
+    border-bottom: 1.5pt solid #000000 !important;
+    background: #005F83 !important; /* Color consistente */
+    color: white !important;
+    padding: 3mm !important;
+    font-weight: bold !important;
+  }
+  
+  .card-body {
+    padding: 4mm !important;
+  }
+  
+  /* MEJORAS A LAS TABLAS */
+  .data-table {
+    border-collapse: collapse !important;
+    width: 100% !important;
+  }
+  
+  .data-table th {
+    background-color: #EEF2F6 !important;
+    color: #000000 !important;
+    font-weight: bold !important;
+    border: 1pt solid #000000 !important;
+    padding: 2mm !important;
+    font-size: 9pt !important;
+  }
+  
+  .data-table td {
+    border: 1pt solid #000000 !important;
+    padding: 2mm !important;
+    font-size: 9pt !important;
+  }
+  
+  .data-table tr:nth-child(even) td {
+    background-color: #F8FAFC !important;
+  }
+  
+  /* FONDOS PARA GRÁFICOS */
+  .dimension-chart, 
+  .chart-container,
+  .technical-drawing-container,
+  .technical-drawing-container-report,
+  .dimension-mini-chart,
+  .coating-chart {
+    background-color: #F8FAFC !important;
+    border: 1pt solid #000000 !important;
+    padding: 2mm !important;
+  }
+  
+  /* MEJORAS PARA GRIDS Y LAYOUTS */
+  .dimension-charts-grid {
+    display: grid !important;
+    grid-template-columns: repeat(2, 1fr) !important;
+    gap: 5mm !important;
+  }
+  
+  .inspection-photo-grid-pdf {
+    display: grid !important;
+    grid-template-columns: repeat(2, 1fr) !important;
+    gap: 5mm !important;
+  }
+  
+  .inspection-photo-container {
+    border: 1pt solid #000000 !important;
+    box-shadow: 0 1mm 2mm rgba(0,0,0,0.2) !important;
+  }
+  
+  .inspection-photo-caption {
+    background-color: #005F83 !important;
+    color: white !important;
+    padding: 1mm 2mm !important;
+    font-weight: bold !important;
+  }
+  
+  .inspection-photo-item-pdf {
+    page-break-inside: avoid !important;
+  }
+  
+  .inspection-photo-item-pdf img {
+    max-width: 80mm !important;
+    max-height: 60mm !important;
+  }
+  
+  /* TÍTULOS DE SECCIÓN MEJORADOS */
+  .report-section-title {
+    background-color: #EEF2F6 !important;
+    color: #000000 !important;
+    padding: 2mm !important;
+    border-left: 3mm solid #005F83 !important;
+    font-weight: bold !important;
+    font-size: 12pt !important;
+    margin-bottom: 3mm !important;
+  }
+  
+  /* ETIQUETAS Y VALORES */
+  .report-info-label {
+    font-weight: bold !important;
+    color: #005F83 !important;
+  }
+  
+  .report-info-value {
+    font-weight: normal !important;
+  }
+  
+  .report-info-item {
+    margin-bottom: 2mm !important;
+    border-bottom: 0.5pt dotted #999 !important;
+    padding-bottom: 1mm !important;
+  }
+  
+  /* BADGES/ETIQUETAS DE ESTADO */
+  .badge {
+    padding: 1mm 2mm !important;
+    border-radius: 2mm !important;
+    font-weight: bold !important;
+    display: inline-block !important;
+  }
+  
+  .badge-success {
+    background-color: #10B981 !important;
+    color: white !important;
+  }
+  
+  .badge-danger {
+    background-color: #EF4444 !important;
+    color: white !important;
+  }
+  
+  .badge-warning {
+    background-color: #F59E0B !important;
+    color: white !important;
+  }
+  
+  /* CONFIGURACIÓN DE PÁGINA Y TIPOGRAFÍA */
+  body {
+    font-size: 10pt !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    font-family: Arial, sans-serif !important; /* Fuente más profesional */
+  }
+  
+  .pdf-page-section {
+    page-break-before: always !important;
+    page-break-after: always !important;
+    min-height: 100vh !important;
+    padding: 0 !important; /* Quitamos el padding original */
+  }
+  
+  .pdf-page-section:first-child {
+    page-break-before: avoid !important;
+  }
+  
+  /* PIE DE PÁGINA CON NUMERACIÓN */
+  .pdf-page-section::after {
+    content: "VALMONT SOLAR - Inspection Report - Page " counter(page) !important;
+    display: block !important;
+    text-align: center !important;
+    font-size: 8pt !important;
+    color: #666 !important;
+    margin-top: 5mm !important;
+    border-top: 1pt solid #CCC !important;
+    padding-top: 2mm !important;
+  }
+  
+  /* OCULTAR ELEMENTOS INNECESARIOS EN PDF */
+  .no-print {
+    display: none !important;
+  }
+}

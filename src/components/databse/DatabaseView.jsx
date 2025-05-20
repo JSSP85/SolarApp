@@ -552,6 +552,6 @@ const DatabaseView = () => {
       )}
     </div>
   );
-};
+}; 
 
 export default DatabaseView;

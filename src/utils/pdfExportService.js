@@ -40,6 +40,21 @@ function addHeaderToPdf(pdf) {
 }
 
 /**
+ * Agrega un pie de página con el número de página
+ */
+function addFooterToPdf(pdf, pageNumber) {
+  // Obtener dimensiones de página
+  const pageWidth = pdf.internal.pageSize.getWidth();
+  const pageHeight = pdf.internal.pageSize.getHeight();
+  
+  // Añadir número de página
+  pdf.setFontSize(9);
+  pdf.setTextColor(100, 100, 100); // Gris para el número de página
+  pdf.setFont("helvetica", "normal");
+  pdf.text(`Pág ${pageNumber}`, pageWidth/2, pageHeight - 10, { align: "center" });
+}
+
+/**
  * Exporta un elemento DOM como PDF con paginación mejorada
  */
 export const exportToPDF = async (elementId, options = {}) => {
@@ -94,8 +109,8 @@ export const exportToPDF = async (elementId, options = {}) => {
       return;
     }
     
-    // Añadir un fondo crema suave a todas las páginas del PDF
-    const bgColorCream = '#FFF8EA'; // Color crema suave
+    // Añadir un fondo crema más claro a todas las páginas del PDF
+    const bgColorCream = '#FFFDF7'; // Color crema muy suave
     
     // Procesar cada sección como una página separada
     for (let i = 0; i < pagesSections.length; i++) {
@@ -113,7 +128,7 @@ export const exportToPDF = async (elementId, options = {}) => {
       }
       
       // Añadir fondo crema a la página actual
-      pdf.setFillColor(255, 248, 234); // #FFF8EA en RGB
+      pdf.setFillColor(255, 253, 247); // #FFFDF7 en RGB
       pdf.rect(0, 0, pageWidth, pageHeight, 'F');
       
       // Añadir encabezado a esta página
@@ -372,7 +387,7 @@ export const exportToPDF = async (elementId, options = {}) => {
           useCORS: true,
           allowTaint: true,
           logging: false,
-          backgroundColor: bgColorCream, // Usar color crema como fondo
+          backgroundColor: bgColorCream, // Usar color crema muy suave como fondo
           width: tempContainer.scrollWidth,
           height: tempContainer.scrollHeight,
           windowWidth: tempContainer.scrollWidth,
@@ -521,7 +536,7 @@ export const exportToPDF = async (elementId, options = {}) => {
         let imgHeight = (imgProps.height * imgWidth) / imgProps.width;
         
         // Si es demasiado alto, ajustar al alto disponible
-        const contentHeight = pageHeight - margin - 35; // Ajustar para el encabezado
+        const contentHeight = pageHeight - margin - 40; // Ajustar para el encabezado y el pie de página
         if (imgHeight > contentHeight) {
           imgHeight = contentHeight;
           imgWidth = (imgProps.width * imgHeight) / imgProps.height;
@@ -533,6 +548,9 @@ export const exportToPDF = async (elementId, options = {}) => {
         
         // Añadir al PDF
         pdf.addImage(imgData, 'JPEG', x, y, imgWidth, imgHeight);
+        
+        // Añadir pie de página con número de página
+        addFooterToPdf(pdf, i + 1);
         
         // Limpiar el contenedor temporal
         document.body.removeChild(tempContainer);

@@ -34,6 +34,9 @@ export const exportToPDF = async (elementId, options = {}) => {
   }
 
   try {
+    // Add a class to the body to activate PDF-specific styles
+    document.body.classList.add('printing-pdf');
+
     // Create PDF
     const pdf = new jsPDF({
       orientation: orientation,
@@ -52,7 +55,10 @@ export const exportToPDF = async (elementId, options = {}) => {
     
     if (pagesSections.length === 0) {
       // Fallback: export everything as before if no sections are defined
-      return await exportSinglePage(element, pdf, options);
+      const result = await exportSinglePage(element, pdf, options);
+      // Remove PDF-specific class
+      document.body.classList.remove('printing-pdf');
+      return result;
     }
 
     let isFirstPage = true;
@@ -76,7 +82,16 @@ export const exportToPDF = async (elementId, options = {}) => {
           x: 0,
           y: 0,
           width: section.scrollWidth,
-          height: section.scrollHeight
+          height: section.scrollHeight,
+          windowWidth: section.scrollWidth,
+          windowHeight: section.scrollHeight,
+          // Emulate print media
+          onclone: function(documentClone) {
+            // This ensures print styles are activated in the cloned document
+            const style = documentClone.createElement('style');
+            style.innerHTML = '@media screen { .pdf-header { display: block !important; } }';
+            documentClone.head.appendChild(style);
+          }
         });
 
         const imgData = canvas.toDataURL('image/jpeg', 0.95);
@@ -114,6 +129,9 @@ export const exportToPDF = async (elementId, options = {}) => {
       }
     }
 
+    // Remove PDF-specific class
+    document.body.classList.remove('printing-pdf');
+
     // Save PDF
     pdf.save(`${filename}.pdf`);
 
@@ -123,6 +141,9 @@ export const exportToPDF = async (elementId, options = {}) => {
     }
   } catch (error) {
     console.error('Error generating PDF:', error);
+    
+    // Make sure to remove PDF-specific class in case of errors
+    document.body.classList.remove('printing-pdf');
     
     if (showNotification) {
       // Update notification to error
@@ -146,7 +167,14 @@ const exportSinglePage = async (element, pdf, options) => {
     useCORS: true,
     allowTaint: true,
     logging: false,
-    backgroundColor: '#ffffff'
+    backgroundColor: '#ffffff',
+    // Emulate print media
+    onclone: function(documentClone) {
+      // This ensures print styles are activated in the cloned document
+      const style = documentClone.createElement('style');
+      style.innerHTML = '@media screen { .pdf-header { display: block !important; } }';
+      documentClone.head.appendChild(style);
+    }
   });
 
   // Create PDF

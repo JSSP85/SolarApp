@@ -439,7 +439,7 @@ const ReportViewDashboard = () => {
   <div className="pdf-header-content">
     <div className="pdf-logo-container">
       <img 
-        src={process.env.PUBLIC_URL + '/images/logo.png'} 
+        src="/images/logo.png" 
         alt="Valmont Logo" 
         className="pdf-logo"
         onError={(e) => {

@@ -115,24 +115,38 @@ export const exportToPDF = async (elementId, options = {}) => {
       // Clonar la sección para no modificar el original
       const sectionToCapture = pagesSections[i].cloneNode(true);
       
-      // TRATAMIENTO ESPECIAL PARA LA PÁGINA 2
+      // TRATAMIENTO ESPECIAL PARA LA PÁGINA 2 - OCULTAR GRAFICOS DIMENSIONALES
       if (i === 1) {
-        // Forzar ancho completo en todos los contenedores relevantes
-        const containers = sectionToCapture.querySelectorAll('.technical-drawing-container, .technical-drawing-container-report, .dashboard-card, .dimension-charts-grid, .data-table, .card, .card-body');
+        // 1. Ocultar los mini gráficos dimensionales
+        const dimensionCharts = sectionToCapture.querySelectorAll('.dimension-charts-grid, .dimension-mini-chart');
+        dimensionCharts.forEach(chart => {
+          chart.style.display = 'none';
+        });
+        
+        // 2. Quitar cualquier referencia a análisis dimensional
+        const analysisCharts = sectionToCapture.querySelectorAll('h4.text-sm.font-semibold.mb-2.text-gray-500');
+        analysisCharts.forEach(header => {
+          if (header.textContent.includes('Dimensional Analysis')) {
+            header.style.display = 'none';
+          }
+        });
+        
+        // 3. Asegurarse que todos los contenedores usen ancho completo
+        const containers = sectionToCapture.querySelectorAll('.dashboard-card, .card, .technical-drawing-container, .technical-drawing-container-report, .data-table');
         containers.forEach(container => {
           container.style.width = '100%';
           container.style.maxWidth = '100%';
           container.style.margin = '0 auto';
           container.style.boxSizing = 'border-box';
+          // Eliminar cualquier restricción de ancho adicional
+          container.style.minWidth = '100%';
         });
         
-        // Asegurar que cualquier contenedor con posicionamiento absoluto o relativo tenga ancho completo
-        const technicalDrawingContainers = sectionToCapture.querySelectorAll('.technical-drawing-container, .technical-drawing-container-report');
-        technicalDrawingContainers.forEach(container => {
-          container.style.width = '100%';
-          container.style.position = 'relative';
-          container.style.left = '0';
-          container.style.transform = 'none';
+        // 4. Específicamente para la tabla de dimensiones, asegurarse que use ancho completo
+        const tables = sectionToCapture.querySelectorAll('.data-table');
+        tables.forEach(table => {
+          table.style.width = '100%';
+          table.style.tableLayout = 'fixed';
         });
       }
       
@@ -154,6 +168,13 @@ export const exportToPDF = async (elementId, options = {}) => {
             display: none !important;
           }
           
+          /* OCULTAR MINI GRÁFICOS EN LA PÁGINA 2 */
+          .pdf-page-section[data-page="2"] .dimension-charts-grid,
+          .pdf-page-section[data-page="2"] .dimension-mini-chart,
+          .pdf-page-section[data-page="2"] .dimension-chart {
+            display: none !important;
+          }
+          
           /* Cards mejoradas */
           .dashboard-card {
             box-shadow: none !important;
@@ -163,6 +184,8 @@ export const exportToPDF = async (elementId, options = {}) => {
             background-color: #fafaf8 !important; /* Crema muy suave */
             overflow: hidden !important;
             page-break-inside: avoid !important;
+            width: 100% !important;
+            max-width: 100% !important;
           }
           
           .card-header {
@@ -176,12 +199,15 @@ export const exportToPDF = async (elementId, options = {}) => {
           .card-body {
             padding: 4mm !important;
             background-color: #fefefe !important;
+            width: 100% !important;
           }
           
           /* Tablas mejoradas */
           .data-table {
             border-collapse: collapse !important;
             width: 100% !important;
+            max-width: 100% !important;
+            table-layout: fixed !important;
           }
           
           .data-table th {
@@ -213,6 +239,7 @@ export const exportToPDF = async (elementId, options = {}) => {
             font-size: 12pt !important;
             margin-bottom: 3mm !important;
             border-radius: 0 4px 4px 0 !important;
+            width: 100% !important;
           }
           
           /* Etiquetas y valores */
@@ -256,10 +283,7 @@ export const exportToPDF = async (elementId, options = {}) => {
           
           /* Estilos específicos para dibujos técnicos y gráficos */
           .technical-drawing-container, 
-          .technical-drawing-container-report,
-          .dimension-mini-chart,
-          .dimension-chart,
-          .coating-chart {
+          .technical-drawing-container-report {
             height: auto !important;
             min-height: 250px !important;
             max-height: none !important;
@@ -269,6 +293,10 @@ export const exportToPDF = async (elementId, options = {}) => {
             border: 1pt solid #E2E8F0 !important;
             border-radius: 4px !important;
             padding: 4mm !important;
+            width: 100% !important;
+            max-width: 100% !important;
+            margin-left: 0 !important;
+            margin-right: 0 !important;
           }
 
           .technical-drawing-image {
@@ -278,60 +306,16 @@ export const exportToPDF = async (elementId, options = {}) => {
             margin: 0 auto !important;
           }
           
-          .dimension-charts-grid {
-            display: grid !important;
-            grid-template-columns: repeat(2, 1fr) !important;
-            gap: 10px !important;
-            grid-auto-rows: minmax(180px, auto) !important;
+          /* Eliminar límites específicos de ancho para página 2 */
+          .pdf-page-section[data-page="2"] * {
+            max-width: 100% !important;
+            box-sizing: border-box !important;
           }
           
           /* Ajustes específicos para SVG y gráficos recharts */
           svg {
             max-width: 100% !important;
             height: auto !important;
-          }
-          
-          /* AJUSTES ESPECIALES PARA LA PÁGINA 2 */
-          .pdf-page-section[data-page="2"] {
-            min-height: 800px !important;
-            width: 100% !important;
-            max-width: 100% !important;
-            padding: 0 !important;
-            margin: 0 !important;
-            box-sizing: border-box !important;
-          }
-          
-          .pdf-page-section[data-page="2"] .technical-drawing-container,
-          .pdf-page-section[data-page="2"] .technical-drawing-container-report {
-            width: 100% !important;
-            max-width: 100% !important;
-            margin: 0 auto 10mm auto !important;
-            padding: 4mm !important;
-            box-sizing: border-box !important;
-          }
-          
-          .pdf-page-section[data-page="2"] .dimension-charts-grid {
-            width: 100% !important;
-            max-width: 100% !important;
-            margin: 0 !important;
-            display: grid !important;
-            grid-template-columns: repeat(2, 1fr) !important;
-          }
-          
-          .pdf-page-section[data-page="2"] .data-table {
-            width: 100% !important;
-            max-width: 100% !important;
-            margin: 0 !important;
-            table-layout: fixed !important;
-          }
-          
-          .pdf-page-section[data-page="2"] .dashboard-card,
-          .pdf-page-section[data-page="2"] .card {
-            width: 100% !important;
-            max-width: 100% !important;
-            margin-left: 0 !important;
-            margin-right: 0 !important;
-            box-sizing: border-box !important;
           }
           
           /* Ocultar elementos innecesarios */
@@ -351,8 +335,8 @@ export const exportToPDF = async (elementId, options = {}) => {
       document.body.appendChild(tempContainer);
       
       try {
-        // Configurar opciones para html2canvas
-        const canvasOptions = {
+        // Capturar la sección como imagen
+        const canvas = await html2canvas(tempContainer, {
           scale: scale,
           useCORS: true,
           allowTaint: true,
@@ -362,28 +346,7 @@ export const exportToPDF = async (elementId, options = {}) => {
           height: tempContainer.scrollHeight,
           windowWidth: tempContainer.scrollWidth,
           windowHeight: tempContainer.scrollHeight,
-          imageTimeout: 15000 // Dar más tiempo para cargar imágenes
-        };
-        
-        // Opciones especiales para la página 2
-        if (i === 1) {
-          canvasOptions.windowWidth = tempContainer.scrollWidth + 20; // Un poco más ancho
-          canvasOptions.width = tempContainer.scrollWidth + 20;
-          
-          // Forzar estilos importantes justo antes de renderizar
-          const importantStyles = document.createElement('style');
-          importantStyles.textContent = `
-            .pdf-page-section[data-page="2"] * {
-              max-width: 100% !important;
-              box-sizing: border-box !important;
-            }
-          `;
-          tempContainer.appendChild(importantStyles);
-        }
-        
-        // Capturar la sección como imagen
-        const canvas = await html2canvas(tempContainer, {
-          ...canvasOptions,
+          imageTimeout: 15000, // Dar más tiempo para cargar imágenes
           onclone: function(documentClone) {
             // Aplicar estilos a encabezados de tarjetas
             const cardHeaders = documentClone.querySelectorAll('.card-header');
@@ -402,6 +365,8 @@ export const exportToPDF = async (elementId, options = {}) => {
               card.style.overflow = 'hidden';
               card.style.backgroundColor = '#fafaf8';
               card.style.marginBottom = '15px';
+              card.style.width = '100%';
+              card.style.maxWidth = '100%';
             });
             
             // Aplicar estilos a títulos de sección
@@ -413,6 +378,7 @@ export const exportToPDF = async (elementId, options = {}) => {
               title.style.marginBottom = '10px';
               title.style.borderRadius = '0 4px 4px 0';
               title.style.fontWeight = 'bold';
+              title.style.width = '100%';
             });
             
             // Aplicar estilos a badges
@@ -439,36 +405,42 @@ export const exportToPDF = async (elementId, options = {}) => {
             technicalDrawings.forEach(container => {
               container.style.height = 'auto';
               container.style.minHeight = '300px';
+              container.style.width = '100%';
+              container.style.maxWidth = 'none';
             });
             
-            // TRATAMIENTO ESPECIAL PARA PÁGINA 2
-            if (i === 1) {
-              const page2 = documentClone.querySelector('.pdf-page-section[data-page="2"]');
-              if (page2) {
-                // Forzar ancho completo en todos los contenedores
-                const containers = page2.querySelectorAll(
-                  '.dashboard-card, .card, .card-body, .technical-drawing-container, ' +
-                  '.technical-drawing-container-report, .dimension-charts-grid, .data-table'
-                );
-                
-                containers.forEach(container => {
-                  container.style.width = '100%';
-                  container.style.maxWidth = '100%';
-                  container.style.marginLeft = '0';
-                  container.style.marginRight = '0';
-                  container.style.boxSizing = 'border-box';
-                });
-                
-                // Ajustar específicamente el dibujo técnico
-                const technicalDrawing = page2.querySelector('.technical-drawing-container, .technical-drawing-container-report');
-                if (technicalDrawing) {
-                  technicalDrawing.style.width = '100%';
-                  technicalDrawing.style.height = 'auto';
-                  technicalDrawing.style.minHeight = '350px';
-                  technicalDrawing.style.padding = '15px';
-                  technicalDrawing.style.boxSizing = 'border-box';
+            // ELIMINAR GRÁFICOS EN LA PÁGINA 2
+            if (i === 1) { // Si estamos en la página 2
+              // Ocultar los gráficos
+              const dimensionalCharts = documentClone.querySelectorAll('.dimension-charts-grid, .dimension-mini-chart, .dimension-chart');
+              dimensionalCharts.forEach(chart => {
+                chart.style.display = 'none';
+              });
+              
+              // Ocultar encabezados relacionados
+              const headers = documentClone.querySelectorAll('h4');
+              headers.forEach(header => {
+                if (header.textContent && header.textContent.includes('Dimensional Analysis')) {
+                  header.style.display = 'none';
                 }
-              }
+              });
+              
+              // Expandir la tabla para usar todo el espacio disponible
+              const tables = documentClone.querySelectorAll('.data-table');
+              tables.forEach(table => {
+                table.style.width = '100%';
+                table.style.maxWidth = '100%';
+                table.style.tableLayout = 'fixed';
+              });
+              
+              // Asegurar que no haya restricciones de ancho en los contenedores
+              const containers = documentClone.querySelectorAll('.card, .card-body, .dashboard-card');
+              containers.forEach(container => {
+                container.style.width = '100%';
+                container.style.maxWidth = '100%';
+                container.style.marginLeft = '0';
+                container.style.marginRight = '0';
+              });
             }
           }
         });
@@ -481,25 +453,11 @@ export const exportToPDF = async (elementId, options = {}) => {
         let imgWidth = contentWidth;
         let imgHeight = (imgProps.height * imgWidth) / imgProps.width;
         
-        // TRATAMIENTO ESPECIAL PARA PÁGINA 2: asegurar ancho completo
-        if (i === 1) {
-          imgWidth = contentWidth; // Forzar ancho máximo disponible
-          imgHeight = (imgProps.height * imgWidth) / imgProps.width;
-          
-          // Si es demasiado alto, ajustar al alto disponible manteniendo proporción
-          const contentHeight = pageHeight - margin - 35; // Ajustar para el encabezado
-          if (imgHeight > contentHeight) {
-            imgHeight = contentHeight;
-            imgWidth = (imgProps.width * imgHeight) / imgProps.height;
-          }
-        } else {
-          // Para las otras páginas, mantener el comportamiento original
-          // Si es demasiado alto, ajustar al alto disponible
-          const contentHeight = pageHeight - margin - 35; // Ajustar para el encabezado
-          if (imgHeight > contentHeight) {
-            imgHeight = contentHeight;
-            imgWidth = (imgProps.width * imgHeight) / imgProps.height;
-          }
+        // Si es demasiado alto, ajustar al alto disponible
+        const contentHeight = pageHeight - margin - 35; // Ajustar para el encabezado
+        if (imgHeight > contentHeight) {
+          imgHeight = contentHeight;
+          imgWidth = (imgProps.width * imgHeight) / imgProps.height;
         }
         
         // Centrar en la página y ajustar posición Y para dejar espacio al encabezado

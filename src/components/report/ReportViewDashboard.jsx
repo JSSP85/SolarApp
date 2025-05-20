@@ -438,7 +438,16 @@ const ReportViewDashboard = () => {
       <div className="pdf-header">
         <div className="pdf-header-content">
           <div className="pdf-logo-container">
-            <img src="/images/logo.png" alt="Valmont Logo" className="pdf-logo" />
+            {/* Usar una ruta más robusta o una imagen base64 para mayor compatibilidad */}
+            <img 
+              src={process.env.PUBLIC_URL + '/images/logo.png'} 
+              alt="Valmont Logo" 
+              className="pdf-logo"
+              onError={(e) => {
+                e.target.onerror = null;
+                e.target.src = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAwIiBoZWlnaHQ9IjgwIiB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciPjxyZWN0IHdpZHRoPSIxMDAlIiBoZWlnaHQ9IjEwMCUiIGZpbGw9IiMwMDVGODMiLz48dGV4dCB4PSI1MCUiIHk9IjUwJSIgZHg9IjAiIGR5PSIwIiBmb250LWZhbWlseT0iQXJpYWwsIHNhbnMtc2VyaWYiIGZvbnQtc2l6ZT0iMjQiIGZvbnQtd2VpZ2h0PSJib2xkIiBmaWxsPSJ3aGl0ZSIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZG9taW5hbnQtYmFzZWxpbmU9Im1pZGRsZSI+VkFMTU9OVDwvdGV4dD48L3N2Zz4=';
+              }}
+            />
           </div>
           <div className="pdf-title-container">
             <h1 className="pdf-title">INSPECTION REPORT</h1>
@@ -446,6 +455,7 @@ const ReportViewDashboard = () => {
           </div>
         </div>
       </div>
+
 
       <div className="flex justify-between items-center mb-4 no-print">
         <p className="text-sm text-gray-500">Generated on {new Date().toLocaleDateString()}</p>

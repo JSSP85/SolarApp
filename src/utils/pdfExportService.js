@@ -131,7 +131,7 @@ export const exportToPDF = async (elementId, options = {}) => {
           }
         });
         
-        // 3. Asegurarse que todos los contenedores usen ancho completo
+        // 3. Asegurarse que todos los contenedores usen ancho apropiado
         const containers = sectionToCapture.querySelectorAll('.dashboard-card, .card, .technical-drawing-container, .technical-drawing-container-report, .data-table');
         containers.forEach(container => {
           container.style.width = '100%';
@@ -147,6 +147,37 @@ export const exportToPDF = async (elementId, options = {}) => {
         tables.forEach(table => {
           table.style.width = '100%';
           table.style.tableLayout = 'fixed';
+        });
+      }
+      
+      // TRATAMIENTO ESPECIAL PARA TODAS LAS PÁGINAS - EVITAR CORTES EN LOS BORDES
+      // Ajustar cards para evitar que se corten en los bordes
+      const allCards = sectionToCapture.querySelectorAll('.dashboard-card, .card');
+      allCards.forEach(card => {
+        card.style.width = '97%'; // Reducir ligeramente el ancho
+        card.style.maxWidth = '97%';
+        card.style.margin = '0 auto 10px auto'; // Centrar horizontalmente
+        card.style.boxSizing = 'border-box';
+        card.style.overflowX = 'hidden'; // Prevenir desbordamiento horizontal
+      });
+      
+      // Ajustar componentes específicos como el coating chart que se corta
+      const coatingCharts = sectionToCapture.querySelectorAll('.coating-chart');
+      coatingCharts.forEach(chart => {
+        chart.style.width = '95%';
+        chart.style.maxWidth = '95%';
+        chart.style.marginLeft = 'auto';
+        chart.style.marginRight = 'auto';
+        chart.style.overflowX = 'hidden';
+      });
+      
+      // Ajustar la información de inspección que se corta
+      const inspectionInfoCards = sectionToCapture.querySelectorAll('.card-header:contains("Inspection Information")').closest('.dashboard-card');
+      if (inspectionInfoCards.length > 0) {
+        inspectionInfoCards.forEach(card => {
+          card.style.width = '95%';
+          card.style.maxWidth = '95%';
+          card.style.overflowX = 'hidden';
         });
       }
       
@@ -175,6 +206,33 @@ export const exportToPDF = async (elementId, options = {}) => {
             display: none !important;
           }
           
+          /* EVITAR CORTE EN LOS BORDES PARA TODAS LAS PÁGINAS */
+          .dashboard-card, .card {
+            width: 97% !important;
+            max-width: 97% !important;
+            margin: 0 auto 10px auto !important;
+            box-sizing: border-box !important;
+            overflow-x: hidden !important;
+          }
+          
+          /* Ajustes para coating chart que se corta */
+          .coating-chart {
+            width: 95% !important;
+            max-width: 95% !important;
+            margin-left: auto !important;
+            margin-right: auto !important;
+            overflow-x: hidden !important;
+          }
+          
+          /* Ajustes para mapas y otros elementos con posible desbordamiento */
+          .technical-drawing-container, 
+          .technical-drawing-container-report {
+            width: 95% !important;
+            max-width: 95% !important;
+            margin: 10px auto !important;
+            overflow: hidden !important;
+          }
+          
           /* Cards mejoradas */
           .dashboard-card {
             box-shadow: none !important;
@@ -184,8 +242,6 @@ export const exportToPDF = async (elementId, options = {}) => {
             background-color: #fafaf8 !important; /* Crema muy suave */
             overflow: hidden !important;
             page-break-inside: avoid !important;
-            width: 100% !important;
-            max-width: 100% !important;
           }
           
           .card-header {
@@ -199,15 +255,16 @@ export const exportToPDF = async (elementId, options = {}) => {
           .card-body {
             padding: 4mm !important;
             background-color: #fefefe !important;
-            width: 100% !important;
+            overflow-x: hidden !important;
           }
           
           /* Tablas mejoradas */
           .data-table {
             border-collapse: collapse !important;
-            width: 100% !important;
-            max-width: 100% !important;
+            width: 98% !important;
+            max-width: 98% !important;
             table-layout: fixed !important;
+            margin: 0 auto !important;
           }
           
           .data-table th {
@@ -223,6 +280,7 @@ export const exportToPDF = async (elementId, options = {}) => {
             border: 1pt solid #CBD5E1 !important;
             padding: 2mm !important;
             font-size: 9pt !important;
+            word-break: break-word !important;
           }
           
           .data-table tr:nth-child(even) td {
@@ -239,7 +297,10 @@ export const exportToPDF = async (elementId, options = {}) => {
             font-size: 12pt !important;
             margin-bottom: 3mm !important;
             border-radius: 0 4px 4px 0 !important;
-            width: 100% !important;
+            width: 98% !important;
+            max-width: 98% !important;
+            margin-left: auto !important;
+            margin-right: auto !important;
           }
           
           /* Etiquetas y valores */
@@ -250,12 +311,14 @@ export const exportToPDF = async (elementId, options = {}) => {
           
           .report-info-value {
             font-weight: normal !important;
+            word-break: break-word !important;
           }
           
           .report-info-item {
             margin-bottom: 2mm !important;
             border-bottom: 0.5pt dotted #CBD5E1 !important;
             padding-bottom: 1mm !important;
+            overflow: hidden !important;
           }
           
           /* Badges mejorados */
@@ -288,15 +351,11 @@ export const exportToPDF = async (elementId, options = {}) => {
             min-height: 250px !important;
             max-height: none !important;
             margin-bottom: 10mm !important;
-            overflow: visible !important;
+            overflow: hidden !important;
             background-color: #fafafa !important;
             border: 1pt solid #E2E8F0 !important;
             border-radius: 4px !important;
             padding: 4mm !important;
-            width: 100% !important;
-            max-width: 100% !important;
-            margin-left: 0 !important;
-            margin-right: 0 !important;
           }
 
           .technical-drawing-image {
@@ -306,16 +365,19 @@ export const exportToPDF = async (elementId, options = {}) => {
             margin: 0 auto !important;
           }
           
-          /* Eliminar límites específicos de ancho para página 2 */
-          .pdf-page-section[data-page="2"] * {
-            max-width: 100% !important;
-            box-sizing: border-box !important;
-          }
-          
           /* Ajustes específicos para SVG y gráficos recharts */
           svg {
             max-width: 100% !important;
             height: auto !important;
+            overflow: visible !important;
+          }
+          
+          /* Para contenedores de mapas */
+          div[id^="map-"] {
+            width: 95% !important;
+            max-width: 95% !important;
+            margin: 0 auto !important;
+            overflow: hidden !important;
           }
           
           /* Ocultar elementos innecesarios */
@@ -331,7 +393,7 @@ export const exportToPDF = async (elementId, options = {}) => {
       // Añadir temporalmente al documento pero fuera de la vista
       tempContainer.style.position = 'absolute';
       tempContainer.style.left = '-9999px';
-      tempContainer.style.width = pageWidth + 'mm';
+      tempContainer.style.width = (pageWidth - 5) + 'mm'; // Reducir ligeramente el ancho para evitar cortes
       document.body.appendChild(tempContainer);
       
       try {
@@ -357,16 +419,63 @@ export const exportToPDF = async (elementId, options = {}) => {
               header.style.padding = '8px';
             });
             
-            // Aplicar estilos a tarjetas
-            const cards = documentClone.querySelectorAll('.dashboard-card');
+            // Aplicar estilos a tarjetas para evitar que se corten
+            const cards = documentClone.querySelectorAll('.dashboard-card, .card');
             cards.forEach(card => {
               card.style.border = '2px solid #005F83';
               card.style.borderRadius = '6px';
               card.style.overflow = 'hidden';
               card.style.backgroundColor = '#fafaf8';
               card.style.marginBottom = '15px';
-              card.style.width = '100%';
-              card.style.maxWidth = '100%';
+              card.style.width = '97%';
+              card.style.maxWidth = '97%';
+              card.style.marginLeft = 'auto';
+              card.style.marginRight = 'auto';
+            });
+            
+            // AJUSTES ESPECÍFICOS PARA LAS TARJETAS QUE SE CORTAN
+            // 1. Tarjeta de Inspection Information
+            const inspectionCards = documentClone.querySelectorAll('.card-header');
+            inspectionCards.forEach(header => {
+              if (header.textContent && header.textContent.includes('Inspection Information')) {
+                const parentCard = header.closest('.dashboard-card, .card');
+                if (parentCard) {
+                  parentCard.style.width = '95%';
+                  parentCard.style.maxWidth = '95%';
+                  parentCard.style.overflowX = 'hidden';
+                  
+                  // También ajustar el contenido interior
+                  const infoItems = parentCard.querySelectorAll('.report-info-item');
+                  infoItems.forEach(item => {
+                    item.style.overflowX = 'hidden';
+                    item.style.wordBreak = 'break-word';
+                    
+                    // Reducir tamaño de fuente si es necesario para textos largos
+                    const valueSpan = item.querySelector('.report-info-value');
+                    if (valueSpan && valueSpan.textContent.length > 25) {
+                      valueSpan.style.fontSize = '0.85em';
+                      valueSpan.style.wordBreak = 'break-word';
+                    }
+                  });
+                }
+              }
+            });
+            
+            // 2. Gráfico de Coating
+            const coatingCharts = documentClone.querySelectorAll('.coating-chart');
+            coatingCharts.forEach(chart => {
+              chart.style.width = '95%';
+              chart.style.maxWidth = '95%';
+              chart.style.marginLeft = 'auto';
+              chart.style.marginRight = 'auto';
+              chart.style.overflowX = 'hidden';
+              
+              // Ajustar SVG dentro del gráfico si existe
+              const svg = chart.querySelector('svg');
+              if (svg) {
+                svg.style.width = '95%';
+                svg.style.overflow = 'visible';
+              }
             });
             
             // Aplicar estilos a títulos de sección
@@ -378,7 +487,10 @@ export const exportToPDF = async (elementId, options = {}) => {
               title.style.marginBottom = '10px';
               title.style.borderRadius = '0 4px 4px 0';
               title.style.fontWeight = 'bold';
-              title.style.width = '100%';
+              title.style.width = '98%';
+              title.style.maxWidth = '98%';
+              title.style.marginLeft = 'auto';
+              title.style.marginRight = 'auto';
             });
             
             // Aplicar estilos a badges
@@ -405,8 +517,11 @@ export const exportToPDF = async (elementId, options = {}) => {
             technicalDrawings.forEach(container => {
               container.style.height = 'auto';
               container.style.minHeight = '300px';
-              container.style.width = '100%';
-              container.style.maxWidth = 'none';
+              container.style.width = '95%';
+              container.style.maxWidth = '95%';
+              container.style.marginLeft = 'auto';
+              container.style.marginRight = 'auto';
+              container.style.overflowX = 'hidden';
             });
             
             // ELIMINAR GRÁFICOS EN LA PÁGINA 2
@@ -428,18 +543,11 @@ export const exportToPDF = async (elementId, options = {}) => {
               // Expandir la tabla para usar todo el espacio disponible
               const tables = documentClone.querySelectorAll('.data-table');
               tables.forEach(table => {
-                table.style.width = '100%';
-                table.style.maxWidth = '100%';
+                table.style.width = '98%';
+                table.style.maxWidth = '98%';
                 table.style.tableLayout = 'fixed';
-              });
-              
-              // Asegurar que no haya restricciones de ancho en los contenedores
-              const containers = documentClone.querySelectorAll('.card, .card-body, .dashboard-card');
-              containers.forEach(container => {
-                container.style.width = '100%';
-                container.style.maxWidth = '100%';
-                container.style.marginLeft = '0';
-                container.style.marginRight = '0';
+                table.style.marginLeft = 'auto';
+                table.style.marginRight = 'auto';
               });
             }
           }
@@ -450,7 +558,7 @@ export const exportToPDF = async (elementId, options = {}) => {
         const imgProps = pdf.getImageProperties(imgData);
         
         // Calcular dimensiones manteniendo proporción
-        let imgWidth = contentWidth;
+        let imgWidth = contentWidth - 4; // Reducir ligeramente para evitar cortes
         let imgHeight = (imgProps.height * imgWidth) / imgProps.width;
         
         // Si es demasiado alto, ajustar al alto disponible

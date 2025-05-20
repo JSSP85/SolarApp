@@ -55,7 +55,7 @@ const SidebarNav = () => {
           <span>Report</span>
         </div>
         
-        {/* Nueva opción Database - Solo visible ppara usuarios Admin */}
+        {/* Nueva opción Database - Solo visible para usuarios Admin */}
         {userRole === 'admin' && (
           <div 
             className={`nav-item ${activeTab === 'database' ? 'active' : ''}`}

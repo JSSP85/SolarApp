@@ -3,14 +3,7 @@ import html2canvas from 'html2canvas';
 import jsPDF from 'jspdf';
 
 /**
- * Exports a DOM element as PDF with better page management
- * @param {string} elementId - ID of the DOM element to export
- * @param {Object} options - Configuration options
- * @param {string} options.filename - Filename (without extension)
- * @param {string} options.orientation - PDF orientation ('portrait' or 'landscape')
- * @param {number} options.scale - Scale for html2canvas (recommended 2-4 for better quality)
- * @param {boolean} options.showNotification - Show notifications during the process
- * @returns {Promise<void>}
+ * Exports a DOM element as PDF with improved styling
  */
 export const exportToPDF = async (elementId, options = {}) => {
   const {
@@ -20,215 +13,213 @@ export const exportToPDF = async (elementId, options = {}) => {
     showNotification = true
   } = options;
 
-  // Element to be exported
-  const element = document.getElementById(elementId);
-  if (!element) {
-    console.error(`Element with ID ${elementId} not found`);
-    return;
-  }
-
-  // Show start notification if enabled
   let notificationElement = null;
   if (showNotification) {
-    notificationElement = createNotification('Generating PDF, please wait...');
+    notificationElement = createNotification('Generando PDF, espere por favor...');
   }
 
   try {
-    // Add a class to the body to activate PDF-specific styles
-    document.body.classList.add('printing-pdf');
+    // Obtener el elemento a exportar
+    const element = document.getElementById(elementId);
+    if (!element) {
+      throw new Error(`Elemento con ID ${elementId} no encontrado`);
+    }
 
-    // Create PDF
+    // SOLUCIÓN RADICAL: Inyectar los estilos directamente en el elemento
+    // antes de la captura para asegurar que se aplican
+    const originalHTML = element.innerHTML;
+    
+    // 1. Aplicar clase al cuerpo
+    document.body.classList.add('printing-pdf');
+    
+    // 2. Inyectar estilos inline directamente 
+    const inlineStyles = `
+      <style>
+        /* Estilos forzados para PDF */
+        .pdf-header {
+          display: block !important;
+          width: 100%;
+          padding: 15mm 10mm 5mm 10mm;
+          margin-bottom: 5mm;
+          border-bottom: 3px solid #005F83;
+        }
+        
+        .pdf-header-content {
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+        }
+        
+        .dashboard-card {
+          box-shadow: none !important;
+          border: 1.5pt solid #000000 !important; 
+          margin-bottom: 5mm !important;
+          padding: 0 !important;
+          background-color: white !important;
+        }
+        
+        .card-header {
+          border-bottom: 1.5pt solid #000000 !important;
+          background: #005F83 !important;
+          color: white !important;
+          padding: 3mm !important;
+          font-weight: bold !important;
+        }
+        
+        .card-body {
+          padding: 4mm !important;
+        }
+        
+        .report-section-title {
+          background-color: #EEF2F6 !important;
+          color: #000000 !important;
+          padding: 2mm !important;
+          border-left: 3mm solid #005F83 !important;
+          font-weight: bold !important;
+          font-size: 12pt !important;
+          margin-bottom: 3mm !important;
+        }
+        
+        .data-table {
+          border-collapse: collapse !important;
+          width: 100% !important;
+        }
+        
+        .data-table th {
+          background-color: #EEF2F6 !important;
+          color: #000000 !important;
+          font-weight: bold !important;
+          border: 1pt solid #000000 !important;
+          padding: 2mm !important;
+          font-size: 9pt !important;
+        }
+        
+        .data-table td {
+          border: 1pt solid #000000 !important;
+          padding: 2mm !important;
+          font-size: 9pt !important;
+        }
+        
+        .report-info-label {
+          font-weight: bold !important;
+          color: #005F83 !important;
+        }
+        
+        .badge-success {
+          background-color: #10B981 !important;
+          color: white !important;
+          padding: 1mm 2mm !important;
+          border-radius: 2mm !important;
+          font-weight: bold !important;
+          display: inline-block !important;
+        }
+        
+        .badge-danger {
+          background-color: #EF4444 !important;
+          color: white !important;
+          padding: 1mm 2mm !important;
+          border-radius: 2mm !important;
+          font-weight: bold !important;
+          display: inline-block !important;
+        }
+        
+        .badge-warning {
+          background-color: #F59E0B !important;
+          color: white !important;
+          padding: 1mm 2mm !important;
+          border-radius: 2mm !important;
+          font-weight: bold !important;
+          display: inline-block !important;
+        }
+        
+        .no-print {
+          display: none !important;
+        }
+      </style>
+    `;
+    
+    // Crear un contenedor temporal para la versión "adaptada para PDF"
+    const tempContainer = document.createElement('div');
+    tempContainer.innerHTML = inlineStyles + originalHTML;
+    document.body.appendChild(tempContainer);
+    tempContainer.style.position = 'absolute';
+    tempContainer.style.left = '-9999px';
+    tempContainer.style.width = '210mm'; // Ancho A4
+    
+    // 3. Crear el PDF con dimensiones exactas
     const pdf = new jsPDF({
       orientation: orientation,
       unit: 'mm',
-      format: 'a4'
+      format: 'a4',
+      compress: true
     });
 
-    const pageWidth = pdf.internal.pageSize.getWidth();
-    const pageHeight = pdf.internal.pageSize.getHeight();
-    const margin = 10; // 10mm margin
-    const contentWidth = pageWidth - (margin * 2);
-    const contentHeight = pageHeight - (margin * 2);
-
-    // Look for page sections
-    const pagesSections = element.querySelectorAll('.pdf-page-section');
+    // 4. Configurar opciones mejoradas para html2canvas
+    const canvas = await html2canvas(tempContainer, {
+      scale: scale,
+      useCORS: true,
+      allowTaint: true,
+      logging: false,
+      backgroundColor: '#ffffff',
+      width: tempContainer.offsetWidth,
+      height: tempContainer.offsetHeight,
+      scrollX: 0,
+      scrollY: 0,
+      windowWidth: tempContainer.offsetWidth,
+      windowHeight: tempContainer.offsetHeight
+    });
     
-    if (pagesSections.length === 0) {
-      // Fallback: export everything as before if no sections are defined
-      const result = await exportSinglePage(element, pdf, options);
-      // Remove PDF-specific class
-      document.body.classList.remove('printing-pdf');
-      return result;
-    }
-
-    let isFirstPage = true;
-
-    for (let i = 0; i < pagesSections.length; i++) {
-      const section = pagesSections[i];
-      
-      // Add new page if not the first
-      if (!isFirstPage) {
-        pdf.addPage();
-      }
-      
-      try {
-        // Capture the specific section
-        const canvas = await html2canvas(section, {
-          scale: scale,
-          useCORS: true,
-          allowTaint: true,
-          logging: false,
-          backgroundColor: '#ffffff',
-          x: 0,
-          y: 0,
-          width: section.scrollWidth,
-          height: section.scrollHeight,
-          windowWidth: section.scrollWidth,
-          windowHeight: section.scrollHeight,
-          // Emulate print media
-          onclone: function(documentClone) {
-            // This ensures print styles are activated in the cloned document
-            const style = documentClone.createElement('style');
-            style.innerHTML = '@media screen { .pdf-header { display: block !important; } }';
-            documentClone.head.appendChild(style);
-          }
-        });
-
-        const imgData = canvas.toDataURL('image/jpeg', 0.95);
-        const imgProps = pdf.getImageProperties(imgData);
-        
-        // Calculate dimensions maintaining aspect ratio
-        let imgWidth = contentWidth;
-        let imgHeight = (imgProps.height * imgWidth) / imgProps.width;
-        
-        // If image is too tall, adjust to available height
-        if (imgHeight > contentHeight) {
-          imgHeight = contentHeight;
-          imgWidth = (imgProps.width * imgHeight) / imgProps.height;
-        }
-        
-        // Center the image on the page
-        const x = margin + (contentWidth - imgWidth) / 2;
-        const y = margin + (contentHeight - imgHeight) / 2;
-        
-        pdf.addImage(imgData, 'JPEG', x, y, imgWidth, imgHeight);
-        
-        isFirstPage = false;
-        
-        // Update progress notification
-        if (showNotification) {
-          updateNotification(
-            notificationElement, 
-            `Processing page ${i + 1} of ${pagesSections.length}...`,
-            'info'
-          );
-        }
-        
-      } catch (error) {
-        console.error(`Error processing page section ${i}:`, error);
-      }
-    }
-
-    // Remove PDF-specific class
+    // 5. Ajustar las dimensiones para que se centre en la página
+    const imgData = canvas.toDataURL('image/jpeg', 0.95);
+    const imgProps = pdf.getImageProperties(imgData);
+    const pdfWidth = pdf.internal.pageSize.getWidth();
+    const pdfHeight = pdf.internal.pageSize.getHeight();
+    
+    // Calcular dimensiones manteniendo proporción pero ajustando al ancho de página
+    const imgWidth = pdfWidth;
+    const imgHeight = (imgProps.height * imgWidth) / imgProps.width;
+    
+    // Centrar en la página
+    const x = 0;
+    const y = 0;
+    
+    // 6. Añadir imagen al PDF con dimensiones corregidas
+    pdf.addImage(imgData, 'JPEG', x, y, imgWidth, imgHeight);
+    
+    // 7. Limpiar elementos temporales y restaurar estado
+    document.body.removeChild(tempContainer);
     document.body.classList.remove('printing-pdf');
-
-    // Save PDF
+    
+    // Guardar el PDF
     pdf.save(`${filename}.pdf`);
-
+    
     if (showNotification) {
-      // Update notification to success
-      updateNotification(notificationElement, 'PDF generated successfully', 'success');
+      updateNotification(notificationElement, 'PDF generado correctamente', 'success');
     }
+    
   } catch (error) {
-    console.error('Error generating PDF:', error);
-    
-    // Make sure to remove PDF-specific class in case of errors
-    document.body.classList.remove('printing-pdf');
-    
+    console.error('Error generando PDF:', error);
     if (showNotification) {
-      // Update notification to error
-      updateNotification(notificationElement, 'Error generating PDF. Please try again.', 'error');
+      updateNotification(notificationElement, 'Error generando PDF. Por favor intente de nuevo.', 'error');
     }
-  }
-};
-
-/**
- * Function to export a single page (fallback)
- * @param {HTMLElement} element - DOM element to export
- * @param {jsPDF} pdf - PDF instance
- * @param {Object} options - Configuration options
- */
-const exportSinglePage = async (element, pdf, options) => {
-  const { scale = 2 } = options;
-  
-  // Capture the element as an image with html2canvas
-  const canvas = await html2canvas(element, {
-    scale: scale,
-    useCORS: true,
-    allowTaint: true,
-    logging: false,
-    backgroundColor: '#ffffff',
-    // Emulate print media
-    onclone: function(documentClone) {
-      // This ensures print styles are activated in the cloned document
-      const style = documentClone.createElement('style');
-      style.innerHTML = '@media screen { .pdf-header { display: block !important; } }';
-      documentClone.head.appendChild(style);
-    }
-  });
-
-  // Create PDF
-  const imgData = canvas.toDataURL('image/jpeg', 0.95);
-  const imgProps = pdf.getImageProperties(imgData);
-  const pdfWidth = pdf.internal.pageSize.getWidth();
-  const pdfHeight = (imgProps.height * pdfWidth) / imgProps.width;
-
-  // Get dimensions
-  const pageHeight = pdf.internal.pageSize.getHeight();
-  
-  // If height is greater than one page, handle multiple pages
-  if (pdfHeight > pageHeight) {
-    // Divide the image into multiple pages
-    let heightLeft = pdfHeight;
-    let position = 0;
-    let page = 1;
-
-    // First page
-    pdf.addImage(imgData, 'JPEG', 0, position, pdfWidth, pdfHeight);
-    heightLeft -= pageHeight;
-    
-    // Additional pages if needed
-    while (heightLeft > 0) {
-      position = -pageHeight * page;
-      pdf.addPage();
-      pdf.addImage(imgData, 'JPEG', 0, position, pdfWidth, pdfHeight);
-      heightLeft -= pageHeight;
-      page++;
-    }
-  } else {
-    // Fits on a single page
-    pdf.addImage(imgData, 'JPEG', 0, 0, pdfWidth, pdfHeight);
+    document.body.classList.remove('printing-pdf');
   }
 };
 
 /**
  * Sets up printing of an element with custom styles
- * @param {Object} options - Configuration options
- * @param {boolean} options.showNotification - Show notifications during the process
  */
 export const printReport = (options = {}) => {
   const { showNotification = true } = options;
   
   try {
     if (showNotification) {
-      const notification = createNotification('Preparing to print...');
+      const notification = createNotification('Preparando impresión...');
       
-      // Allow time for the notification to display before opening the print dialog
       setTimeout(() => {
         window.print();
-        updateNotification(notification, 'Print dialog opened', 'success');
+        updateNotification(notification, 'Diálogo de impresión abierto', 'success');
         
-        // Remove the notification after a few seconds
         setTimeout(() => {
           if (notification.parentNode) {
             notification.parentNode.removeChild(notification);
@@ -239,9 +230,9 @@ export const printReport = (options = {}) => {
       window.print();
     }
   } catch (error) {
-    console.error('Error printing:', error);
+    console.error('Error al imprimir:', error);
     if (showNotification) {
-      const notification = createNotification('Error opening print dialog', 'error');
+      const notification = createNotification('Error al abrir diálogo de impresión', 'error');
       setTimeout(() => {
         if (notification.parentNode) {
           notification.parentNode.removeChild(notification);
@@ -253,15 +244,10 @@ export const printReport = (options = {}) => {
 
 /**
  * Creates a temporary notification on screen
- * @param {string} message - Message to display
- * @param {string} type - Notification type ('info', 'success', 'error')
- * @returns {HTMLElement} - Created notification element
  */
 function createNotification(message, type = 'info') {
-  // Create notification element
   const notification = document.createElement('div');
   
-  // Base style
   notification.style.cssText = `
     position: fixed;
     top: 20px;
@@ -278,7 +264,6 @@ function createNotification(message, type = 'info') {
     justify-content: center;
   `;
   
-  // Configure color based on type
   if (type === 'success') {
     notification.style.backgroundColor = 'rgba(39, 174, 96, 0.9)';
     notification.style.color = 'white';
@@ -290,10 +275,7 @@ function createNotification(message, type = 'info') {
     notification.style.color = 'white';
   }
   
-  // Add message
   notification.innerText = message;
-  
-  // Add to DOM
   document.body.appendChild(notification);
   
   return notification;
@@ -301,17 +283,12 @@ function createNotification(message, type = 'info') {
 
 /**
  * Updates an existing notification
- * @param {HTMLElement} notification - Notification element to update
- * @param {string} message - New message
- * @param {string} type - New type ('info', 'success', 'error')
  */
 function updateNotification(notification, message, type = 'info') {
   if (!notification) return;
   
-  // Update message
   notification.innerText = message;
   
-  // Update style based on type
   if (type === 'success') {
     notification.style.backgroundColor = 'rgba(39, 174, 96, 0.9)';
   } else if (type === 'error') {
@@ -320,11 +297,9 @@ function updateNotification(notification, message, type = 'info') {
     notification.style.backgroundColor = 'rgba(47, 128, 237, 0.9)';
   }
   
-  // Remove after 3 seconds if success or error
   if (type === 'success' || type === 'error') {
     setTimeout(() => {
       if (notification.parentNode) {
-        // Fade out animation
         notification.style.opacity = '0';
         notification.style.transform = 'translateX(-50%) translateY(-20px)';
         
@@ -340,8 +315,6 @@ function updateNotification(notification, message, type = 'info') {
 
 /**
  * Generates a filename based on report data
- * @param {Object} reportData - Report data
- * @returns {string} - Generated filename
  */
 export const generateFilename = (reportData) => {
   const componentInfo = reportData.componentName || reportData.componentCode || 'Component';
@@ -354,10 +327,9 @@ export const generateFilename = (reportData) => {
 
 /**
  * Generates an email to share the report
- * @param {string} email - Recipient email address
- * @param {Object} reportData - Report data
  */
 export const sendReportByEmail = (email, reportData) => {
+  // (Código existente para el email, mantenerlo igual)
   if (!email) {
     console.error('No email address provided');
     return;
@@ -413,8 +385,6 @@ export const sendReportByEmail = (email, reportData) => {
 
 /**
  * Calculates total non-conformities in a report
- * @param {Object} reportData - Report data
- * @returns {number} - Total non-conformities
  */
 function calculateTotalNonConformities(reportData) {
   if (!reportData.dimensionNonConformities) return 0;

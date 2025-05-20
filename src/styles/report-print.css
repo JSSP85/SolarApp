@@ -6,8 +6,8 @@
   display: none;
 }
 
-/* Todos los estilos aquí solo se aplicarán cuando se imprima o exporte a PDF */
-@media print {
+/* Aplicar estilos cuando se está imprimiendo o se está generando un PDF */
+@media print, screen.printing-pdf, .printing-pdf {
   /* ENCABEZADO DEL PDF */
   .pdf-header {
     display: block !important;
@@ -228,4 +228,9 @@
   .no-print {
     display: none !important;
   }
+}
+
+/* Estilos específicos para cuando estamos en modo impresión-PDF */
+.printing-pdf .pdf-header {
+  display: block !important;
 }

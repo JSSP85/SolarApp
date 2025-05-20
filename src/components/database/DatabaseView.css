@@ -1,0 +1,462 @@
+/* src/components/database/DatabaseView.css */
+.database-container {
+  padding: 1.5rem;
+  max-width: 100%;
+}
+
+.database-card {
+  background-color: white;
+  border-radius: 0.5rem;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1), 0 1px 3px rgba(0, 0, 0, 0.08);
+  overflow: hidden;
+  transition: all 0.3s;
+}
+
+.database-card:hover {
+  box-shadow: 0 10px 15px rgba(0, 0, 0, 0.1), 0 4px 6px rgba(0, 0, 0, 0.05);
+}
+
+.database-header {
+  padding: 1.25rem 1.5rem;
+  background: linear-gradient(to right, #1e40af, #3b82f6);
+  color: white;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.database-title {
+  font-size: 1.25rem;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+}
+
+.database-title svg {
+  margin-right: 0.75rem;
+}
+
+.database-badge {
+  background-color: rgba(0, 0, 0, 0.2);
+  padding: 0.375rem 0.75rem;
+  border-radius: 9999px;
+  font-size: 0.875rem;
+  font-weight: 500;
+}
+
+.database-content {
+  background-color: #f9fafb;
+  padding: 1.5rem;
+}
+
+.database-export-btn {
+  display: flex;
+  align-items: center;
+  padding: 0.5rem 0.75rem;
+  background-color: white;
+  color: #2563eb;
+  border: 1px solid #e5e7eb;
+  border-radius: 0.375rem;
+  font-weight: 500;
+  transition: all 0.2s;
+  cursor: pointer;
+}
+
+.database-export-btn:hover {
+  background-color: #f3f4f6;
+  transform: translateY(-1px);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+
+.database-export-btn svg {
+  margin-right: 0.5rem;
+}
+
+.database-month-nav {
+  display: flex;
+  align-items: center;
+  background-color: white;
+  padding: 1rem;
+  border-radius: 0.5rem;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  margin-bottom: 1rem;
+}
+
+.database-month-btn {
+  padding: 0.5rem;
+  border-radius: 0.375rem;
+  background: transparent;
+  transition: all 0.2s;
+  border: none;
+  cursor: pointer;
+}
+
+.database-month-btn:hover {
+  background-color: #f3f4f6;
+}
+
+.database-month-label {
+  padding: 0 1rem;
+  font-weight: 600;
+  font-size: 1.125rem;
+  color: #1f2937;
+  display: flex;
+  align-items: center;
+}
+
+.database-month-label svg {
+  color: #2563eb;
+  margin-right: 0.5rem;
+}
+
+.database-search-form {
+  display: flex;
+  width: 100%;
+  max-width: 400px;
+  margin-left: auto;
+}
+
+.database-search-input {
+  position: relative;
+  flex-grow: 1;
+}
+
+.database-search-input input {
+  width: 100%;
+  padding: 0.625rem 0.75rem 0.625rem 2.5rem;
+  border: 1px solid #d1d5db;
+  border-radius: 0.375rem 0 0 0.375rem;
+  outline: none;
+}
+
+.database-search-input input:focus {
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.3);
+}
+
+.database-search-icon {
+  position: absolute;
+  left: 0.75rem;
+  top: 50%;
+  transform: translateY(-50%);
+  color: #9ca3af;
+  pointer-events: none;
+}
+
+.database-search-btn {
+  background-color: #2563eb;
+  color: white;
+  padding: 0.625rem 1rem;
+  border: none;
+  border-radius: 0 0.375rem 0.375rem 0;
+  font-weight: 500;
+  cursor: pointer;
+}
+
+.database-search-btn:hover {
+  background-color: #1d4ed8;
+}
+
+.database-filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  background-color: white;
+  padding: 1rem;
+  border-radius: 0.5rem;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  margin-bottom: 1rem;
+  align-items: center;
+}
+
+.database-filter-label {
+  display: flex;
+  align-items: center;
+  color: #4b5563;
+  font-weight: 500;
+  margin-right: 0.5rem;
+}
+
+.database-filter-label svg {
+  color: #2563eb;
+  margin-right: 0.5rem;
+}
+
+.database-filter-btn {
+  padding: 0.5rem 1rem;
+  border-radius: 9999px;
+  font-size: 0.875rem;
+  font-weight: 500;
+  background-color: #f3f4f6;
+  border: 1px solid #e5e7eb;
+  color: #4b5563;
+  transition: all 0.2s;
+  cursor: pointer;
+}
+
+.database-filter-btn:hover {
+  transform: scale(1.05);
+}
+
+.database-filter-btn.active {
+  background-color: #dbeafe;
+  color: #1e40af;
+  border-color: #bfdbfe;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+}
+
+.database-filter-btn-accepted.active {
+  background-color: #d1fae5;
+  color: #065f46;
+  border-color: #a7f3d0;
+}
+
+.database-filter-btn-rejected.active {
+  background-color: #fee2e2;
+  color: #b91c1c;
+  border-color: #fecaca;
+}
+
+.database-filter-btn-progress.active {
+  background-color: #dbeafe;
+  color: #1e40af;
+  border-color: #bfdbfe;
+}
+
+.database-filter-btn svg {
+  margin-right: 0.25rem;
+}
+
+.database-table-container {
+  background-color: white;
+  border-radius: 0.5rem;
+  border: 1px solid #e5e7eb;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  overflow-x: auto;
+  transition: all 0.3s;
+}
+
+.database-table-container:hover {
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+.database-table {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+}
+
+.database-table th {
+  background-color: #f9fafb;
+  color: #4b5563;
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  text-align: left;
+  padding: 1rem 1.5rem;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.database-table td {
+  padding: 1rem 1.5rem;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.database-table tr:hover td {
+  background-color: #f3f8ff;
+}
+
+.database-status-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.25rem 0.75rem;
+  border-radius: 9999px;
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+
+.database-status-badge-accepted {
+  background-color: #d1fae5;
+  color: #065f46;
+  border: 1px solid #a7f3d0;
+}
+
+.database-status-badge-rejected {
+  background-color: #fee2e2;
+  color: #b91c1c;
+  border: 1px solid #fecaca;
+}
+
+.database-status-badge-progress {
+  background-color: #dbeafe;
+  color: #1e40af;
+  border: 1px solid #bfdbfe;
+}
+
+.database-action-buttons {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.75rem;
+}
+
+.database-action-btn {
+  padding: 0.375rem;
+  border-radius: 0.375rem;
+  transition: all 0.15s;
+  background: none;
+  border: none;
+  cursor: pointer;
+}
+
+.database-action-btn-view {
+  color: #2563eb;
+}
+
+.database-action-btn-view:hover {
+  background-color: #eff6ff;
+}
+
+.database-action-btn-details {
+  color: #4f46e5;
+}
+
+.database-action-btn-details:hover {
+  background-color: #eef2ff;
+}
+
+.database-action-btn-delete {
+  color: #dc2626;
+}
+
+.database-action-btn-delete:hover {
+  background-color: #fef2f2;
+}
+
+.database-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background-color: white;
+  padding: 1rem 1.5rem;
+  border-top: 1px solid #e5e7eb;
+  border-radius: 0 0 0.5rem 0.5rem;
+  margin-top: 1.5rem;
+}
+
+.database-stats {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+}
+
+.database-stat-badge {
+  display: flex;
+  align-items: center;
+  background-color: #f3f4f6;
+  padding: 0.375rem 0.75rem;
+  border-radius: 9999px;
+  font-size: 0.875rem;
+  font-weight: 500;
+}
+
+.database-stat-indicator {
+  width: 0.75rem;
+  height: 0.75rem;
+  border-radius: 9999px;
+  margin-right: 0.5rem;
+}
+
+.database-stat-indicator-accepted {
+  background-color: #10b981;
+}
+
+.database-stat-indicator-rejected {
+  background-color: #ef4444;
+}
+
+.database-stat-indicator-progress {
+  background-color: #3b82f6;
+}
+
+.database-loading {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  padding: 4rem;
+}
+
+.database-loading-spinner {
+  width: 4rem;
+  height: 4rem;
+  border-radius: 50%;
+  border: 0.25rem solid #e5e7eb;
+  border-top-color: #3b82f6;
+  animation: spin 1s linear infinite;
+  margin-bottom: 1rem;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+.database-empty-state {
+  background-color: white;
+  padding: 3rem;
+  text-align: center;
+  border-radius: 0.5rem;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.database-empty-icon {
+  width: 4rem;
+  height: 4rem;
+  color: #9ca3af;
+  margin: 0 auto 1rem;
+}
+
+.database-empty-title {
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: #1f2937;
+  margin-bottom: 0.75rem;
+}
+
+.database-empty-description {
+  color: #6b7280;
+  margin-bottom: 1rem;
+}
+
+/* Animation */
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(-10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.database-alert {
+  animation: fadeIn 0.3s ease-out forwards;
+  padding: 1rem;
+  border-radius: 0.375rem;
+  margin-bottom: 1rem;
+  display: flex;
+  align-items: flex-start;
+}
+
+.database-alert-success {
+  background-color: #d1fae5;
+  border: 1px solid #a7f3d0;
+  color: #065f46;
+}
+
+.database-alert-error {
+  background-color: #fee2e2;
+  border: 1px solid #fecaca;
+  color: #b91c1c;
+}
+
+.database-alert svg {
+  margin-right: 0.5rem;
+  margin-top: 0.125rem;
+  flex-shrink: 0;
+}

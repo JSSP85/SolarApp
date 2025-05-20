@@ -510,7 +510,7 @@ const DatabaseView = () => {
             </div>
           )}
           
-          {/* Footer de navegación por mes */}
+          {/* Foter de navegación por mes */}
           <div className="flex items-center justify-between bg-white px-6 py-4 border-t border-gray-200 rounded-b-lg mt-6">
             <button
               className="flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 transition-colors duration-150"

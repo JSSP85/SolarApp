@@ -217,7 +217,7 @@ const DashboardApp = () => {
       }
     `;
     
-    // Crear elemento de estilo e insertarlo en el head
+    // Crear elemento de esstilo e insertarlo en el head
     const styleElement = document.createElement('style');
     styleElement.textContent = mediumModernThemeStyles;
     document.head.appendChild(styleElement);
@@ -262,6 +262,6 @@ const DashboardApp = () => {
       </div>
     </div>
   );
-}; 
+};
 
 export default DashboardApp;

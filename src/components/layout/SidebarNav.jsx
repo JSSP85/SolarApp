@@ -1,7 +1,14 @@
 // src/components/layout/SidebarNav.jsx
 import React from 'react';
 import { useInspection } from '../../context/InspectionContext';
-import { Settings, Clipboard, FileText, Database } from 'lucide-react';
+import { 
+  Settings, 
+  Clipboard, 
+  FileText, 
+  Database,
+  BarChart,
+  Shield
+} from 'lucide-react';
 
 const SidebarNav = () => {
   const { state, dispatch } = useInspection();
@@ -30,6 +37,10 @@ const SidebarNav = () => {
       
       <div className="sidebar-divider"></div>
       
+      <div className="sidebar-section-title">
+        <span>Inspection</span>
+      </div>
+      
       <div className="sidebar-nav">
         <div 
           className={`nav-item ${activeTab === 'setup' ? 'active' : ''}`}
@@ -54,20 +65,39 @@ const SidebarNav = () => {
           <FileText size={20} />
           <span>Report</span>
         </div>
-        
-        {/* Nueva opción Database - Solo visible para usuarios Admin */}
-        {userRole === 'admin' && (
-          <div 
-            className={`nav-item ${activeTab === 'database' ? 'active' : ''}`}
-            onClick={() => handleTabChange('database')}
-          >
-            <Database size={20} />
-            <span>Database</span>
-          </div>
-        )}
       </div>
+      
+      {/* Admin section */}
+      {userRole === 'admin' && (
+        <>
+          <div className="sidebar-divider admin-divider"></div>
+          
+          <div className="sidebar-section-title admin-section-title">
+            <Shield size={16} className="mr-2" />
+            <span>Admin</span>
+          </div>
+          
+          <div className="sidebar-nav">
+            <div 
+              className={`nav-item admin-item ${activeTab === 'database' ? 'admin-active' : ''}`}
+              onClick={() => handleTabChange('database')}
+            >
+              <Database size={20} />
+              <span>Database</span>
+            </div>
+            
+            <div 
+              className={`nav-item admin-item ${activeTab === 'dashboard' ? 'admin-active' : ''}`}
+              onClick={() => handleTabChange('dashboard')}
+            >
+              <BarChart size={20} />
+              <span>Dashboard</span>
+            </div>
+          </div>
+        </>
+      )}
 
-      {/* Estilos específicos con aalta prioridad y posición corregida */}
+      {/* Estilos específicos con alta prioridad y posición corregida */}
       <style jsx>{`
         /* Selector altamente específico para la barra lateral */
         html body #root .app-container .sidebar,
@@ -114,6 +144,29 @@ const SidebarNav = () => {
           align-items: center;
           padding: 1.5rem;
         }
+        
+        /* Títulos de sección */
+        .sidebar-section-title {
+          color: rgba(255, 255, 255, 0.6);
+          font-size: 0.8rem;
+          text-transform: uppercase;
+          letter-spacing: 1px;
+          padding: 0.5rem 1.5rem;
+          font-weight: 600;
+        }
+        
+        /* Estilo especial para sección de administrador */
+        .admin-section-title {
+          color: rgba(255, 161, 86, 0.9);
+          display: flex;
+          align-items: center;
+        }
+        
+        .admin-divider {
+          margin-top: 1.5rem;
+          margin-bottom: 1rem;
+          background-color: rgba(255, 161, 86, 0.3) !important;
+        }
 
         .sidebar-nav .nav-item {
           color: rgba(255, 255, 255, 0.8);
@@ -136,6 +189,26 @@ const SidebarNav = () => {
           background-color: rgba(255, 255, 255, 0.2);
           color: white;
           box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+        }
+        
+        /* Estilos para ítems de administrador */
+        .sidebar-nav .nav-item.admin-item {
+          color: rgba(255, 161, 86, 0.9);
+          font-weight: 600;
+          border-left: 3px solid rgba(255, 161, 86, 0.6);
+        }
+        
+        .sidebar-nav .nav-item.admin-item:hover {
+          background-color: rgba(255, 161, 86, 0.15);
+          color: rgba(255, 161, 86, 1);
+        }
+        
+        .sidebar-nav .nav-item.admin-active {
+          background-color: rgba(255, 161, 86, 0.2);
+          color: rgba(255, 161, 86, 1);
+          box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+          font-weight: 600;
+          border-left: 3px solid rgba(255, 161, 86, 1);
         }
 
         .sidebar-divider {

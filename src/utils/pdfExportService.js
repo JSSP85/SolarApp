@@ -115,6 +115,27 @@ export const exportToPDF = async (elementId, options = {}) => {
       // Clonar la sección para no modificar el original
       const sectionToCapture = pagesSections[i].cloneNode(true);
       
+      // TRATAMIENTO ESPECIAL PARA LA PÁGINA 2
+      if (i === 1) {
+        // Forzar ancho completo en todos los contenedores relevantes
+        const containers = sectionToCapture.querySelectorAll('.technical-drawing-container, .technical-drawing-container-report, .dashboard-card, .dimension-charts-grid, .data-table, .card, .card-body');
+        containers.forEach(container => {
+          container.style.width = '100%';
+          container.style.maxWidth = '100%';
+          container.style.margin = '0 auto';
+          container.style.boxSizing = 'border-box';
+        });
+        
+        // Asegurar que cualquier contenedor con posicionamiento absoluto o relativo tenga ancho completo
+        const technicalDrawingContainers = sectionToCapture.querySelectorAll('.technical-drawing-container, .technical-drawing-container-report');
+        technicalDrawingContainers.forEach(container => {
+          container.style.width = '100%';
+          container.style.position = 'relative';
+          container.style.left = '0';
+          container.style.transform = 'none';
+        });
+      }
+      
       // Crear div temporal para contener la sección
       const tempContainer = document.createElement('div');
       
@@ -270,9 +291,47 @@ export const exportToPDF = async (elementId, options = {}) => {
             height: auto !important;
           }
           
-          /* Ajustes específicos para la página 2 */
+          /* AJUSTES ESPECIALES PARA LA PÁGINA 2 */
           .pdf-page-section[data-page="2"] {
             min-height: 800px !important;
+            width: 100% !important;
+            max-width: 100% !important;
+            padding: 0 !important;
+            margin: 0 !important;
+            box-sizing: border-box !important;
+          }
+          
+          .pdf-page-section[data-page="2"] .technical-drawing-container,
+          .pdf-page-section[data-page="2"] .technical-drawing-container-report {
+            width: 100% !important;
+            max-width: 100% !important;
+            margin: 0 auto 10mm auto !important;
+            padding: 4mm !important;
+            box-sizing: border-box !important;
+          }
+          
+          .pdf-page-section[data-page="2"] .dimension-charts-grid {
+            width: 100% !important;
+            max-width: 100% !important;
+            margin: 0 !important;
+            display: grid !important;
+            grid-template-columns: repeat(2, 1fr) !important;
+          }
+          
+          .pdf-page-section[data-page="2"] .data-table {
+            width: 100% !important;
+            max-width: 100% !important;
+            margin: 0 !important;
+            table-layout: fixed !important;
+          }
+          
+          .pdf-page-section[data-page="2"] .dashboard-card,
+          .pdf-page-section[data-page="2"] .card {
+            width: 100% !important;
+            max-width: 100% !important;
+            margin-left: 0 !important;
+            margin-right: 0 !important;
+            box-sizing: border-box !important;
           }
           
           /* Ocultar elementos innecesarios */
@@ -292,8 +351,8 @@ export const exportToPDF = async (elementId, options = {}) => {
       document.body.appendChild(tempContainer);
       
       try {
-        // Capturar la sección como imagen
-        const canvas = await html2canvas(tempContainer, {
+        // Configurar opciones para html2canvas
+        const canvasOptions = {
           scale: scale,
           useCORS: true,
           allowTaint: true,
@@ -303,7 +362,28 @@ export const exportToPDF = async (elementId, options = {}) => {
           height: tempContainer.scrollHeight,
           windowWidth: tempContainer.scrollWidth,
           windowHeight: tempContainer.scrollHeight,
-          imageTimeout: 15000, // Dar más tiempo para cargar imágenes
+          imageTimeout: 15000 // Dar más tiempo para cargar imágenes
+        };
+        
+        // Opciones especiales para la página 2
+        if (i === 1) {
+          canvasOptions.windowWidth = tempContainer.scrollWidth + 20; // Un poco más ancho
+          canvasOptions.width = tempContainer.scrollWidth + 20;
+          
+          // Forzar estilos importantes justo antes de renderizar
+          const importantStyles = document.createElement('style');
+          importantStyles.textContent = `
+            .pdf-page-section[data-page="2"] * {
+              max-width: 100% !important;
+              box-sizing: border-box !important;
+            }
+          `;
+          tempContainer.appendChild(importantStyles);
+        }
+        
+        // Capturar la sección como imagen
+        const canvas = await html2canvas(tempContainer, {
+          ...canvasOptions,
           onclone: function(documentClone) {
             // Aplicar estilos a encabezados de tarjetas
             const cardHeaders = documentClone.querySelectorAll('.card-header');
@@ -360,6 +440,36 @@ export const exportToPDF = async (elementId, options = {}) => {
               container.style.height = 'auto';
               container.style.minHeight = '300px';
             });
+            
+            // TRATAMIENTO ESPECIAL PARA PÁGINA 2
+            if (i === 1) {
+              const page2 = documentClone.querySelector('.pdf-page-section[data-page="2"]');
+              if (page2) {
+                // Forzar ancho completo en todos los contenedores
+                const containers = page2.querySelectorAll(
+                  '.dashboard-card, .card, .card-body, .technical-drawing-container, ' +
+                  '.technical-drawing-container-report, .dimension-charts-grid, .data-table'
+                );
+                
+                containers.forEach(container => {
+                  container.style.width = '100%';
+                  container.style.maxWidth = '100%';
+                  container.style.marginLeft = '0';
+                  container.style.marginRight = '0';
+                  container.style.boxSizing = 'border-box';
+                });
+                
+                // Ajustar específicamente el dibujo técnico
+                const technicalDrawing = page2.querySelector('.technical-drawing-container, .technical-drawing-container-report');
+                if (technicalDrawing) {
+                  technicalDrawing.style.width = '100%';
+                  technicalDrawing.style.height = 'auto';
+                  technicalDrawing.style.minHeight = '350px';
+                  technicalDrawing.style.padding = '15px';
+                  technicalDrawing.style.boxSizing = 'border-box';
+                }
+              }
+            }
           }
         });
         
@@ -371,11 +481,25 @@ export const exportToPDF = async (elementId, options = {}) => {
         let imgWidth = contentWidth;
         let imgHeight = (imgProps.height * imgWidth) / imgProps.width;
         
-        // Si es demasiado alto, ajustar al alto disponible
-        const contentHeight = pageHeight - margin - 35; // Ajustar para el encabezado
-        if (imgHeight > contentHeight) {
-          imgHeight = contentHeight;
-          imgWidth = (imgProps.width * imgHeight) / imgProps.height;
+        // TRATAMIENTO ESPECIAL PARA PÁGINA 2: asegurar ancho completo
+        if (i === 1) {
+          imgWidth = contentWidth; // Forzar ancho máximo disponible
+          imgHeight = (imgProps.height * imgWidth) / imgProps.width;
+          
+          // Si es demasiado alto, ajustar al alto disponible manteniendo proporción
+          const contentHeight = pageHeight - margin - 35; // Ajustar para el encabezado
+          if (imgHeight > contentHeight) {
+            imgHeight = contentHeight;
+            imgWidth = (imgProps.width * imgHeight) / imgProps.height;
+          }
+        } else {
+          // Para las otras páginas, mantener el comportamiento original
+          // Si es demasiado alto, ajustar al alto disponible
+          const contentHeight = pageHeight - margin - 35; // Ajustar para el encabezado
+          if (imgHeight > contentHeight) {
+            imgHeight = contentHeight;
+            imgWidth = (imgProps.width * imgHeight) / imgProps.height;
+          }
         }
         
         // Centrar en la página y ajustar posición Y para dejar espacio al encabezado

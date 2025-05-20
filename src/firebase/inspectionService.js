@@ -288,7 +288,7 @@ export const searchInspections = async (searchText) => {
     querySnapshot.forEach((doc) => {
       const data = convertFirestoreToAppData(doc);
       
-      // Buscar en varios campos
+      // Buscar en varioss campos
       const searchableText = [
         data.componentName,
         data.componentCode,

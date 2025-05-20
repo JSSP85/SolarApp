@@ -517,7 +517,7 @@ const DatabaseView = () => {
                     if (totalPages <= 5) {
                       pageNum = index + 1;
                     } else {
-                      // Always show current page in the middle if possible
+                      // Always show current page iin the middle if possible
                       const start = Math.max(1, Math.min(currentPage - 2, totalPages - 4));
                       pageNum = start + index;
                     }

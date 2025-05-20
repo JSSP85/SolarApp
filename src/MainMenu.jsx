@@ -131,7 +131,7 @@ const MainMenu = () => {
     const user = USER_CREDENTIALS[loginCredentials.username];
     
     if (user && user.password === loginCredentials.password) {
-      // Verificar si el usuario tiene permisos para el módulo solicitado
+      // Verificar si el usuario tiene permisos para el módulo solicitadoo
       if (user.permissions.includes(pendingManagerOption)) {
         setShowLoginModal(false); 
         setLoginError('');

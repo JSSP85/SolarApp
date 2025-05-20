@@ -3,6 +3,43 @@ import html2canvas from 'html2canvas';
 import jsPDF from 'jspdf';
 
 /**
+ * Agrega un encabezado personalizado directamente al PDF
+ */
+function addHeaderToPdf(pdf) {
+  // Obtener dimensiones de página
+  const pageWidth = pdf.internal.pageSize.getWidth();
+  
+  // Configurar color azul corporativo
+  pdf.setFillColor(0, 95, 131); // #005F83
+  
+  // Crear rectángulo azul para el logo
+  pdf.rect(10, 10, 30, 15, 'F');
+  
+  // Añadir texto "VALMONT" en blanco sobre el rectángulo azul
+  pdf.setTextColor(255, 255, 255);
+  pdf.setFont("helvetica", "bold");
+  pdf.setFontSize(12);
+  pdf.text("VALMONT", 25, 18, { align: "center" });
+  
+  // Añadir título del informe
+  pdf.setTextColor(0, 95, 131); // #005F83
+  pdf.setFontSize(24);
+  pdf.setFont("helvetica", "bold");
+  pdf.text("INSPECTION REPORT", pageWidth - 10, 18, { align: "right" });
+  
+  // Añadir subtítulo
+  pdf.setTextColor(100, 100, 100);
+  pdf.setFontSize(16);
+  pdf.setFont("helvetica", "normal");
+  pdf.text("Steel Components", pageWidth - 10, 25, { align: "right" });
+  
+  // Añadir línea horizontal
+  pdf.setDrawColor(0, 95, 131);
+  pdf.setLineWidth(0.5);
+  pdf.line(10, 30, pageWidth - 10, 30);
+}
+
+/**
  * Exporta un elemento DOM como PDF con paginación mejorada
  */
 export const exportToPDF = async (elementId, options = {}) => {
@@ -72,6 +109,9 @@ export const exportToPDF = async (elementId, options = {}) => {
         pdf.addPage();
       }
       
+      // Añadir encabezado a esta página
+      addHeaderToPdf(pdf);
+      
       // Clonar la sección para no modificar el original
       const sectionToCapture = pagesSections[i].cloneNode(true);
       
@@ -88,56 +128,9 @@ export const exportToPDF = async (elementId, options = {}) => {
             font-family: 'Arial', sans-serif;
           }
           
-          /* Encabezado mejorado */
+          /* Ocultar encabezado HTML ya que usamos uno nativo en PDF */
           .pdf-header {
-            display: block !important;
-            width: 100%;
-            padding: 15mm 10mm 5mm 10mm;
-            margin-bottom: 5mm;
-            border-bottom: 3px solid #005F83;
-            position: relative;
-          }
-          
-          .pdf-header:after {
-            content: '';
-            position: absolute;
-            bottom: 0;
-            left: 0;
-            width: 100%;
-            height: 1px;
-            background: linear-gradient(90deg, rgba(0,95,131,0.7) 0%, rgba(0,95,131,0.3) 100%);
-          }
-          
-          .pdf-header-content {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-          }
-          
-          .pdf-logo-container {
-            width: 30mm;
-            background-color: #005F83;
-            padding: 10px;
-            border-radius: 4px;
-          }
-          
-          .pdf-title-container {
-            text-align: right;
-          }
-          
-          .pdf-title {
-            font-size: 24pt;
-            font-weight: bold;
-            margin: 0;
-            color: #005F83;
-            letter-spacing: 1px;
-          }
-          
-          .pdf-subtitle {
-            font-size: 16pt;
-            font-weight: normal;
-            margin: 0;
-            color: #666;
+            display: none !important;
           }
           
           /* Cards mejoradas */
@@ -148,6 +141,7 @@ export const exportToPDF = async (elementId, options = {}) => {
             margin-bottom: 5mm !important;
             background-color: #fafaf8 !important; /* Crema muy suave */
             overflow: hidden !important;
+            page-break-inside: avoid !important;
           }
           
           .card-header {
@@ -239,17 +233,46 @@ export const exportToPDF = async (elementId, options = {}) => {
             color: white !important;
           }
           
-          /* Ajustes para gráficos */
-          .dimension-chart, 
-          .chart-container,
-          .technical-drawing-container,
+          /* Estilos específicos para dibujos técnicos y gráficos */
+          .technical-drawing-container, 
           .technical-drawing-container-report,
           .dimension-mini-chart,
+          .dimension-chart,
           .coating-chart {
-            background-color: #fefefe !important;
+            height: auto !important;
+            min-height: 250px !important;
+            max-height: none !important;
+            margin-bottom: 10mm !important;
+            overflow: visible !important;
+            background-color: #fafafa !important;
             border: 1pt solid #E2E8F0 !important;
             border-radius: 4px !important;
-            padding: 2mm !important;
+            padding: 4mm !important;
+          }
+
+          .technical-drawing-image {
+            max-width: 100% !important;
+            height: auto !important;
+            display: block !important;
+            margin: 0 auto !important;
+          }
+          
+          .dimension-charts-grid {
+            display: grid !important;
+            grid-template-columns: repeat(2, 1fr) !important;
+            gap: 10px !important;
+            grid-auto-rows: minmax(180px, auto) !important;
+          }
+          
+          /* Ajustes específicos para SVG y gráficos recharts */
+          svg {
+            max-width: 100% !important;
+            height: auto !important;
+          }
+          
+          /* Ajustes específicos para la página 2 */
+          .pdf-page-section[data-page="2"] {
+            min-height: 800px !important;
           }
           
           /* Ocultar elementos innecesarios */
@@ -279,7 +302,65 @@ export const exportToPDF = async (elementId, options = {}) => {
           width: tempContainer.scrollWidth,
           height: tempContainer.scrollHeight,
           windowWidth: tempContainer.scrollWidth,
-          windowHeight: tempContainer.scrollHeight
+          windowHeight: tempContainer.scrollHeight,
+          imageTimeout: 15000, // Dar más tiempo para cargar imágenes
+          onclone: function(documentClone) {
+            // Aplicar estilos a encabezados de tarjetas
+            const cardHeaders = documentClone.querySelectorAll('.card-header');
+            cardHeaders.forEach(header => {
+              header.style.background = 'linear-gradient(135deg, #005F83 0%, #007BA7 100%)';
+              header.style.color = 'white';
+              header.style.fontWeight = 'bold';
+              header.style.padding = '8px';
+            });
+            
+            // Aplicar estilos a tarjetas
+            const cards = documentClone.querySelectorAll('.dashboard-card');
+            cards.forEach(card => {
+              card.style.border = '2px solid #005F83';
+              card.style.borderRadius = '6px';
+              card.style.overflow = 'hidden';
+              card.style.backgroundColor = '#fafaf8';
+              card.style.marginBottom = '15px';
+            });
+            
+            // Aplicar estilos a títulos de sección
+            const sectionTitles = documentClone.querySelectorAll('.report-section-title');
+            sectionTitles.forEach(title => {
+              title.style.background = 'linear-gradient(to right, #EEF2F6, #F8FAFC)';
+              title.style.borderLeft = '10px solid #005F83';
+              title.style.padding = '8px';
+              title.style.marginBottom = '10px';
+              title.style.borderRadius = '0 4px 4px 0';
+              title.style.fontWeight = 'bold';
+            });
+            
+            // Aplicar estilos a badges
+            const badges = documentClone.querySelectorAll('.badge-success');
+            badges.forEach(badge => {
+              badge.style.background = 'linear-gradient(135deg, #10B981, #059669)';
+              badge.style.color = 'white';
+              badge.style.padding = '3px 8px';
+              badge.style.borderRadius = '4px';
+              badge.style.fontWeight = 'bold';
+            });
+            
+            const badgesDanger = documentClone.querySelectorAll('.badge-danger');
+            badgesDanger.forEach(badge => {
+              badge.style.background = 'linear-gradient(135deg, #EF4444, #DC2626)';
+              badge.style.color = 'white';
+              badge.style.padding = '3px 8px';
+              badge.style.borderRadius = '4px';
+              badge.style.fontWeight = 'bold';
+            });
+            
+            // Ajustar altura de contenedores que puedan estar comprimidos
+            const technicalDrawings = documentClone.querySelectorAll('.technical-drawing-container, .technical-drawing-container-report');
+            technicalDrawings.forEach(container => {
+              container.style.height = 'auto';
+              container.style.minHeight = '300px';
+            });
+          }
         });
         
         // Convertir a imagen
@@ -291,15 +372,15 @@ export const exportToPDF = async (elementId, options = {}) => {
         let imgHeight = (imgProps.height * imgWidth) / imgProps.width;
         
         // Si es demasiado alto, ajustar al alto disponible
-        const contentHeight = pageHeight - (margin * 2);
+        const contentHeight = pageHeight - margin - 35; // Ajustar para el encabezado
         if (imgHeight > contentHeight) {
           imgHeight = contentHeight;
           imgWidth = (imgProps.width * imgHeight) / imgProps.height;
         }
         
-        // Centrar en la página
+        // Centrar en la página y ajustar posición Y para dejar espacio al encabezado
         const x = margin + (contentWidth - imgWidth) / 2;
-        const y = margin;
+        const y = 35; // Coordenada Y después del encabezado
         
         // Añadir al PDF
         pdf.addImage(imgData, 'JPEG', x, y, imgWidth, imgHeight);

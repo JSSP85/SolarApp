@@ -828,7 +828,7 @@ export const InspectionProvider = ({ children, initialUserRole = null }) => {
       setUserRole
     }}>
       {children}
-    </InspectionContext.Provider>
+    </InspectionContext.Provider> 
   );
 };
 

@@ -1,6 +1,5 @@
 // src/components/database/DatabaseView.jsx
 import React, { useState, useEffect } from 'react';
-import { useInspection } from '../../context/InspectionContext';
 import { 
   Search, 
   Filter, 
@@ -17,10 +16,9 @@ import {
   Database,
   Download
 } from 'lucide-react';
-import { deleteInspection } from '../../firebase/inspectionService';
+import { getInspections, deleteInspection } from '../../firebase/inspectionService';
 
 const DatabaseView = () => {
-  const { getAllInspections } = useInspection();
   const [inspections, setInspections] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -57,7 +55,7 @@ const DatabaseView = () => {
     setLoading(true);
     setError(null);
     try {
-      const data = await getAllInspections();
+      const data = await getInspections();
       setInspections(data);
       setTotalPages(Math.ceil(data.length / itemsPerPage));
       setLoading(false);
@@ -82,7 +80,7 @@ const DatabaseView = () => {
       };
       
       // Get filtered inspections
-      const data = await getAllInspections(filters);
+      const data = await getInspections(filters);
       
       setInspections(data);
       setTotalPages(Math.ceil(data.length / itemsPerPage));
@@ -133,11 +131,11 @@ const DatabaseView = () => {
       // Create CSV rows from inspections
       const rows = inspections.map(insp => [
         insp.id,
-        insp.inspectionDate,
-        insp.componentName || 'Unknown',
-        insp.componentCode || 'N/A',
-        insp.inspector || 'Unknown',
-        getStatusText(insp.inspectionStatus)
+        getInspectionDate(insp),
+        getComponentName(insp),
+        getComponentCode(insp),
+        getInspectorName(insp),
+        getStatusText(getInspectionStatus(insp))
       ]);
       
       // Combine headers and rows
@@ -162,6 +160,44 @@ const DatabaseView = () => {
       console.error("Error exporting data:", err);
       setError("Failed to export data. Please try again.");
     }
+  };
+
+  // Helper functions to get data in a flexible way
+  const getInspectionDate = (insp) => {
+    return insp.inspectionDate || 
+           insp.inspectionInfo?.inspectionDate || 
+           'N/A';
+  };
+
+  const getComponentName = (insp) => {
+    return insp.componentName || 
+           insp.componentInfo?.componentName || 
+           'Unknown Component';
+  };
+
+  const getComponentCode = (insp) => {
+    return insp.componentCode || 
+           insp.componentInfo?.componentCode || 
+           'N/A';
+  };
+
+  const getInspectorName = (insp) => {
+    return insp.inspector || 
+           insp.inspectionInfo?.inspector || 
+           'Unknown';
+  };
+
+  const getProjectName = (insp) => {
+    return insp.project || 
+           insp.projectName ||
+           insp.componentInfo?.projectName || 
+           'No Project';
+  };
+
+  const getInspectionStatus = (insp) => {
+    return insp.inspectionStatus || 
+           insp.finalResults?.inspectionStatus || 
+           'in-progress';
   };
 
   // Get status display class
@@ -379,24 +415,30 @@ const DatabaseView = () => {
                 {getCurrentPageItems().map((inspection) => (
                   <tr key={inspection.id} className="hover:bg-gray-50">
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                      {inspection.inspectionDate}
+                      {getInspectionDate(inspection)}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="text-sm font-medium text-gray-900">{inspection.componentName || 'Unknown Component'}</div>
-                      <div className="text-xs text-gray-500">{inspection.componentCode || 'No Code'}</div>
+                      <div className="text-sm font-medium text-gray-900">
+                        {getComponentName(inspection)}
+                      </div>
+                      <div className="text-xs text-gray-500">
+                        {getComponentCode(inspection)}
+                      </div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="flex items-center">
                         <User size={14} className="text-gray-400 mr-1" />
-                        <span className="text-sm text-gray-900">{inspection.inspector || 'Unknown'}</span>
+                        <span className="text-sm text-gray-900">
+                          {getInspectorName(inspection)}
+                        </span>
                       </div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                      {inspection.project || inspection.client || 'No Project'}
+                      {getProjectName(inspection)}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
-                      <span className={`px-3 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${getStatusClass(inspection.inspectionStatus)}`}>
-                        {getStatusText(inspection.inspectionStatus)}
+                      <span className={`px-3 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${getStatusClass(getInspectionStatus(inspection))}`}>
+                        {getStatusText(getInspectionStatus(inspection))}
                       </span>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
@@ -451,7 +493,7 @@ const DatabaseView = () => {
             <div className="hidden sm:flex-1 sm:flex sm:items-center sm:justify-between">
               <div>
                 <p className="text-sm text-gray-700">
-                  Showing <span className="font-medium">{(currentPage - 1) * itemsPerPage + 1}</span> to{' '}
+                  Showing <span className="font-medium">{Math.min((currentPage - 1) * itemsPerPage + 1, inspections.length)}</span> to{' '}
                   <span className="font-medium">
                     {Math.min(currentPage * itemsPerPage, inspections.length)}
                   </span>{' '}
@@ -468,20 +510,32 @@ const DatabaseView = () => {
                     <ChevronLeft size={18} />
                   </button>
                   
-                  {/* Page numbers */}
-                  {[...Array(totalPages)].map((_, index) => (
-                    <button
-                      key={index}
-                      className={`relative inline-flex items-center px-4 py-2 border ${
-                        currentPage === index + 1
-                          ? 'border-blue-500 bg-blue-50 text-blue-600 z-10'
-                          : 'border-gray-300 bg-white text-gray-500 hover:bg-gray-50'
-                      }`}
-                      onClick={() => goToPage(index + 1)}
-                    >
-                      {index + 1}
-                    </button>
-                  ))}
+                  {/* Page numbers - limit to showing 5 pages max */}
+                  {[...Array(Math.min(5, totalPages))].map((_, index) => {
+                    // Calculate which page numbers to show
+                    let pageNum;
+                    if (totalPages <= 5) {
+                      pageNum = index + 1;
+                    } else {
+                      // Always show current page in the middle if possible
+                      const start = Math.max(1, Math.min(currentPage - 2, totalPages - 4));
+                      pageNum = start + index;
+                    }
+                    
+                    return (
+                      <button
+                        key={pageNum}
+                        className={`relative inline-flex items-center px-4 py-2 border ${
+                          currentPage === pageNum
+                            ? 'border-blue-500 bg-blue-50 text-blue-600 z-10'
+                            : 'border-gray-300 bg-white text-gray-500 hover:bg-gray-50'
+                        }`}
+                        onClick={() => goToPage(pageNum)}
+                      >
+                        {pageNum}
+                      </button>
+                    );
+                  })}
                   
                   <button
                     className="relative inline-flex items-center px-2 py-2 rounded-r-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50"

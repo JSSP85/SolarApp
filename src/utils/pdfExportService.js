@@ -764,7 +764,7 @@ export const sendReportByEmail = (email, reportData) => {
 };
 
 /**
- * Calcula el total de no conformidades en un informe
+ * Calcula el total de no conformidades en un informeh
  */
 function calculateTotalNonConformities(reportData) {
   if (!reportData.dimensionNonConformities) return 0;

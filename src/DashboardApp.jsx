@@ -262,6 +262,6 @@ const DashboardApp = () => {
       </div>
     </div>
   );
-};
+}; 
 
 export default DashboardApp;

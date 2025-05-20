@@ -13,7 +13,6 @@ import StaticMapReport from './StaticMapReport';
 import ReportTechnicalDrawing from './ReportTechnicalDrawing';
 import ReportExportOptions from './ReportExportOptions'; // Import the new component
 import '../../styles/inspection-photos.css'; // Importar el CSS global para fotos
-import '../../styles/report-print.css'; // Importar el CSS para impresión
 
 // Componente para los mini gráficos dimensionales con tamaño reducido
 const DimensionMiniChart = ({ dimension, measurements, index }) => {

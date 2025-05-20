@@ -13,13 +13,13 @@ function addHeaderToPdf(pdf) {
   pdf.setFillColor(0, 95, 131); // #005F83
   
   // Crear rectángulo azul para el logo
-  pdf.rect(10, 10, 30, 15, 'F');
+  pdf.rect(10, 10, 40, 15, 'F');
   
-  // Añadir texto "VALMONT" en blanco sobre el rectángulo azul
+  // Añadir texto "VALMONT SOLAR" en blanco sobre el rectángulo azul
   pdf.setTextColor(255, 255, 255);
   pdf.setFont("helvetica", "bold");
-  pdf.setFontSize(12);
-  pdf.text("VALMONT", 25, 18, { align: "center" });
+  pdf.setFontSize(11);
+  pdf.text("VALMONT SOLAR", 30, 18, { align: "center" });
   
   // Añadir título del informe
   pdf.setTextColor(0, 95, 131); // #005F83
@@ -133,20 +133,44 @@ export const exportToPDF = async (elementId, options = {}) => {
             display: none !important;
           }
           
+          /* Ocultar contenedor de Inspection Overview */
+          .pdf-page-section > .dashboard-card:first-child {
+            display: none !important;
+          }
+          
+          /* Pero mantener las tarjetas internas visibles */
+          .pdf-page-section > .dashboard-card:first-child .cards-grid-2 .dashboard-card {
+            display: block !important;
+          }
+          
+          /* Ajuste para mostrar solo las tarjetas Component Information e Inspection Information */
+          .cards-grid-2 {
+            display: flex !important;
+            flex-direction: row !important;
+            gap: 15px !important;
+            width: 100% !important;
+          }
+          
+          .cards-grid-2 > .dashboard-card {
+            flex: 1 !important;
+            margin-top: 0 !important;
+          }
+          
           /* Cards mejoradas */
           .dashboard-card {
             box-shadow: none !important;
-            border: 1.5pt solid #005F83 !important;
+            border: 2px solid #005F83 !important;
             border-radius: 6px !important;
             margin-bottom: 5mm !important;
             background-color: #fafaf8 !important; /* Crema muy suave */
             overflow: hidden !important;
             page-break-inside: avoid !important;
+            width: 100% !important;
           }
           
           .card-header {
-            border-bottom: 1.5pt solid #005F83 !important;
-            background: linear-gradient(135deg, #005F83 0%, #007BA7 100%) !important;
+            border-bottom: 2px solid #005F83 !important;
+            background-color: #005F83 !important;
             color: white !important;
             padding: 3mm !important;
             font-weight: bold !important;
@@ -164,7 +188,7 @@ export const exportToPDF = async (elementId, options = {}) => {
           }
           
           .data-table th {
-            background: linear-gradient(to bottom, #EEF2F6, #E2E8F0) !important;
+            background-color: #EEF2F6 !important;
             color: #000000 !important;
             font-weight: bold !important;
             border: 1pt solid #005F83 !important;
@@ -184,7 +208,7 @@ export const exportToPDF = async (elementId, options = {}) => {
           
           /* Títulos de sección */
           .report-section-title {
-            background: linear-gradient(to right, #EEF2F6, #F8FAFC) !important;
+            background-color: #EEF2F6 !important;
             color: #000000 !important;
             padding: 2mm !important;
             border-left: 3mm solid #005F83 !important;
@@ -219,17 +243,17 @@ export const exportToPDF = async (elementId, options = {}) => {
           }
           
           .badge-success {
-            background: linear-gradient(135deg, #10B981, #059669) !important;
+            background-color: #10B981 !important;
             color: white !important;
           }
           
           .badge-danger {
-            background: linear-gradient(135deg, #EF4444, #DC2626) !important;
+            background-color: #EF4444 !important;
             color: white !important;
           }
           
           .badge-warning {
-            background: linear-gradient(135deg, #F59E0B, #D97706) !important;
+            background-color: #F59E0B !important;
             color: white !important;
           }
           
@@ -248,31 +272,48 @@ export const exportToPDF = async (elementId, options = {}) => {
             border: 1pt solid #E2E8F0 !important;
             border-radius: 4px !important;
             padding: 4mm !important;
+            width: 100% !important;
           }
 
           .technical-drawing-image {
             max-width: 100% !important;
             height: auto !important;
+            max-height: 450px !important;
             display: block !important;
             margin: 0 auto !important;
           }
           
-          .dimension-charts-grid {
+          /* Ajustes específicos para la página 2 */
+          .pdf-page-section[data-page="2"] {
+            width: 100% !important;
+            height: auto !important;
+            transform: scale(1) !important;
+          }
+          
+          .pdf-page-section[data-page="2"] table {
+            width: 100% !important;
+            transform: scale(1) !important;
+          }
+          
+          .pdf-page-section[data-page="2"] .dimension-charts-grid {
             display: grid !important;
             grid-template-columns: repeat(2, 1fr) !important;
             gap: 10px !important;
-            grid-auto-rows: minmax(180px, auto) !important;
+            width: 100% !important;
+            transform: scale(1) !important;
           }
           
-          /* Ajustes específicos para SVG y gráficos recharts */
-          svg {
-            max-width: 100% !important;
+          .pdf-page-section[data-page="2"] .dimension-mini-chart {
+            min-height: 180px !important;
+            width: 100% !important;
+            transform: scale(1) !important;
+          }
+          
+          /* SVG y gráficos más grandes para la página 2 */
+          .pdf-page-section[data-page="2"] svg {
+            width: 100% !important;
             height: auto !important;
-          }
-          
-          /* Ajustes específicos para la página 2 */
-          .pdf-page-section[data-page="2"] {
-            min-height: 800px !important;
+            min-height: 150px !important;
           }
           
           /* Ocultar elementos innecesarios */
@@ -305,13 +346,41 @@ export const exportToPDF = async (elementId, options = {}) => {
           windowHeight: tempContainer.scrollHeight,
           imageTimeout: 15000, // Dar más tiempo para cargar imágenes
           onclone: function(documentClone) {
+            // Remover tarjeta contenedora de Inspection Overview
+            const overviewCard = documentClone.querySelector('.pdf-page-section > .dashboard-card:first-child');
+            if (overviewCard) {
+              // No eliminar la tarjeta completamente, solo hacerla invisible
+              overviewCard.style.display = 'none';
+              
+              // Extraer las tarjetas internas y colocarlas directamente en la sección
+              const internalCards = overviewCard.querySelectorAll('.cards-grid-2 .dashboard-card');
+              const cardsContainer = document.createElement('div');
+              cardsContainer.style.display = 'flex';
+              cardsContainer.style.flexDirection = 'row';
+              cardsContainer.style.gap = '15px';
+              cardsContainer.style.width = '100%';
+              cardsContainer.style.marginBottom = '15px';
+              
+              internalCards.forEach(card => {
+                card.style.flex = '1';
+                cardsContainer.appendChild(card.cloneNode(true));
+              });
+              
+              // Insertar al inicio de la sección
+              if (internalCards.length > 0) {
+                const section = documentClone.querySelector('.pdf-page-section');
+                section.insertBefore(cardsContainer, section.firstChild);
+              }
+            }
+            
             // Aplicar estilos a encabezados de tarjetas
             const cardHeaders = documentClone.querySelectorAll('.card-header');
             cardHeaders.forEach(header => {
-              header.style.background = 'linear-gradient(135deg, #005F83 0%, #007BA7 100%)';
+              header.style.backgroundColor = '#005F83';
               header.style.color = 'white';
               header.style.fontWeight = 'bold';
               header.style.padding = '8px';
+              header.style.borderBottom = '2px solid #005F83';
             });
             
             // Aplicar estilos a tarjetas
@@ -322,12 +391,13 @@ export const exportToPDF = async (elementId, options = {}) => {
               card.style.overflow = 'hidden';
               card.style.backgroundColor = '#fafaf8';
               card.style.marginBottom = '15px';
+              card.style.width = '100%';
             });
             
             // Aplicar estilos a títulos de sección
             const sectionTitles = documentClone.querySelectorAll('.report-section-title');
             sectionTitles.forEach(title => {
-              title.style.background = 'linear-gradient(to right, #EEF2F6, #F8FAFC)';
+              title.style.backgroundColor = '#EEF2F6';
               title.style.borderLeft = '10px solid #005F83';
               title.style.padding = '8px';
               title.style.marginBottom = '10px';
@@ -338,7 +408,7 @@ export const exportToPDF = async (elementId, options = {}) => {
             // Aplicar estilos a badges
             const badges = documentClone.querySelectorAll('.badge-success');
             badges.forEach(badge => {
-              badge.style.background = 'linear-gradient(135deg, #10B981, #059669)';
+              badge.style.backgroundColor = '#10B981';
               badge.style.color = 'white';
               badge.style.padding = '3px 8px';
               badge.style.borderRadius = '4px';
@@ -347,19 +417,78 @@ export const exportToPDF = async (elementId, options = {}) => {
             
             const badgesDanger = documentClone.querySelectorAll('.badge-danger');
             badgesDanger.forEach(badge => {
-              badge.style.background = 'linear-gradient(135deg, #EF4444, #DC2626)';
+              badge.style.backgroundColor = '#EF4444';
               badge.style.color = 'white';
               badge.style.padding = '3px 8px';
               badge.style.borderRadius = '4px';
               badge.style.fontWeight = 'bold';
             });
             
-            // Ajustar altura de contenedores que puedan estar comprimidos
-            const technicalDrawings = documentClone.querySelectorAll('.technical-drawing-container, .technical-drawing-container-report');
-            technicalDrawings.forEach(container => {
-              container.style.height = 'auto';
-              container.style.minHeight = '300px';
-            });
+            // AJUSTES ESPECÍFICOS PARA PÁGINA 2
+            const page2 = documentClone.querySelector('.pdf-page-section[data-page="2"]');
+            if (page2) {
+              // Forzar tamaño completo para la página
+              page2.style.width = '100%';
+              page2.style.transform = 'scale(1)';
+              
+              // Ajustar dibujo técnico
+              const technicalDrawings = page2.querySelectorAll('.technical-drawing-container, .technical-drawing-container-report');
+              technicalDrawings.forEach(container => {
+                container.style.height = 'auto';
+                container.style.minHeight = '400px';
+                container.style.width = '100%';
+                
+                // Imagen del dibujo técnico más grande
+                const img = container.querySelector('img');
+                if (img) {
+                  img.style.maxHeight = '350px';
+                  img.style.width = 'auto';
+                  img.style.margin = '0 auto';
+                  img.style.display = 'block';
+                }
+              });
+              
+              // Ajustar tablas dimensionales
+              const tables = page2.querySelectorAll('table');
+              tables.forEach(table => {
+                table.style.width = '100%';
+                table.style.tableLayout = 'fixed';
+                table.style.transform = 'scale(1)';
+                
+                // Hacer celdas del mismo tamaño
+                const cells = table.querySelectorAll('td, th');
+                cells.forEach(cell => {
+                  cell.style.width = 'auto';
+                  cell.style.padding = '4px';
+                  cell.style.textAlign = 'center';
+                });
+              });
+              
+              // Ajustar contenedores de gráficos dimensionales
+              const chartGrid = page2.querySelector('.dimension-charts-grid');
+              if (chartGrid) {
+                chartGrid.style.display = 'grid';
+                chartGrid.style.gridTemplateColumns = 'repeat(2, 1fr)';
+                chartGrid.style.gap = '15px';
+                chartGrid.style.width = '100%';
+                chartGrid.style.transform = 'scale(1)';
+              }
+              
+              const miniCharts = page2.querySelectorAll('.dimension-mini-chart');
+              miniCharts.forEach(chart => {
+                chart.style.minHeight = '180px';
+                chart.style.width = '100%';
+                chart.style.transform = 'scale(1)';
+              });
+              
+              // Ajustar SVGs
+              const svgs = page2.querySelectorAll('svg');
+              svgs.forEach(svg => {
+                svg.style.width = '100%';
+                svg.style.height = 'auto';
+                svg.style.minHeight = '150px';
+              });
+            }
           }
         });
         
@@ -370,6 +499,14 @@ export const exportToPDF = async (elementId, options = {}) => {
         // Calcular dimensiones manteniendo proporción
         let imgWidth = contentWidth;
         let imgHeight = (imgProps.height * imgWidth) / imgProps.width;
+        
+        // Ajuste especial para la página 2 (índice 1)
+        if (i === 1) { // La página 2 es el índice 1 (0-based)
+          // Asegurarnos de que no se comprima demasiado
+          imgWidth = contentWidth;
+          const aspectRatio = imgProps.width / imgProps.height;
+          imgHeight = imgWidth / aspectRatio;
+        }
         
         // Si es demasiado alto, ajustar al alto disponible
         const contentHeight = pageHeight - margin - 35; // Ajustar para el encabezado

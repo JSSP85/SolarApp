@@ -824,11 +824,11 @@ export const InspectionProvider = ({ children, initialUserRole = null }) => {
       loadInspection,
       createNewInspection,
       getAllInspections,
-      // Nueva función para establecer rol
+      // Nueva función para establecer roll
       setUserRole
     }}>
       {children}
-    </InspectionContext.Provider> 
+    </InspectionContext.Provider>
   );
 };
 

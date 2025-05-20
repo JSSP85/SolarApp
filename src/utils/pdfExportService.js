@@ -3,7 +3,7 @@ import html2canvas from 'html2canvas';
 import jsPDF from 'jspdf';
 
 /**
- * Exports a DOM element as PDF with improved styling
+ * Exporta un elemento DOM como PDF con paginación mejorada
  */
 export const exportToPDF = async (elementId, options = {}) => {
   const {
@@ -19,134 +19,16 @@ export const exportToPDF = async (elementId, options = {}) => {
   }
 
   try {
-    // Obtener el elemento a exportar
+    // Obtener el elemento principal
     const element = document.getElementById(elementId);
     if (!element) {
       throw new Error(`Elemento con ID ${elementId} no encontrado`);
     }
 
-    // SOLUCIÓN RADICAL: Inyectar los estilos directamente en el elemento
-    // antes de la captura para asegurar que se aplican
-    const originalHTML = element.innerHTML;
-    
-    // 1. Aplicar clase al cuerpo
+    // Marcar el cuerpo para aplicar estilos de impresión
     document.body.classList.add('printing-pdf');
-    
-    // 2. Inyectar estilos inline directamente 
-    const inlineStyles = `
-      <style>
-        /* Estilos forzados para PDF */
-        .pdf-header {
-          display: block !important;
-          width: 100%;
-          padding: 15mm 10mm 5mm 10mm;
-          margin-bottom: 5mm;
-          border-bottom: 3px solid #005F83;
-        }
-        
-        .pdf-header-content {
-          display: flex;
-          align-items: center;
-          justify-content: space-between;
-        }
-        
-        .dashboard-card {
-          box-shadow: none !important;
-          border: 1.5pt solid #000000 !important; 
-          margin-bottom: 5mm !important;
-          padding: 0 !important;
-          background-color: white !important;
-        }
-        
-        .card-header {
-          border-bottom: 1.5pt solid #000000 !important;
-          background: #005F83 !important;
-          color: white !important;
-          padding: 3mm !important;
-          font-weight: bold !important;
-        }
-        
-        .card-body {
-          padding: 4mm !important;
-        }
-        
-        .report-section-title {
-          background-color: #EEF2F6 !important;
-          color: #000000 !important;
-          padding: 2mm !important;
-          border-left: 3mm solid #005F83 !important;
-          font-weight: bold !important;
-          font-size: 12pt !important;
-          margin-bottom: 3mm !important;
-        }
-        
-        .data-table {
-          border-collapse: collapse !important;
-          width: 100% !important;
-        }
-        
-        .data-table th {
-          background-color: #EEF2F6 !important;
-          color: #000000 !important;
-          font-weight: bold !important;
-          border: 1pt solid #000000 !important;
-          padding: 2mm !important;
-          font-size: 9pt !important;
-        }
-        
-        .data-table td {
-          border: 1pt solid #000000 !important;
-          padding: 2mm !important;
-          font-size: 9pt !important;
-        }
-        
-        .report-info-label {
-          font-weight: bold !important;
-          color: #005F83 !important;
-        }
-        
-        .badge-success {
-          background-color: #10B981 !important;
-          color: white !important;
-          padding: 1mm 2mm !important;
-          border-radius: 2mm !important;
-          font-weight: bold !important;
-          display: inline-block !important;
-        }
-        
-        .badge-danger {
-          background-color: #EF4444 !important;
-          color: white !important;
-          padding: 1mm 2mm !important;
-          border-radius: 2mm !important;
-          font-weight: bold !important;
-          display: inline-block !important;
-        }
-        
-        .badge-warning {
-          background-color: #F59E0B !important;
-          color: white !important;
-          padding: 1mm 2mm !important;
-          border-radius: 2mm !important;
-          font-weight: bold !important;
-          display: inline-block !important;
-        }
-        
-        .no-print {
-          display: none !important;
-        }
-      </style>
-    `;
-    
-    // Crear un contenedor temporal para la versión "adaptada para PDF"
-    const tempContainer = document.createElement('div');
-    tempContainer.innerHTML = inlineStyles + originalHTML;
-    document.body.appendChild(tempContainer);
-    tempContainer.style.position = 'absolute';
-    tempContainer.style.left = '-9999px';
-    tempContainer.style.width = '210mm'; // Ancho A4
-    
-    // 3. Crear el PDF con dimensiones exactas
+
+    // Configurar el documento PDF
     const pdf = new jsPDF({
       orientation: orientation,
       unit: 'mm',
@@ -154,40 +36,286 @@ export const exportToPDF = async (elementId, options = {}) => {
       compress: true
     });
 
-    // 4. Configurar opciones mejoradas para html2canvas
-    const canvas = await html2canvas(tempContainer, {
-      scale: scale,
-      useCORS: true,
-      allowTaint: true,
-      logging: false,
-      backgroundColor: '#ffffff',
-      width: tempContainer.offsetWidth,
-      height: tempContainer.offsetHeight,
-      scrollX: 0,
-      scrollY: 0,
-      windowWidth: tempContainer.offsetWidth,
-      windowHeight: tempContainer.offsetHeight
-    });
+    // Obtener dimensiones de página
+    const pageWidth = pdf.internal.pageSize.getWidth();
+    const pageHeight = pdf.internal.pageSize.getHeight();
     
-    // 5. Ajustar las dimensiones para que se centre en la página
-    const imgData = canvas.toDataURL('image/jpeg', 0.95);
-    const imgProps = pdf.getImageProperties(imgData);
-    const pdfWidth = pdf.internal.pageSize.getWidth();
-    const pdfHeight = pdf.internal.pageSize.getHeight();
+    // Configurar márgenes
+    const margin = 10;
+    const contentWidth = pageWidth - (margin * 2);
     
-    // Calcular dimensiones manteniendo proporción pero ajustando al ancho de página
-    const imgWidth = pdfWidth;
-    const imgHeight = (imgProps.height * imgWidth) / imgProps.width;
+    // Encontrar secciones de página
+    const pagesSections = element.querySelectorAll('.pdf-page-section');
     
-    // Centrar en la página
-    const x = 0;
-    const y = 0;
+    if (pagesSections.length === 0) {
+      updateNotification(
+        notificationElement, 
+        'Error: No se encontraron secciones de página. Por favor contacte al desarrollador.', 
+        'error'
+      );
+      document.body.classList.remove('printing-pdf');
+      return;
+    }
     
-    // 6. Añadir imagen al PDF con dimensiones corregidas
-    pdf.addImage(imgData, 'JPEG', x, y, imgWidth, imgHeight);
+    // Procesar cada sección como una página separada
+    for (let i = 0; i < pagesSections.length; i++) {
+      if (showNotification && i > 0) {
+        updateNotification(
+          notificationElement, 
+          `Procesando página ${i + 1} de ${pagesSections.length}...`, 
+          'info'
+        );
+      }
+      
+      // Añadir nueva página excepto para la primera
+      if (i > 0) {
+        pdf.addPage();
+      }
+      
+      // Clonar la sección para no modificar el original
+      const sectionToCapture = pagesSections[i].cloneNode(true);
+      
+      // Crear div temporal para contener la sección
+      const tempContainer = document.createElement('div');
+      
+      // Añadir estilos mejorados inline para asegurar su aplicación
+      const enhancedStyles = `
+        <style>
+          /* Estilos base */
+          body {
+            margin: 0;
+            padding: 0;
+            font-family: 'Arial', sans-serif;
+          }
+          
+          /* Encabezado mejorado */
+          .pdf-header {
+            display: block !important;
+            width: 100%;
+            padding: 15mm 10mm 5mm 10mm;
+            margin-bottom: 5mm;
+            border-bottom: 3px solid #005F83;
+            position: relative;
+          }
+          
+          .pdf-header:after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            height: 1px;
+            background: linear-gradient(90deg, rgba(0,95,131,0.7) 0%, rgba(0,95,131,0.3) 100%);
+          }
+          
+          .pdf-header-content {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+          }
+          
+          .pdf-logo-container {
+            width: 30mm;
+            background-color: #005F83;
+            padding: 10px;
+            border-radius: 4px;
+          }
+          
+          .pdf-title-container {
+            text-align: right;
+          }
+          
+          .pdf-title {
+            font-size: 24pt;
+            font-weight: bold;
+            margin: 0;
+            color: #005F83;
+            letter-spacing: 1px;
+          }
+          
+          .pdf-subtitle {
+            font-size: 16pt;
+            font-weight: normal;
+            margin: 0;
+            color: #666;
+          }
+          
+          /* Cards mejoradas */
+          .dashboard-card {
+            box-shadow: none !important;
+            border: 1.5pt solid #005F83 !important;
+            border-radius: 6px !important;
+            margin-bottom: 5mm !important;
+            background-color: #fafaf8 !important; /* Crema muy suave */
+            overflow: hidden !important;
+          }
+          
+          .card-header {
+            border-bottom: 1.5pt solid #005F83 !important;
+            background: linear-gradient(135deg, #005F83 0%, #007BA7 100%) !important;
+            color: white !important;
+            padding: 3mm !important;
+            font-weight: bold !important;
+          }
+          
+          .card-body {
+            padding: 4mm !important;
+            background-color: #fefefe !important;
+          }
+          
+          /* Tablas mejoradas */
+          .data-table {
+            border-collapse: collapse !important;
+            width: 100% !important;
+          }
+          
+          .data-table th {
+            background: linear-gradient(to bottom, #EEF2F6, #E2E8F0) !important;
+            color: #000000 !important;
+            font-weight: bold !important;
+            border: 1pt solid #005F83 !important;
+            padding: 2mm !important;
+            font-size: 9pt !important;
+          }
+          
+          .data-table td {
+            border: 1pt solid #CBD5E1 !important;
+            padding: 2mm !important;
+            font-size: 9pt !important;
+          }
+          
+          .data-table tr:nth-child(even) td {
+            background-color: #F8FAFC !important;
+          }
+          
+          /* Títulos de sección */
+          .report-section-title {
+            background: linear-gradient(to right, #EEF2F6, #F8FAFC) !important;
+            color: #000000 !important;
+            padding: 2mm !important;
+            border-left: 3mm solid #005F83 !important;
+            font-weight: bold !important;
+            font-size: 12pt !important;
+            margin-bottom: 3mm !important;
+            border-radius: 0 4px 4px 0 !important;
+          }
+          
+          /* Etiquetas y valores */
+          .report-info-label {
+            font-weight: bold !important;
+            color: #005F83 !important;
+          }
+          
+          .report-info-value {
+            font-weight: normal !important;
+          }
+          
+          .report-info-item {
+            margin-bottom: 2mm !important;
+            border-bottom: 0.5pt dotted #CBD5E1 !important;
+            padding-bottom: 1mm !important;
+          }
+          
+          /* Badges mejorados */
+          .badge {
+            padding: 1mm 2mm !important;
+            border-radius: 2mm !important;
+            font-weight: bold !important;
+            display: inline-block !important;
+          }
+          
+          .badge-success {
+            background: linear-gradient(135deg, #10B981, #059669) !important;
+            color: white !important;
+          }
+          
+          .badge-danger {
+            background: linear-gradient(135deg, #EF4444, #DC2626) !important;
+            color: white !important;
+          }
+          
+          .badge-warning {
+            background: linear-gradient(135deg, #F59E0B, #D97706) !important;
+            color: white !important;
+          }
+          
+          /* Ajustes para gráficos */
+          .dimension-chart, 
+          .chart-container,
+          .technical-drawing-container,
+          .technical-drawing-container-report,
+          .dimension-mini-chart,
+          .coating-chart {
+            background-color: #fefefe !important;
+            border: 1pt solid #E2E8F0 !important;
+            border-radius: 4px !important;
+            padding: 2mm !important;
+          }
+          
+          /* Ocultar elementos innecesarios */
+          .no-print {
+            display: none !important;
+          }
+        </style>
+      `;
+      
+      tempContainer.innerHTML = enhancedStyles;
+      tempContainer.appendChild(sectionToCapture);
+      
+      // Añadir temporalmente al documento pero fuera de la vista
+      tempContainer.style.position = 'absolute';
+      tempContainer.style.left = '-9999px';
+      tempContainer.style.width = pageWidth + 'mm';
+      document.body.appendChild(tempContainer);
+      
+      try {
+        // Capturar la sección como imagen
+        const canvas = await html2canvas(tempContainer, {
+          scale: scale,
+          useCORS: true,
+          allowTaint: true,
+          logging: false,
+          backgroundColor: '#ffffff',
+          width: tempContainer.scrollWidth,
+          height: tempContainer.scrollHeight,
+          windowWidth: tempContainer.scrollWidth,
+          windowHeight: tempContainer.scrollHeight
+        });
+        
+        // Convertir a imagen
+        const imgData = canvas.toDataURL('image/jpeg', 0.95);
+        const imgProps = pdf.getImageProperties(imgData);
+        
+        // Calcular dimensiones manteniendo proporción
+        let imgWidth = contentWidth;
+        let imgHeight = (imgProps.height * imgWidth) / imgProps.width;
+        
+        // Si es demasiado alto, ajustar al alto disponible
+        const contentHeight = pageHeight - (margin * 2);
+        if (imgHeight > contentHeight) {
+          imgHeight = contentHeight;
+          imgWidth = (imgProps.width * imgHeight) / imgProps.height;
+        }
+        
+        // Centrar en la página
+        const x = margin + (contentWidth - imgWidth) / 2;
+        const y = margin;
+        
+        // Añadir al PDF
+        pdf.addImage(imgData, 'JPEG', x, y, imgWidth, imgHeight);
+        
+        // Limpiar el contenedor temporal
+        document.body.removeChild(tempContainer);
+        
+      } catch (error) {
+        console.error(`Error procesando página ${i+1}:`, error);
+        if (tempContainer.parentNode) {
+          document.body.removeChild(tempContainer);
+        }
+      }
+    }
     
-    // 7. Limpiar elementos temporales y restaurar estado
-    document.body.removeChild(tempContainer);
+    // Quitar clase de impresión
     document.body.classList.remove('printing-pdf');
     
     // Guardar el PDF
@@ -199,15 +327,20 @@ export const exportToPDF = async (elementId, options = {}) => {
     
   } catch (error) {
     console.error('Error generando PDF:', error);
-    if (showNotification) {
-      updateNotification(notificationElement, 'Error generando PDF. Por favor intente de nuevo.', 'error');
-    }
     document.body.classList.remove('printing-pdf');
+    
+    if (showNotification) {
+      updateNotification(
+        notificationElement, 
+        'Error generando PDF. Por favor intente de nuevo: ' + error.message, 
+        'error'
+      );
+    }
   }
 };
 
 /**
- * Sets up printing of an element with custom styles
+ * Prepara la impresión de un elemento con estilos personalizados
  */
 export const printReport = (options = {}) => {
   const { showNotification = true } = options;
@@ -243,7 +376,7 @@ export const printReport = (options = {}) => {
 };
 
 /**
- * Creates a temporary notification on screen
+ * Crea una notificación temporal en pantalla
  */
 function createNotification(message, type = 'info') {
   const notification = document.createElement('div');
@@ -282,7 +415,7 @@ function createNotification(message, type = 'info') {
 }
 
 /**
- * Updates an existing notification
+ * Actualiza una notificación existente
  */
 function updateNotification(notification, message, type = 'info') {
   if (!notification) return;
@@ -314,7 +447,7 @@ function updateNotification(notification, message, type = 'info') {
 }
 
 /**
- * Generates a filename based on report data
+ * Genera un nombre de archivo basado en los datos del informe
  */
 export const generateFilename = (reportData) => {
   const componentInfo = reportData.componentName || reportData.componentCode || 'Component';
@@ -326,13 +459,12 @@ export const generateFilename = (reportData) => {
 };
 
 /**
- * Generates an email to share the report
+ * Genera un correo electrónico para compartir el informe
  */
 export const sendReportByEmail = (email, reportData) => {
-  // (Código existente para el email, mantenerlo igual)
   if (!email) {
     console.error('No email address provided');
-    return;
+    return false;
   }
   
   try {
@@ -384,7 +516,7 @@ export const sendReportByEmail = (email, reportData) => {
 };
 
 /**
- * Calculates total non-conformities in a report
+ * Calcula el total de no conformidades en un informe
  */
 function calculateTotalNonConformities(reportData) {
   if (!reportData.dimensionNonConformities) return 0;

@@ -94,6 +94,9 @@ export const exportToPDF = async (elementId, options = {}) => {
       return;
     }
     
+    // Añadir un fondo crema suave a todas las páginas del PDF
+    const bgColorCream = '#FFF8EA'; // Color crema suave
+    
     // Procesar cada sección como una página separada
     for (let i = 0; i < pagesSections.length; i++) {
       if (showNotification && i > 0) {
@@ -108,6 +111,10 @@ export const exportToPDF = async (elementId, options = {}) => {
       if (i > 0) {
         pdf.addPage();
       }
+      
+      // Añadir fondo crema a la página actual
+      pdf.setFillColor(255, 248, 234); // #FFF8EA en RGB
+      pdf.rect(0, 0, pageWidth, pageHeight, 'F');
       
       // Añadir encabezado a esta página
       addHeaderToPdf(pdf);
@@ -143,6 +150,12 @@ export const exportToPDF = async (elementId, options = {}) => {
             margin: 0;
             padding: 0;
             font-family: 'Arial', sans-serif;
+            background-color: ${bgColorCream} !important;
+          }
+          
+          /* Fondo crema para todos los contenedores */
+          .pdf-page-section {
+            background-color: ${bgColorCream} !important;
           }
           
           /* Ocultar encabezado HTML ya que usamos uno nativo en PDF */
@@ -190,7 +203,7 @@ export const exportToPDF = async (elementId, options = {}) => {
             border: 1.5pt solid #005F83 !important;
             border-radius: 6px !important;
             margin-bottom: 5mm !important;
-            background-color: #fafaf8 !important; /* Crema muy suave */
+            background-color: #FFFFFF !important; /* Fondo blanco para las tarjetas */
             overflow: hidden !important;
             page-break-inside: avoid !important;
           }
@@ -205,7 +218,7 @@ export const exportToPDF = async (elementId, options = {}) => {
           
           .card-body {
             padding: 4mm !important;
-            background-color: #fefefe !important;
+            background-color: #FFFFFF !important; /* Fondo blanco para el cuerpo de las tarjetas */
             overflow-x: hidden !important;
           }
           
@@ -216,6 +229,7 @@ export const exportToPDF = async (elementId, options = {}) => {
             max-width: 98% !important;
             table-layout: fixed !important;
             margin: 0 auto !important;
+            background-color: #FFFFFF !important; /* Fondo blanco para las tablas */
           }
           
           .data-table th {
@@ -303,7 +317,7 @@ export const exportToPDF = async (elementId, options = {}) => {
             max-height: none !important;
             margin-bottom: 10mm !important;
             overflow: hidden !important;
-            background-color: #fafafa !important;
+            background-color: #FFFFFF !important; /* Fondo blanco para el área de dibujo */
             border: 1pt solid #E2E8F0 !important;
             border-radius: 4px !important;
             padding: 4mm !important;
@@ -329,6 +343,7 @@ export const exportToPDF = async (elementId, options = {}) => {
             max-width: 95% !important;
             margin: 0 auto !important;
             overflow: hidden !important;
+            background-color: #FFFFFF !important; /* Fondo blanco para mapas */
           }
           
           /* Ocultar elementos innecesarios */
@@ -340,6 +355,9 @@ export const exportToPDF = async (elementId, options = {}) => {
       
       tempContainer.innerHTML = enhancedStyles;
       tempContainer.appendChild(sectionToCapture);
+      
+      // Aplicar fondo crema al contenedor temporal
+      tempContainer.style.backgroundColor = bgColorCream;
       
       // Añadir temporalmente al documento pero fuera de la vista
       tempContainer.style.position = 'absolute';
@@ -354,13 +372,22 @@ export const exportToPDF = async (elementId, options = {}) => {
           useCORS: true,
           allowTaint: true,
           logging: false,
-          backgroundColor: '#ffffff',
+          backgroundColor: bgColorCream, // Usar color crema como fondo
           width: tempContainer.scrollWidth,
           height: tempContainer.scrollHeight,
           windowWidth: tempContainer.scrollWidth,
           windowHeight: tempContainer.scrollHeight,
           imageTimeout: 15000, // Dar más tiempo para cargar imágenes
           onclone: function(documentClone) {
+            // Establecer fondo crema para el documento clonado
+            documentClone.body.style.backgroundColor = bgColorCream;
+            
+            // También para cada sección de página
+            const pageSections = documentClone.querySelectorAll('.pdf-page-section');
+            pageSections.forEach(section => {
+              section.style.backgroundColor = bgColorCream;
+            });
+            
             // Aplicar estilos a encabezados de tarjetas
             const cardHeaders = documentClone.querySelectorAll('.card-header');
             cardHeaders.forEach(header => {
@@ -376,7 +403,7 @@ export const exportToPDF = async (elementId, options = {}) => {
               card.style.border = '2px solid #005F83';
               card.style.borderRadius = '6px';
               card.style.overflow = 'hidden';
-              card.style.backgroundColor = '#fafaf8';
+              card.style.backgroundColor = '#FFFFFF'; // Fondo blanco para las tarjetas
               card.style.marginBottom = '15px';
               card.style.width = '97%';
               card.style.maxWidth = '97%';
@@ -428,6 +455,7 @@ export const exportToPDF = async (elementId, options = {}) => {
               container.style.marginLeft = 'auto';
               container.style.marginRight = 'auto';
               container.style.overflowX = 'hidden';
+              container.style.backgroundColor = '#FFFFFF'; // Fondo blanco para dibujos técnicos
             });
             
             // ELIMINAR GRÁFICOS EN LA PÁGINA 2
@@ -454,6 +482,7 @@ export const exportToPDF = async (elementId, options = {}) => {
                 table.style.tableLayout = 'fixed';
                 table.style.marginLeft = 'auto';
                 table.style.marginRight = 'auto';
+                table.style.backgroundColor = '#FFFFFF'; // Fondo blanco para las tablas
               });
             }
             
@@ -465,6 +494,7 @@ export const exportToPDF = async (elementId, options = {}) => {
                 container.style.width = '95%';
                 container.style.maxWidth = '95%';
                 container.style.margin = '0 auto';
+                container.style.backgroundColor = '#FFFFFF'; // Fondo blanco para mapas
               });
             }
             
@@ -476,6 +506,7 @@ export const exportToPDF = async (elementId, options = {}) => {
                 chart.style.marginLeft = 'auto';
                 chart.style.marginRight = 'auto';
                 chart.style.overflowX = 'hidden';
+                chart.style.backgroundColor = '#FFFFFF'; // Fondo blanco para gráficos
               });
             }
           }

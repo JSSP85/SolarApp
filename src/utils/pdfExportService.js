@@ -124,60 +124,11 @@ export const exportToPDF = async (elementId, options = {}) => {
         });
         
         // 2. Quitar cualquier referencia a análisis dimensional
-        const analysisCharts = sectionToCapture.querySelectorAll('h4.text-sm.font-semibold.mb-2.text-gray-500');
+        const analysisCharts = sectionToCapture.querySelectorAll('h4');
         analysisCharts.forEach(header => {
-          if (header.textContent.includes('Dimensional Analysis')) {
+          if (header.textContent && header.textContent.includes('Dimensional Analysis')) {
             header.style.display = 'none';
           }
-        });
-        
-        // 3. Asegurarse que todos los contenedores usen ancho apropiado
-        const containers = sectionToCapture.querySelectorAll('.dashboard-card, .card, .technical-drawing-container, .technical-drawing-container-report, .data-table');
-        containers.forEach(container => {
-          container.style.width = '100%';
-          container.style.maxWidth = '100%';
-          container.style.margin = '0 auto';
-          container.style.boxSizing = 'border-box';
-          // Eliminar cualquier restricción de ancho adicional
-          container.style.minWidth = '100%';
-        });
-        
-        // 4. Específicamente para la tabla de dimensiones, asegurarse que use ancho completo
-        const tables = sectionToCapture.querySelectorAll('.data-table');
-        tables.forEach(table => {
-          table.style.width = '100%';
-          table.style.tableLayout = 'fixed';
-        });
-      }
-      
-      // TRATAMIENTO ESPECIAL PARA TODAS LAS PÁGINAS - EVITAR CORTES EN LOS BORDES
-      // Ajustar cards para evitar que se corten en los bordes
-      const allCards = sectionToCapture.querySelectorAll('.dashboard-card, .card');
-      allCards.forEach(card => {
-        card.style.width = '97%'; // Reducir ligeramente el ancho
-        card.style.maxWidth = '97%';
-        card.style.margin = '0 auto 10px auto'; // Centrar horizontalmente
-        card.style.boxSizing = 'border-box';
-        card.style.overflowX = 'hidden'; // Prevenir desbordamiento horizontal
-      });
-      
-      // Ajustar componentes específicos como el coating chart que se corta
-      const coatingCharts = sectionToCapture.querySelectorAll('.coating-chart');
-      coatingCharts.forEach(chart => {
-        chart.style.width = '95%';
-        chart.style.maxWidth = '95%';
-        chart.style.marginLeft = 'auto';
-        chart.style.marginRight = 'auto';
-        chart.style.overflowX = 'hidden';
-      });
-      
-      // Ajustar la información de inspección que se corta
-      const inspectionInfoCards = sectionToCapture.querySelectorAll('.card-header:contains("Inspection Information")').closest('.dashboard-card');
-      if (inspectionInfoCards.length > 0) {
-        inspectionInfoCards.forEach(card => {
-          card.style.width = '95%';
-          card.style.maxWidth = '95%';
-          card.style.overflowX = 'hidden';
         });
       }
       
@@ -433,51 +384,6 @@ export const exportToPDF = async (elementId, options = {}) => {
               card.style.marginRight = 'auto';
             });
             
-            // AJUSTES ESPECÍFICOS PARA LAS TARJETAS QUE SE CORTAN
-            // 1. Tarjeta de Inspection Information
-            const inspectionCards = documentClone.querySelectorAll('.card-header');
-            inspectionCards.forEach(header => {
-              if (header.textContent && header.textContent.includes('Inspection Information')) {
-                const parentCard = header.closest('.dashboard-card, .card');
-                if (parentCard) {
-                  parentCard.style.width = '95%';
-                  parentCard.style.maxWidth = '95%';
-                  parentCard.style.overflowX = 'hidden';
-                  
-                  // También ajustar el contenido interior
-                  const infoItems = parentCard.querySelectorAll('.report-info-item');
-                  infoItems.forEach(item => {
-                    item.style.overflowX = 'hidden';
-                    item.style.wordBreak = 'break-word';
-                    
-                    // Reducir tamaño de fuente si es necesario para textos largos
-                    const valueSpan = item.querySelector('.report-info-value');
-                    if (valueSpan && valueSpan.textContent.length > 25) {
-                      valueSpan.style.fontSize = '0.85em';
-                      valueSpan.style.wordBreak = 'break-word';
-                    }
-                  });
-                }
-              }
-            });
-            
-            // 2. Gráfico de Coating
-            const coatingCharts = documentClone.querySelectorAll('.coating-chart');
-            coatingCharts.forEach(chart => {
-              chart.style.width = '95%';
-              chart.style.maxWidth = '95%';
-              chart.style.marginLeft = 'auto';
-              chart.style.marginRight = 'auto';
-              chart.style.overflowX = 'hidden';
-              
-              // Ajustar SVG dentro del gráfico si existe
-              const svg = chart.querySelector('svg');
-              if (svg) {
-                svg.style.width = '95%';
-                svg.style.overflow = 'visible';
-              }
-            });
-            
             // Aplicar estilos a títulos de sección
             const sectionTitles = documentClone.querySelectorAll('.report-section-title');
             sectionTitles.forEach(title => {
@@ -548,6 +454,28 @@ export const exportToPDF = async (elementId, options = {}) => {
                 table.style.tableLayout = 'fixed';
                 table.style.marginLeft = 'auto';
                 table.style.marginRight = 'auto';
+              });
+            }
+            
+            // Ajustes específicos para cada página
+            if (i === 0) { // Primera página
+              // Ajustar el mapa y la información de ubicación
+              const mapContainers = documentClone.querySelectorAll('div[id^="map-"]');
+              mapContainers.forEach(container => {
+                container.style.width = '95%';
+                container.style.maxWidth = '95%';
+                container.style.margin = '0 auto';
+              });
+            }
+            
+            if (i === 2) { // Tercera página - coating charts
+              const coatingCharts = documentClone.querySelectorAll('.coating-chart');
+              coatingCharts.forEach(chart => {
+                chart.style.width = '95%';
+                chart.style.maxWidth = '95%';
+                chart.style.marginLeft = 'auto';
+                chart.style.marginRight = 'auto';
+                chart.style.overflowX = 'hidden';
               });
             }
           }

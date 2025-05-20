@@ -6,10 +6,13 @@ import ContentHeader from './components/layout/ContentHeader';
 import SetupForm from './components/setup/SetupForm'; 
 import { InspectionPanelSistem } from './components/inspection';
 import ReportViewDashboard from './components/report/ReportViewDashboard';
+// Importaremos el componente DatabaseView más adelante
+// Esta importación es un placeholder hasta que creemos el componente
+import DatabaseView from './components/database/DatabaseView';
 
 const DashboardApp = () => {
   const { state } = useInspection();
-  const { activeTab } = state;
+  const { activeTab, userRole } = state;
 
   // Efecto para añadir los estilos del tema
   useEffect(() => {
@@ -233,6 +236,8 @@ const DashboardApp = () => {
         return 'Component Inspection';
       case 'report':
         return 'Inspection Report';
+      case 'database':
+        return 'Inspection Database';
       default:
         return 'Dashboard';
     }
@@ -250,6 +255,8 @@ const DashboardApp = () => {
             {activeTab === 'setup' && <SetupForm />}
             {activeTab === 'inspection' && <InspectionPanelSistem />}
             {activeTab === 'report' && <ReportViewDashboard />}
+            {/* Nueva pestaña Database - Solo visible para usuarios Admin */}
+            {activeTab === 'database' && userRole === 'admin' && <DatabaseView />}
           </div>
         </div>
       </div>

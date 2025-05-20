@@ -100,11 +100,42 @@ export const getInspection = async (inspectionId) => {
  * @param {string} filters.componentFamily - Filtrar por familia de componente
  * @param {string} filters.inspector - Filtrar por inspector
  * @param {string} filters.status - Filtrar por estado
+ * @param {string} filters.dateStart - Filtrar por fecha de inicio (YYYY-MM-DD)
+ * @param {string} filters.dateEnd - Filtrar por fecha de fin (YYYY-MM-DD)
+ * @param {string} filters.search - Filtrar por búsqueda de texto
  * @param {number} filters.limit - Límite de resultados
  * @returns {Promise<Array>} - Array de inspecciones
  */
 export const getInspections = async (filters = {}) => {
   try {
+    // Si hay un término de búsqueda, utilizar la función searchInspections
+    if (filters.search && typeof filters.search === 'string' && filters.search.trim() !== '') {
+      const searchResults = await searchInspections(filters.search);
+      
+      // Aplicar filtros adicionales a los resultados de búsqueda
+      let filteredResults = searchResults;
+      
+      if (filters.status) {
+        filteredResults = filteredResults.filter(insp => 
+          insp.inspectionStatus === filters.status
+        );
+      }
+      
+      if (filters.dateStart) {
+        filteredResults = filteredResults.filter(insp => 
+          insp.inspectionDate >= filters.dateStart
+        );
+      }
+      
+      if (filters.dateEnd) {
+        filteredResults = filteredResults.filter(insp => 
+          insp.inspectionDate <= filters.dateEnd
+        );
+      }
+      
+      return filteredResults;
+    }
+
     let q = collection(db, INSPECTIONS_COLLECTION);
     
     // Aplicar filtros si existen
@@ -126,6 +157,10 @@ export const getInspections = async (filters = {}) => {
       queryConstraints.push(where('finalResults.inspectionStatus', '==', filters.status));
     }
     
+    // Nuevos filtros de fecha
+    // Nota: Firestore no permite múltiples cláusulas where en campos diferentes 
+    // con operadores de rango, así que manejamos este filtrado en la aplicación cliente
+
     // Ordenar por fecha de creación (más recientes primero)
     queryConstraints.push(orderBy('createdAt', 'desc'));
     
@@ -139,11 +174,24 @@ export const getInspections = async (filters = {}) => {
     
     // Ejecutar query
     const querySnapshot = await getDocs(q);
-    const inspections = [];
+    let inspections = [];
     
     querySnapshot.forEach((doc) => {
       inspections.push(convertFirestoreToAppData(doc));
     });
+    
+    // Filtrar por fechas en el cliente
+    if (filters.dateStart) {
+      inspections = inspections.filter(insp => 
+        insp.inspectionDate >= filters.dateStart
+      );
+    }
+    
+    if (filters.dateEnd) {
+      inspections = inspections.filter(insp => 
+        insp.inspectionDate <= filters.dateEnd
+      );
+    }
     
     console.log(`Se encontraron ${inspections.length} inspecciones`);
     return inspections;

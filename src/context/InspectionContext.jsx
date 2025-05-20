@@ -23,7 +23,7 @@ import {
 // Crear el contexto
 const InspectionContext = createContext();
 
-// Estado inicial actualizado con campos de Firebase
+// Estado inicial actualizado con campos de Firebase y userRole
 const inspectionStateWithFirebase = {
   ...defaultInspectionState,
   // Nuevos campos para Firestore
@@ -32,6 +32,8 @@ const inspectionStateWithFirebase = {
   saveError: null,
   lastSaved: null,
   hasUnsavedChanges: false,
+  // Nuevo campo para rol de usuario
+  userRole: null
 };
 
 // Reducer para manejar las actualizaciones de estado
@@ -39,6 +41,10 @@ function inspectionReducer(state, action) {
   switch (action.type) {
     case 'SET_ACTIVE_TAB':
       return { ...state, activeTab: action.payload };
+      
+    // Nuevo caso para establecer el rol de usuario
+    case 'SET_USER_ROLE':
+      return { ...state, userRole: action.payload };
       
     case 'UPDATE_SETUP_FIELD':
       return { ...state, [action.payload.field]: action.payload.value };
@@ -554,9 +560,12 @@ function inspectionReducer(state, action) {
   }
 }
 
-// Provider component
-export const InspectionProvider = ({ children }) => {
-  const [state, dispatch] = useReducer(inspectionReducer, inspectionStateWithFirebase);
+// Provider component - Modificado para aceptar initialUserRole
+export const InspectionProvider = ({ children, initialUserRole = null }) => {
+  const [state, dispatch] = useReducer(inspectionReducer, {
+    ...inspectionStateWithFirebase,
+    userRole: initialUserRole  // Inicializar con el rol proporcionado
+  });
   
   // Cargar datos iniciales al montar el componente
   useEffect(() => {
@@ -722,6 +731,11 @@ export const InspectionProvider = ({ children }) => {
   ]);
   
   // FUNCIONES DE FIRESTORE
+  
+  // Nueva función para establecer explícitamente el rol del usuario
+  const setUserRole = (role) => {
+    dispatch({ type: 'SET_USER_ROLE', payload: role });
+  };
 
   // Función para guardar inspección
   const saveCurrentInspection = async () => {
@@ -783,11 +797,22 @@ export const InspectionProvider = ({ children }) => {
       ...inspectionStateWithFirebase,
       // Mantener estas configuraciones del usuario
       inspector: state.inspector,
-      inspectionDate: new Date().toISOString().slice(0, 10)
+      inspectionDate: new Date().toISOString().slice(0, 10),
+      userRole: state.userRole // Preservar el rol de usuario
     };
     
     dispatch({ type: 'LOAD_INSPECTION_DATA', payload: newState });
     console.log('Nueva inspección creada');
+  };
+  
+  // Función para obtener todas las inspecciones (para la vista de base de datos)
+  const getAllInspections = async (filters = {}) => {
+    try {
+      return await getInspections(filters);
+    } catch (error) {
+      console.error('Error obteniendo inspecciones:', error);
+      throw error;
+    }
   };
   
   return (
@@ -797,7 +822,10 @@ export const InspectionProvider = ({ children }) => {
       // Funciones de Firestore
       saveCurrentInspection,
       loadInspection,
-      createNewInspection
+      createNewInspection,
+      getAllInspections,
+      // Nueva función para establecer rol
+      setUserRole
     }}>
       {children}
     </InspectionContext.Provider>

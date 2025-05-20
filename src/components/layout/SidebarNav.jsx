@@ -1,11 +1,11 @@
 // src/components/layout/SidebarNav.jsx
 import React from 'react';
 import { useInspection } from '../../context/InspectionContext';
-import { Settings, Clipboard, FileText } from 'lucide-react';
+import { Settings, Clipboard, FileText, Database } from 'lucide-react';
 
 const SidebarNav = () => {
   const { state, dispatch } = useInspection();
-  const { activeTab } = state;
+  const { activeTab, userRole } = state;
   
   const handleTabChange = (tab) => {
     dispatch({ type: 'SET_ACTIVE_TAB', payload: tab });
@@ -54,6 +54,17 @@ const SidebarNav = () => {
           <FileText size={20} />
           <span>Report</span>
         </div>
+        
+        {/* Nueva opción Database - Solo visible para usuarios Admin */}
+        {userRole === 'admin' && (
+          <div 
+            className={`nav-item ${activeTab === 'database' ? 'active' : ''}`}
+            onClick={() => handleTabChange('database')}
+          >
+            <Database size={20} />
+            <span>Database</span>
+          </div>
+        )}
       </div>
 
       {/* Estilos específicos con alta prioridad y posición corregida */}

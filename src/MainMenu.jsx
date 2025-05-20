@@ -136,6 +136,9 @@ const MainMenu = () => {
         setShowLoginModal(false);
         setLoginError('');
         setSelectedOption(pendingManagerOption);
+
+         // Guardar el rol del usuario para usarlo en la aplicación
+        sessionStorage.setItem('userRole', user.role);
       } else {
         setLoginError(`Access denied. Your role (${user.role}) does not have permission to access this module.`);
       }
@@ -327,7 +330,7 @@ const MainMenu = () => {
             <BackButton onClick={() => setSelectedOption(null)} />
             
             <LanguageProvider>
-              <InspectionProvider>
+              <InspectionProvider initialUserRole={sessionStorage.getItem('userRole')}>
                 <DashboardApp />
               </InspectionProvider>
             </LanguageProvider>

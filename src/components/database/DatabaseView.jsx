@@ -8,6 +8,9 @@ import {
   FileText, 
   Calendar, 
   User, 
+  Briefcase,
+  Building,
+  Box,
   Check, 
   AlertTriangle, 
   FileWarning, 
@@ -18,10 +21,12 @@ import {
   ListFilter
 } from 'lucide-react';
 import { getInspections, deleteInspection } from '../../firebase/inspectionService';
-import './DatabaseView.css'; // Importar el archivo CSS
+import { useInspection } from '../../context/InspectionContext';
+import './DatabaseView.css'; // Asegúrate de que este archivo CSS existe
 
 const DatabaseView = () => {
   const navigate = useNavigate();
+  const { loadInspection, dispatch } = useInspection();
   const [inspections, setInspections] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -132,14 +137,18 @@ const DatabaseView = () => {
   const exportToCSV = () => {
     try {
       const headers = [
-        'ID', 'Date', 'Component Name', 'Component Code', 'Inspector', 'Status'
+        'ID', 'Date', 'Client', 'Project', 'Component Name', 'Component Code', 
+        'Batch', 'Inspector', 'Status'
       ];
       
       const rows = inspections.map(insp => [
         insp.id,
         getInspectionDate(insp),
+        getClientName(insp),
+        getProjectName(insp),
         getComponentName(insp),
         getComponentCode(insp),
+        getBatchInfo(insp),
         getInspectorName(insp),
         getStatusText(getInspectionStatus(insp))
       ]);
@@ -171,6 +180,14 @@ const DatabaseView = () => {
     return insp.inspectionDate || insp.inspectionInfo?.inspectionDate || 'N/A';
   };
 
+  const getClientName = (insp) => {
+    return insp.client || 
+           insp.clientName || 
+           insp.inspectionInfo?.client || 
+           insp.componentInfo?.client || 
+           'N/A';
+  };
+
   const getComponentName = (insp) => {
     return insp.componentName || insp.componentInfo?.componentName || 'Unknown Component';
   };
@@ -184,7 +201,20 @@ const DatabaseView = () => {
   };
 
   const getProjectName = (insp) => {
-    return insp.project || insp.projectName || insp.componentInfo?.projectName || 'No Project';
+    return insp.project || 
+           insp.projectName || 
+           insp.inspectionInfo?.project || 
+           insp.componentInfo?.projectName || 
+           'No Project';
+  };
+
+  const getBatchInfo = (insp) => {
+    return insp.batchNumber || 
+           insp.batchQuantity || 
+           insp.batch || 
+           insp.inspectionInfo?.batchNumber || 
+           insp.inspectionInfo?.batchQuantity || 
+           'N/A';
   };
 
   const getInspectionStatus = (insp) => {
@@ -218,22 +248,40 @@ const DatabaseView = () => {
     applyFilters();
   };
 
-  // Handle view report - usamos navigate para redireccionar
+  // Handle view report
   const handleViewReport = (inspectionId) => {
     try {
+      // Attempt to navigate to report view
       navigate(`/report/${inspectionId}`);
     } catch (err) {
       console.error("Navigation error:", err);
+      // Fallback if navigation fails
       alert(`Viewing report for inspection ${inspectionId}`);
     }
   };
 
-  // Handle view details - usamos navigate para redireccionar
+  // Handle view details
   const handleViewDetails = (inspectionId) => {
     try {
-      navigate(`/inspection/${inspectionId}`);
+      // Try to use the loadInspection function from context first
+      if (typeof loadInspection === 'function') {
+        // This will load the inspection into the current state
+        loadInspection(inspectionId)
+          .then(() => {
+            // Change to the inspection tab to view the data
+            dispatch({ type: 'SET_ACTIVE_TAB', payload: 'inspection' });
+            setSuccessMessage("Inspection loaded successfully");
+          })
+          .catch(err => {
+            console.error("Error loading inspection:", err);
+            setError("Failed to load inspection details");
+          });
+      } else {
+        // Fallback to navigation if loadInspection is not available
+        navigate(`/inspection/${inspectionId}`);
+      }
     } catch (err) {
-      console.error("Navigation error:", err);
+      console.error("Error handling view details:", err);
       alert(`Viewing details for inspection ${inspectionId}`);
     }
   };
@@ -368,16 +416,18 @@ const DatabaseView = () => {
             </div>
           )}
           
-          {/* Tabla de inspecciones */}
+          {/* Tabla de inspecciones con columnas ampliadas */}
           {!loading && inspections.length > 0 && (
             <div className="database-table-container">
               <table className="database-table">
                 <thead>
                   <tr>
                     <th>Date</th>
-                    <th>Component</th>
-                    <th>Inspector</th>
+                    <th>Client</th>
                     <th>Project</th>
+                    <th>Component</th>
+                    <th>Batch</th>
+                    <th>Inspector</th>
                     <th>Status</th>
                     <th style={{textAlign: 'right'}}>Actions</th>
                   </tr>
@@ -387,8 +437,26 @@ const DatabaseView = () => {
                     <tr key={inspection.id}>
                       <td>{getInspectionDate(inspection)}</td>
                       <td>
+                        <div style={{display: 'flex', alignItems: 'center'}}>
+                          <Building size={14} style={{color: '#9ca3af', marginRight: '0.25rem'}} />
+                          <span>{getClientName(inspection)}</span>
+                        </div>
+                      </td>
+                      <td>
+                        <div style={{display: 'flex', alignItems: 'center'}}>
+                          <Briefcase size={14} style={{color: '#9ca3af', marginRight: '0.25rem'}} />
+                          <span>{getProjectName(inspection)}</span>
+                        </div>
+                      </td>
+                      <td>
                         <div style={{fontWeight: '500', color: '#1f2937'}}>{getComponentName(inspection)}</div>
                         <div style={{fontSize: '0.75rem', color: '#6b7280'}}>{getComponentCode(inspection)}</div>
+                      </td>
+                      <td>
+                        <div style={{display: 'flex', alignItems: 'center'}}>
+                          <Box size={14} style={{color: '#9ca3af', marginRight: '0.25rem'}} />
+                          <span>{getBatchInfo(inspection)}</span>
+                        </div>
                       </td>
                       <td>
                         <div style={{display: 'flex', alignItems: 'center'}}>
@@ -396,7 +464,6 @@ const DatabaseView = () => {
                           <span>{getInspectorName(inspection)}</span>
                         </div>
                       </td>
-                      <td>{getProjectName(inspection)}</td>
                       <td>
                         <span className={`database-status-badge ${
                           getInspectionStatus(inspection) === 'pass' ? 'database-status-badge-accepted' : 

@@ -418,6 +418,14 @@ const ReportViewDashboard = () => {
     mapCoords
   } = state;
   
+    // AGREGAR ESTAS LÍNEAS AQUÍ ↓
+  console.log('=== DEBUG ReportViewDashboard ===');
+  console.log('Current state:', state);
+  console.log('Dimension measurements:', dimensionMeasurements);
+  console.log('Dimensions:', dimensions);
+  console.log('Sample count:', sampleInfo);
+  console.log('=== END DEBUG ===');
+  
   const renderStatusBadge = (status) => {
     if (status === 'pass') {
       return <span className="badge badge-success">ACCEPTED</span>;

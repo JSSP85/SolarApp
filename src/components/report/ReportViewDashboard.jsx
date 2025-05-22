@@ -548,10 +548,15 @@ const ReportViewDashboard = () => {
                       </span>
                     </div>
                     
+                      <div className="report-info-item">
+                       <span className="report-info-label">Supplier Name</span>
+                       <span className="report-info-value">{state.supplierName || "NA"}</span>
+                    </div>
+
                     <div className="report-info-item">
                       <span className="report-info-label">Inspection Location</span>
                       <span className="report-info-value">
-                        {inspectionCity && inspectionCountry ? `${inspectionCity}, ${inspectionCountry}` : "Madrid, Spain"}
+                        {inspectionCity && inspectionCountry ? `${inspectionCity}, ${inspectionCountry}` : "NA"}
                       </span>
                     </div>
                     

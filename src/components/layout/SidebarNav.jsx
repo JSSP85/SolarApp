@@ -97,7 +97,7 @@ const SidebarNav = () => {
         </>
       )}
 
-      {/* Estiloss específicos con alta prioridad y posición corregida */}
+      {/* Estilos específicos con alta prioridad y posición corregida */}
       <style jsx>{`
         /* Selector altamente específico para la barra lateral */
         html body #root .app-container .sidebar,

@@ -308,7 +308,7 @@ const SidebarNav = () => {
               fontSize: '12px',
               color: '#0c4a6e'
             }}>
-              <strong>Nota:</strong> It is recommended to complete all required fields to obtain a complete and accurate report.
+              <strong>Note:</strong> It is recommended to complete all required fields to obtain a complete and accurate report.
             </div>
           </div>
         </div>

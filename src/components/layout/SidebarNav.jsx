@@ -16,7 +16,7 @@ const SidebarNav = () => {
       const validation = validateRequiredFields();
       
       if (!validation.isValid) {
-        setValidationError(`Para continuar a la sección ${tab === 'inspection' ? 'Inspection' : 'Report'}, complete los siguientes campos:\n\n• ${validation.missingFields.join('\n• ')}`);
+        setValidationError(`To continue to the ${tab === 'inspection' ? 'Inspection' : 'Report'} section, please complete the following fields:\n\n• ${validation.missingFields.join('\n• ')}`);
         setAttemptedTab(tab);
         setShowValidationModal(true);
         return;
@@ -233,7 +233,7 @@ const SidebarNav = () => {
                   fontSize: '18px',
                   fontWeight: '600'
                 }}>
-                  Campos Requeridos Faltantes
+                  Missing Required Fields
                 </h3>
               </div>
             </div>
@@ -277,7 +277,7 @@ const SidebarNav = () => {
                 onMouseOver={(e) => e.target.style.backgroundColor = '#f9fafb'}
                 onMouseOut={(e) => e.target.style.backgroundColor = 'white'}
               >
-                Volver al Setup
+                Back to Setup
               </button>
               <button
                 onClick={proceedAnyway}
@@ -294,7 +294,7 @@ const SidebarNav = () => {
                 onMouseOver={(e) => e.target.style.transform = 'translateY(-1px)'}
                 onMouseOut={(e) => e.target.style.transform = 'translateY(0)'}
               >
-                Continuar de Todas Formas
+                Continue Anyway
               </button>
             </div>
 
@@ -308,7 +308,7 @@ const SidebarNav = () => {
               fontSize: '12px',
               color: '#0c4a6e'
             }}>
-              <strong>Nota:</strong> Se recomienda completar todos los campos requeridos para obtener un informe completo y preciso.
+              <strong>Nota:</strong> It is recommended to complete all required fields to obtain a complete and accurate report.
             </div>
           </div>
         </div>

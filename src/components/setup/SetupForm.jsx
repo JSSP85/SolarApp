@@ -67,7 +67,7 @@ const SetupForm = () => {
     const validation = validateRequiredFields();
     
     if (!validation.isValid) {
-      const errorMessage = `Por favor complete los siguientes campos requeridos:\n\n• ${validation.missingFields.join('\n• ')}`;
+      const errorMessage = `Please complete the following required fields:\n\n• ${validation.missingFields.join('\n• ')}`;
       setValidationError(errorMessage);
       
       // Mostrar alerta también
@@ -345,7 +345,7 @@ const SetupForm = () => {
             <AlertTriangle size={20} style={{ color: '#dc2626', marginTop: '2px', flexShrink: 0 }} />
             <div>
               <h4 style={{ color: '#dc2626', fontWeight: 'bold', margin: '0 0 8px 0' }}>
-                Campos Requeridos Faltantes
+                Missing Required Fields
               </h4>
               <div style={{ color: '#991b1b', fontSize: '14px', whiteSpace: 'pre-line' }}>
                 {validationError}

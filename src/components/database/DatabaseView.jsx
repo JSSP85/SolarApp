@@ -338,8 +338,27 @@ const InspectionReportContent = ({ inspectionData }) => {
   // Cargar los datos de la inspección en el contexto para que ReportViewDashboard los use
   React.useEffect(() => {
     if (inspectionData) {
+      console.log('Loading inspection data:', inspectionData); // Debug
+      
+      // Asegurar que las dimensiones y mediciones se carguen correctamente
+      const dataToLoad = {
+        ...inspectionData,
+        // Asegurar que las mediciones dimensionales se mantengan
+        dimensionMeasurements: inspectionData.dimensionMeasurements || {},
+        dimensions: inspectionData.dimensions || [],
+        // Asegurar que las mediciones de coating se mantengan
+        localCoatingMeasurements: inspectionData.localCoatingMeasurements || [],
+        coatingStats: inspectionData.coatingStats || {},
+        // Otros datos importantes
+        photos: inspectionData.photos || [],
+        visualConformity: inspectionData.visualConformity || null,
+        visualNotes: inspectionData.visualNotes || ''
+      };
+      
+      console.log('Data being loaded into context:', dataToLoad); // Debug
+      
       // Cargar todos los datos de la inspección en el estado del contexto
-      dispatch({ type: 'LOAD_INSPECTION_DATA', payload: inspectionData });
+      dispatch({ type: 'LOAD_INSPECTION_DATA', payload: dataToLoad });
     }
   }, [inspectionData, dispatch]);
   

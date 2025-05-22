@@ -26,9 +26,11 @@ import { getInspections, deleteInspection } from '../../firebase/inspectionServi
 import { useInspection } from '../../context/InspectionContext';
 import { formatDate } from '../../utils/dateFormatter';
 import StaticMapReport from '../report/StaticMapReport';
+import ReportViewDashboard from '../report/ReportViewDashboard'; // NUEVA IMPORTACIÓN
+import { InspectionProvider } from '../../context/InspectionContext'; // NUEVA IMPORTACIÓN
 import './DatabaseView.css';
 
-// Componente InspectionDetails
+// Componente InspectionDetails (sin cambios)
 const InspectionDetails = ({ inspectionData, onBack }) => {
   if (!inspectionData) {
     return (
@@ -50,7 +52,7 @@ const InspectionDetails = ({ inspectionData, onBack }) => {
             className="flex items-center text-gray-700 hover:text-blue-600 transition-colors database-back-btn"
           >
             <ArrowLeft size={18} className="mr-2" />
-            Volver a la lista
+            Back to list
           </button>
         </div>
       )}
@@ -212,14 +214,14 @@ const InspectionDetails = ({ inspectionData, onBack }) => {
                   type="text"
                   className="form-control"
                   placeholder="Country"
-                  value={inspectionData.inspectionCountry || 'Italy'}
+                  value={inspectionData.inspectionCountry || 'Spain'}
                   readOnly
                 />
                 <input
                   type="text"
                   className="form-control"
                   placeholder="City"
-                  value={inspectionData.inspectionCity || 'Roma'}
+                  value={inspectionData.inspectionCity || 'Madrid'}
                   readOnly
                 />
               </div>
@@ -288,7 +290,67 @@ const InspectionDetails = ({ inspectionData, onBack }) => {
   );
 };
 
-// Componente principal DatabaseView
+// NUEVO COMPONENTE: InspectionReport
+const InspectionReport = ({ inspectionData, onBack }) => {
+  if (!inspectionData) {
+    return (
+      <div className="dashboard-card">
+        <div className="card-body text-center text-gray-500">
+          No inspection data available for report generation
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="inspection-report-wrapper">
+      {/* Barra de navegación superior */}
+      <div className="database-report-header">
+        {onBack && (
+          <button 
+            onClick={onBack}
+            className="flex items-center text-gray-700 hover:text-blue-600 transition-colors database-back-btn"
+          >
+            <ArrowLeft size={18} className="mr-2" />
+            Back to list
+          </button>
+        )}
+        
+        <h2 className="text-xl font-bold">Inspection Report Preview</h2>
+        
+        <div className="flex items-center text-sm text-gray-500">
+          This is a preview of the report that would be exported as PDF
+        </div>
+      </div>
+      
+      {/* Contenedor del reporte usando InspectionProvider para que tenga acceso al contexto */}
+      <InspectionProvider>
+        <InspectionReportContent inspectionData={inspectionData} />
+      </InspectionProvider>
+    </div>
+  );
+};
+
+// Componente interno que tiene acceso al contexto de inspección
+const InspectionReportContent = ({ inspectionData }) => {
+  const { dispatch } = useInspection();
+  
+  // Cargar los datos de la inspección en el contexto para que ReportViewDashboard los use
+  React.useEffect(() => {
+    if (inspectionData) {
+      // Cargar todos los datos de la inspección en el estado del contexto
+      dispatch({ type: 'LOAD_INSPECTION_DATA', payload: inspectionData });
+    }
+  }, [inspectionData, dispatch]);
+  
+  return (
+    <div id="database-report-container">
+      <ReportViewDashboard />
+    </div>
+  );
+};
+
+// Componente principal DatabaseView (ACTUALIZADO)
 const DatabaseView = () => {
   const navigate = useNavigate();
   const { loadInspection, dispatch } = useInspection();
@@ -299,7 +361,7 @@ const DatabaseView = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedFilter, setSelectedFilter] = useState('all');
   
-  // NUEVOS ESTADOS PARA MANEJAR LAS VISTAS
+  // ESTADOS PARA MANEJAR LAS VISTAS (ACTUALIZADO)
   const [currentView, setCurrentView] = useState('list'); // 'list', 'details', 'report'
   const [selectedInspection, setSelectedInspection] = useState(null);
   
@@ -517,19 +579,39 @@ const DatabaseView = () => {
     applyFilters();
   };
 
-  // Handle view report
-  const handleViewReport = (inspectionId) => {
+  // FUNCIÓN MODIFICADA: Handle view report
+  const handleViewReport = async (inspectionId) => {
     try {
-      // Attempt to navigate to report view
-      navigate(`/report/${inspectionId}`);
+      setLoading(true);
+      
+      // Buscar la inspección en la lista actual
+      const inspection = inspections.find(insp => insp.id === inspectionId);
+      
+      if (inspection) {
+        setSelectedInspection(inspection);
+        setCurrentView('report');
+        setSuccessMessage("Inspection report loaded successfully");
+      } else {
+        // Si no está en la lista actual, intentar cargar desde Firebase
+        if (typeof loadInspection === 'function') {
+          const inspectionData = await loadInspection(inspectionId);
+          setSelectedInspection(inspectionData);
+          setCurrentView('report');
+          setSuccessMessage("Inspection report loaded successfully");
+        } else {
+          throw new Error('Unable to load inspection report');
+        }
+      }
+      
+      setLoading(false);
     } catch (err) {
-      console.error("Navigation error:", err);
-      // Fallback if navigation fails
-      alert(`Viewing report for inspection ${inspectionId}`);
+      console.error("Error loading inspection report:", err);
+      setError("Failed to load inspection report");
+      setLoading(false);
     }
   };
 
-  // FUNCIÓN MODIFICADA: Handle view details
+  // Handle view details (sin cambios)
   const handleViewDetails = async (inspectionId) => {
     try {
       setLoading(true);
@@ -561,7 +643,7 @@ const DatabaseView = () => {
     }
   };
 
-  // NUEVA FUNCIÓN: Función para volver a la lista
+  // Función para volver a la lista
   const handleBackToList = () => {
     setCurrentView('list');
     setSelectedInspection(null);
@@ -579,10 +661,18 @@ const DatabaseView = () => {
         />
       )}
       
+      {/* NUEVA VISTA: Si estamos en la vista de reporte, mostrar InspectionReport */}
+      {currentView === 'report' && selectedInspection && (
+        <InspectionReport 
+          inspectionData={selectedInspection}
+          onBack={handleBackToList}
+        />
+      )}
+      
       {/* Si estamos en la vista de lista, mostrar la interfaz normal */}
       {currentView === 'list' && (
         <div className="database-card">
-          {/* Tarjeta principal */}
+          {/* Resto del contenido sin cambios... */}
           <div className="database-header">
             <h1 className="database-title">
               <Database size={24} />

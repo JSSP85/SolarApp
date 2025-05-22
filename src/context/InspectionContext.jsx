@@ -28,6 +28,8 @@ const inspectionStateWithFirebase = {
   ...defaultInspectionState,
   // NUEVO CAMPO: Nombre del proveedor
   supplierName: '',
+    // NUEVO CAMPO: Rol del usuario
+  userRole: 'admin', // ← AGREGAR ESTA LÍNEA
   // Nuevos campos para Firestore
   currentInspectionId: null,
   isSaving: false,

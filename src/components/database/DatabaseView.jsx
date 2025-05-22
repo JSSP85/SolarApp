@@ -333,37 +333,69 @@ const InspectionReport = ({ inspectionData, onBack }) => {
 
 // Componente interno que tiene acceso al contexto de inspección
 const InspectionReportContent = ({ inspectionData }) => {
-  const { dispatch } = useInspection();
+const { dispatch, state } = useInspection();
+  const [dataLoaded, setDataLoaded] = useState(false);
+  const [renderKey, setRenderKey] = useState(0);
   
-  // Cargar los datos de la inspección en el contexto para que ReportViewDashboard los use
   React.useEffect(() => {
     if (inspectionData) {
-      console.log('Loading inspection data:', inspectionData); // Debug
+      console.log('Loading inspection data:', inspectionData);
       
-      // Asegurar que las dimensiones y mediciones se carguen correctamente
       const dataToLoad = {
         ...inspectionData,
-        // Asegurar que las mediciones dimensionales se mantengan
         dimensionMeasurements: inspectionData.dimensionMeasurements || {},
         dimensions: inspectionData.dimensions || [],
-        // Asegurar que las mediciones de coating se mantengan
         localCoatingMeasurements: inspectionData.localCoatingMeasurements || [],
         coatingStats: inspectionData.coatingStats || {},
-        // Otros datos importantes
         photos: inspectionData.photos || [],
         visualConformity: inspectionData.visualConformity || null,
-        visualNotes: inspectionData.visualNotes || ''
+        visualNotes: inspectionData.visualNotes || '',
+        sampleInfo: inspectionData.sampleInfo || '',
+        componentName: inspectionData.componentName || '',
+        inspector: inspectionData.inspector || ''
       };
       
-      console.log('Data being loaded into context:', dataToLoad); // Debug
+      console.log('Data being loaded into context:', dataToLoad);
       
-      // Cargar todos los datos de la inspección en el estado del contexto
+      // Cargar datos
       dispatch({ type: 'LOAD_INSPECTION_DATA', payload: dataToLoad });
+      
+      // Verificar que los datos críticos estén disponibles antes de renderizar
+      const checkDataReady = () => {
+        const currentState = state;
+        const isDataReady = 
+          currentState.dimensions && 
+          currentState.dimensions.length > 0 && 
+          currentState.sampleInfo && 
+          currentState.sampleInfo.trim() !== '';
+        
+        if (isDataReady) {
+          setDataLoaded(true);
+          setRenderKey(prev => prev + 1);
+        } else {
+          // Reintentar después de un tiempo
+          setTimeout(checkDataReady, 100);
+        }
+      };
+      
+      // Comenzar la verificación después de un pequeño delay
+      setTimeout(checkDataReady, 200);
     }
-  }, [inspectionData, dispatch]);
+  }, [inspectionData, dispatch, state]);
+  
+  if (!dataLoaded) {
+    return (
+      <div id="database-report-container" style={{ padding: '2rem', textAlign: 'center' }}>
+        <div>Loading report data...</div>
+        <div style={{ fontSize: '0.8rem', color: '#666', marginTop: '1rem' }}>
+          Waiting for dimensions and sample info...
+        </div>
+      </div>
+    );
+  }
   
   return (
-    <div id="database-report-container">
+    <div id="database-report-container" key={renderKey}>
       <ReportViewDashboard />
     </div>
   );

@@ -333,7 +333,7 @@ const InspectionReport = ({ inspectionData, onBack }) => {
 
 // Componente interno que tiene acceso al contexto de inspección
 const InspectionReportContent = ({ inspectionData }) => {
-const { dispatch, state } = useInspection();
+  const { dispatch } = useInspection();
   const [dataLoaded, setDataLoaded] = useState(false);
   const [renderKey, setRenderKey] = useState(0);
   
@@ -357,39 +357,23 @@ const { dispatch, state } = useInspection();
       
       console.log('Data being loaded into context:', dataToLoad);
       
-      // Cargar datos
+      // Cargar datos una sola vez
       dispatch({ type: 'LOAD_INSPECTION_DATA', payload: dataToLoad });
       
-      // Verificar que los datos críticos estén disponibles antes de renderizar
-      const checkDataReady = () => {
-        const currentState = state;
-        const isDataReady = 
-          currentState.dimensions && 
-          currentState.dimensions.length > 0 && 
-          currentState.sampleInfo && 
-          currentState.sampleInfo.trim() !== '';
-        
-        if (isDataReady) {
-          setDataLoaded(true);
-          setRenderKey(prev => prev + 1);
-        } else {
-          // Reintentar después de un tiempo
-          setTimeout(checkDataReady, 100);
-        }
-      };
+      // Simple timeout para asegurar que el contexto se actualice
+      const timer = setTimeout(() => {
+        setDataLoaded(true);
+        setRenderKey(prev => prev + 1);
+      }, 800); // Timeout más largo
       
-      // Comenzar la verificación después de un pequeño delay
-      setTimeout(checkDataReady, 200);
+      return () => clearTimeout(timer);
     }
-  }, [inspectionData, dispatch, state]);
+  }, [inspectionData, dispatch]); // Quitar 'state' de las dependencias
   
   if (!dataLoaded) {
     return (
       <div id="database-report-container" style={{ padding: '2rem', textAlign: 'center' }}>
         <div>Loading report data...</div>
-        <div style={{ fontSize: '0.8rem', color: '#666', marginTop: '1rem' }}>
-          Waiting for dimensions and sample info...
-        </div>
       </div>
     );
   }

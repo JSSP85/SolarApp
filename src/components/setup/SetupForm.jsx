@@ -1,6 +1,6 @@
 // src/components/setup/SetupForm.jsx
 import React, { useState, useEffect } from 'react';
-import { ChevronRight, Settings, Info } from 'lucide-react';
+import { ChevronRight, Settings, Info, AlertTriangle } from 'lucide-react';
 import { useInspection } from '../../context/InspectionContext';
 import { calculateSample } from '../../utils/samplePlanHelper';
 import { MapContainer, TileLayer, Marker, useMapEvents } from 'react-leaflet';
@@ -17,13 +17,14 @@ L.Icon.Default.mergeOptions({
 
 const SetupForm = () => {
   // Usar el contexto real en lugar de un estado local
-  const { state, dispatch } = useInspection();
+  const { state, dispatch, validateRequiredFields } = useInspection();
   
   const [showLocationDetails, setShowLocationDetails] = useState(false);
   const [mapCoords, setMapCoords] = useState({ lat: 40.416775, lng: -3.703790 });
   const [searchResults, setSearchResults] = useState([]);
   const [isSearching, setIsSearching] = useState(false);
   const [showSearchResults, setShowSearchResults] = useState(false);
+  const [validationError, setValidationError] = useState('');
 
   // Map reference to control the view programmatically
   const mapRef = React.useRef(null);
@@ -34,6 +35,11 @@ const SetupForm = () => {
       type: 'UPDATE_SETUP_FIELD',
       payload: { field, value }
     });
+    
+    // Limpiar errores de validación cuando el usuario empiece a llenar campos
+    if (validationError) {
+      setValidationError('');
+    }
     
     // Calculate sample size when batch quantity changes
     if (field === 'batchQuantity' && value) {
@@ -57,13 +63,20 @@ const SetupForm = () => {
   };
   
   const handleNextStep = () => {
-    // Basic validation before continuing
-    if (!state.componentCode || !state.batchQuantity || !state.inspector) {
-      alert('Please complete all required fields before continuing.');
+    // Validar campos requeridos usando la función del contexto
+    const validation = validateRequiredFields();
+    
+    if (!validation.isValid) {
+      const errorMessage = `Por favor complete los siguientes campos requeridos:\n\n• ${validation.missingFields.join('\n• ')}`;
+      setValidationError(errorMessage);
+      
+      // Mostrar alerta también
+      alert(errorMessage);
       return;
     }
     
-    // This is the key change - we're correctly changing the activeTab
+    // Si todo está correcto, proceder a inspection
+    setValidationError('');
     dispatch({ type: 'SET_ACTIVE_TAB', payload: 'inspection' });
   };
 
@@ -317,6 +330,30 @@ const SetupForm = () => {
       </div>
       
       <div className="card-body">
+        {/* Mostrar errores de validación */}
+        {validationError && (
+          <div style={{
+            background: 'linear-gradient(135deg, #fee2e2, #fecaca)',
+            border: '2px solid #f87171',
+            borderRadius: '8px',
+            padding: '16px',
+            marginBottom: '24px',
+            display: 'flex',
+            alignItems: 'flex-start',
+            gap: '12px'
+          }}>
+            <AlertTriangle size={20} style={{ color: '#dc2626', marginTop: '2px', flexShrink: 0 }} />
+            <div>
+              <h4 style={{ color: '#dc2626', fontWeight: 'bold', margin: '0 0 8px 0' }}>
+                Campos Requeridos Faltantes
+              </h4>
+              <div style={{ color: '#991b1b', fontSize: '14px', whiteSpace: 'pre-line' }}>
+                {validationError}
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* Two-column container */}
         <div className="cards-grid-2">
           {/* LEFT COLUMN: Component Information */}
@@ -441,6 +478,7 @@ const SetupForm = () => {
                 <div className="form-group">
                   <label className="form-label">
                     Material Thickness (mm)
+                    <span style={{color: '#e53e3e', marginLeft: '4px'}}>*</span>
                   </label>
                   <div style={{position: 'relative'}}>
                     <select
@@ -463,6 +501,7 @@ const SetupForm = () => {
                 <div className="form-group">
                   <label className="form-label">
                     Special Coating Value (µm)
+                    <span style={{color: '#e53e3e', marginLeft: '4px'}}>*</span>
                   </label>
                   <input
                     type="number"
@@ -545,6 +584,24 @@ const SetupForm = () => {
                   value={state.inspectionDate || ''}
                   onChange={(e) => handleInputChange('inspectionDate', e.target.value)}
                 />
+              </div>
+
+              {/* NUEVO CAMPO: Supplier Name */}
+              <div className="form-group">
+                <label className="form-label">
+                  Supplier Name
+                  <span style={{color: '#e53e3e', marginLeft: '4px'}}>*</span>
+                </label>
+                <input
+                  type="text"
+                  className="form-control"
+                  placeholder="Enter supplier name where inspection is performed"
+                  value={state.supplierName || ''}
+                  onChange={(e) => handleInputChange('supplierName', e.target.value)}
+                />
+                <div className="text-xs text-gray-500 mt-1">
+                  Name of the supplier where the inspection is being performed.
+                </div>
               </div>
               
               {/* Inspection Location */}

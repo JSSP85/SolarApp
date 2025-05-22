@@ -23,17 +23,51 @@ import {
 // Crear el contexto
 const InspectionContext = createContext();
 
-// Estado inicial actualizado con campos de Firebase y userRole
+// Estado inicial actualizado con campos de Firebase
 const inspectionStateWithFirebase = {
   ...defaultInspectionState,
+  // NUEVO CAMPO: Nombre del proveedor
+  supplierName: '',
   // Nuevos campos para Firestore
   currentInspectionId: null,
   isSaving: false,
   saveError: null,
   lastSaved: null,
   hasUnsavedChanges: false,
-  // Nuevo campo para rol de usuario
-  userRole: null
+};
+
+// Función de validación de campos requeridos
+export const validateRequiredFields = (state) => {
+  const requiredFields = [
+    { field: 'componentFamily', label: 'Component Family' },
+    { field: 'componentCode', label: 'Component Code' },
+    { field: 'surfaceProtection', label: 'Surface Protection' },
+    { field: 'batchQuantity', label: 'Batch Quantity' },
+    { field: 'inspector', label: 'Inspector Name' },
+    { field: 'supplierName', label: 'Supplier Name' }, // NUEVO CAMPO REQUERIDO
+  ];
+
+  const missingFields = [];
+
+  for (const { field, label } of requiredFields) {
+    if (!state[field] || state[field].toString().trim() === '') {
+      missingFields.push(label);
+    }
+  }
+
+  // Validaciones adicionales basadas en condiciones
+  if (state.surfaceProtection === 'ISO1461' && (!state.thickness || state.thickness.toString().trim() === '')) {
+    missingFields.push('Material Thickness');
+  }
+
+  if (state.surfaceProtection === 'special coating' && (!state.specialCoating || state.specialCoating.toString().trim() === '')) {
+    missingFields.push('Special Coating Value');
+  }
+
+  return {
+    isValid: missingFields.length === 0,
+    missingFields: missingFields
+  };
 };
 
 // Reducer para manejar las actualizaciones de estado
@@ -41,10 +75,6 @@ function inspectionReducer(state, action) {
   switch (action.type) {
     case 'SET_ACTIVE_TAB':
       return { ...state, activeTab: action.payload };
-      
-    // Nuevo caso para establecer el rol de usuario
-    case 'SET_USER_ROLE':
-      return { ...state, userRole: action.payload };
       
     case 'UPDATE_SETUP_FIELD':
       return { ...state, [action.payload.field]: action.payload.value };
@@ -560,12 +590,9 @@ function inspectionReducer(state, action) {
   }
 }
 
-// Provider component - Modificado para aceptar initialUserRole
-export const InspectionProvider = ({ children, initialUserRole = null }) => {
-  const [state, dispatch] = useReducer(inspectionReducer, {
-    ...inspectionStateWithFirebase,
-    userRole: initialUserRole  // Inicializar con el rol proporcionado
-  });
+// Provider component
+export const InspectionProvider = ({ children }) => {
+  const [state, dispatch] = useReducer(inspectionReducer, inspectionStateWithFirebase);
   
   // Cargar datos iniciales al montar el componente
   useEffect(() => {
@@ -727,15 +754,11 @@ export const InspectionProvider = ({ children, initialUserRole = null }) => {
   }, [
     state.componentCode, state.componentName, state.componentFamily,
     state.inspector, state.batchQuantity, state.dimensionMeasurements,
-    state.localCoatingMeasurements, state.visualConformity, state.visualNotes
+    state.localCoatingMeasurements, state.visualConformity, state.visualNotes,
+    state.supplierName // INCLUIR EL NUEVO CAMPO
   ]);
   
   // FUNCIONES DE FIRESTORE
-  
-  // Nueva función para establecer explícitamente el rol del usuario
-  const setUserRole = (role) => {
-    dispatch({ type: 'SET_USER_ROLE', payload: role });
-  };
 
   // Función para guardar inspección
   const saveCurrentInspection = async () => {
@@ -797,22 +820,11 @@ export const InspectionProvider = ({ children, initialUserRole = null }) => {
       ...inspectionStateWithFirebase,
       // Mantener estas configuraciones del usuario
       inspector: state.inspector,
-      inspectionDate: new Date().toISOString().slice(0, 10),
-      userRole: state.userRole // Preservar el rol de usuario
+      inspectionDate: new Date().toISOString().slice(0, 10)
     };
     
     dispatch({ type: 'LOAD_INSPECTION_DATA', payload: newState });
     console.log('Nueva inspección creada');
-  };
-  
-  // Función para obtener todas las inspecciones (para la vista de base de datos)
-  const getAllInspections = async (filters = {}) => {
-    try {
-      return await getInspections(filters);
-    } catch (error) {
-      console.error('Error obteniendo inspecciones:', error);
-      throw error;
-    }
   };
   
   return (
@@ -823,9 +835,8 @@ export const InspectionProvider = ({ children, initialUserRole = null }) => {
       saveCurrentInspection,
       loadInspection,
       createNewInspection,
-      getAllInspections,
-      // Nueva función para establecer roll
-      setUserRole
+      // Función de validación
+      validateRequiredFields: () => validateRequiredFields(state)
     }}>
       {children}
     </InspectionContext.Provider>

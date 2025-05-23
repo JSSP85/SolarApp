@@ -291,8 +291,7 @@ const InspectionDetails = ({ inspectionData, onBack }) => {
 };
 
 
-// InspectionReport versión SIN InspectionProvider anidado:
-
+// InspectionReport con esta versión que restaura el provider anidado:
 const InspectionReport = ({ inspectionData, onBack }) => {
   const [isExporting, setIsExporting] = useState(false);
 
@@ -311,13 +310,9 @@ const InspectionReport = ({ inspectionData, onBack }) => {
     setIsExporting(true);
     
     try {
-      // Importar dinámicamente el servicio de exportación
       const { exportToPDF, generateFilename } = await import('../../utils/pdfExportService');
-      
-      // Generar nombre de archivo
       const filename = generateFilename(inspectionData);
       
-      // Exportar el contenedor del reporte
       await exportToPDF('database-report-container', {
         filename: filename,
         orientation: 'portrait',
@@ -382,8 +377,10 @@ const InspectionReport = ({ inspectionData, onBack }) => {
         </button>
       </div>
       
-      {/* Contenedor del reporte SIN InspectionProvider anidado */}
-      <InspectionReportContent inspectionData={inspectionData} />
+      {/* RESTAURAR el InspectionProvider anidado */}
+      <InspectionProvider>
+        <InspectionReportContent inspectionData={inspectionData} />
+      </InspectionProvider>
     </div>
   );
 };

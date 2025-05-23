@@ -339,7 +339,7 @@ const InspectionReportContent = ({ inspectionData }) => {
   
   React.useEffect(() => {
     if (inspectionData) {
-      console.log('Loading inspection data:', inspectionData);
+      console.log('Loading inspection data:', inspectionData); // Puedes quitar esto después
       
       const dataToLoad = {
         ...inspectionData,
@@ -355,25 +355,45 @@ const InspectionReportContent = ({ inspectionData }) => {
         inspector: inspectionData.inspector || ''
       };
       
-      console.log('Data being loaded into context:', dataToLoad);
+      console.log('Data being loaded into context:', dataToLoad); // Puedes quitar esto después
       
-      // Cargar datos una sola vez
+      // Cargar datos
       dispatch({ type: 'LOAD_INSPECTION_DATA', payload: dataToLoad });
       
-      // Simple timeout para asegurar que el contexto se actualice
-      const timer = setTimeout(() => {
+      // Múltiples re-renders para asegurar que se actualice
+      const timer1 = setTimeout(() => {
+        setRenderKey(prev => prev + 1);
+      }, 300);
+      
+      const timer2 = setTimeout(() => {
+        setRenderKey(prev => prev + 1);
+      }, 600);
+      
+      const timer3 = setTimeout(() => {
         setDataLoaded(true);
         setRenderKey(prev => prev + 1);
-      }, 800); // Timeout más largo
+      }, 1000);
       
-      return () => clearTimeout(timer);
+      const timer4 = setTimeout(() => {
+        setRenderKey(prev => prev + 1);
+      }, 1500);
+      
+      return () => {
+        clearTimeout(timer1);
+        clearTimeout(timer2);
+        clearTimeout(timer3);
+        clearTimeout(timer4);
+      };
     }
-  }, [inspectionData, dispatch]); // Quitar 'state' de las dependencias
+  }, [inspectionData, dispatch]);
   
   if (!dataLoaded) {
     return (
       <div id="database-report-container" style={{ padding: '2rem', textAlign: 'center' }}>
         <div>Loading report data...</div>
+        <div style={{ fontSize: '0.8rem', color: '#666', marginTop: '1rem' }}>
+          Processing dimensional measurements...
+        </div>
       </div>
     );
   }

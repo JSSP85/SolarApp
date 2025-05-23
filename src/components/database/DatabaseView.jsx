@@ -290,8 +290,12 @@ const InspectionDetails = ({ inspectionData, onBack }) => {
   );
 };
 
-// NUEVO COMPONENTE: InspectionReport
+
+// InspectionReport versión SIN InspectionProvider anidado:
+
 const InspectionReport = ({ inspectionData, onBack }) => {
+  const [isExporting, setIsExporting] = useState(false);
+
   if (!inspectionData) {
     return (
       <div className="dashboard-card">
@@ -302,31 +306,84 @@ const InspectionReport = ({ inspectionData, onBack }) => {
     );
   }
 
+  // Función para exportar a PDF
+  const handleExportPDF = async () => {
+    setIsExporting(true);
+    
+    try {
+      // Importar dinámicamente el servicio de exportación
+      const { exportToPDF, generateFilename } = await import('../../utils/pdfExportService');
+      
+      // Generar nombre de archivo
+      const filename = generateFilename(inspectionData);
+      
+      // Exportar el contenedor del reporte
+      await exportToPDF('database-report-container', {
+        filename: filename,
+        orientation: 'portrait',
+        scale: 2,
+        showNotification: true
+      });
+      
+    } catch (error) {
+      console.error('Error exporting PDF:', error);
+      alert('Error generating PDF. Please try again.');
+    } finally {
+      setIsExporting(false);
+    }
+  };
+
   return (
     <div className="inspection-report-wrapper">
       {/* Barra de navegación superior */}
       <div className="database-report-header">
-        {onBack && (
-          <button 
-            onClick={onBack}
-            className="flex items-center text-gray-700 hover:text-blue-600 transition-colors database-back-btn"
-          >
-            <ArrowLeft size={18} className="mr-2" />
-            Back to list
-          </button>
-        )}
-        
-        <h2 className="text-xl font-bold">Inspection Report Preview</h2>
-        
-        <div className="flex items-center text-sm text-gray-500">
-          This is a preview of the report that would be exported as PDF
+        <div className="flex items-center">
+          {onBack && (
+            <button 
+              onClick={onBack}
+              className="flex items-center text-white hover:text-blue-200 transition-colors mr-4"
+              style={{
+                background: 'rgba(255, 255, 255, 0.2)',
+                padding: '0.5rem 1rem',
+                borderRadius: '0.375rem',
+                border: '1px solid rgba(255, 255, 255, 0.3)'
+              }}
+            >
+              <ArrowLeft size={18} className="mr-2" />
+              Back to list
+            </button>
+          )}
+          
+          <div>
+            <h2 className="text-xl font-bold">Inspection Report Preview</h2>
+            <div className="text-sm text-blue-100 opacity-90">
+              This is a preview of the report that would be exported as PDF
+            </div>
+          </div>
         </div>
+        
+        {/* Botón de exportación a PDF */}
+        <button 
+          onClick={handleExportPDF}
+          disabled={isExporting}
+          className="flex items-center gap-2 px-4 py-2 bg-white text-blue-600 rounded-lg font-medium hover:bg-blue-50 transition-all duration-200 shadow-lg hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed"
+        >
+          {isExporting ? (
+            <>
+              <div className="animate-spin rounded-full h-4 w-4 border-t-2 border-b-2 border-blue-600"></div>
+              <span>Exporting...</span>
+            </>
+          ) : (
+            <>
+              <Download size={18} />
+              <span>Export PDF</span>
+            </>
+          )}
+        </button>
       </div>
       
-      {/* Contenedor del reporte usando InspectionProvider para que tenga acceso al contexto */}
-      <InspectionProvider>
-        <InspectionReportContent inspectionData={inspectionData} />
-      </InspectionProvider>
+      {/* Contenedor del reporte SIN InspectionProvider anidado */}
+      <InspectionReportContent inspectionData={inspectionData} />
     </div>
   );
 };

@@ -578,15 +578,33 @@ function inspectionReducer(state, action) {
         ...state,
         hasUnsavedChanges: action.payload
       };
-
     case 'LOAD_INSPECTION_DATA':
-      return {
+      const newState = {
+        // Mantener la estructura base del estado
+        ...inspectionStateWithFirebase,
+        // Cargar todos los datos de Firebase
         ...action.payload,
+        // Asegurar que las propiedades críticas estén bien estructuradas
+        dimensionMeasurements: action.payload.dimensionMeasurements || {},
+        dimensions: action.payload.dimensions || [],
+        localCoatingMeasurements: action.payload.localCoatingMeasurements || [],
+        coatingStats: action.payload.coatingStats || {},
+        // Mantener propiedades del sistema
         isSaving: false,
         saveError: null,
-        hasUnsavedChanges: false
+        hasUnsavedChanges: false,
+        // Asegurar que el ID se mantenga si existe
+        currentInspectionId: action.payload.id || action.payload.currentInspectionId || null
       };
       
+      // DEBUG TEMPORAL
+      console.log('=== REDUCER DEBUG ===');
+      console.log('Action payload dimensionMeasurements:', action.payload.dimensionMeasurements);
+      console.log('New state dimensionMeasurements:', newState.dimensionMeasurements);
+      console.log('=== END REDUCER DEBUG ===');
+      
+      return newState;
+  
     default:
       return state;
   }

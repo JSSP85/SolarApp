@@ -26,8 +26,7 @@ import { getInspections, deleteInspection } from '../../firebase/inspectionServi
 import { useInspection } from '../../context/InspectionContext';
 import { formatDate } from '../../utils/dateFormatter';
 import StaticMapReport from '../report/StaticMapReport';
-import ReportViewDashboard from '../report/ReportViewDashboard'; // NUEVA IMPORTACIÓN
-import { InspectionProvider } from '../../context/InspectionContext'; // NUEVA IMPORTACIÓN
+import DatabaseReportView from './DatabaseReportView'; // CAMBIO: Importar el nuevo componente
 import './DatabaseView.css';
 
 // Componente InspectionDetails (sin cambios)
@@ -290,8 +289,7 @@ const InspectionDetails = ({ inspectionData, onBack }) => {
   );
 };
 
-
-// InspectionReport con esta versión que restaura el provider anidado:
+// CAMBIO: Componente InspectionReport simplificado
 const InspectionReport = ({ inspectionData, onBack }) => {
   const [isExporting, setIsExporting] = useState(false);
 
@@ -377,89 +375,15 @@ const InspectionReport = ({ inspectionData, onBack }) => {
         </button>
       </div>
       
-      {/* RESTAURAR el InspectionProvider anidado */}
-      <InspectionProvider>
-        <InspectionReportContent inspectionData={inspectionData} />
-      </InspectionProvider>
-    </div>
-  );
-};
-
-// Componente interno que tiene acceso al contexto de inspección
-const InspectionReportContent = ({ inspectionData }) => {
-  const { dispatch } = useInspection();
-  const [dataLoaded, setDataLoaded] = useState(false);
-  const [renderKey, setRenderKey] = useState(0);
-  
-  React.useEffect(() => {
-    if (inspectionData) {
-      console.log('Loading inspection data:', inspectionData); // Puedes quitar esto después
-      
-      const dataToLoad = {
-        ...inspectionData,
-        dimensionMeasurements: inspectionData.dimensionMeasurements || {},
-        dimensions: inspectionData.dimensions || [],
-        localCoatingMeasurements: inspectionData.localCoatingMeasurements || [],
-        coatingStats: inspectionData.coatingStats || {},
-        photos: inspectionData.photos || [],
-        visualConformity: inspectionData.visualConformity || null,
-        visualNotes: inspectionData.visualNotes || '',
-        sampleInfo: inspectionData.sampleInfo || '',
-        componentName: inspectionData.componentName || '',
-        inspector: inspectionData.inspector || ''
-      };
-      
-      console.log('Data being loaded into context:', dataToLoad); // Puedes quitar esto después
-      
-      // Cargar datos
-      dispatch({ type: 'LOAD_INSPECTION_DATA', payload: dataToLoad });
-      
-      // Múltiples re-renders para asegurar que se actualice
-      const timer1 = setTimeout(() => {
-        setRenderKey(prev => prev + 1);
-      }, 300);
-      
-      const timer2 = setTimeout(() => {
-        setRenderKey(prev => prev + 1);
-      }, 600);
-      
-      const timer3 = setTimeout(() => {
-        setDataLoaded(true);
-        setRenderKey(prev => prev + 1);
-      }, 1000);
-      
-      const timer4 = setTimeout(() => {
-        setRenderKey(prev => prev + 1);
-      }, 1500);
-      
-      return () => {
-        clearTimeout(timer1);
-        clearTimeout(timer2);
-        clearTimeout(timer3);
-        clearTimeout(timer4);
-      };
-    }
-  }, [inspectionData, dispatch]);
-  
-  if (!dataLoaded) {
-    return (
-      <div id="database-report-container" style={{ padding: '2rem', textAlign: 'center' }}>
-        <div>Loading report data...</div>
-        <div style={{ fontSize: '0.8rem', color: '#666', marginTop: '1rem' }}>
-          Processing dimensional measurements...
-        </div>
+      {/* CAMBIO: Usar el nuevo componente DatabaseReportView */}
+      <div id="database-report-container">
+        <DatabaseReportView inspectionData={inspectionData} />
       </div>
-    );
-  }
-  
-  return (
-    <div id="database-report-container" key={renderKey}>
-      <ReportViewDashboard />
     </div>
   );
 };
 
-// Componente principal DatabaseView (ACTUALIZADO)
+// Componente principal DatabaseView (sin cambios en la lógica)
 const DatabaseView = () => {
   const navigate = useNavigate();
   const { loadInspection, dispatch } = useInspection();
@@ -470,7 +394,7 @@ const DatabaseView = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedFilter, setSelectedFilter] = useState('all');
   
-  // ESTADOS PARA MANEJAR LAS VISTAS (ACTUALIZADO)
+  // ESTADOS PARA MANEJAR LAS VISTAS
   const [currentView, setCurrentView] = useState('list'); // 'list', 'details', 'report'
   const [selectedInspection, setSelectedInspection] = useState(null);
   
@@ -688,7 +612,7 @@ const DatabaseView = () => {
     applyFilters();
   };
 
-  // FUNCIÓN MODIFICADA: Handle view report
+  // Handle view report
   const handleViewReport = async (inspectionId) => {
     try {
       setLoading(true);
@@ -720,7 +644,7 @@ const DatabaseView = () => {
     }
   };
 
-  // Handle view details (sin cambios)
+  // Handle view details
   const handleViewDetails = async (inspectionId) => {
     try {
       setLoading(true);
@@ -770,7 +694,7 @@ const DatabaseView = () => {
         />
       )}
       
-      {/* NUEVA VISTA: Si estamos en la vista de reporte, mostrar InspectionReport */}
+      {/* Si estamos en la vista de reporte, mostrar InspectionReport */}
       {currentView === 'report' && selectedInspection && (
         <InspectionReport 
           inspectionData={selectedInspection}

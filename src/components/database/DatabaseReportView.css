@@ -1,0 +1,427 @@
+/* src/components/database/DatabaseReportView.css */
+
+/* Wrapper principal */
+.database-report-wrapper {
+  width: 100%;
+  background: white;
+  padding: 1rem;
+}
+
+/* Secciones de página para PDF */
+.pdf-page-section {
+  margin-bottom: 2rem;
+  page-break-after: auto;
+}
+
+/* Headers de tarjetas con gradientes */
+.report-header {
+  background: linear-gradient(to right, #667eea, #764ba2) !important;
+  color: white;
+}
+
+.component-header {
+  background: linear-gradient(to right, #5a67d8, #6875f5) !important;
+  color: white;
+}
+
+.inspection-header {
+  background: linear-gradient(to right, #667eea, #764ba2) !important;
+  color: white;
+}
+
+.header-content {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+/* Títulos de sección */
+.report-section {
+  margin-bottom: 1.5rem;
+}
+
+.report-section-title {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 1.25rem;
+  font-weight: 600;
+  margin-bottom: 1rem;
+  padding: 0.75rem;
+  background-color: rgba(249, 250, 251, 0.8);
+  border-radius: 0.375rem;
+  color: #3D4A5C;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+  border-left: 4px solid #005F83;
+}
+
+/* Grid de información */
+.info-grid {
+  display: grid;
+  gap: 1rem;
+}
+
+.report-info-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  padding-bottom: 0.5rem;
+  border-bottom: 1px dotted #e5e7eb;
+}
+
+.report-info-label {
+  font-weight: 600;
+  color: #005F83;
+  min-width: 140px;
+}
+
+.report-info-value {
+  text-align: right;
+  flex: 1;
+  word-break: break-word;
+}
+
+/* Badges de estado */
+.badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.25rem 0.75rem;
+  border-radius: 9999px;
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+
+.badge-success {
+  background: linear-gradient(135deg, #10B981, #059669);
+  color: white;
+}
+
+.badge-danger {
+  background: linear-gradient(135deg, #EF4444, #DC2626);
+  color: white;
+}
+
+.badge-warning {
+  background: linear-gradient(135deg, #F59E0B, #D97706);
+  color: white;
+}
+
+/* Tablas de datos */
+.data-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.75rem;
+}
+
+.data-table th,
+.data-table td {
+  padding: 0.5rem;
+  border: 1px solid #e5e7eb;
+  text-align: center;
+}
+
+.data-table th {
+  background-color: #f3f4f6;
+  font-weight: 600;
+}
+
+.data-table tr:nth-child(even) td {
+  background-color: #f9fafb;
+}
+
+.sample-header,
+.sample-cell {
+  font-weight: 600;
+  background-color: #f8fafc;
+}
+
+.dimension-header {
+  vertical-align: top;
+}
+
+.dim-code {
+  font-weight: 600;
+  margin-bottom: 0.25rem;
+}
+
+.dim-specs {
+  font-size: 0.65rem;
+  color: #6b7280;
+  font-weight: normal;
+}
+
+.measurement-cell {
+  font-family: monospace;
+}
+
+.invalid-value {
+  color: #dc2626;
+  background-color: #fee2e2;
+  font-weight: 600;
+}
+
+/* Mini gráficos dimensionales */
+.dimension-charts-section {
+  margin-top: 1rem;
+}
+
+.charts-section-title {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: #6b7280;
+  margin-bottom: 0.75rem;
+}
+
+.dimension-charts-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 0.75rem;
+}
+
+.dimension-mini-chart {
+  background-color: white;
+  border-radius: 0.5rem;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  padding: 0.75rem;
+  border: 1px solid #e5e7eb;
+}
+
+.chart-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 0.5rem;
+}
+
+.chart-title {
+  font-size: 0.875rem;
+  font-weight: 700;
+  margin: 0;
+}
+
+.chart-subtitle {
+  font-size: 0.65rem;
+  color: #6b7280;
+  margin: 0;
+  max-width: 120px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.chart-info {
+  text-align: right;
+}
+
+.nominal-value {
+  font-size: 0.75rem;
+  font-weight: 600;
+  margin: 0;
+}
+
+.tolerance-value {
+  font-size: 0.65rem;
+  color: #6b7280;
+  margin: 0;
+}
+
+.chart-container {
+  height: 80px;
+  position: relative;
+  background-color: rgba(255, 255, 255, 0.85);
+  border-radius: 0.25rem;
+}
+
+.chart-stats {
+  position: absolute;
+  top: 6px;
+  right: 8px;
+  background-color: rgba(255, 255, 255, 0.95);
+  border-radius: 0.25rem;
+  padding: 2px 6px;
+  font-size: 9px;
+  border: 1px solid rgba(0, 0, 0, 0.05);
+  z-index: 10;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+}
+
+.stat-separator {
+  color: #6b7280;
+  margin: 0 4px;
+}
+
+.stat-value {
+  color: #3b82f6;
+}
+
+/* Gráfico de coating */
+.coating-chart {
+  background-color: white;
+  border-radius: 0.5rem;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  padding: 0.75rem;
+  border: 1px solid #e5e7eb;
+  margin-top: 1rem;
+}
+
+.coating-title {
+  color: #3b82f6;
+}
+
+.with-icon {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.mean-badge {
+  background-color: #f3f4f6;
+  border-radius: 0.25rem;
+  padding: 0.125rem 0.5rem;
+}
+
+.mean-label {
+  font-size: 0.75rem;
+  font-weight: 500;
+  margin: 0;
+}
+
+.mean-value {
+  color: #3b82f6;
+}
+
+.info-icon {
+  color: #9ca3af;
+}
+
+.coating-container {
+  height: 150px;
+}
+
+.coating-stats {
+  top: 6px;
+  right: 8px;
+}
+
+.req-value {
+  color: #ef4444;
+  font-weight: 700;
+}
+
+/* Sección de equipamiento */
+.equipment-list {
+  display: grid;
+  gap: 0.25rem;
+}
+
+.equipment-item {
+  margin: 0;
+}
+
+.equipment-label {
+  font-weight: 600;
+}
+
+.no-equipment {
+  color: #6b7280;
+  font-style: italic;
+}
+
+/* Sección visual */
+.visual-result,
+.visual-notes {
+  margin-bottom: 1rem;
+}
+
+.result-badge {
+  margin-top: 0.5rem;
+}
+
+.notes-content {
+  margin-top: 0.5rem;
+}
+
+.photos-section {
+  margin-top: 1rem;
+}
+
+/* Footer */
+.report-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1rem;
+  background-color: #f9fafb;
+}
+
+.company-name {
+  font-weight: 700;
+  margin: 0;
+}
+
+.final-result {
+  font-weight: 500;
+  margin: 0;
+}
+
+/* Contadores de no conformidades */
+.non-conformities-count {
+  margin-left: 0.5rem;
+  font-size: 0.875rem;
+  color: #6b7280;
+}
+
+.count-danger {
+  color: #dc2626;
+  font-weight: 700;
+}
+
+/* Contenedor del mapa */
+.map-container {
+  grid-column: 1 / -1;
+  margin-top: 0.5rem;
+}
+
+/* Estados vacíos */
+.no-data {
+  text-align: center;
+  color: #6b7280;
+  padding: 2rem;
+}
+
+/* Ajustes para impresión/PDF */
+@media print {
+  .pdf-page-section {
+    page-break-inside: avoid;
+  }
+  
+  .dimension-charts-grid {
+    page-break-inside: avoid;
+  }
+  
+  .dashboard-card {
+    page-break-inside: avoid;
+  }
+  
+  /* Ocultar gráficos en página 2 para PDF */
+  .pdf-page-section[data-page="2"] .dimension-charts-section {
+    display: none !important;
+  }
+}
+
+/* Responsivo */
+@media (max-width: 768px) {
+  .dimension-charts-grid {
+    grid-template-columns: 1fr;
+  }
+  
+  .report-info-item {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+  
+  .report-info-value {
+    text-align: left;
+    margin-top: 0.25rem;
+  }
+}

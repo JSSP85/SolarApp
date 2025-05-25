@@ -676,6 +676,10 @@ const InspectionReportContent = ({ inspectionData }) => {
         setRenderKey(prev => prev + 1);
         console.log('🔄 Re-render 4 - Final');
         
+        // NUEVO: Marcar que terminamos de cargar desde database
+        dispatch({ type: 'FINISH_LOADING_FROM_DATABASE' });
+        console.log('🏁 Finalizando carga desde database');
+        
         // DEBUG: Ver el estado final del contexto
         console.log('🎯 Estado final del contexto:', {
           dimensions: state.dimensions?.length || 0,

@@ -291,7 +291,6 @@ const InspectionDetails = ({ inspectionData, onBack }) => {
   );
 };
 
-
 // NUEVO: Componente HiddenReportContent que pasa datos directamente
 const HiddenReportContent = ({ inspectionData }) => {
   const [dataLoaded, setDataLoaded] = useState(false);

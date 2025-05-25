@@ -1,4 +1,3 @@
-// src/components/database/DatabaseView.jsx
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { 
@@ -29,6 +28,104 @@ import StaticMapReport from '../report/StaticMapReport';
 import ReportViewDashboard from '../report/ReportViewDashboard';
 import { InspectionProvider } from '../../context/InspectionContext';
 import './DatabaseView.css';
+
+// COMPONENTE DEBUG TEMPORAL
+const DebugInspectionData = () => {
+  const { state } = useInspection();
+  
+  return (
+    <div style={{
+      position: 'fixed',
+      top: '10px',
+      right: '10px',
+      background: 'rgba(0,0,0,0.9)',
+      color: 'white',
+      padding: '10px',
+      borderRadius: '5px',
+      maxWidth: '350px',
+      fontSize: '11px',
+      zIndex: 9999,
+      maxHeight: '500px',
+      overflowY: 'auto',
+      border: '2px solid #4CAF50'
+    }}>
+      <h4 style={{margin: '0 0 10px 0', color: '#4CAF50'}}>🐛 Debug - Estado del Contexto</h4>
+      
+      <div><strong>Component Name:</strong> {state.componentName || 'N/A'}</div>
+      <div><strong>Component Code:</strong> {state.componentCode || 'N/A'}</div>
+      <div><strong>Inspector:</strong> {state.inspector || 'N/A'}</div>
+      <div><strong>Sample Info:</strong> {state.sampleInfo || 'N/A'}</div>
+      
+      <hr style={{margin: '8px 0', borderColor: '#666'}} />
+      
+      <div><strong>Dimensions:</strong> {state.dimensions?.length || 0}</div>
+      {state.dimensions?.slice(0, 3).map((dim, index) => (
+        <div key={index} style={{marginLeft: '10px', fontSize: '10px', color: '#ccc'}}>
+          {dim.code}: {dim.nominal}mm ({dim.tolerancePlus}, {dim.toleranceMinus})
+        </div>
+      ))}
+      {state.dimensions?.length > 3 && <div style={{marginLeft: '10px', fontSize: '10px', color: '#999'}}>... y {state.dimensions.length - 3} más</div>}
+      
+      <hr style={{margin: '8px 0', borderColor: '#666'}} />
+      
+      <div><strong>Dimension Measurements:</strong></div>
+      {state.dimensionMeasurements && Object.keys(state.dimensionMeasurements).length > 0 ? 
+        Object.keys(state.dimensionMeasurements).slice(0, 2).map(dimCode => (
+          <div key={dimCode} style={{marginLeft: '10px', fontSize: '10px', color: '#ccc'}}>
+            {dimCode}: [{(state.dimensionMeasurements[dimCode] || []).slice(0, 3).join(', ')}...]
+          </div>
+        )) : 
+        <div style={{marginLeft: '10px', color: '#ff6b6b'}}>❌ No measurements found</div>
+      }
+      
+      <hr style={{margin: '8px 0', borderColor: '#666'}} />
+      
+      <div><strong>Photos:</strong> {state.photos?.length || 0}</div>
+      <div><strong>Visual Conformity:</strong> {state.visualConformity || 'N/A'}</div>
+      <div><strong>Inspection Status:</strong> {state.inspectionStatus || 'N/A'}</div>
+      
+      <button 
+        onClick={() => {
+          console.log('🎯 Estado completo del contexto:', state);
+          console.log('📊 Dimension Measurements detallado:', state.dimensionMeasurements);
+          console.log('📏 Dimensions detallado:', state.dimensions);
+        }}
+        style={{
+          background: '#4CAF50',
+          color: 'white',
+          border: 'none',
+          padding: '4px 8px',
+          borderRadius: '3px',
+          cursor: 'pointer',
+          marginTop: '8px',
+          fontSize: '10px'
+        }}
+      >
+        Log Estado Completo
+      </button>
+      
+      <button 
+        onClick={() => {
+          const debugElement = document.querySelector('[style*="position: fixed"]');
+          if (debugElement) debugElement.style.display = 'none';
+        }}
+        style={{
+          background: '#f44336',
+          color: 'white',
+          border: 'none',
+          padding: '4px 8px',
+          borderRadius: '3px',
+          cursor: 'pointer',
+          marginTop: '4px',
+          marginLeft: '5px',
+          fontSize: '10px'
+        }}
+      >
+        Ocultar
+      </button>
+    </div>
+  );
+};
 
 // Componente InspectionDetails (sin cambios)
 const InspectionDetails = ({ inspectionData, onBack }) => {
@@ -294,12 +391,33 @@ const InspectionDetails = ({ inspectionData, onBack }) => {
 const convertFirestoreDataToContext = (firestoreData) => {
   console.log('🔄 Convirtiendo datos de Firestore:', firestoreData);
   
+  // DEBUGGING: Ver la estructura de dimensionMeasurements
+  if (firestoreData.dimensionMeasurements) {
+    console.log('📊 dimensionMeasurements encontrado:', firestoreData.dimensionMeasurements);
+    console.log('📊 Tipo:', typeof firestoreData.dimensionMeasurements);
+    console.log('📊 Keys:', Object.keys(firestoreData.dimensionMeasurements));
+    
+    // Ver el contenido de cada dimensión
+    Object.keys(firestoreData.dimensionMeasurements).forEach(dimCode => {
+      console.log(`📊 Dimensión ${dimCode}:`, firestoreData.dimensionMeasurements[dimCode]);
+    });
+  }
+  
+  if (firestoreData.dimensions) {
+    console.log('📏 dimensions encontrado:', firestoreData.dimensions);
+    console.log('📏 Cantidad:', firestoreData.dimensions.length);
+    firestoreData.dimensions.forEach((dim, index) => {
+      console.log(`📏 Dimensión ${index}:`, dim);
+    });
+  }
+  
   // Si los datos ya están en formato plano (directamente convertidos), usarlos tal como están
   if (firestoreData.dimensionMeasurements && firestoreData.dimensions) {
     console.log('✅ Datos ya en formato plano');
-    return {
+    
+    const result = {
       ...firestoreData,
-      // Asegurar que estos campos existan
+      // Asegurar que estos campos existan y tengan la estructura correcta
       dimensionMeasurements: firestoreData.dimensionMeasurements || {},
       dimensions: firestoreData.dimensions || [],
       dimensionNonConformities: firestoreData.dimensionNonConformities || {},
@@ -311,6 +429,16 @@ const convertFirestoreDataToContext = (firestoreData) => {
       visualConformity: firestoreData.visualConformity || '',
       visualNotes: firestoreData.visualNotes || ''
     };
+    
+    console.log('🎯 Resultado final de conversión:', {
+      componentName: result.componentName,
+      dimensions: result.dimensions?.length || 0,
+      dimensionMeasurements: Object.keys(result.dimensionMeasurements || {}).length,
+      sampleMeasurementsPerDim: result.dimensions?.length > 0 ? 
+        result.dimensionMeasurements[result.dimensions[0]?.code]?.length || 0 : 0
+    });
+    
+    return result;
   }
   
   // Si los datos están en estructura anidada de Firestore, extraerlos
@@ -484,7 +612,7 @@ const InspectionReport = ({ inspectionData, onBack }) => {
 
 // Componente interno CORREGIDO que tiene acceso al contexto de inspección
 const InspectionReportContent = ({ inspectionData }) => {
-  const { dispatch } = useInspection();
+  const { dispatch, state } = useInspection();
   const [dataLoaded, setDataLoaded] = useState(false);
   const [renderKey, setRenderKey] = useState(0);
   
@@ -499,7 +627,8 @@ const InspectionReportContent = ({ inspectionData }) => {
         componentName: contextData.componentName,
         dimensions: contextData.dimensions?.length || 0,
         measurements: Object.keys(contextData.dimensionMeasurements || {}).length,
-        photos: contextData.photos?.length || 0
+        photos: contextData.photos?.length || 0,
+        sampleInfo: contextData.sampleInfo
       });
       
       // Cargar datos en el contexto
@@ -508,19 +637,53 @@ const InspectionReportContent = ({ inspectionData }) => {
       // Escalonado de re-renders para asegurar carga completa
       const timers = [];
       
-      timers.push(setTimeout(() => setRenderKey(prev => prev + 1), 300));
-      timers.push(setTimeout(() => setRenderKey(prev => prev + 1), 600));
+      timers.push(setTimeout(() => {
+        setRenderKey(prev => prev + 1);
+        console.log('🔄 Re-render 1');
+      }, 300));
+      
+      timers.push(setTimeout(() => {
+        setRenderKey(prev => prev + 1);
+        console.log('🔄 Re-render 2');
+      }, 600));
+      
       timers.push(setTimeout(() => {
         setDataLoaded(true);
         setRenderKey(prev => prev + 1);
+        console.log('🔄 Re-render 3 - Data loaded');
       }, 1000));
-      timers.push(setTimeout(() => setRenderKey(prev => prev + 1), 1500));
+      
+      timers.push(setTimeout(() => {
+        setRenderKey(prev => prev + 1);
+        console.log('🔄 Re-render 4 - Final');
+        
+        // DEBUG: Ver el estado final del contexto
+        console.log('🎯 Estado final del contexto:', {
+          dimensions: state.dimensions?.length || 0,
+          dimensionMeasurements: Object.keys(state.dimensionMeasurements || {}).length,
+          sampleInfo: state.sampleInfo
+        });
+      }, 1500));
       
       return () => {
         timers.forEach(clearTimeout);
       };
     }
   }, [inspectionData, dispatch]);
+  
+  // DEBUG adicional: Observar cambios en el estado
+  React.useEffect(() => {
+    if (dataLoaded) {
+      console.log('🎪 Estado del contexto actualizado:', {
+        componentName: state.componentName,
+        dimensions: state.dimensions?.length || 0,
+        dimensionMeasurements: state.dimensionMeasurements ? Object.keys(state.dimensionMeasurements).length : 0,
+        sampleInfo: state.sampleInfo,
+        firstDimension: state.dimensions?.[0],
+        firstMeasurements: state.dimensions?.[0] ? state.dimensionMeasurements?.[state.dimensions[0].code] : null
+      });
+    }
+  }, [state, dataLoaded]);
   
   if (!dataLoaded) {
     return (
@@ -538,6 +701,8 @@ const InspectionReportContent = ({ inspectionData }) => {
   
   return (
     <div id="database-report-container" key={renderKey} className="database-report-content">
+      {/* COMPONENTE DEBUG TEMPORAL */}
+      <DebugInspectionData />
       <ReportViewDashboard />
     </div>
   );

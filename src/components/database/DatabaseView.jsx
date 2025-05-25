@@ -20,13 +20,15 @@ import {
   Download,
   ListFilter,
   ArrowLeft,
-  Info
+  Info,
+  X
 } from 'lucide-react';
 import { getInspections, deleteInspection } from '../../firebase/inspectionService';
 import { useInspection } from '../../context/InspectionContext';
 import { formatDate } from '../../utils/dateFormatter';
 import StaticMapReport from '../report/StaticMapReport';
-import DatabaseReportView from './DatabaseReportView'; // CAMBIO: Importar el nuevo componente
+import ReportViewDashboard from '../report/ReportViewDashboard';
+import { InspectionProvider } from '../../context/InspectionContext';
 import './DatabaseView.css';
 
 // Componente InspectionDetails (sin cambios)
@@ -289,101 +291,43 @@ const InspectionDetails = ({ inspectionData, onBack }) => {
   );
 };
 
-// CAMBIO: Componente InspectionReport simplificado
-const InspectionReport = ({ inspectionData, onBack }) => {
-  const [isExporting, setIsExporting] = useState(false);
-
-  if (!inspectionData) {
-    return (
-      <div className="dashboard-card">
-        <div className="card-body text-center text-gray-500">
-          No inspection data available for report generation
-        </div>
-      </div>
-    );
-  }
-
-  // Función para exportar a PDF
-  const handleExportPDF = async () => {
-    setIsExporting(true);
-    
-    try {
-      const { exportToPDF, generateFilename } = await import('../../utils/pdfExportService');
-      const filename = generateFilename(inspectionData);
+// Componente para el contenido del reporte oculto
+const HiddenReportContent = ({ inspectionData }) => {
+  const { dispatch } = useInspection();
+  const [dataLoaded, setDataLoaded] = useState(false);
+  
+  React.useEffect(() => {
+    if (inspectionData) {
+      const dataToLoad = {
+        ...inspectionData,
+        dimensionMeasurements: inspectionData.dimensionMeasurements || {},
+        dimensions: inspectionData.dimensions || [],
+        localCoatingMeasurements: inspectionData.localCoatingMeasurements || [],
+        coatingStats: inspectionData.coatingStats || {},
+        photos: inspectionData.photos || [],
+        visualConformity: inspectionData.visualConformity || null,
+        visualNotes: inspectionData.visualNotes || '',
+        sampleInfo: inspectionData.sampleInfo || '',
+        componentName: inspectionData.componentName || '',
+        inspector: inspectionData.inspector || ''
+      };
       
-      await exportToPDF('database-report-container', {
-        filename: filename,
-        orientation: 'portrait',
-        scale: 2,
-        showNotification: true
-      });
+      dispatch({ type: 'LOAD_INSPECTION_DATA', payload: dataToLoad });
       
-    } catch (error) {
-      console.error('Error exporting PDF:', error);
-      alert('Error generating PDF. Please try again.');
-    } finally {
-      setIsExporting(false);
+      setTimeout(() => {
+        setDataLoaded(true);
+      }, 500);
     }
-  };
-
-  return (
-    <div className="inspection-report-wrapper">
-      {/* Barra de navegación superior */}
-      <div className="database-report-header">
-        <div className="flex items-center">
-          {onBack && (
-            <button 
-              onClick={onBack}
-              className="flex items-center text-white hover:text-blue-200 transition-colors mr-4"
-              style={{
-                background: 'rgba(255, 255, 255, 0.2)',
-                padding: '0.5rem 1rem',
-                borderRadius: '0.375rem',
-                border: '1px solid rgba(255, 255, 255, 0.3)'
-              }}
-            >
-              <ArrowLeft size={18} className="mr-2" />
-              Back to list
-            </button>
-          )}
-          
-          <div>
-            <h2 className="text-xl font-bold">Inspection Report Preview</h2>
-            <div className="text-sm text-blue-100 opacity-90">
-              This is a preview of the report that would be exported as PDF
-            </div>
-          </div>
-        </div>
-        
-        {/* Botón de exportación a PDF */}
-        <button 
-          onClick={handleExportPDF}
-          disabled={isExporting}
-          className="flex items-center gap-2 px-4 py-2 bg-white text-blue-600 rounded-lg font-medium hover:bg-blue-50 transition-all duration-200 shadow-lg hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed"
-        >
-          {isExporting ? (
-            <>
-              <div className="animate-spin rounded-full h-4 w-4 border-t-2 border-b-2 border-blue-600"></div>
-              <span>Exporting...</span>
-            </>
-          ) : (
-            <>
-              <Download size={18} />
-              <span>Export PDF</span>
-            </>
-          )}
-        </button>
-      </div>
-      
-      {/* CAMBIO: Usar el nuevo componente DatabaseReportView */}
-      <div id="database-report-container">
-        <DatabaseReportView inspectionData={inspectionData} />
-      </div>
-    </div>
-  );
+  }, [inspectionData, dispatch]);
+  
+  if (!dataLoaded) {
+    return <div>Loading report data...</div>;
+  }
+  
+  return <ReportViewDashboard />;
 };
 
-// Componente principal DatabaseView (sin cambios en la lógica)
+// Componente principal DatabaseView
 const DatabaseView = () => {
   const navigate = useNavigate();
   const { loadInspection, dispatch } = useInspection();
@@ -394,9 +338,14 @@ const DatabaseView = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedFilter, setSelectedFilter] = useState('all');
   
-  // ESTADOS PARA MANEJAR LAS VISTAS
-  const [currentView, setCurrentView] = useState('list'); // 'list', 'details', 'report'
+  // Estados para manejar las vistas
+  const [currentView, setCurrentView] = useState('list'); // 'list' o 'details'
   const [selectedInspection, setSelectedInspection] = useState(null);
+  
+  // Estados para el modal de confirmación de PDF
+  const [showPdfModal, setShowPdfModal] = useState(false);
+  const [pdfInspectionData, setPdfInspectionData] = useState(null);
+  const [isGeneratingPdf, setIsGeneratingPdf] = useState(false);
   
   // Estados para navegación por mes/año
   const [currentDate, setCurrentDate] = useState(() => {
@@ -612,7 +561,7 @@ const DatabaseView = () => {
     applyFilters();
   };
 
-  // Handle view report
+  // NUEVO: Handle view report - Mostrar modal de confirmación
   const handleViewReport = async (inspectionId) => {
     try {
       setLoading(true);
@@ -621,16 +570,14 @@ const DatabaseView = () => {
       const inspection = inspections.find(insp => insp.id === inspectionId);
       
       if (inspection) {
-        setSelectedInspection(inspection);
-        setCurrentView('report');
-        setSuccessMessage("Inspection report loaded successfully");
+        setPdfInspectionData(inspection);
+        setShowPdfModal(true);
       } else {
         // Si no está en la lista actual, intentar cargar desde Firebase
         if (typeof loadInspection === 'function') {
           const inspectionData = await loadInspection(inspectionId);
-          setSelectedInspection(inspectionData);
-          setCurrentView('report');
-          setSuccessMessage("Inspection report loaded successfully");
+          setPdfInspectionData(inspectionData);
+          setShowPdfModal(true);
         } else {
           throw new Error('Unable to load inspection report');
         }
@@ -644,7 +591,42 @@ const DatabaseView = () => {
     }
   };
 
-  // Handle view details
+  // NUEVO: Generar PDF después de confirmar
+  const handleGeneratePdf = async () => {
+    setIsGeneratingPdf(true);
+    
+    try {
+      // Esperar un momento para que el contenido se renderice
+      setTimeout(async () => {
+        try {
+          const { exportToPDF, generateFilename } = await import('../../utils/pdfExportService');
+          const filename = generateFilename(pdfInspectionData);
+          
+          await exportToPDF('hidden-report-container', {
+            filename: filename,
+            orientation: 'portrait',
+            scale: 2,
+            showNotification: true
+          });
+          
+          setSuccessMessage("PDF generated successfully!");
+          setShowPdfModal(false);
+          setPdfInspectionData(null);
+        } catch (error) {
+          console.error('Error generating PDF:', error);
+          setError('Failed to generate PDF. Please try again.');
+        } finally {
+          setIsGeneratingPdf(false);
+        }
+      }, 1000);
+    } catch (error) {
+      console.error('Error in PDF generation process:', error);
+      setError('Failed to generate PDF. Please try again.');
+      setIsGeneratingPdf(false);
+    }
+  };
+
+  // Handle view details (sin cambios)
   const handleViewDetails = async (inspectionId) => {
     try {
       setLoading(true);
@@ -694,18 +676,9 @@ const DatabaseView = () => {
         />
       )}
       
-      {/* Si estamos en la vista de reporte, mostrar InspectionReport */}
-      {currentView === 'report' && selectedInspection && (
-        <InspectionReport 
-          inspectionData={selectedInspection}
-          onBack={handleBackToList}
-        />
-      )}
-      
       {/* Si estamos en la vista de lista, mostrar la interfaz normal */}
       {currentView === 'list' && (
         <div className="database-card">
-          {/* Resto del contenido sin cambios... */}
           <div className="database-header">
             <h1 className="database-title">
               <Database size={24} />
@@ -892,7 +865,7 @@ const DatabaseView = () => {
                           <div className="database-action-buttons">
                             <button 
                               className="database-action-btn database-action-btn-view" 
-                              title="View Report"
+                              title="Generate PDF Report"
                               onClick={() => handleViewReport(inspection.id)}
                             >
                               <FileText size={18} />
@@ -952,6 +925,153 @@ const DatabaseView = () => {
               </div>
             )}
           </div>
+        </div>
+      )}
+      
+      {/* NUEVO: Modal de confirmación para PDF */}
+      {showPdfModal && (
+        <div className="modal-overlay" style={{
+          position: 'fixed',
+          inset: 0,
+          backgroundColor: 'rgba(0, 0, 0, 0.5)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          zIndex: 1000
+        }}>
+          <div className="modal-content" style={{
+            backgroundColor: 'white',
+            borderRadius: '0.5rem',
+            boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)',
+            padding: '2rem',
+            maxWidth: '400px',
+            width: '90%',
+            animation: 'fadeIn 0.3s ease-out'
+          }}>
+            <div style={{display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '1.5rem'}}>
+              <h3 style={{fontSize: '1.25rem', fontWeight: '600', color: '#1f2937', margin: 0}}>
+                Generate PDF Report
+              </h3>
+              <button
+                onClick={() => {
+                  setShowPdfModal(false);
+                  setPdfInspectionData(null);
+                }}
+                style={{
+                  background: 'none',
+                  border: 'none',
+                  padding: '0.25rem',
+                  cursor: 'pointer',
+                  borderRadius: '0.25rem',
+                  color: '#6b7280',
+                  transition: 'all 0.2s'
+                }}
+                onMouseOver={(e) => e.currentTarget.style.backgroundColor = '#f3f4f6'}
+                onMouseOut={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
+              >
+                <X size={20} />
+              </button>
+            </div>
+            
+            <div style={{marginBottom: '1.5rem'}}>
+              <p style={{color: '#4b5563', marginBottom: '1rem'}}>
+                Would you like to generate a complete PDF report for this inspection?
+              </p>
+              
+              {pdfInspectionData && (
+                <div style={{
+                  backgroundColor: '#f9fafb',
+                  padding: '1rem',
+                  borderRadius: '0.375rem',
+                  border: '1px solid #e5e7eb'
+                }}>
+                  <p style={{margin: '0 0 0.5rem 0', fontWeight: '600', color: '#374151'}}>
+                    {getComponentName(pdfInspectionData)}
+                  </p>
+                  <p style={{margin: '0 0 0.25rem 0', fontSize: '0.875rem', color: '#6b7280'}}>
+                    Code: {getComponentCode(pdfInspectionData)}
+                  </p>
+                  <p style={{margin: '0', fontSize: '0.875rem', color: '#6b7280'}}>
+                    Date: {getInspectionDate(pdfInspectionData)}
+                  </p>
+                </div>
+              )}
+            </div>
+            
+            <div style={{display: 'flex', gap: '0.75rem', justifyContent: 'flex-end'}}>
+              <button
+                onClick={() => {
+                  setShowPdfModal(false);
+                  setPdfInspectionData(null);
+                }}
+                disabled={isGeneratingPdf}
+                style={{
+                  padding: '0.5rem 1rem',
+                  borderRadius: '0.375rem',
+                  border: '1px solid #d1d5db',
+                  backgroundColor: 'white',
+                  color: '#374151',
+                  fontWeight: '500',
+                  cursor: isGeneratingPdf ? 'not-allowed' : 'pointer',
+                  opacity: isGeneratingPdf ? 0.5 : 1,
+                  transition: 'all 0.2s'
+                }}
+                onMouseOver={(e) => !isGeneratingPdf && (e.currentTarget.style.backgroundColor = '#f9fafb')}
+                onMouseOut={(e) => (e.currentTarget.style.backgroundColor = 'white')}
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleGeneratePdf}
+                disabled={isGeneratingPdf}
+                style={{
+                  padding: '0.5rem 1rem',
+                  borderRadius: '0.375rem',
+                  border: 'none',
+                  backgroundColor: '#3b82f6',
+                  color: 'white',
+                  fontWeight: '500',
+                  cursor: isGeneratingPdf ? 'not-allowed' : 'pointer',
+                  opacity: isGeneratingPdf ? 0.7 : 1,
+                  transition: 'all 0.2s',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '0.5rem'
+                }}
+                onMouseOver={(e) => !isGeneratingPdf && (e.currentTarget.style.backgroundColor = '#2563eb')}
+                onMouseOut={(e) => (e.currentTarget.style.backgroundColor = '#3b82f6')}
+              >
+                {isGeneratingPdf ? (
+                  <>
+                    <div className="animate-spin rounded-full h-4 w-4 border-t-2 border-b-2 border-white"></div>
+                    <span>Generating...</span>
+                  </>
+                ) : (
+                  <>
+                    <Download size={16} />
+                    <span>Generate PDF</span>
+                  </>
+                )}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+      
+      {/* NUEVO: Contenedor oculto para generar el PDF */}
+      {pdfInspectionData && isGeneratingPdf && (
+        <div style={{
+          position: 'fixed',
+          top: '-9999px',
+          left: '-9999px',
+          width: '210mm',
+          visibility: 'hidden'
+        }}>
+          <InspectionProvider>
+            <div id="hidden-report-container">
+              <HiddenReportContent inspectionData={pdfInspectionData} />
+            </div>
+          </InspectionProvider>
         </div>
       )}
     </div>

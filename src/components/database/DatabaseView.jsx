@@ -791,44 +791,49 @@ const DatabaseView = () => {
 
   // NUEVO: Generar PDF después de confirmar
  // NUEVO: Generar PDF después de confirmar (VERSIÓN QUE FUNCIONA)
+// NUEVO: Generar PDF después de confirmar (TIMING CORREGIDO)
 const handleGeneratePdf = async () => {
   setIsGeneratingPdf(true);
   
   try {
     console.log('🔥 Iniciando generación PDF desde Database...');
     
-    // PASO 1: Asegurar que el contenedor existe y tiene contenido
-    let container = document.getElementById('hidden-report-container');
+    // PASO 1: Esperar a que se cree el contenedor oculto
+    console.log('⏰ Esperando a que se cree el contenedor oculto...');
+    await new Promise(resolve => setTimeout(resolve, 1000));
     
-    if (!container) {
-      console.error('❌ Contenedor hidden-report-container no encontrado');
-      throw new Error('Report container not found');
+    // PASO 2: Buscar el contenedor con reintentos
+    let container = null;
+    let attempts = 0;
+    const maxAttempts = 10;
+    
+    while (!container && attempts < maxAttempts) {
+      container = document.getElementById('hidden-report-container');
+      if (!container) {
+        console.log(`⏳ Intento ${attempts + 1}/${maxAttempts} - Contenedor no encontrado, esperando...`);
+        await new Promise(resolve => setTimeout(resolve, 500));
+        attempts++;
+      } else {
+        console.log('✅ Contenedor encontrado en intento', attempts + 1);
+      }
     }
     
-    // PASO 2: Esperar tiempo suficiente para que se renderice TODO
-    console.log('⏰ Esperando 5 segundos para renderización completa...');
-    await new Promise(resolve => setTimeout(resolve, 5000));
+    if (!container) {
+      console.error('❌ Contenedor hidden-report-container no encontrado después de todos los intentos');
+      throw new Error('Report container not found after waiting');
+    }
     
-    // PASO 3: Verificar nuevamente que el contenedor tiene contenido
-    container = document.getElementById('hidden-report-container');
+    // PASO 3: Esperar a que el contenido se renderice completamente
+    console.log('⏰ Esperando renderización completa del contenido...');
+    await new Promise(resolve => setTimeout(resolve, 3000));
+    
+    // PASO 4: Verificar que el contenido está listo
     const tables = container.querySelectorAll('table');
     const allCells = container.querySelectorAll('td');
     
     console.log('📊 Verificación final:');
     console.log('- Tablas encontradas:', tables.length);
     console.log('- Celdas totales:', allCells.length);
-    
-    // PASO 4: Forzar un último re-render si es necesario
-    if (tables.length === 0) {
-      console.log('⚠️ No hay tablas, forzando re-render...');
-      
-      // Crear evento personalizado para forzar re-render
-      const event = new CustomEvent('forceRerender');
-      container.dispatchEvent(event);
-      
-      // Esperar un poco más
-      await new Promise(resolve => setTimeout(resolve, 2000));
-    }
     
     // PASO 5: Verificar contenido dimensional específicamente
     const dimensionalCells = Array.from(allCells).filter(cell => {
@@ -845,10 +850,19 @@ const handleGeneratePdf = async () => {
         console.log(`  ${i + 1}: ${cell.textContent.trim()}`);
       });
     } else {
-      console.warn('⚠️ No se encontraron valores dimensionales visibles');
+      console.warn('⚠️ No se encontraron valores dimensionales, esperando un poco más...');
+      await new Promise(resolve => setTimeout(resolve, 2000));
+      
+      // Verificar nuevamente
+      const newDimensionalCells = Array.from(container.querySelectorAll('td')).filter(cell => {
+        const text = cell.textContent.trim();
+        return /^\d+(\.\d+)?$/.test(text) && parseFloat(text) >= 0;
+      });
+      
+      console.log('🔢 Segunda verificación - valores numéricos:', newDimensionalCells.length);
     }
     
-    // PASO 6: Generar PDF (usando la misma función que funciona en Report normal)
+    // PASO 6: Generar PDF
     console.log('🚀 Generando PDF...');
     
     const { exportToPDF, generateFilename } = await import('../../utils/pdfExportService');
@@ -856,7 +870,6 @@ const handleGeneratePdf = async () => {
     
     console.log('📄 Filename:', filename);
     
-    // Usar las mismas opciones que en Report normal
     await exportToPDF('hidden-report-container', {
       filename: filename,
       orientation: 'portrait', 
@@ -874,13 +887,13 @@ const handleGeneratePdf = async () => {
     console.error('❌ Error completo:', error);
     console.error('Stack trace:', error.stack);
     
-    // Dar más información del error
+    // Dar información más específica del error
     if (error.message.includes('container')) {
-      setError('Error: Report container not found. Please try again.');
+      setError('Error: Could not find or create the report container. Please try again.');
     } else if (error.message.includes('exportToPDF')) {
-      setError('Error: PDF export failed. Please check console for details.');
+      setError('Error: PDF export function failed. Please check console for details.');
     } else {
-      setError(`PDF generation failed: ${error.message}`);
+      setError(`PDF generation failed: ${error.message}. Check console for details.`);
     }
   } finally {
     setIsGeneratingPdf(false);

@@ -20,8 +20,7 @@ import {
   Download,
   ListFilter,
   ArrowLeft,
-  Info,
-  X
+  Info
 } from 'lucide-react';
 import { getInspections, deleteInspection } from '../../firebase/inspectionService';
 import { useInspection } from '../../context/InspectionContext';
@@ -291,191 +290,260 @@ const InspectionDetails = ({ inspectionData, onBack }) => {
   );
 };
 
-// NUEVO: Componente HiddenReportContent que pasa datos directamente
-// Componente para el contenido del reporte oculto (VERSIÓN LIMPIA)
-const HiddenReportContent = ({ inspectionData }) => {
+// FUNCIÓN AUXILIAR para convertir datos de Firestore al formato esperado por el contexto
+const convertFirestoreDataToContext = (firestoreData) => {
+  console.log('🔄 Convirtiendo datos de Firestore:', firestoreData);
+  
+  // Si los datos ya están en formato plano (directamente convertidos), usarlos tal como están
+  if (firestoreData.dimensionMeasurements && firestoreData.dimensions) {
+    console.log('✅ Datos ya en formato plano');
+    return {
+      ...firestoreData,
+      // Asegurar que estos campos existan
+      dimensionMeasurements: firestoreData.dimensionMeasurements || {},
+      dimensions: firestoreData.dimensions || [],
+      dimensionNonConformities: firestoreData.dimensionNonConformities || {},
+      localCoatingMeasurements: firestoreData.localCoatingMeasurements || [],
+      coatingRequirements: firestoreData.coatingRequirements || {},
+      coatingStats: firestoreData.coatingStats || {},
+      photos: firestoreData.photos || [],
+      measurementEquipment: firestoreData.measurementEquipment || [],
+      visualConformity: firestoreData.visualConformity || '',
+      visualNotes: firestoreData.visualNotes || ''
+    };
+  }
+  
+  // Si los datos están en estructura anidada de Firestore, extraerlos
+  const measurements = firestoreData.measurements || {};
+  const dimensional = measurements.dimensional || {};
+  const coating = measurements.coating || {};
+  const visual = measurements.visual || {};
+  
+  console.log('📊 Extrayendo de estructura anidada:', {
+    dimensional: dimensional,
+    coating: coating,
+    visual: visual
+  });
+  
+  return {
+    // Información básica
+    id: firestoreData.id || '',
+    client: firestoreData.client || firestoreData.componentInfo?.client || '',
+    projectName: firestoreData.projectName || firestoreData.componentInfo?.projectName || '',
+    componentFamily: firestoreData.componentFamily || firestoreData.componentInfo?.componentFamily || '',
+    componentCode: firestoreData.componentCode || firestoreData.componentInfo?.componentCode || '',
+    componentName: firestoreData.componentName || firestoreData.componentInfo?.componentName || '',
+    surfaceProtection: firestoreData.surfaceProtection || firestoreData.componentInfo?.surfaceProtection || '',
+    thickness: firestoreData.thickness || firestoreData.componentInfo?.thickness || '',
+    specialCoating: firestoreData.specialCoating || firestoreData.componentInfo?.specialCoating || '',
+    batchQuantity: firestoreData.batchQuantity || firestoreData.componentInfo?.batchQuantity || '',
+    
+    // Información de inspección
+    inspector: firestoreData.inspector || firestoreData.inspectionInfo?.inspector || '',
+    inspectionDate: firestoreData.inspectionDate || firestoreData.inspectionInfo?.inspectionDate || '',
+    inspectionCountry: firestoreData.inspectionCountry || firestoreData.inspectionInfo?.inspectionCountry || '',
+    inspectionCity: firestoreData.inspectionCity || firestoreData.inspectionInfo?.inspectionCity || '',
+    inspectionSite: firestoreData.inspectionSite || firestoreData.inspectionInfo?.inspectionSite || '',
+    inspectionAddress: firestoreData.inspectionAddress || firestoreData.inspectionInfo?.inspectionAddress || '',
+    mapCoords: firestoreData.mapCoords || firestoreData.inspectionInfo?.coordinates || { lat: 40.416775, lng: -3.703790 },
+    
+    // Datos dimensionales
+    dimensions: dimensional.dimensions || firestoreData.dimensions || [],
+    dimensionMeasurements: dimensional.measurements || firestoreData.dimensionMeasurements || {},
+    dimensionNonConformities: dimensional.nonConformities || firestoreData.dimensionNonConformities || {},
+    completedDimensions: dimensional.completedDimensions || firestoreData.completedDimensions || {},
+    
+    // Datos de recubrimiento
+    coatingRequirements: coating.requirements || firestoreData.coatingRequirements || {},
+    meanCoating: coating.meanCoating || firestoreData.meanCoating || '',
+    localCoatingMeasurements: coating.localMeasurements || firestoreData.localCoatingMeasurements || [],
+    coatingStats: coating.stats || firestoreData.coatingStats || {},
+    
+    // Inspección visual
+    visualConformity: visual.conformity || firestoreData.visualConformity || '',
+    visualNotes: visual.notes || firestoreData.visualNotes || '',
+    photos: visual.photos || firestoreData.photos || [],
+    
+    // Equipo de medición
+    measurementEquipment: firestoreData.measurementEquipment || firestoreData.equipment || [],
+    
+    // Información de muestra
+    sampleInfo: firestoreData.sampleInfo || firestoreData.sampleInfo?.sampleInfo || '',
+    inspectionStep: firestoreData.inspectionStep || firestoreData.sampleInfo?.inspectionStep || 'first',
+    
+    // Resultados finales
+    totalNonConformities: firestoreData.totalNonConformities || firestoreData.finalResults?.totalNonConformities || 0,
+    inspectionStatus: firestoreData.inspectionStatus || firestoreData.finalResults?.inspectionStatus || 'in-progress'
+  };
+};
+
+// InspectionReport CORREGIDO
+const InspectionReport = ({ inspectionData, onBack }) => {
+  const [isExporting, setIsExporting] = useState(false);
+
+  if (!inspectionData) {
+    return (
+      <div className="dashboard-card">
+        <div className="card-body text-center text-gray-500">
+          No inspection data available for report generation
+        </div>
+      </div>
+    );
+  }
+
+  // Función para exportar a PDF CORREGIDA
+  const handleExportPDF = async () => {
+    if (isExporting) return;
+    
+    setIsExporting(true);
+    
+    try {
+      console.log('🎯 Iniciando exportación PDF desde Database...');
+      
+      // Esperar un momento para asegurar que el contenedor esté renderizado
+      await new Promise(resolve => setTimeout(resolve, 500));
+      
+      const { exportToPDF, generateFilename } = await import('../../utils/pdfExportService');
+      const filename = generateFilename(inspectionData);
+      
+      console.log('📄 Exportando con filename:', filename);
+      
+      await exportToPDF('database-report-container', {
+        filename: filename,
+        orientation: 'portrait',
+        scale: 2,
+        showNotification: true
+      });
+      
+      console.log('✅ PDF exportado exitosamente');
+      
+    } catch (error) {
+      console.error('❌ Error exporting PDF:', error);
+      alert('Error generating PDF. Please try again.');
+    } finally {
+      setIsExporting(false);
+    }
+  };
+
+  return (
+    <div className="inspection-report-wrapper">
+      {/* Barra de navegación superior */}
+      <div className="database-report-header">
+        <div className="flex items-center">
+          {onBack && (
+            <button 
+              onClick={onBack}
+              className="flex items-center text-white hover:text-blue-200 transition-colors mr-4"
+              style={{
+                background: 'rgba(255, 255, 255, 0.2)',
+                padding: '0.5rem 1rem',
+                borderRadius: '0.375rem',
+                border: '1px solid rgba(255, 255, 255, 0.3)'
+              }}
+            >
+              <ArrowLeft size={18} className="mr-2" />
+              Back to list
+            </button>
+          )}
+          
+          <div>
+            <h2 className="text-xl font-bold">Inspection Report Preview</h2>
+            <div className="text-sm text-blue-100 opacity-90">
+              Component: {inspectionData.componentName || inspectionData.componentCode || 'Unknown'}
+            </div>
+          </div>
+        </div>
+        
+        {/* Botón de exportación a PDF */}
+        <button 
+          onClick={handleExportPDF}
+          disabled={isExporting}
+          className="flex items-center gap-2 px-4 py-2 bg-white text-blue-600 rounded-lg font-medium hover:bg-blue-50 transition-all duration-200 shadow-lg hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed"
+        >
+          {isExporting ? (
+            <>
+              <div className="animate-spin rounded-full h-4 w-4 border-t-2 border-b-2 border-blue-600"></div>
+              <span>Exporting...</span>
+            </>
+          ) : (
+            <>
+              <Download size={18} />
+              <span>Export PDF</span>
+            </>
+          )}
+        </button>
+      </div>
+      
+      {/* Provider anidado con datos corregidos */}
+      <InspectionProvider>
+        <InspectionReportContent inspectionData={inspectionData} />
+      </InspectionProvider>
+    </div>
+  );
+};
+
+// Componente interno CORREGIDO que tiene acceso al contexto de inspección
+const InspectionReportContent = ({ inspectionData }) => {
   const { dispatch } = useInspection();
   const [dataLoaded, setDataLoaded] = useState(false);
+  const [renderKey, setRenderKey] = useState(0);
   
   React.useEffect(() => {
     if (inspectionData) {
-      console.log('🔍 Cargando datos para PDF:', inspectionData.componentName);
-      console.log('📋 Dimensiones:', inspectionData.dimensions?.length || 0);
-      console.log('📊 Mediciones:', Object.keys(inspectionData.dimensionMeasurements || {}).length);
+      console.log('🔍 Cargando datos para reporte:', inspectionData.componentName || inspectionData.componentCode);
       
-      const dataToLoad = {
-        // Datos básicos
-        client: inspectionData.client || 'Valmont Solar',
-        projectName: inspectionData.projectName || 'NEPI',
-        componentFamily: inspectionData.componentFamily || '',
-        componentCode: inspectionData.componentCode || '',
-        componentName: inspectionData.componentName || '',
-        surfaceProtection: inspectionData.surfaceProtection || '',
-        thickness: inspectionData.thickness || '',
-        specialCoating: inspectionData.specialCoating || '',
-        batchQuantity: inspectionData.batchQuantity || '',
-        
-        // Datos de inspección
-        inspector: inspectionData.inspector || '',
-        inspectionDate: inspectionData.inspectionDate || '',
-        inspectionCountry: inspectionData.inspectionCountry || '',
-        inspectionCity: inspectionData.inspectionCity || '',
-        inspectionSite: inspectionData.inspectionSite || '',
-        inspectionAddress: inspectionData.inspectionAddress || '',
-        mapCoords: inspectionData.mapCoords || { lat: 40.416775, lng: -3.703790 },
-        
-        // DATOS DIMENSIONALES
-        dimensions: inspectionData.dimensions || [],
-        dimensionMeasurements: inspectionData.dimensionMeasurements || {},
-        dimensionNonConformities: inspectionData.dimensionNonConformities || {},
-        completedDimensions: inspectionData.completedDimensions || {},
-        
-        // Otros datos
-        coatingRequirements: inspectionData.coatingRequirements || {},
-        meanCoating: inspectionData.meanCoating || '',
-        localCoatingMeasurements: inspectionData.localCoatingMeasurements || [],
-        coatingStats: inspectionData.coatingStats || {},
-        visualConformity: inspectionData.visualConformity || '',
-        visualNotes: inspectionData.visualNotes || '',
-        photos: inspectionData.photos || [],
-        measurementEquipment: inspectionData.measurementEquipment || [],
-        sampleInfo: inspectionData.sampleInfo || '',
-        inspectionStep: inspectionData.inspectionStep || 'first',
-        totalNonConformities: inspectionData.totalNonConformities || 0,
-        inspectionStatus: inspectionData.inspectionStatus || 'in-progress'
-      };
+      // CORREGIR: Convertir datos de Firestore al formato esperado por el contexto
+      const contextData = convertFirestoreDataToContext(inspectionData);
       
-      console.log('🚀 Datos procesados para contexto:', {
-        dimensions: dataToLoad.dimensions.length,
-        dimensionMeasurements: Object.keys(dataToLoad.dimensionMeasurements).length,
-        inspector: dataToLoad.inspector,
-        componentName: dataToLoad.componentName
+      console.log('🚀 Datos convertidos para contexto:', {
+        componentName: contextData.componentName,
+        dimensions: contextData.dimensions?.length || 0,
+        measurements: Object.keys(contextData.dimensionMeasurements || {}).length,
+        photos: contextData.photos?.length || 0
       });
       
-      // Múltiples dispatches para asegurar carga
-      dispatch({ type: 'LOAD_INSPECTION_DATA', payload: dataToLoad });
+      // Cargar datos en el contexto
+      dispatch({ type: 'LOAD_INSPECTION_DATA', payload: contextData });
       
-      setTimeout(() => {
-        dispatch({ type: 'LOAD_INSPECTION_DATA', payload: dataToLoad });
-      }, 200);
+      // Escalonado de re-renders para asegurar carga completa
+      const timers = [];
       
-      setTimeout(() => {
-        dispatch({ type: 'LOAD_INSPECTION_DATA', payload: dataToLoad });
+      timers.push(setTimeout(() => setRenderKey(prev => prev + 1), 300));
+      timers.push(setTimeout(() => setRenderKey(prev => prev + 1), 600));
+      timers.push(setTimeout(() => {
         setDataLoaded(true);
-      }, 500);
+        setRenderKey(prev => prev + 1);
+      }, 1000));
+      timers.push(setTimeout(() => setRenderKey(prev => prev + 1), 1500));
+      
+      return () => {
+        timers.forEach(clearTimeout);
+      };
     }
   }, [inspectionData, dispatch]);
   
   if (!dataLoaded) {
     return (
-      <div style={{ 
-        padding: '2rem', 
-        textAlign: 'center',
-        fontSize: '1rem',
-        color: '#666'
-      }}>
-        Loading dimensional data for PDF...
+      <div id="database-report-container" style={{ padding: '2rem', textAlign: 'center' }}>
+        <div className="flex flex-col items-center justify-center">
+          <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-blue-600 mb-4"></div>
+          <div>Loading report data...</div>
+          <div style={{ fontSize: '0.8rem', color: '#666', marginTop: '1rem' }}>
+            Processing inspection data: {inspectionData.componentName || inspectionData.componentCode}
+          </div>
+        </div>
       </div>
     );
   }
   
-  return <ReportViewDashboard />;
-};
-
-// Componente simplificado que renderiza las tablas dimensionales directamente
-const DirectReportView = ({ reportData }) => {
-  const { 
-    dimensions, 
-    dimensionMeasurements, 
-    inspector, 
-    componentName,
-    sampleInfo 
-  } = reportData;
-  
-  console.log('🎯 === DIRECTREPORTVIEW RECIBIENDO DATOS ===');
-  console.log('dimensions:', dimensions);
-  console.log('dimensionMeasurements:', dimensionMeasurements);
-  console.log('inspector:', inspector);
-  
-  // Calcular número de muestras
-  const getSampleCount = (sampleInfo) => {
-    if (!sampleInfo) return 3; // Default
-    const match = sampleInfo.match(/Sample: (\d+)/);
-    return match ? parseInt(match[1]) : 3;
-  };
-  
-  const sampleCount = getSampleCount(sampleInfo);
-  console.log('Sample count calculado:', sampleCount);
-  
   return (
-    <div id="direct-report-content">
-      <h2>INSPECTION REPORT - DIRECT</h2>
-      
-      <div style={{ marginBottom: '2rem' }}>
-        <h3>Inspector: {inspector}</h3>
-        <h3>Component: {componentName}</h3>
-      </div>
-      
-      {dimensions && dimensions.length > 0 ? (
-        <div>
-          <h3>Dimensional Measurements</h3>
-          <table style={{ width: '100%', borderCollapse: 'collapse', border: '1px solid #ccc' }}>
-            <thead>
-              <tr style={{ backgroundColor: '#f5f5f5' }}>
-                <th style={{ border: '1px solid #ccc', padding: '8px' }}>Sample</th>
-                {dimensions.map((dim) => (
-                  <th key={dim.code} style={{ border: '1px solid #ccc', padding: '8px' }}>
-                    <div>{dim.code}</div>
-                    <div style={{ fontSize: '0.8rem' }}>
-                      {dim.nominal} mm ({dim.tolerancePlus > 0 ? '+' : ''}{dim.tolerancePlus}, {dim.toleranceMinus > 0 ? '+' : ''}{dim.toleranceMinus})
-                    </div>
-                  </th>
-                ))}
-              </tr>
-            </thead>
-            <tbody>
-              {Array.from({ length: sampleCount }).map((_, sampleIndex) => (
-                <tr key={sampleIndex}>
-                  <td style={{ border: '1px solid #ccc', padding: '8px', fontWeight: 'bold' }}>
-                    Sample {sampleIndex + 1}
-                  </td>
-                  {dimensions.map((dim) => {
-                    const value = dimensionMeasurements?.[dim.code]?.[sampleIndex] || "-";
-                    console.log(`Renderizando ${dim.code}[${sampleIndex}]: "${value}"`);
-                    
-                    return (
-                      <td 
-                        key={dim.code} 
-                        style={{ 
-                          border: '1px solid #ccc', 
-                          padding: '8px', 
-                          textAlign: 'center',
-                          backgroundColor: value !== "-" ? '#fff' : '#f9f9f9'
-                        }}
-                      >
-                        {value}
-                      </td>
-                    );
-                  })}
-                </tr>
-              ))}
-            </tbody>
-          </table>
-          
-          <div style={{ marginTop: '1rem', fontSize: '0.9rem', color: '#666' }}>
-            Total dimensions: {dimensions.length} | Sample count: {sampleCount}
-          </div>
-        </div>
-      ) : (
-        <div style={{ padding: '2rem', textAlign: 'center', color: '#999' }}>
-          No dimensional data available.
-        </div>
-      )}
+    <div id="database-report-container" key={renderKey} className="database-report-content">
+      <ReportViewDashboard />
     </div>
   );
 };
 
-// Componente principal DatabaseView
+// Componente principal DatabaseView (resto del código sin cambios...)
 const DatabaseView = () => {
   const navigate = useNavigate();
   const { loadInspection, dispatch } = useInspection();
@@ -486,20 +554,15 @@ const DatabaseView = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedFilter, setSelectedFilter] = useState('all');
   
-  // Estados para manejar las vistas
-  const [currentView, setCurrentView] = useState('list'); // 'list' o 'details'
+  // ESTADOS PARA MANEJAR LAS VISTAS
+  const [currentView, setCurrentView] = useState('list');
   const [selectedInspection, setSelectedInspection] = useState(null);
-  
-  // Estados para el modal de confirmación de PDF
-  const [showPdfModal, setShowPdfModal] = useState(false);
-  const [pdfInspectionData, setPdfInspectionData] = useState(null);
-  const [isGeneratingPdf, setIsGeneratingPdf] = useState(false);
   
   // Estados para navegación por mes/año
   const [currentDate, setCurrentDate] = useState(() => {
     const now = new Date();
     return {
-      month: now.getMonth(), // 0-11
+      month: now.getMonth(),
       year: now.getFullYear()
     };
   });
@@ -709,7 +772,7 @@ const DatabaseView = () => {
     applyFilters();
   };
 
-  // NUEVO: Handle view report - Mostrar modal de confirmación
+  // Handle view report CORREGIDO
   const handleViewReport = async (inspectionId) => {
     try {
       setLoading(true);
@@ -718,14 +781,17 @@ const DatabaseView = () => {
       const inspection = inspections.find(insp => insp.id === inspectionId);
       
       if (inspection) {
-        setPdfInspectionData(inspection);
-        setShowPdfModal(true);
+        console.log('🎯 Cargando reporte para:', inspection.componentName || inspection.componentCode);
+        setSelectedInspection(inspection);
+        setCurrentView('report');
+        setSuccessMessage("Inspection report loaded successfully");
       } else {
         // Si no está en la lista actual, intentar cargar desde Firebase
         if (typeof loadInspection === 'function') {
           const inspectionData = await loadInspection(inspectionId);
-          setPdfInspectionData(inspectionData);
-          setShowPdfModal(true);
+          setSelectedInspection(inspectionData);
+          setCurrentView('report');
+          setSuccessMessage("Inspection report loaded successfully");
         } else {
           throw new Error('Unable to load inspection report');
         }
@@ -738,117 +804,6 @@ const DatabaseView = () => {
       setLoading(false);
     }
   };
-
-  // NUEVO: Generar PDF después de confirmar
- // NUEVO: Generar PDF después de confirmar (VERSIÓN QUE FUNCIONA)
-// NUEVO: Generar PDF después de confirmar (TIMING CORREGIDO)
-const handleGeneratePdf = async () => {
-  setIsGeneratingPdf(true);
-  
-  try {
-    console.log('🔥 Iniciando generación PDF desde Database...');
-    
-    // PASO 1: Esperar a que se cree el contenedor oculto
-    console.log('⏰ Esperando a que se cree el contenedor oculto...');
-    await new Promise(resolve => setTimeout(resolve, 1000));
-    
-    // PASO 2: Buscar el contenedor con reintentos
-    let container = null;
-    let attempts = 0;
-    const maxAttempts = 10;
-    
-    while (!container && attempts < maxAttempts) {
-      container = document.getElementById('hidden-report-container');
-      if (!container) {
-        console.log(`⏳ Intento ${attempts + 1}/${maxAttempts} - Contenedor no encontrado, esperando...`);
-        await new Promise(resolve => setTimeout(resolve, 500));
-        attempts++;
-      } else {
-        console.log('✅ Contenedor encontrado en intento', attempts + 1);
-      }
-    }
-    
-    if (!container) {
-      console.error('❌ Contenedor hidden-report-container no encontrado después de todos los intentos');
-      throw new Error('Report container not found after waiting');
-    }
-    
-    // PASO 3: Esperar a que el contenido se renderice completamente
-    console.log('⏰ Esperando renderización completa del contenido...');
-    await new Promise(resolve => setTimeout(resolve, 3000));
-    
-    // PASO 4: Verificar que el contenido está listo
-    const tables = container.querySelectorAll('table');
-    const allCells = container.querySelectorAll('td');
-    
-    console.log('📊 Verificación final:');
-    console.log('- Tablas encontradas:', tables.length);
-    console.log('- Celdas totales:', allCells.length);
-    
-    // PASO 5: Verificar contenido dimensional específicamente
-    const dimensionalCells = Array.from(allCells).filter(cell => {
-      const text = cell.textContent.trim();
-      // Buscar valores que parezcan mediciones (números, incluye decimales)
-      return /^\d+(\.\d+)?$/.test(text) && parseFloat(text) >= 0;
-    });
-    
-    console.log('🔢 Celdas con valores numéricos:', dimensionalCells.length);
-    
-    if (dimensionalCells.length > 0) {
-      console.log('✅ Valores encontrados:');
-      dimensionalCells.slice(0, 5).forEach((cell, i) => {
-        console.log(`  ${i + 1}: ${cell.textContent.trim()}`);
-      });
-    } else {
-      console.warn('⚠️ No se encontraron valores dimensionales, esperando un poco más...');
-      await new Promise(resolve => setTimeout(resolve, 2000));
-      
-      // Verificar nuevamente
-      const newDimensionalCells = Array.from(container.querySelectorAll('td')).filter(cell => {
-        const text = cell.textContent.trim();
-        return /^\d+(\.\d+)?$/.test(text) && parseFloat(text) >= 0;
-      });
-      
-      console.log('🔢 Segunda verificación - valores numéricos:', newDimensionalCells.length);
-    }
-    
-    // PASO 6: Generar PDF
-    console.log('🚀 Generando PDF...');
-    
-    const { exportToPDF, generateFilename } = await import('../../utils/pdfExportService');
-    const filename = generateFilename(pdfInspectionData);
-    
-    console.log('📄 Filename:', filename);
-    
-    await exportToPDF('hidden-report-container', {
-      filename: filename,
-      orientation: 'portrait', 
-      scale: 2,
-      showNotification: true
-    });
-    
-    console.log('✅ PDF generado exitosamente desde Database');
-    
-    setSuccessMessage("PDF generated successfully!");
-    setShowPdfModal(false);
-    setPdfInspectionData(null);
-    
-  } catch (error) {
-    console.error('❌ Error completo:', error);
-    console.error('Stack trace:', error.stack);
-    
-    // Dar información más específica del error
-    if (error.message.includes('container')) {
-      setError('Error: Could not find or create the report container. Please try again.');
-    } else if (error.message.includes('exportToPDF')) {
-      setError('Error: PDF export function failed. Please check console for details.');
-    } else {
-      setError(`PDF generation failed: ${error.message}. Check console for details.`);
-    }
-  } finally {
-    setIsGeneratingPdf(false);
-  }
-};
 
   // Handle view details (sin cambios)
   const handleViewDetails = async (inspectionId) => {
@@ -895,6 +850,14 @@ const handleGeneratePdf = async () => {
       {/* Si estamos en la vista de detalles, mostrar InspectionDetails */}
       {currentView === 'details' && selectedInspection && (
         <InspectionDetails 
+          inspectionData={selectedInspection}
+          onBack={handleBackToList}
+        />
+      )}
+      
+      {/* Si estamos en la vista de reporte, mostrar InspectionReport */}
+      {currentView === 'report' && selectedInspection && (
+        <InspectionReport 
           inspectionData={selectedInspection}
           onBack={handleBackToList}
         />
@@ -1028,7 +991,7 @@ const handleGeneratePdf = async () => {
               </div>
             )}
             
-            {/* Tabla de inspecciones con columnas ampliadas */}
+            {/* Tabla de inspecciones */}
             {!loading && inspections.length > 0 && (
               <div className="database-table-container">
                 <table className="database-table">
@@ -1089,7 +1052,7 @@ const handleGeneratePdf = async () => {
                           <div className="database-action-buttons">
                             <button 
                               className="database-action-btn database-action-btn-view" 
-                              title="Generate PDF Report"
+                              title="View Report"
                               onClick={() => handleViewReport(inspection.id)}
                             >
                               <FileText size={18} />
@@ -1149,153 +1112,6 @@ const handleGeneratePdf = async () => {
               </div>
             )}
           </div>
-        </div>
-      )}
-      
-      {/* NUEVO: Modal de confirmación para PDF */}
-      {showPdfModal && (
-        <div className="modal-overlay" style={{
-          position: 'fixed',
-          inset: 0,
-          backgroundColor: 'rgba(0, 0, 0, 0.5)',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          zIndex: 1000
-        }}>
-          <div className="modal-content" style={{
-            backgroundColor: 'white',
-            borderRadius: '0.5rem',
-            boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)',
-            padding: '2rem',
-            maxWidth: '400px',
-            width: '90%',
-            animation: 'fadeIn 0.3s ease-out'
-          }}>
-            <div style={{display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '1.5rem'}}>
-              <h3 style={{fontSize: '1.25rem', fontWeight: '600', color: '#1f2937', margin: 0}}>
-                Generate PDF Report
-              </h3>
-              <button
-                onClick={() => {
-                  setShowPdfModal(false);
-                  setPdfInspectionData(null);
-                }}
-                style={{
-                  background: 'none',
-                  border: 'none',
-                  padding: '0.25rem',
-                  cursor: 'pointer',
-                  borderRadius: '0.25rem',
-                  color: '#6b7280',
-                  transition: 'all 0.2s'
-                }}
-                onMouseOver={(e) => e.currentTarget.style.backgroundColor = '#f3f4f6'}
-                onMouseOut={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
-              >
-                <X size={20} />
-              </button>
-            </div>
-            
-            <div style={{marginBottom: '1.5rem'}}>
-              <p style={{color: '#4b5563', marginBottom: '1rem'}}>
-                Would you like to generate a complete PDF report for this inspection?
-              </p>
-              
-              {pdfInspectionData && (
-                <div style={{
-                  backgroundColor: '#f9fafb',
-                  padding: '1rem',
-                  borderRadius: '0.375rem',
-                  border: '1px solid #e5e7eb'
-                }}>
-                  <p style={{margin: '0 0 0.5rem 0', fontWeight: '600', color: '#374151'}}>
-                    {getComponentName(pdfInspectionData)}
-                  </p>
-                  <p style={{margin: '0 0 0.25rem 0', fontSize: '0.875rem', color: '#6b7280'}}>
-                    Code: {getComponentCode(pdfInspectionData)}
-                  </p>
-                  <p style={{margin: '0', fontSize: '0.875rem', color: '#6b7280'}}>
-                    Date: {getInspectionDate(pdfInspectionData)}
-                  </p>
-                </div>
-              )}
-            </div>
-            
-            <div style={{display: 'flex', gap: '0.75rem', justifyContent: 'flex-end'}}>
-              <button
-                onClick={() => {
-                  setShowPdfModal(false);
-                  setPdfInspectionData(null);
-                }}
-                disabled={isGeneratingPdf}
-                style={{
-                  padding: '0.5rem 1rem',
-                  borderRadius: '0.375rem',
-                  border: '1px solid #d1d5db',
-                  backgroundColor: 'white',
-                  color: '#374151',
-                  fontWeight: '500',
-                  cursor: isGeneratingPdf ? 'not-allowed' : 'pointer',
-                  opacity: isGeneratingPdf ? 0.5 : 1,
-                  transition: 'all 0.2s'
-                }}
-                onMouseOver={(e) => !isGeneratingPdf && (e.currentTarget.style.backgroundColor = '#f9fafb')}
-                onMouseOut={(e) => (e.currentTarget.style.backgroundColor = 'white')}
-              >
-                Cancel
-              </button>
-              <button
-                onClick={handleGeneratePdf}
-                disabled={isGeneratingPdf}
-                style={{
-                  padding: '0.5rem 1rem',
-                  borderRadius: '0.375rem',
-                  border: 'none',
-                  backgroundColor: '#3b82f6',
-                  color: 'white',
-                  fontWeight: '500',
-                  cursor: isGeneratingPdf ? 'not-allowed' : 'pointer',
-                  opacity: isGeneratingPdf ? 0.7 : 1,
-                  transition: 'all 0.2s',
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '0.5rem'
-                }}
-                onMouseOver={(e) => !isGeneratingPdf && (e.currentTarget.style.backgroundColor = '#2563eb')}
-                onMouseOut={(e) => (e.currentTarget.style.backgroundColor = '#3b82f6')}
-              >
-                {isGeneratingPdf ? (
-                  <>
-                    <div className="animate-spin rounded-full h-4 w-4 border-t-2 border-b-2 border-white"></div>
-                    <span>Generating...</span>
-                  </>
-                ) : (
-                  <>
-                    <Download size={16} />
-                    <span>Generate PDF</span>
-                  </>
-                )}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-      
-      {/* NUEVO: Contenedor oculto para generar el PDF */}
-      {pdfInspectionData && isGeneratingPdf && (
-        <div style={{
-          position: 'fixed',
-          top: '-9999px',
-          left: '-9999px',
-          width: '210mm',
-          visibility: 'hidden'
-        }}>
-          <InspectionProvider>
-            <div id="hidden-report-container">
-              <HiddenReportContent inspectionData={pdfInspectionData} />
-            </div>
-          </InspectionProvider>
         </div>
       )}
     </div>

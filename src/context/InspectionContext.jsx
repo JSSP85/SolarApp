@@ -617,6 +617,10 @@ case 'LOAD_INSPECTION_DATA':
   });
   
   return newState;
+    default:
+      return state;
+  }
+}
 
 // Provider component
 export const InspectionProvider = ({ children }) => {

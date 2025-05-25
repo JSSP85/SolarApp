@@ -292,45 +292,19 @@ const InspectionDetails = ({ inspectionData, onBack }) => {
 };
 
 // NUEVO: Componente HiddenReportContent que pasa datos directamente
+// Componente para el contenido del reporte oculto (VERSIÓN LIMPIA)
 const HiddenReportContent = ({ inspectionData }) => {
+  const { dispatch } = useInspection();
   const [dataLoaded, setDataLoaded] = useState(false);
-  const [processedData, setProcessedData] = useState(null);
   
   React.useEffect(() => {
     if (inspectionData) {
-      console.log('🔍 === DATOS ORIGINALES DE FIREBASE (HiddenReportContent) ===');
-      console.log('inspectionData completo:', inspectionData);
+      console.log('🔍 Cargando datos para PDF:', inspectionData.componentName);
+      console.log('📋 Dimensiones:', inspectionData.dimensions?.length || 0);
+      console.log('📊 Mediciones:', Object.keys(inspectionData.dimensionMeasurements || {}).length);
       
-      // Procesar datos dimensionales
-      let processedDimensionMeasurements = {};
-      let processedDimensions = [];
-      
-      if (inspectionData.dimensionMeasurements && Object.keys(inspectionData.dimensionMeasurements).length > 0) {
-        processedDimensionMeasurements = inspectionData.dimensionMeasurements;
-        console.log('✅ Usando dimensionMeasurements directo');
-      }
-      
-      if (inspectionData.dimensions && inspectionData.dimensions.length > 0) {
-        processedDimensions = inspectionData.dimensions;
-        console.log('✅ Usando dimensions directo');
-      }
-      
-      console.log('📋 === DATOS PROCESADOS FINALES ===');
-      console.log('processedDimensionMeasurements:', processedDimensionMeasurements);
-      console.log('processedDimensions:', processedDimensions);
-      
-      // Verificar mediciones
-      Object.entries(processedDimensionMeasurements).forEach(([dimCode, values]) => {
-        console.log(`Cota ${dimCode}:`, values);
-        if (Array.isArray(values)) {
-          const nonEmptyValues = values.filter(v => v !== '' && v !== null && v !== undefined);
-          console.log(`  - Valores no vacíos: ${nonEmptyValues.length}/${values.length}`);
-        }
-      });
-      
-      // Crear objeto de datos procesados para pasar directamente al ReportViewDashboard
-      const dataForReport = {
-        // Información básica
+      const dataToLoad = {
+        // Datos básicos
         client: inspectionData.client || 'Valmont Solar',
         projectName: inspectionData.projectName || 'NEPI',
         componentFamily: inspectionData.componentFamily || '',
@@ -341,7 +315,7 @@ const HiddenReportContent = ({ inspectionData }) => {
         specialCoating: inspectionData.specialCoating || '',
         batchQuantity: inspectionData.batchQuantity || '',
         
-        // Información de inspección
+        // Datos de inspección
         inspector: inspectionData.inspector || '',
         inspectionDate: inspectionData.inspectionDate || '',
         inspectionCountry: inspectionData.inspectionCountry || '',
@@ -350,44 +324,49 @@ const HiddenReportContent = ({ inspectionData }) => {
         inspectionAddress: inspectionData.inspectionAddress || '',
         mapCoords: inspectionData.mapCoords || { lat: 40.416775, lng: -3.703790 },
         
-        // 🎯 DATOS DIMENSIONALES PROCESADOS
-        dimensions: processedDimensions,
-        dimensionMeasurements: processedDimensionMeasurements,
+        // DATOS DIMENSIONALES
+        dimensions: inspectionData.dimensions || [],
+        dimensionMeasurements: inspectionData.dimensionMeasurements || {},
         dimensionNonConformities: inspectionData.dimensionNonConformities || {},
+        completedDimensions: inspectionData.completedDimensions || {},
         
-        // Resto de datos
+        // Otros datos
         coatingRequirements: inspectionData.coatingRequirements || {},
         meanCoating: inspectionData.meanCoating || '',
         localCoatingMeasurements: inspectionData.localCoatingMeasurements || [],
         coatingStats: inspectionData.coatingStats || {},
-        
         visualConformity: inspectionData.visualConformity || '',
         visualNotes: inspectionData.visualNotes || '',
         photos: inspectionData.photos || [],
-        
         measurementEquipment: inspectionData.measurementEquipment || [],
-        
         sampleInfo: inspectionData.sampleInfo || '',
         inspectionStep: inspectionData.inspectionStep || 'first',
-        
         totalNonConformities: inspectionData.totalNonConformities || 0,
         inspectionStatus: inspectionData.inspectionStatus || 'in-progress'
       };
       
-      console.log('🚀 === DATOS PROCESADOS PARA REPORTE DIRECTO ===');
-      console.log('dataForReport.dimensionMeasurements:', dataForReport.dimensionMeasurements);
-      console.log('dataForReport.dimensions:', dataForReport.dimensions);
-      console.log('dataForReport.inspector:', dataForReport.inspector);
+      console.log('🚀 Datos procesados para contexto:', {
+        dimensions: dataToLoad.dimensions.length,
+        dimensionMeasurements: Object.keys(dataToLoad.dimensionMeasurements).length,
+        inspector: dataToLoad.inspector,
+        componentName: dataToLoad.componentName
+      });
       
-      setProcessedData(dataForReport);
+      // Múltiples dispatches para asegurar carga
+      dispatch({ type: 'LOAD_INSPECTION_DATA', payload: dataToLoad });
       
       setTimeout(() => {
+        dispatch({ type: 'LOAD_INSPECTION_DATA', payload: dataToLoad });
+      }, 200);
+      
+      setTimeout(() => {
+        dispatch({ type: 'LOAD_INSPECTION_DATA', payload: dataToLoad });
         setDataLoaded(true);
-      }, 1000);
+      }, 500);
     }
-  }, [inspectionData]);
+  }, [inspectionData, dispatch]);
   
-  if (!dataLoaded || !processedData) {
+  if (!dataLoaded) {
     return (
       <div style={{ 
         padding: '2rem', 
@@ -395,17 +374,12 @@ const HiddenReportContent = ({ inspectionData }) => {
         fontSize: '1rem',
         color: '#666'
       }}>
-        Loading report data... (bypassing context, using direct props)
+        Loading dimensional data for PDF...
       </div>
     );
   }
   
-  return (
-    <div>
-      {/* Crear un ReportViewDashboard simplificado que use los datos directamente */}
-      <DirectReportView reportData={processedData} />
-    </div>
-  );
+  return <ReportViewDashboard />;
 };
 
 // Componente simplificado que renderiza las tablas dimensionales directamente

@@ -581,40 +581,86 @@ function inspectionReducer(state, action) {
       
  // SOLO REEMPLAZA EL CASO 'LOAD_INSPECTION_DATA' en tu reducer
 
+// REEMPLAZA COMPLETAMENTE el case 'LOAD_INSPECTION_DATA' en tu reducer
 case 'LOAD_INSPECTION_DATA':
   console.log('🔥 REDUCER: Cargando datos de inspección completos');
-  console.log('📊 Datos recibidos - dimensions:', action.payload.dimensions?.length || 0);
-  console.log('📊 Datos recibidos - dimensionMeasurements:', Object.keys(action.payload.dimensionMeasurements || {}).length);
+  console.log('📊 Datos recibidos - payload completo:', action.payload);
   
-  // IMPORTANTE: Mantener la estructura del estado y solo actualizar campos específicos
+  // DEBUGGING ESPECÍFICO de dimensionMeasurements
+  if (action.payload.dimensionMeasurements) {
+    console.log('📊 dimensionMeasurements en payload:', action.payload.dimensionMeasurements);
+    Object.keys(action.payload.dimensionMeasurements).forEach(dimCode => {
+      console.log(`📊 ${dimCode}:`, action.payload.dimensionMeasurements[dimCode]);
+    });
+  } else {
+    console.log('❌ dimensionMeasurements NO encontrado en payload');
+  }
+  
+  // ESTRATEGIA 1: Preservar datos existentes y mergear cuidadosamente
+  const preservedDimensionMeasurements = { ...state.dimensionMeasurements };
+  const incomingDimensionMeasurements = action.payload.dimensionMeasurements || {};
+  
+  // ESTRATEGIA 2: Mergear mediciones dimensionales explícitamente
+  const finalDimensionMeasurements = {
+    ...preservedDimensionMeasurements,
+    ...incomingDimensionMeasurements
+  };
+  
+  console.log('🔧 Merged dimensionMeasurements:', finalDimensionMeasurements);
+  
+  // ESTRATEGIA 3: Construcción explícita del nuevo estado
   const newState = {
-    ...state, // Mantener el estado actual
-    ...action.payload, // Aplicar los nuevos datos
-    // Forzar que estos campos críticos se mantengan correctamente
+    // PASO 1: Empezar con el estado actual
+    ...state,
+    
+    // PASO 2: Aplicar TODOS los datos del payload
+    ...action.payload,
+    
+    // PASO 3: FORZAR campos críticos específicamente
     dimensions: action.payload.dimensions || state.dimensions || [],
-    dimensionMeasurements: action.payload.dimensionMeasurements || state.dimensionMeasurements || {},
+    dimensionMeasurements: finalDimensionMeasurements,
     dimensionNonConformities: action.payload.dimensionNonConformities || state.dimensionNonConformities || {},
     completedDimensions: action.payload.completedDimensions || state.completedDimensions || {},
+    
+    // PASO 4: Otros campos importantes
     photos: action.payload.photos || state.photos || [],
     localCoatingMeasurements: action.payload.localCoatingMeasurements || state.localCoatingMeasurements || [],
     coatingRequirements: action.payload.coatingRequirements || state.coatingRequirements || {},
     coatingStats: action.payload.coatingStats || state.coatingStats || {},
     measurementEquipment: action.payload.measurementEquipment || state.measurementEquipment || [],
-    visualConformity: action.payload.visualConformity || state.visualConformity || '',
-    visualNotes: action.payload.visualNotes || state.visualNotes || '',
+    visualConformity: action.payload.visualConformity !== undefined ? action.payload.visualConformity : state.visualConformity,
+    visualNotes: action.payload.visualNotes !== undefined ? action.payload.visualNotes : state.visualNotes,
     sampleInfo: action.payload.sampleInfo || state.sampleInfo || '',
-    // Campos de Firebase
+    
+    // PASO 5: Campos específicos de información
+    componentName: action.payload.componentName || state.componentName || '',
+    componentCode: action.payload.componentCode || state.componentCode || '',
+    componentFamily: action.payload.componentFamily || state.componentFamily || '',
+    inspector: action.payload.inspector || state.inspector || '',
+    inspectionDate: action.payload.inspectionDate || state.inspectionDate || '',
+    batchQuantity: action.payload.batchQuantity || state.batchQuantity || '',
+    
+    // PASO 6: Campos de Firebase
     isSaving: false,
     saveError: null,
     hasUnsavedChanges: false
   };
   
-  console.log('🎯 REDUCER: Estado final después de carga:', {
+  // DEBUGGING FINAL
+  console.log('🎯 REDUCER: Estado final construido:', {
     dimensions: newState.dimensions?.length || 0,
     dimensionMeasurements: Object.keys(newState.dimensionMeasurements || {}).length,
+    dimensionMeasurementsDetailed: newState.dimensionMeasurements,
     sampleInfo: newState.sampleInfo,
     componentName: newState.componentName
   });
+  
+  // VERIFICACIÓN CRÍTICA
+  if (Object.keys(newState.dimensionMeasurements || {}).length === 0) {
+    console.error('❌ CRÍTICO: dimensionMeasurements está vacío después del merge!');
+    console.error('❌ Payload original:', action.payload.dimensionMeasurements);
+    console.error('❌ Estado previo:', state.dimensionMeasurements);
+  }
   
   return newState;
     default:

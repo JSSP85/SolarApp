@@ -401,6 +401,8 @@ const convertFirestoreDataToContext = (firestoreData) => {
     Object.keys(firestoreData.dimensionMeasurements).forEach(dimCode => {
       console.log(`📊 Dimensión ${dimCode}:`, firestoreData.dimensionMeasurements[dimCode]);
     });
+  } else {
+    console.log('❌ dimensionMeasurements NO encontrado en datos de Firestore');
   }
   
   if (firestoreData.dimensions) {
@@ -411,14 +413,24 @@ const convertFirestoreDataToContext = (firestoreData) => {
     });
   }
   
+  // ESTRATEGIA MEJORADA: Asegurar que dimensionMeasurements se preserve
+  let finalDimensionMeasurements = {};
+  
+  if (firestoreData.dimensionMeasurements && typeof firestoreData.dimensionMeasurements === 'object') {
+    finalDimensionMeasurements = { ...firestoreData.dimensionMeasurements };
+    console.log('✅ dimensionMeasurements copiado correctamente');
+  } else {
+    console.log('⚠️ dimensionMeasurements no válido, inicializando vacío');
+  }
+  
   // Si los datos ya están en formato plano (directamente convertidos), usarlos tal como están
   if (firestoreData.dimensionMeasurements && firestoreData.dimensions) {
     console.log('✅ Datos ya en formato plano');
     
     const result = {
       ...firestoreData,
-      // Asegurar que estos campos existan y tengan la estructura correcta
-      dimensionMeasurements: firestoreData.dimensionMeasurements || {},
+      // FORZAR campos críticos con verificación
+      dimensionMeasurements: finalDimensionMeasurements,
       dimensions: firestoreData.dimensions || [],
       dimensionNonConformities: firestoreData.dimensionNonConformities || {},
       localCoatingMeasurements: firestoreData.localCoatingMeasurements || [],
@@ -430,13 +442,20 @@ const convertFirestoreDataToContext = (firestoreData) => {
       visualNotes: firestoreData.visualNotes || ''
     };
     
+    // VERIFICACIÓN ADICIONAL
     console.log('🎯 Resultado final de conversión:', {
       componentName: result.componentName,
       dimensions: result.dimensions?.length || 0,
       dimensionMeasurements: Object.keys(result.dimensionMeasurements || {}).length,
+      dimensionMeasurementsContent: result.dimensionMeasurements,
       sampleMeasurementsPerDim: result.dimensions?.length > 0 ? 
         result.dimensionMeasurements[result.dimensions[0]?.code]?.length || 0 : 0
     });
+    
+    // ALERTA si dimensionMeasurements está vacío
+    if (Object.keys(result.dimensionMeasurements).length === 0) {
+      console.error('❌ ALERTA: dimensionMeasurements está vacío en resultado final');
+    }
     
     return result;
   }

@@ -291,40 +291,238 @@ const InspectionDetails = ({ inspectionData, onBack }) => {
   );
 };
 
-// Componente para el contenido del reporte oculto
+// Componente para el contenido del reporte oculto (MEJORADO)
 const HiddenReportContent = ({ inspectionData }) => {
-  const { dispatch } = useInspection();
+  const { dispatch, state } = useInspection();
   const [dataLoaded, setDataLoaded] = useState(false);
+  const [renderKey, setRenderKey] = useState(0);
   
   React.useEffect(() => {
     if (inspectionData) {
+      console.log('🔍 === DATOS ORIGINALES DE FIREBASE (HiddenReportContent) ===');
+      console.log('inspectionData completo:', inspectionData);
+      console.log('dimensionMeasurements directo:', inspectionData.dimensionMeasurements);
+      console.log('dimensions directo:', inspectionData.dimensions);
+      console.log('measurements object:', inspectionData.measurements);
+      
+      // Verificar todas las posibles ubicaciones de los datos dimensionales
+      console.log('🔎 === BUSCANDO DATOS DIMENSIONALES ===');
+      console.log('Opción 1 - directo:', inspectionData.dimensionMeasurements);
+      console.log('Opción 2 - anidado:', inspectionData.measurements?.dimensional?.measurements);
+      console.log('Dimensions opción 1:', inspectionData.dimensions);
+      console.log('Dimensions opción 2:', inspectionData.measurements?.dimensional?.dimensions);
+      
+      // Intentar múltiples estrategias para obtener los datos
+      let processedDimensionMeasurements = {};
+      let processedDimensions = [];
+      
+      // Estrategia 1: Datos directos
+      if (inspectionData.dimensionMeasurements && Object.keys(inspectionData.dimensionMeasurements).length > 0) {
+        processedDimensionMeasurements = inspectionData.dimensionMeasurements;
+        console.log('✅ Usando dimensionMeasurements directo');
+      }
+      // Estrategia 2: Datos anidados en measurements
+      else if (inspectionData.measurements?.dimensional?.measurements) {
+        processedDimensionMeasurements = inspectionData.measurements.dimensional.measurements;
+        console.log('✅ Usando measurements.dimensional.measurements');
+      }
+      // Estrategia 3: Buscar en cualquier lugar del objeto
+      else {
+        console.log('🔍 Buscando en todo el objeto...');
+        const findDimensionalData = (obj, path = '') => {
+          for (const [key, value] of Object.entries(obj || {})) {
+            if (typeof value === 'object' && value !== null) {
+              if (key === 'dimensionMeasurements' || key === 'measurements') {
+                console.log(`Encontrado en ${path}.${key}:`, value);
+              }
+              findDimensionalData(value, path ? `${path}.${key}` : key);
+            }
+          }
+        };
+        findDimensionalData(inspectionData);
+      }
+      
+      // Hacer lo mismo para dimensions
+      if (inspectionData.dimensions && inspectionData.dimensions.length > 0) {
+        processedDimensions = inspectionData.dimensions;
+        console.log('✅ Usando dimensions directo');
+      } else if (inspectionData.measurements?.dimensional?.dimensions) {
+        processedDimensions = inspectionData.measurements.dimensional.dimensions;
+        console.log('✅ Usando measurements.dimensional.dimensions');
+      }
+      
+      console.log('📋 === DATOS PROCESADOS FINALES ===');
+      console.log('processedDimensionMeasurements:', processedDimensionMeasurements);
+      console.log('Número de cotas:', Object.keys(processedDimensionMeasurements).length);
+      console.log('processedDimensions:', processedDimensions);
+      console.log('Número de dimensiones:', processedDimensions.length);
+      
+      // Verificar que las mediciones tengan valores
+      Object.entries(processedDimensionMeasurements).forEach(([dimCode, values]) => {
+        console.log(`Cota ${dimCode}:`, values);
+        if (Array.isArray(values)) {
+          const nonEmptyValues = values.filter(v => v !== '' && v !== null && v !== undefined);
+          console.log(`  - Valores no vacíos: ${nonEmptyValues.length}/${values.length}`);
+        }
+      });
+      
       const dataToLoad = {
-        ...inspectionData,
-        dimensionMeasurements: inspectionData.dimensionMeasurements || {},
-        dimensions: inspectionData.dimensions || [],
-        localCoatingMeasurements: inspectionData.localCoatingMeasurements || [],
-        coatingStats: inspectionData.coatingStats || {},
-        photos: inspectionData.photos || [],
-        visualConformity: inspectionData.visualConformity || null,
-        visualNotes: inspectionData.visualNotes || '',
-        sampleInfo: inspectionData.sampleInfo || '',
+        // Información básica
+        client: inspectionData.client || 'Valmont Solar',
+        projectName: inspectionData.projectName || 'NEPI',
+        componentFamily: inspectionData.componentFamily || '',
+        componentCode: inspectionData.componentCode || '',
         componentName: inspectionData.componentName || '',
-        inspector: inspectionData.inspector || ''
+        surfaceProtection: inspectionData.surfaceProtection || '',
+        thickness: inspectionData.thickness || '',
+        specialCoating: inspectionData.specialCoating || '',
+        batchQuantity: inspectionData.batchQuantity || '',
+        
+        // Información de inspección
+        inspector: inspectionData.inspector || '',
+        inspectionDate: inspectionData.inspectionDate || '',
+        inspectionCountry: inspectionData.inspectionCountry || '',
+        inspectionCity: inspectionData.inspectionCity || '',
+        inspectionSite: inspectionData.inspectionSite || '',
+        inspectionAddress: inspectionData.inspectionAddress || '',
+        mapCoords: inspectionData.mapCoords || { lat: 40.416775, lng: -3.703790 },
+        
+        // 🎯 DATOS DIMENSIONALES MEJORADOS
+        dimensions: processedDimensions,
+        dimensionMeasurements: processedDimensionMeasurements,
+        dimensionNonConformities: inspectionData.dimensionNonConformities || 
+                                  inspectionData.measurements?.dimensional?.nonConformities || {},
+        completedDimensions: inspectionData.completedDimensions || 
+                            inspectionData.measurements?.dimensional?.completedDimensions || {},
+        
+        // Resto de datos
+        coatingRequirements: inspectionData.coatingRequirements || 
+                            inspectionData.measurements?.coating?.requirements || {},
+        meanCoating: inspectionData.meanCoating || 
+                    inspectionData.measurements?.coating?.meanCoating?.toString() || '',
+        localCoatingMeasurements: inspectionData.localCoatingMeasurements || 
+                                 inspectionData.measurements?.coating?.localMeasurements || [],
+        coatingStats: inspectionData.coatingStats || 
+                     inspectionData.measurements?.coating?.stats || {},
+        
+        visualConformity: inspectionData.visualConformity || 
+                         inspectionData.measurements?.visual?.conformity || '',
+        visualNotes: inspectionData.visualNotes || 
+                    inspectionData.measurements?.visual?.notes || '',
+        photos: inspectionData.photos || 
+               inspectionData.measurements?.visual?.photos || [],
+        
+        measurementEquipment: inspectionData.measurementEquipment || 
+                             inspectionData.equipment || [],
+        
+        sampleInfo: inspectionData.sampleInfo || 
+                   inspectionData.sampleInfo?.sampleInfo || '',
+        inspectionStep: inspectionData.inspectionStep || 
+                       inspectionData.sampleInfo?.inspectionStep || 'first',
+        
+        totalNonConformities: inspectionData.totalNonConformities || 
+                             inspectionData.finalResults?.totalNonConformities || 0,
+        inspectionStatus: inspectionData.inspectionStatus || 
+                         inspectionData.finalResults?.inspectionStatus || 'in-progress'
       };
       
+      console.log('🚀 === DATOS CARGANDO EN CONTEXTO ===');
+      console.log('dataToLoad.dimensionMeasurements:', dataToLoad.dimensionMeasurements);
+      console.log('dataToLoad.dimensions:', dataToLoad.dimensions);
+      console.log('dataToLoad.inspector:', dataToLoad.inspector);
+      console.log('dataToLoad.componentName:', dataToLoad.componentName);
+      
+      // Cargar datos en el contexto
       dispatch({ type: 'LOAD_INSPECTION_DATA', payload: dataToLoad });
       
+      // Verificar inmediatamente después de cargar
       setTimeout(() => {
+        console.log('🔄 === VERIFICACIÓN POST-CARGA ===');
+        console.log('state después de dispatch:', state);
+      }, 100);
+      
+      // Re-renders con más tiempo y logging
+      const timers = [];
+      
+      timers.push(setTimeout(() => {
+        console.log('🔄 Re-render 1 (500ms)');
+        setRenderKey(prev => prev + 1);
+      }, 500));
+      
+      timers.push(setTimeout(() => {
+        console.log('🔄 Re-render 2 (1000ms)');
+        setRenderKey(prev => prev + 1);
+      }, 1000));
+      
+      timers.push(setTimeout(() => {
+        console.log('🔄 Re-render 3 - Marcando como cargado (1500ms)');
         setDataLoaded(true);
-      }, 500);
+        setRenderKey(prev => prev + 1);
+      }, 1500));
+      
+      timers.push(setTimeout(() => {
+        console.log('🔄 Re-render 4 - Final (2500ms)');
+        setRenderKey(prev => prev + 1);
+      }, 2500));
+      
+      return () => {
+        timers.forEach(timer => clearTimeout(timer));
+      };
     }
   }, [inspectionData, dispatch]);
   
+  // Verificar estado actual antes de renderizar
+  React.useEffect(() => {
+    if (dataLoaded) {
+      console.log('✅ === ESTADO FINAL ANTES DE RENDERIZAR ===');
+      console.log('state.dimensionMeasurements:', state.dimensionMeasurements);
+      console.log('state.dimensions:', state.dimensions);
+      console.log('state.inspector:', state.inspector);
+      console.log('state.componentName:', state.componentName);
+      
+      // Verificar si el DOM se ha actualizado
+      setTimeout(() => {
+        const container = document.getElementById('hidden-report-container');
+        if (container) {
+          const tables = container.querySelectorAll('table');
+          const cells = container.querySelectorAll('td');
+          console.log('📊 DOM VERIFICACIÓN:');
+          console.log('Tablas encontradas:', tables.length);
+          console.log('Celdas encontradas:', cells.length);
+          
+          const cellsWithData = Array.from(cells).filter(cell => {
+            const text = cell.textContent.trim();
+            return text !== '' && text !== '-' && text !== 'NA';
+          });
+          console.log('Celdas con datos:', cellsWithData.length);
+          
+          // Mostrar contenido de algunas celdas con datos
+          cellsWithData.slice(0, 10).forEach((cell, i) => {
+            console.log(`Celda ${i}: "${cell.textContent.trim()}"`);
+          });
+        }
+      }, 500);
+    }
+  }, [dataLoaded, state, renderKey]);
+  
   if (!dataLoaded) {
-    return <div>Loading report data...</div>;
+    return (
+      <div style={{ 
+        padding: '2rem', 
+        textAlign: 'center',
+        fontSize: '1rem',
+        color: '#666'
+      }}>
+        Loading report data... (check console for detailed logs)
+      </div>
+    );
   }
   
-  return <ReportViewDashboard />;
+  return (
+    <div key={renderKey}>
+      <ReportViewDashboard />
+    </div>
+  );
 };
 
 // Componente principal DatabaseView

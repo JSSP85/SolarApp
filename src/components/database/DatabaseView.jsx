@@ -292,72 +292,35 @@ const InspectionDetails = ({ inspectionData, onBack }) => {
 };
 
 // Componente para el contenido del reporte oculto (MEJORADO)
+c// NUEVO: Componente HiddenReportContent que pasa datos directamente
 const HiddenReportContent = ({ inspectionData }) => {
-  const { dispatch, state } = useInspection();
   const [dataLoaded, setDataLoaded] = useState(false);
-  const [renderKey, setRenderKey] = useState(0);
+  const [processedData, setProcessedData] = useState(null);
   
   React.useEffect(() => {
     if (inspectionData) {
       console.log('🔍 === DATOS ORIGINALES DE FIREBASE (HiddenReportContent) ===');
       console.log('inspectionData completo:', inspectionData);
-      console.log('dimensionMeasurements directo:', inspectionData.dimensionMeasurements);
-      console.log('dimensions directo:', inspectionData.dimensions);
-      console.log('measurements object:', inspectionData.measurements);
       
-      // Verificar todas las posibles ubicaciones de los datos dimensionales
-      console.log('🔎 === BUSCANDO DATOS DIMENSIONALES ===');
-      console.log('Opción 1 - directo:', inspectionData.dimensionMeasurements);
-      console.log('Opción 2 - anidado:', inspectionData.measurements?.dimensional?.measurements);
-      console.log('Dimensions opción 1:', inspectionData.dimensions);
-      console.log('Dimensions opción 2:', inspectionData.measurements?.dimensional?.dimensions);
-      
-      // Intentar múltiples estrategias para obtener los datos
+      // Procesar datos dimensionales
       let processedDimensionMeasurements = {};
       let processedDimensions = [];
       
-      // Estrategia 1: Datos directos
       if (inspectionData.dimensionMeasurements && Object.keys(inspectionData.dimensionMeasurements).length > 0) {
         processedDimensionMeasurements = inspectionData.dimensionMeasurements;
         console.log('✅ Usando dimensionMeasurements directo');
       }
-      // Estrategia 2: Datos anidados en measurements
-      else if (inspectionData.measurements?.dimensional?.measurements) {
-        processedDimensionMeasurements = inspectionData.measurements.dimensional.measurements;
-        console.log('✅ Usando measurements.dimensional.measurements');
-      }
-      // Estrategia 3: Buscar en cualquier lugar del objeto
-      else {
-        console.log('🔍 Buscando en todo el objeto...');
-        const findDimensionalData = (obj, path = '') => {
-          for (const [key, value] of Object.entries(obj || {})) {
-            if (typeof value === 'object' && value !== null) {
-              if (key === 'dimensionMeasurements' || key === 'measurements') {
-                console.log(`Encontrado en ${path}.${key}:`, value);
-              }
-              findDimensionalData(value, path ? `${path}.${key}` : key);
-            }
-          }
-        };
-        findDimensionalData(inspectionData);
-      }
       
-      // Hacer lo mismo para dimensions
       if (inspectionData.dimensions && inspectionData.dimensions.length > 0) {
         processedDimensions = inspectionData.dimensions;
         console.log('✅ Usando dimensions directo');
-      } else if (inspectionData.measurements?.dimensional?.dimensions) {
-        processedDimensions = inspectionData.measurements.dimensional.dimensions;
-        console.log('✅ Usando measurements.dimensional.dimensions');
       }
       
       console.log('📋 === DATOS PROCESADOS FINALES ===');
       console.log('processedDimensionMeasurements:', processedDimensionMeasurements);
-      console.log('Número de cotas:', Object.keys(processedDimensionMeasurements).length);
       console.log('processedDimensions:', processedDimensions);
-      console.log('Número de dimensiones:', processedDimensions.length);
       
-      // Verificar que las mediciones tengan valores
+      // Verificar mediciones
       Object.entries(processedDimensionMeasurements).forEach(([dimCode, values]) => {
         console.log(`Cota ${dimCode}:`, values);
         if (Array.isArray(values)) {
@@ -366,7 +329,8 @@ const HiddenReportContent = ({ inspectionData }) => {
         }
       });
       
-      const dataToLoad = {
+      // Crear objeto de datos procesados para pasar directamente al ReportViewDashboard
+      const dataForReport = {
         // Información básica
         client: inspectionData.client || 'Valmont Solar',
         projectName: inspectionData.projectName || 'NEPI',
@@ -387,125 +351,44 @@ const HiddenReportContent = ({ inspectionData }) => {
         inspectionAddress: inspectionData.inspectionAddress || '',
         mapCoords: inspectionData.mapCoords || { lat: 40.416775, lng: -3.703790 },
         
-        // 🎯 DATOS DIMENSIONALES MEJORADOS
+        // 🎯 DATOS DIMENSIONALES PROCESADOS
         dimensions: processedDimensions,
         dimensionMeasurements: processedDimensionMeasurements,
-        dimensionNonConformities: inspectionData.dimensionNonConformities || 
-                                  inspectionData.measurements?.dimensional?.nonConformities || {},
-        completedDimensions: inspectionData.completedDimensions || 
-                            inspectionData.measurements?.dimensional?.completedDimensions || {},
+        dimensionNonConformities: inspectionData.dimensionNonConformities || {},
         
         // Resto de datos
-        coatingRequirements: inspectionData.coatingRequirements || 
-                            inspectionData.measurements?.coating?.requirements || {},
-        meanCoating: inspectionData.meanCoating || 
-                    inspectionData.measurements?.coating?.meanCoating?.toString() || '',
-        localCoatingMeasurements: inspectionData.localCoatingMeasurements || 
-                                 inspectionData.measurements?.coating?.localMeasurements || [],
-        coatingStats: inspectionData.coatingStats || 
-                     inspectionData.measurements?.coating?.stats || {},
+        coatingRequirements: inspectionData.coatingRequirements || {},
+        meanCoating: inspectionData.meanCoating || '',
+        localCoatingMeasurements: inspectionData.localCoatingMeasurements || [],
+        coatingStats: inspectionData.coatingStats || {},
         
-        visualConformity: inspectionData.visualConformity || 
-                         inspectionData.measurements?.visual?.conformity || '',
-        visualNotes: inspectionData.visualNotes || 
-                    inspectionData.measurements?.visual?.notes || '',
-        photos: inspectionData.photos || 
-               inspectionData.measurements?.visual?.photos || [],
+        visualConformity: inspectionData.visualConformity || '',
+        visualNotes: inspectionData.visualNotes || '',
+        photos: inspectionData.photos || [],
         
-        measurementEquipment: inspectionData.measurementEquipment || 
-                             inspectionData.equipment || [],
+        measurementEquipment: inspectionData.measurementEquipment || [],
         
-        sampleInfo: inspectionData.sampleInfo || 
-                   inspectionData.sampleInfo?.sampleInfo || '',
-        inspectionStep: inspectionData.inspectionStep || 
-                       inspectionData.sampleInfo?.inspectionStep || 'first',
+        sampleInfo: inspectionData.sampleInfo || '',
+        inspectionStep: inspectionData.inspectionStep || 'first',
         
-        totalNonConformities: inspectionData.totalNonConformities || 
-                             inspectionData.finalResults?.totalNonConformities || 0,
-        inspectionStatus: inspectionData.inspectionStatus || 
-                         inspectionData.finalResults?.inspectionStatus || 'in-progress'
+        totalNonConformities: inspectionData.totalNonConformities || 0,
+        inspectionStatus: inspectionData.inspectionStatus || 'in-progress'
       };
       
-      console.log('🚀 === DATOS CARGANDO EN CONTEXTO ===');
-      console.log('dataToLoad.dimensionMeasurements:', dataToLoad.dimensionMeasurements);
-      console.log('dataToLoad.dimensions:', dataToLoad.dimensions);
-      console.log('dataToLoad.inspector:', dataToLoad.inspector);
-      console.log('dataToLoad.componentName:', dataToLoad.componentName);
+      console.log('🚀 === DATOS PROCESADOS PARA REPORTE DIRECTO ===');
+      console.log('dataForReport.dimensionMeasurements:', dataForReport.dimensionMeasurements);
+      console.log('dataForReport.dimensions:', dataForReport.dimensions);
+      console.log('dataForReport.inspector:', dataForReport.inspector);
       
-      // Cargar datos en el contexto
-      dispatch({ type: 'LOAD_INSPECTION_DATA', payload: dataToLoad });
+      setProcessedData(dataForReport);
       
-      // Verificar inmediatamente después de cargar
       setTimeout(() => {
-        console.log('🔄 === VERIFICACIÓN POST-CARGA ===');
-        console.log('state después de dispatch:', state);
-      }, 100);
-      
-      // Re-renders con más tiempo y logging
-      const timers = [];
-      
-      timers.push(setTimeout(() => {
-        console.log('🔄 Re-render 1 (500ms)');
-        setRenderKey(prev => prev + 1);
-      }, 500));
-      
-      timers.push(setTimeout(() => {
-        console.log('🔄 Re-render 2 (1000ms)');
-        setRenderKey(prev => prev + 1);
-      }, 1000));
-      
-      timers.push(setTimeout(() => {
-        console.log('🔄 Re-render 3 - Marcando como cargado (1500ms)');
         setDataLoaded(true);
-        setRenderKey(prev => prev + 1);
-      }, 1500));
-      
-      timers.push(setTimeout(() => {
-        console.log('🔄 Re-render 4 - Final (2500ms)');
-        setRenderKey(prev => prev + 1);
-      }, 2500));
-      
-      return () => {
-        timers.forEach(timer => clearTimeout(timer));
-      };
+      }, 1000);
     }
-  }, [inspectionData, dispatch]);
+  }, [inspectionData]);
   
-  // Verificar estado actual antes de renderizar
-  React.useEffect(() => {
-    if (dataLoaded) {
-      console.log('✅ === ESTADO FINAL ANTES DE RENDERIZAR ===');
-      console.log('state.dimensionMeasurements:', state.dimensionMeasurements);
-      console.log('state.dimensions:', state.dimensions);
-      console.log('state.inspector:', state.inspector);
-      console.log('state.componentName:', state.componentName);
-      
-      // Verificar si el DOM se ha actualizado
-      setTimeout(() => {
-        const container = document.getElementById('hidden-report-container');
-        if (container) {
-          const tables = container.querySelectorAll('table');
-          const cells = container.querySelectorAll('td');
-          console.log('📊 DOM VERIFICACIÓN:');
-          console.log('Tablas encontradas:', tables.length);
-          console.log('Celdas encontradas:', cells.length);
-          
-          const cellsWithData = Array.from(cells).filter(cell => {
-            const text = cell.textContent.trim();
-            return text !== '' && text !== '-' && text !== 'NA';
-          });
-          console.log('Celdas con datos:', cellsWithData.length);
-          
-          // Mostrar contenido de algunas celdas con datos
-          cellsWithData.slice(0, 10).forEach((cell, i) => {
-            console.log(`Celda ${i}: "${cell.textContent.trim()}"`);
-          });
-        }
-      }, 500);
-    }
-  }, [dataLoaded, state, renderKey]);
-  
-  if (!dataLoaded) {
+  if (!dataLoaded || !processedData) {
     return (
       <div style={{ 
         padding: '2rem', 
@@ -513,14 +396,108 @@ const HiddenReportContent = ({ inspectionData }) => {
         fontSize: '1rem',
         color: '#666'
       }}>
-        Loading report data... (check console for detailed logs)
+        Loading report data... (bypassing context, using direct props)
       </div>
     );
   }
   
   return (
-    <div key={renderKey}>
-      <ReportViewDashboard />
+    <div>
+      {/* Crear un ReportViewDashboard simplificado que use los datos directamente */}
+      <DirectReportView reportData={processedData} />
+    </div>
+  );
+};
+
+// Componente simplificado que renderiza las tablas dimensionales directamente
+const DirectReportView = ({ reportData }) => {
+  const { 
+    dimensions, 
+    dimensionMeasurements, 
+    inspector, 
+    componentName,
+    sampleInfo 
+  } = reportData;
+  
+  console.log('🎯 === DIRECTREPORTVIEW RECIBIENDO DATOS ===');
+  console.log('dimensions:', dimensions);
+  console.log('dimensionMeasurements:', dimensionMeasurements);
+  console.log('inspector:', inspector);
+  
+  // Calcular número de muestras
+  const getSampleCount = (sampleInfo) => {
+    if (!sampleInfo) return 3; // Default
+    const match = sampleInfo.match(/Sample: (\d+)/);
+    return match ? parseInt(match[1]) : 3;
+  };
+  
+  const sampleCount = getSampleCount(sampleInfo);
+  console.log('Sample count calculado:', sampleCount);
+  
+  return (
+    <div id="direct-report-content">
+      <h2>INSPECTION REPORT - DIRECT</h2>
+      
+      <div style={{ marginBottom: '2rem' }}>
+        <h3>Inspector: {inspector}</h3>
+        <h3>Component: {componentName}</h3>
+      </div>
+      
+      {dimensions && dimensions.length > 0 ? (
+        <div>
+          <h3>Dimensional Measurements</h3>
+          <table style={{ width: '100%', borderCollapse: 'collapse', border: '1px solid #ccc' }}>
+            <thead>
+              <tr style={{ backgroundColor: '#f5f5f5' }}>
+                <th style={{ border: '1px solid #ccc', padding: '8px' }}>Sample</th>
+                {dimensions.map((dim) => (
+                  <th key={dim.code} style={{ border: '1px solid #ccc', padding: '8px' }}>
+                    <div>{dim.code}</div>
+                    <div style={{ fontSize: '0.8rem' }}>
+                      {dim.nominal} mm ({dim.tolerancePlus > 0 ? '+' : ''}{dim.tolerancePlus}, {dim.toleranceMinus > 0 ? '+' : ''}{dim.toleranceMinus})
+                    </div>
+                  </th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {Array.from({ length: sampleCount }).map((_, sampleIndex) => (
+                <tr key={sampleIndex}>
+                  <td style={{ border: '1px solid #ccc', padding: '8px', fontWeight: 'bold' }}>
+                    Sample {sampleIndex + 1}
+                  </td>
+                  {dimensions.map((dim) => {
+                    const value = dimensionMeasurements?.[dim.code]?.[sampleIndex] || "-";
+                    console.log(`Renderizando ${dim.code}[${sampleIndex}]: "${value}"`);
+                    
+                    return (
+                      <td 
+                        key={dim.code} 
+                        style={{ 
+                          border: '1px solid #ccc', 
+                          padding: '8px', 
+                          textAlign: 'center',
+                          backgroundColor: value !== "-" ? '#fff' : '#f9f9f9'
+                        }}
+                      >
+                        {value}
+                      </td>
+                    );
+                  })}
+                </tr>
+              ))}
+            </tbody>
+          </table>
+          
+          <div style={{ marginTop: '1rem', fontSize: '0.9rem', color: '#666' }}>
+            Total dimensions: {dimensions.length} | Sample count: {sampleCount}
+          </div>
+        </div>
+      ) : (
+        <div style={{ padding: '2rem', textAlign: 'center', color: '#999' }}>
+          No dimensional data available.
+        </div>
+      )}
     </div>
   );
 };

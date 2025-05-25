@@ -291,38 +291,47 @@ const InspectionDetails = ({ inspectionData, onBack }) => {
   );
 };
 
-// Componente para el contenido del reporte oculto (CORREGIDO - SIN ERRORES)
+
+// NUEVO: Componente HiddenReportContent que pasa datos directamente
 const HiddenReportContent = ({ inspectionData }) => {
-  const { dispatch } = useInspection();
   const [dataLoaded, setDataLoaded] = useState(false);
+  const [processedData, setProcessedData] = useState(null);
   
   React.useEffect(() => {
     if (inspectionData) {
-      console.log('🔍 === CARGANDO DATOS PARA PDF ===');
-      console.log('inspectionData:', inspectionData);
+      console.log('🔍 === DATOS ORIGINALES DE FIREBASE (HiddenReportContent) ===');
+      console.log('inspectionData completo:', inspectionData);
       
-      // Extraer y procesar datos dimensionales
-      const dimensionMeasurements = inspectionData.dimensionMeasurements || {};
-      const dimensions = inspectionData.dimensions || [];
+      // Procesar datos dimensionales
+      let processedDimensionMeasurements = {};
+      let processedDimensions = [];
       
-      console.log('📋 Datos dimensionales extraídos:');
-      console.log('- dimensionMeasurements:', dimensionMeasurements);
-      console.log('- dimensions count:', dimensions.length);
-      console.log('- inspector:', inspectionData.inspector);
-      console.log('- componentName:', inspectionData.componentName);
-      
-      // Verificar y mostrar datos de cada cota
-      if (Object.keys(dimensionMeasurements).length > 0) {
-        console.log('✅ Mediciones encontradas:');
-        Object.entries(dimensionMeasurements).forEach(([dimCode, values]) => {
-          console.log(`  ${dimCode}:`, values);
-        });
-      } else {
-        console.warn('⚠️ No hay mediciones dimensionales');
+      if (inspectionData.dimensionMeasurements && Object.keys(inspectionData.dimensionMeasurements).length > 0) {
+        processedDimensionMeasurements = inspectionData.dimensionMeasurements;
+        console.log('✅ Usando dimensionMeasurements directo');
       }
       
-      const dataToLoad = {
-        // Datos básicos
+      if (inspectionData.dimensions && inspectionData.dimensions.length > 0) {
+        processedDimensions = inspectionData.dimensions;
+        console.log('✅ Usando dimensions directo');
+      }
+      
+      console.log('📋 === DATOS PROCESADOS FINALES ===');
+      console.log('processedDimensionMeasurements:', processedDimensionMeasurements);
+      console.log('processedDimensions:', processedDimensions);
+      
+      // Verificar mediciones
+      Object.entries(processedDimensionMeasurements).forEach(([dimCode, values]) => {
+        console.log(`Cota ${dimCode}:`, values);
+        if (Array.isArray(values)) {
+          const nonEmptyValues = values.filter(v => v !== '' && v !== null && v !== undefined);
+          console.log(`  - Valores no vacíos: ${nonEmptyValues.length}/${values.length}`);
+        }
+      });
+      
+      // Crear objeto de datos procesados para pasar directamente al ReportViewDashboard
+      const dataForReport = {
+        // Información básica
         client: inspectionData.client || 'Valmont Solar',
         projectName: inspectionData.projectName || 'NEPI',
         componentFamily: inspectionData.componentFamily || '',
@@ -333,7 +342,7 @@ const HiddenReportContent = ({ inspectionData }) => {
         specialCoating: inspectionData.specialCoating || '',
         batchQuantity: inspectionData.batchQuantity || '',
         
-        // Datos de inspección
+        // Información de inspección
         inspector: inspectionData.inspector || '',
         inspectionDate: inspectionData.inspectionDate || '',
         inspectionCountry: inspectionData.inspectionCountry || '',
@@ -342,52 +351,44 @@ const HiddenReportContent = ({ inspectionData }) => {
         inspectionAddress: inspectionData.inspectionAddress || '',
         mapCoords: inspectionData.mapCoords || { lat: 40.416775, lng: -3.703790 },
         
-        // DATOS DIMENSIONALES (CLAVE)
-        dimensions: dimensions,
-        dimensionMeasurements: dimensionMeasurements,
+        // 🎯 DATOS DIMENSIONALES PROCESADOS
+        dimensions: processedDimensions,
+        dimensionMeasurements: processedDimensionMeasurements,
         dimensionNonConformities: inspectionData.dimensionNonConformities || {},
-        completedDimensions: inspectionData.completedDimensions || {},
         
-        // Otros datos
+        // Resto de datos
         coatingRequirements: inspectionData.coatingRequirements || {},
         meanCoating: inspectionData.meanCoating || '',
         localCoatingMeasurements: inspectionData.localCoatingMeasurements || [],
         coatingStats: inspectionData.coatingStats || {},
+        
         visualConformity: inspectionData.visualConformity || '',
         visualNotes: inspectionData.visualNotes || '',
         photos: inspectionData.photos || [],
+        
         measurementEquipment: inspectionData.measurementEquipment || [],
+        
         sampleInfo: inspectionData.sampleInfo || '',
         inspectionStep: inspectionData.inspectionStep || 'first',
+        
         totalNonConformities: inspectionData.totalNonConformities || 0,
         inspectionStatus: inspectionData.inspectionStatus || 'in-progress'
       };
       
-      console.log('🚀 Enviando al contexto:');
-      console.log('- dataToLoad.dimensions:', dataToLoad.dimensions);
-      console.log('- dataToLoad.dimensionMeasurements:', dataToLoad.dimensionMeasurements);
+      console.log('🚀 === DATOS PROCESADOS PARA REPORTE DIRECTO ===');
+      console.log('dataForReport.dimensionMeasurements:', dataForReport.dimensionMeasurements);
+      console.log('dataForReport.dimensions:', dataForReport.dimensions);
+      console.log('dataForReport.inspector:', dataForReport.inspector);
       
-      // MÚLTIPLES DISPATCHES para asegurar que se carga
-      dispatch({ type: 'LOAD_INSPECTION_DATA', payload: dataToLoad });
-      
-      setTimeout(() => {
-        console.log('🔄 Segundo dispatch...');
-        dispatch({ type: 'LOAD_INSPECTION_DATA', payload: dataToLoad });
-      }, 200);
+      setProcessedData(dataForReport);
       
       setTimeout(() => {
-        console.log('🔄 Tercer dispatch...');
-        dispatch({ type: 'LOAD_INSPECTION_DATA', payload: dataToLoad });
-      }, 500);
-      
-      setTimeout(() => {
-        console.log('✅ Marcando como cargado');
         setDataLoaded(true);
       }, 1000);
     }
-  }, [inspectionData, dispatch]);
+  }, [inspectionData]);
   
-  if (!dataLoaded) {
+  if (!dataLoaded || !processedData) {
     return (
       <div style={{ 
         padding: '2rem', 
@@ -395,12 +396,110 @@ const HiddenReportContent = ({ inspectionData }) => {
         fontSize: '1rem',
         color: '#666'
       }}>
-        Loading dimensional data for PDF generation...
+        Loading report data... (bypassing context, using direct props)
       </div>
     );
   }
   
-  return React.createElement(ReportViewDashboard);
+  return (
+    <div>
+      {/* Crear un ReportViewDashboard simplificado que use los datos directamente */}
+      <DirectReportView reportData={processedData} />
+    </div>
+  );
+};
+
+// Componente simplificado que renderiza las tablas dimensionales directamente
+const DirectReportView = ({ reportData }) => {
+  const { 
+    dimensions, 
+    dimensionMeasurements, 
+    inspector, 
+    componentName,
+    sampleInfo 
+  } = reportData;
+  
+  console.log('🎯 === DIRECTREPORTVIEW RECIBIENDO DATOS ===');
+  console.log('dimensions:', dimensions);
+  console.log('dimensionMeasurements:', dimensionMeasurements);
+  console.log('inspector:', inspector);
+  
+  // Calcular número de muestras
+  const getSampleCount = (sampleInfo) => {
+    if (!sampleInfo) return 3; // Default
+    const match = sampleInfo.match(/Sample: (\d+)/);
+    return match ? parseInt(match[1]) : 3;
+  };
+  
+  const sampleCount = getSampleCount(sampleInfo);
+  console.log('Sample count calculado:', sampleCount);
+  
+  return (
+    <div id="direct-report-content">
+      <h2>INSPECTION REPORT - DIRECT</h2>
+      
+      <div style={{ marginBottom: '2rem' }}>
+        <h3>Inspector: {inspector}</h3>
+        <h3>Component: {componentName}</h3>
+      </div>
+      
+      {dimensions && dimensions.length > 0 ? (
+        <div>
+          <h3>Dimensional Measurements</h3>
+          <table style={{ width: '100%', borderCollapse: 'collapse', border: '1px solid #ccc' }}>
+            <thead>
+              <tr style={{ backgroundColor: '#f5f5f5' }}>
+                <th style={{ border: '1px solid #ccc', padding: '8px' }}>Sample</th>
+                {dimensions.map((dim) => (
+                  <th key={dim.code} style={{ border: '1px solid #ccc', padding: '8px' }}>
+                    <div>{dim.code}</div>
+                    <div style={{ fontSize: '0.8rem' }}>
+                      {dim.nominal} mm ({dim.tolerancePlus > 0 ? '+' : ''}{dim.tolerancePlus}, {dim.toleranceMinus > 0 ? '+' : ''}{dim.toleranceMinus})
+                    </div>
+                  </th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {Array.from({ length: sampleCount }).map((_, sampleIndex) => (
+                <tr key={sampleIndex}>
+                  <td style={{ border: '1px solid #ccc', padding: '8px', fontWeight: 'bold' }}>
+                    Sample {sampleIndex + 1}
+                  </td>
+                  {dimensions.map((dim) => {
+                    const value = dimensionMeasurements?.[dim.code]?.[sampleIndex] || "-";
+                    console.log(`Renderizando ${dim.code}[${sampleIndex}]: "${value}"`);
+                    
+                    return (
+                      <td 
+                        key={dim.code} 
+                        style={{ 
+                          border: '1px solid #ccc', 
+                          padding: '8px', 
+                          textAlign: 'center',
+                          backgroundColor: value !== "-" ? '#fff' : '#f9f9f9'
+                        }}
+                      >
+                        {value}
+                      </td>
+                    );
+                  })}
+                </tr>
+              ))}
+            </tbody>
+          </table>
+          
+          <div style={{ marginTop: '1rem', fontSize: '0.9rem', color: '#666' }}>
+            Total dimensions: {dimensions.length} | Sample count: {sampleCount}
+          </div>
+        </div>
+      ) : (
+        <div style={{ padding: '2rem', textAlign: 'center', color: '#999' }}>
+          No dimensional data available.
+        </div>
+      )}
+    </div>
+  );
 };
 
 // Componente simplificado que renderiza las tablas dimensionales directamente

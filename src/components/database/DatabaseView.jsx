@@ -291,8 +291,6 @@ const InspectionDetails = ({ inspectionData, onBack }) => {
   );
 };
 
-// Componente para el contenido del reporte oculto (MEJORADO)
-c// NUEVO: Componente HiddenReportContent que pasa datos directamente
 // Componente para el contenido del reporte oculto (CORREGIDO - SIN ERRORES)
 const HiddenReportContent = ({ inspectionData }) => {
   const { dispatch } = useInspection();

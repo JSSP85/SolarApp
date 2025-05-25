@@ -579,17 +579,44 @@ function inspectionReducer(state, action) {
         hasUnsavedChanges: action.payload
       };
       
-   case 'LOAD_INSPECTION_DATA':
-  return {
-    ...action.payload,
+ // SOLO REEMPLAZA EL CASO 'LOAD_INSPECTION_DATA' en tu reducer
+
+case 'LOAD_INSPECTION_DATA':
+  console.log('🔥 REDUCER: Cargando datos de inspección completos');
+  console.log('📊 Datos recibidos - dimensions:', action.payload.dimensions?.length || 0);
+  console.log('📊 Datos recibidos - dimensionMeasurements:', Object.keys(action.payload.dimensionMeasurements || {}).length);
+  
+  // IMPORTANTE: Mantener la estructura del estado y solo actualizar campos específicos
+  const newState = {
+    ...state, // Mantener el estado actual
+    ...action.payload, // Aplicar los nuevos datos
+    // Forzar que estos campos críticos se mantengan correctamente
+    dimensions: action.payload.dimensions || state.dimensions || [],
+    dimensionMeasurements: action.payload.dimensionMeasurements || state.dimensionMeasurements || {},
+    dimensionNonConformities: action.payload.dimensionNonConformities || state.dimensionNonConformities || {},
+    completedDimensions: action.payload.completedDimensions || state.completedDimensions || {},
+    photos: action.payload.photos || state.photos || [],
+    localCoatingMeasurements: action.payload.localCoatingMeasurements || state.localCoatingMeasurements || [],
+    coatingRequirements: action.payload.coatingRequirements || state.coatingRequirements || {},
+    coatingStats: action.payload.coatingStats || state.coatingStats || {},
+    measurementEquipment: action.payload.measurementEquipment || state.measurementEquipment || [],
+    visualConformity: action.payload.visualConformity || state.visualConformity || '',
+    visualNotes: action.payload.visualNotes || state.visualNotes || '',
+    sampleInfo: action.payload.sampleInfo || state.sampleInfo || '',
+    // Campos de Firebase
     isSaving: false,
     saveError: null,
     hasUnsavedChanges: false
-  };  
-    default:
-      return state;
-  }
-}
+  };
+  
+  console.log('🎯 REDUCER: Estado final después de carga:', {
+    dimensions: newState.dimensions?.length || 0,
+    dimensionMeasurements: Object.keys(newState.dimensionMeasurements || {}).length,
+    sampleInfo: newState.sampleInfo,
+    componentName: newState.componentName
+  });
+  
+  return newState;
 
 // Provider component
 export const InspectionProvider = ({ children }) => {

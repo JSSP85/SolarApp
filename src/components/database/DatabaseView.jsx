@@ -790,39 +790,102 @@ const DatabaseView = () => {
   };
 
   // NUEVO: Generar PDF después de confirmar
-  const handleGeneratePdf = async () => {
-    setIsGeneratingPdf(true);
+ // NUEVO: Generar PDF después de confirmar (VERSIÓN QUE FUNCIONA)
+const handleGeneratePdf = async () => {
+  setIsGeneratingPdf(true);
+  
+  try {
+    console.log('🔥 Iniciando generación PDF desde Database...');
     
-    try {
-      // Esperar un momento para que el contenido se renderice
-      setTimeout(async () => {
-        try {
-          const { exportToPDF, generateFilename } = await import('../../utils/pdfExportService');
-          const filename = generateFilename(pdfInspectionData);
-          
-          await exportToPDF('hidden-report-container', {
-            filename: filename,
-            orientation: 'portrait',
-            scale: 2,
-            showNotification: true
-          });
-          
-          setSuccessMessage("PDF generated successfully!");
-          setShowPdfModal(false);
-          setPdfInspectionData(null);
-        } catch (error) {
-          console.error('Error generating PDF:', error);
-          setError('Failed to generate PDF. Please try again.');
-        } finally {
-          setIsGeneratingPdf(false);
-        }
-      }, 1000);
-    } catch (error) {
-      console.error('Error in PDF generation process:', error);
-      setError('Failed to generate PDF. Please try again.');
-      setIsGeneratingPdf(false);
+    // PASO 1: Asegurar que el contenedor existe y tiene contenido
+    let container = document.getElementById('hidden-report-container');
+    
+    if (!container) {
+      console.error('❌ Contenedor hidden-report-container no encontrado');
+      throw new Error('Report container not found');
     }
-  };
+    
+    // PASO 2: Esperar tiempo suficiente para que se renderice TODO
+    console.log('⏰ Esperando 5 segundos para renderización completa...');
+    await new Promise(resolve => setTimeout(resolve, 5000));
+    
+    // PASO 3: Verificar nuevamente que el contenedor tiene contenido
+    container = document.getElementById('hidden-report-container');
+    const tables = container.querySelectorAll('table');
+    const allCells = container.querySelectorAll('td');
+    
+    console.log('📊 Verificación final:');
+    console.log('- Tablas encontradas:', tables.length);
+    console.log('- Celdas totales:', allCells.length);
+    
+    // PASO 4: Forzar un último re-render si es necesario
+    if (tables.length === 0) {
+      console.log('⚠️ No hay tablas, forzando re-render...');
+      
+      // Crear evento personalizado para forzar re-render
+      const event = new CustomEvent('forceRerender');
+      container.dispatchEvent(event);
+      
+      // Esperar un poco más
+      await new Promise(resolve => setTimeout(resolve, 2000));
+    }
+    
+    // PASO 5: Verificar contenido dimensional específicamente
+    const dimensionalCells = Array.from(allCells).filter(cell => {
+      const text = cell.textContent.trim();
+      // Buscar valores que parezcan mediciones (números, incluye decimales)
+      return /^\d+(\.\d+)?$/.test(text) && parseFloat(text) >= 0;
+    });
+    
+    console.log('🔢 Celdas con valores numéricos:', dimensionalCells.length);
+    
+    if (dimensionalCells.length > 0) {
+      console.log('✅ Valores encontrados:');
+      dimensionalCells.slice(0, 5).forEach((cell, i) => {
+        console.log(`  ${i + 1}: ${cell.textContent.trim()}`);
+      });
+    } else {
+      console.warn('⚠️ No se encontraron valores dimensionales visibles');
+    }
+    
+    // PASO 6: Generar PDF (usando la misma función que funciona en Report normal)
+    console.log('🚀 Generando PDF...');
+    
+    const { exportToPDF, generateFilename } = await import('../../utils/pdfExportService');
+    const filename = generateFilename(pdfInspectionData);
+    
+    console.log('📄 Filename:', filename);
+    
+    // Usar las mismas opciones que en Report normal
+    await exportToPDF('hidden-report-container', {
+      filename: filename,
+      orientation: 'portrait', 
+      scale: 2,
+      showNotification: true
+    });
+    
+    console.log('✅ PDF generado exitosamente desde Database');
+    
+    setSuccessMessage("PDF generated successfully!");
+    setShowPdfModal(false);
+    setPdfInspectionData(null);
+    
+  } catch (error) {
+    console.error('❌ Error completo:', error);
+    console.error('Stack trace:', error.stack);
+    
+    // Dar más información del error
+    if (error.message.includes('container')) {
+      setError('Error: Report container not found. Please try again.');
+    } else if (error.message.includes('exportToPDF')) {
+      setError('Error: PDF export failed. Please check console for details.');
+    } else {
+      setError(`PDF generation failed: ${error.message}`);
+    }
+  } finally {
+    setIsGeneratingPdf(false);
+  }
+};
 
   // Handle view details (sin cambios)
   const handleViewDetails = async (inspectionId) => {

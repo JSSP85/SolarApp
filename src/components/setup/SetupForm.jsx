@@ -7,6 +7,15 @@ import { MapContainer, TileLayer, Marker, useMapEvents } from 'react-leaflet';
 import 'leaflet/dist/leaflet.css';
 import L from 'leaflet';
 
+// Importar las funciones que necesitamos debuggear
+import { 
+  fetchComponentFamilies, 
+  fetchComponentCodes, 
+  fetchDimensions
+} from '../../utils/googleSheetsService';
+import { getComponentDrawing } from '../../utils/drawingService';
+import * as XLSX from 'xlsx';
+
 // Corrección para los iconos de Leaflet en React
 delete L.Icon.Default.prototype._getIconUrl;
 L.Icon.Default.mergeOptions({
@@ -28,9 +37,242 @@ const SetupForm = () => {
 
   // Map reference to control the view programmatically
   const mapRef = React.useRef(null);
+
+  // ===== FUNCIONES DE DEBUG =====
+
+  // Función para verificar manualmente el Excel
+  const verifyExcelData = async () => {
+    console.log('🔍 [SETUP-DEBUG] Iniciando verificación manual del Excel...');
+    
+    try {
+      // Cargar el Excel directamente
+      const response = await fetch('/data/Database_componenti.xlsx');
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+      }
+      
+      const arrayBuffer = await response.arrayBuffer();
+      console.log('📁 [SETUP-DEBUG] Excel cargado correctamente, tamaño:', arrayBuffer.byteLength, 'bytes');
+      
+      const workbook = XLSX.read(arrayBuffer, { type: 'array' });
+      const worksheet = workbook.Sheets[workbook.SheetNames[0]];
+      const data = XLSX.utils.sheet_to_json(worksheet);
+      
+      console.log('📊 [SETUP-DEBUG] Total de componentes en Excel:', data.length);
+      
+      // Verificar familias únicas
+      const families = [...new Set(data.map(item => item.Familia))];
+      console.log('📋 [SETUP-DEBUG] Familias encontradas:', families);
+      console.log('✅ [SETUP-DEBUG] MODULE SUPPORTS encontrado:', families.includes('MODULE SUPPORTS'));
+      
+      // Buscar MODULE SUPPORTS específicamente
+      const moduleSupportComponents = data.filter(item => 
+        item.Familia === 'MODULE SUPPORTS'
+      );
+      console.log('🎯 [SETUP-DEBUG] Componentes MODULE SUPPORTS encontrados:', moduleSupportComponents.length);
+      
+      // Verificar cada componente de MODULE SUPPORTS
+      moduleSupportComponents.forEach((comp, index) => {
+        console.log(`\n--- [SETUP-DEBUG] Componente MODULE SUPPORTS ${index + 1} ---`);
+        console.log('Codigo:', comp.Codigo);
+        console.log('Nombre:', comp.Nombre);
+        console.log('Imagen:', comp.Imagen);
+        console.log('Familia:', comp.Familia);
+        
+        // Verificar dimensiones
+        const dimensionKeys = Object.keys(comp).filter(key => 
+          /^[A-Z]$/.test(key) || /^[A-Z]\+$/.test(key) || /^[A-Z]\-$/.test(key) || /^Ø\d+/.test(key)
+        );
+        console.log('Dimensiones encontradas:', dimensionKeys);
+        
+        // Mostrar valores de dimensiones
+        dimensionKeys.forEach(key => {
+          if (comp[key] !== undefined && comp[key] !== null && comp[key] !== '') {
+            console.log(`  ${key}: ${comp[key]}`);
+          }
+        });
+        
+        console.log('Objeto completo:', comp);
+      });
+      
+      // Verificar si "Long Plante" existe
+      const longPlante = data.find(item => 
+        item.Nombre === 'Long Plante' || 
+        (item.Codigo && item.Codigo.toLowerCase().includes('long')) ||
+        (item.Familia === 'MODULE SUPPORTS' && item.Nombre && item.Nombre.toLowerCase().includes('long'))
+      );
+      
+      if (longPlante) {
+        console.log('\n✅ [SETUP-DEBUG] Long Plante encontrado:');
+        console.log(longPlante);
+      } else {
+        console.log('\n❌ [SETUP-DEBUG] Long Plante NO encontrado');
+        console.log('Buscando variaciones...');
+        
+        // Buscar variaciones de nombres
+        const variations = data.filter(item => 
+          item.Familia === 'MODULE SUPPORTS' || 
+          (item.Nombre && (item.Nombre.toLowerCase().includes('long') || item.Nombre.toLowerCase().includes('plante'))) ||
+          (item.Codigo && (item.Codigo.toLowerCase().includes('long') || item.Codigo.toLowerCase().includes('plante')))
+        );
+        
+        console.log('Variaciones encontradas:', variations);
+      }
+      
+      return { success: true, data, moduleSupportComponents };
+      
+    } catch (error) {
+      console.error('❌ [SETUP-DEBUG] Error verificando Excel:', error);
+      return { success: false, error: error.message };
+    }
+  };
+
+  // Función para verificar imagen específica
+  const verifyImage = async (imageName) => {
+    console.log(`🖼️ [SETUP-DEBUG] Verificando imagen: ${imageName}`);
+    
+    const imagePath = `/images/drawings/${imageName}.jpeg`;
+    try {
+      const response = await fetch(imagePath, { method: 'HEAD' });
+      const exists = response.ok;
+      console.log(`🖼️ [SETUP-DEBUG] Imagen ${imageName}:`, exists ? '✅ Existe' : '❌ No existe');
+      console.log(`📁 [SETUP-DEBUG] Ruta completa: ${window.location.origin}${imagePath}`);
+      console.log(`📁 [SETUP-DEBUG] Status: ${response.status} ${response.statusText}`);
+      return exists;
+    } catch (error) {
+      console.error(`❌ [SETUP-DEBUG] Error verificando imagen ${imageName}:`, error);
+      return false;
+    }
+  };
+
+  // Debug function para verificar la carga de datos paso a paso
+  const debugComponentLoading = async (family, code) => {
+    console.log('\n🔍 [SETUP-DEBUG] ===== INICIANDO VERIFICACIÓN COMPLETA =====');
+    console.log(`🔍 [SETUP-DEBUG] Familia: "${family}", Código: "${code}"`);
+    
+    try {
+      // 1. Verificar Excel raw
+      console.log('\n📋 [SETUP-DEBUG] PASO 1: Verificando Excel raw...');
+      const excelResult = await verifyExcelData();
+      
+      // 2. Verificar familias disponibles a través de la función
+      console.log('\n📋 [SETUP-DEBUG] PASO 2: Verificando familias a través de fetchComponentFamilies...');
+      const families = await fetchComponentFamilies();
+      console.log('📋 [SETUP-DEBUG] Familias desde fetchComponentFamilies:', families);
+      console.log('✅ [SETUP-DEBUG] MODULE SUPPORTS en fetchComponentFamilies:', families.includes('MODULE SUPPORTS'));
+      
+      if (family) {
+        // 3. Verificar códigos de la familia
+        console.log(`\n📦 [SETUP-DEBUG] PASO 3: Verificando códigos para familia "${family}"...`);
+        const codes = await fetchComponentCodes(family);
+        console.log(`📦 [SETUP-DEBUG] Códigos para ${family}:`, codes);
+        console.log(`📦 [SETUP-DEBUG] Número de códigos encontrados:`, codes.length);
+        
+        // Buscar "Long Plante" específicamente
+        const longPlanteCode = codes.find(c => 
+          c.name === 'Long Plante' || 
+          c.name.toLowerCase().includes('long') ||
+          c.code.toLowerCase().includes('long')
+        );
+        console.log(`🎯 [SETUP-DEBUG] Long Plante en códigos:`, longPlanteCode);
+        
+        if (code) {
+          // 4. Verificar el componente específico
+          console.log(`\n🎯 [SETUP-DEBUG] PASO 4: Verificando componente específico "${code}"...`);
+          const specificComponent = codes.find(c => c.code === code);
+          console.log(`🎯 [SETUP-DEBUG] Componente específico ${code}:`, specificComponent);
+          
+          // 5. Verificar dimensiones
+          console.log(`\n📏 [SETUP-DEBUG] PASO 5: Verificando dimensiones para "${code}"...`);
+          const dimensions = await fetchDimensions(code);
+          console.log(`📏 [SETUP-DEBUG] Dimensiones para ${code}:`, dimensions);
+          console.log(`📏 [SETUP-DEBUG] Número de dimensiones:`, dimensions.length);
+          
+          // 6. Verificar imagen
+          console.log(`\n🖼️ [SETUP-DEBUG] PASO 6: Verificando imagen para "${code}"...`);
+          const drawing = await getComponentDrawing(code);
+          console.log(`🖼️ [SETUP-DEBUG] Dibujo para ${code}:`, drawing);
+          
+          // 7. Verificar archivo de imagen
+          if (drawing.imageCode) {
+            console.log(`\n📁 [SETUP-DEBUG] PASO 7: Verificando archivo de imagen "${drawing.imageCode}"...`);
+            const imageExists = await verifyImage(drawing.imageCode);
+            console.log(`📁 [SETUP-DEBUG] Archivo de imagen existe:`, imageExists);
+          }
+        }
+      }
+      
+      console.log('\n🏁 [SETUP-DEBUG] ===== VERIFICACIÓN COMPLETA FINALIZADA =====');
+      
+    } catch (error) {
+      console.error('❌ [SETUP-DEBUG] Error en debug completo:', error);
+    }
+  };
+
+  // Función para verificar estado del contexto
+  const debugContextState = () => {
+    console.log('\n🏪 [SETUP-DEBUG] ===== ESTADO DEL CONTEXTO =====');
+    console.log('componentFamily:', state.componentFamily);
+    console.log('componentCode:', state.componentCode);
+    console.log('componentName:', state.componentName);
+    console.log('availableComponentFamilies:', state.availableComponentFamilies);
+    console.log('availableComponentCodes:', state.availableComponentCodes);
+    console.log('dimensions:', state.dimensions);
+    console.log('dataSourceIsDatabase:', state.dataSourceIsDatabase);
+    console.log('isLoadingFromDatabase:', state.isLoadingFromDatabase);
+    console.log('Estado completo:', state);
+  };
+
+  // ===== EFECTOS PARA DEBUG AUTOMÁTICO =====
+
+  // Debug automático cuando cambia la familia
+  useEffect(() => {
+    if (state.componentFamily) {
+      console.log(`\n🔄 [SETUP-DEBUG] Familia cambiada a: "${state.componentFamily}"`);
+      debugContextState();
+      
+      if (state.componentFamily === 'MODULE SUPPORTS') {
+        console.log('🎯 [SETUP-DEBUG] MODULE SUPPORTS detectado, ejecutando debug...');
+        setTimeout(() => {
+          debugComponentLoading(state.componentFamily, null);
+        }, 1000); // Dar tiempo para que se carguen los códigos
+      }
+    }
+  }, [state.componentFamily]);
+
+  // Debug automático cuando cambia el código
+  useEffect(() => {
+    if (state.componentCode && state.componentFamily === 'MODULE SUPPORTS') {
+      console.log(`\n🔄 [SETUP-DEBUG] Código MODULE SUPPORTS cambiado a: "${state.componentCode}"`);
+      debugContextState();
+      setTimeout(() => {
+        debugComponentLoading(state.componentFamily, state.componentCode);
+      }, 500);
+    }
+  }, [state.componentCode, state.componentFamily]);
+
+  // Debug cuando cambian los códigos disponibles
+  useEffect(() => {
+    if (state.availableComponentCodes && state.componentFamily === 'MODULE SUPPORTS') {
+      console.log('\n📦 [SETUP-DEBUG] Códigos disponibles actualizados para MODULE SUPPORTS:');
+      console.log('availableComponentCodes:', state.availableComponentCodes);
+      
+      // Buscar específicamente Long Plante
+      const longPlante = state.availableComponentCodes.find(comp => 
+        comp.name === 'Long Plante' ||
+        comp.name.toLowerCase().includes('long') ||
+        comp.code.toLowerCase().includes('long')
+      );
+      console.log('🎯 [SETUP-DEBUG] Long Plante en availableComponentCodes:', longPlante);
+    }
+  }, [state.availableComponentCodes, state.componentFamily]);
+
+  // ===== FUNCIONES ORIGINALES (con logs adicionales) =====
   
-  // Manejadores de eventos
+  // Manejadores de eventos con debug
   const handleInputChange = (field, value) => {
+    console.log(`📝 [SETUP-DEBUG] Campo cambiado: ${field} = "${value}"`);
+    
     dispatch({
       type: 'UPDATE_SETUP_FIELD',
       payload: { field, value }
@@ -50,24 +292,36 @@ const SetupForm = () => {
       });
     }
     
-    // Update component name when component code changes
+    // Update component name when component code changes (con debug)
     if (field === 'componentCode') {
+      console.log(`🔍 [SETUP-DEBUG] Buscando nombre para código: "${value}"`);
+      console.log('🔍 [SETUP-DEBUG] Códigos disponibles:', state.availableComponentCodes);
+      
       const selectedComponent = state.availableComponentCodes?.find(comp => comp.code === value);
+      console.log(`🔍 [SETUP-DEBUG] Componente encontrado:`, selectedComponent);
+      
       if (selectedComponent) {
+        console.log(`✅ [SETUP-DEBUG] Nombre a establecer: "${selectedComponent.name}"`);
         dispatch({
           type: 'UPDATE_SETUP_FIELD',
           payload: { field: 'componentName', value: selectedComponent.name }
         });
+      } else {
+        console.log(`❌ [SETUP-DEBUG] No se encontró componente para código: "${value}"`);
       }
     }
   };
   
   const handleNextStep = () => {
+    console.log('\n🚀 [SETUP-DEBUG] Intentando continuar a inspección...');
+    debugContextState();
+    
     // Validar campos requeridos usando la función del contexto
     const validation = validateRequiredFields();
     
     if (!validation.isValid) {
       const errorMessage = `Please complete the following required fields:\n\n• ${validation.missingFields.join('\n• ')}`;
+      console.log('❌ [SETUP-DEBUG] Validación falló:', validation.missingFields);
       setValidationError(errorMessage);
       
       // Mostrar alerta también
@@ -76,9 +330,12 @@ const SetupForm = () => {
     }
     
     // Si todo está correcto, proceder a inspection
+    console.log('✅ [SETUP-DEBUG] Validación exitosa, continuando a inspección...');
     setValidationError('');
     dispatch({ type: 'SET_ACTIVE_TAB', payload: 'inspection' });
   };
+
+  // ===== RESTO DE FUNCIONES ORIGINALES =====
 
   // Función para obtener geocodificación inversa limitando a Italia
   const fetchAddressFromCoords = async (lat, lng) => {
@@ -322,11 +579,48 @@ const SetupForm = () => {
       <Marker position={[mapCoords.lat, mapCoords.lng]} />
     ) : null;
   };
+
+  // ===== EXPONER FUNCIONES DE DEBUG GLOBALMENTE =====
+  React.useEffect(() => {
+    // Hacer funciones disponibles en la consola del navegador
+    window.debugComponentLoading = debugComponentLoading;
+    window.verifyExcelData = verifyExcelData;
+    window.verifyImage = verifyImage;
+    window.debugContextState = debugContextState;
+    
+    console.log('\n🎯 [SETUP-DEBUG] Funciones de debug disponibles en consola:');
+    console.log('- window.debugComponentLoading(family, code)');
+    console.log('- window.verifyExcelData()');
+    console.log('- window.verifyImage(imageName)');
+    console.log('- window.debugContextState()');
+    console.log('\nEjemplo: debugComponentLoading("MODULE SUPPORTS", "tu_codigo")');
+    
+    // Ejecutar verificación inicial
+    setTimeout(() => {
+      console.log('\n🚀 [SETUP-DEBUG] Ejecutando verificación inicial...');
+      verifyExcelData();
+    }, 2000);
+  }, []);
   
   return (
     <div className="dashboard-card">
       <div className="card-header">
         <h3 className="card-title">Inspection Setup</h3>
+        {/* Botón de debug manual */}
+        <button 
+          onClick={() => debugComponentLoading(state.componentFamily, state.componentCode)}
+          style={{
+            background: '#e53e3e',
+            color: 'white',
+            border: 'none',
+            padding: '4px 8px',
+            borderRadius: '4px',
+            fontSize: '12px',
+            cursor: 'pointer'
+          }}
+        >
+          DEBUG NOW
+        </button>
       </div>
       
       <div className="card-body">
@@ -432,6 +726,12 @@ const SetupForm = () => {
                     ))}
                   </select>
                 </div>
+                {/* Debug info para códigos */}
+                {state.componentFamily === 'MODULE SUPPORTS' && (
+                  <div style={{fontSize: '11px', color: '#666', marginTop: '4px'}}>
+                    DEBUG: {state.availableComponentCodes?.length || 0} códigos disponibles
+                  </div>
+                )}
               </div>
               
               {/* Component Name */}
@@ -447,6 +747,12 @@ const SetupForm = () => {
                   value={state.componentName || ''}
                   readOnly
                 />
+                {/* Debug info para nombre */}
+                {state.componentFamily === 'MODULE SUPPORTS' && (
+                  <div style={{fontSize: '11px', color: '#666', marginTop: '4px'}}>
+                    DEBUG: Nombre actual = "{state.componentName || 'VACÍO'}"
+                  </div>
+                )}
               </div>
               
               {/* Surface Protection */}

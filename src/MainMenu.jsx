@@ -85,7 +85,7 @@ import { LanguageProvider } from './context/LanguageContext';
 // Configuración de usuarios y permisos
 const USER_CREDENTIALS = {
   'Admin': {
-    password: 'admin1234',
+    password: 'valm2025',
     role: 'admin',
     permissions: ['steel', 'hardware', 'electrical', 'free-inspection', 'non-conformity-manager', 'inspection-dashboard', 'quality-database', 'supplier-management']
   },

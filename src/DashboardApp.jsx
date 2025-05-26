@@ -6,9 +6,8 @@ import ContentHeader from './components/layout/ContentHeader';
 import SetupForm from './components/setup/SetupForm'; 
 import { InspectionPanelSistem } from './components/inspection';
 import ReportViewDashboard from './components/report/ReportViewDashboard';
-// Importaremos el componente DatabaseView más adelante
-// Esta importación es un placeholder hasta que creemos el componente
 import DatabaseView from './components/database/DatabaseView';
+import PhotoGallery from './components/gallery/PhotoGallery'; 
 
 const DashboardApp = () => {
   const { state } = useInspection();
@@ -238,6 +237,8 @@ const DashboardApp = () => {
         return 'Inspection Report';
       case 'database':
         return 'Inspection Database';
+      case 'gallery': // ← NUEVO CASE
+        return 'Photo Gallery';
       default:
         return 'Dashboard';
     }
@@ -257,6 +258,9 @@ const DashboardApp = () => {
             {activeTab === 'report' && <ReportViewDashboard />}
             {/* Nueva pestaña Database - Solo visible para usuarios Admin */}
             {activeTab === 'database' && userRole === 'admin' && <DatabaseView />}
+            {/* NUEVA PESTAÑA GALLERY - Solo visible para usuarios Admin */}
+            {activeTab === 'gallery' && userRole === 'admin' && <PhotoGallery />}
+            {activeTab === 'dashboard' && userRole === 'admin' && <div>Dashboard content here</div>}
           </div>
         </div>
       </div>

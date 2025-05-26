@@ -9,7 +9,8 @@ import {
   X,
   Database,
   BarChart,
-  Shield
+  Shield,
+  Images
 } from 'lucide-react';
 
 const SidebarNav = () => {
@@ -117,6 +118,15 @@ const SidebarNav = () => {
               >
                 <Database size={20} />
                 <span>Database</span>
+              </div>
+              
+              {/* NUEVA SECCIÓN: Photo Gallery */}
+              <div 
+                className={`nav-item admin-item ${activeTab === 'gallery' ? 'admin-active' : ''}`}
+                onClick={() => handleTabChange('gallery')}
+              >
+                <Images size={20} />
+                <span>Photo Gallery</span>
               </div>
               
               <div 

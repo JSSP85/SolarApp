@@ -72,7 +72,7 @@ const LanguageSelector = () => {
       </div>
       
       <span className="text-xs text-gray-500 ml-2 hidden sm:inline">
-        Idioma para reconocimiento de voz
+        Language for voice mode
       </span>
       
       {/* Estilos para la animación */}

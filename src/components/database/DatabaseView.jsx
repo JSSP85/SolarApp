@@ -29,104 +29,6 @@ import ReportViewDashboard from '../report/ReportViewDashboard';
 import { InspectionProvider } from '../../context/InspectionContext';
 import './DatabaseView.css';
 
-// COMPONENTE DEBUG TEMPORAL
-const DebugInspectionData = () => {
-  const { state } = useInspection();
-  
-  return (
-    <div style={{
-      position: 'fixed',
-      top: '10px',
-      right: '10px',
-      background: 'rgba(0,0,0,0.9)',
-      color: 'white',
-      padding: '10px',
-      borderRadius: '5px',
-      maxWidth: '350px',
-      fontSize: '11px',
-      zIndex: 9999,
-      maxHeight: '500px',
-      overflowY: 'auto',
-      border: '2px solid #4CAF50'
-    }}>
-      <h4 style={{margin: '0 0 10px 0', color: '#4CAF50'}}>🐛 Debug - Estado del Contexto</h4>
-      
-      <div><strong>Component Name:</strong> {state.componentName || 'N/A'}</div>
-      <div><strong>Component Code:</strong> {state.componentCode || 'N/A'}</div>
-      <div><strong>Inspector:</strong> {state.inspector || 'N/A'}</div>
-      <div><strong>Sample Info:</strong> {state.sampleInfo || 'N/A'}</div>
-      
-      <hr style={{margin: '8px 0', borderColor: '#666'}} />
-      
-      <div><strong>Dimensions:</strong> {state.dimensions?.length || 0}</div>
-      {state.dimensions?.slice(0, 3).map((dim, index) => (
-        <div key={index} style={{marginLeft: '10px', fontSize: '10px', color: '#ccc'}}>
-          {dim.code}: {dim.nominal}mm ({dim.tolerancePlus}, {dim.toleranceMinus})
-        </div>
-      ))}
-      {state.dimensions?.length > 3 && <div style={{marginLeft: '10px', fontSize: '10px', color: '#999'}}>... y {state.dimensions.length - 3} más</div>}
-      
-      <hr style={{margin: '8px 0', borderColor: '#666'}} />
-      
-      <div><strong>Dimension Measurements:</strong></div>
-      {state.dimensionMeasurements && Object.keys(state.dimensionMeasurements).length > 0 ? 
-        Object.keys(state.dimensionMeasurements).slice(0, 2).map(dimCode => (
-          <div key={dimCode} style={{marginLeft: '10px', fontSize: '10px', color: '#ccc'}}>
-            {dimCode}: [{(state.dimensionMeasurements[dimCode] || []).slice(0, 3).join(', ')}...]
-          </div>
-        )) : 
-        <div style={{marginLeft: '10px', color: '#ff6b6b'}}>❌ No measurements found</div>
-      }
-      
-      <hr style={{margin: '8px 0', borderColor: '#666'}} />
-      
-      <div><strong>Photos:</strong> {state.photos?.length || 0}</div>
-      <div><strong>Visual Conformity:</strong> {state.visualConformity || 'N/A'}</div>
-      <div><strong>Inspection Status:</strong> {state.inspectionStatus || 'N/A'}</div>
-      
-      <button 
-        onClick={() => {
-          console.log('🎯 Estado completo del contexto:', state);
-          console.log('📊 Dimension Measurements detallado:', state.dimensionMeasurements);
-          console.log('📏 Dimensions detallado:', state.dimensions);
-        }}
-        style={{
-          background: '#4CAF50',
-          color: 'white',
-          border: 'none',
-          padding: '4px 8px',
-          borderRadius: '3px',
-          cursor: 'pointer',
-          marginTop: '8px',
-          fontSize: '10px'
-        }}
-      >
-        Log Estado Completo
-      </button>
-      
-      <button 
-        onClick={() => {
-          const debugElement = document.querySelector('[style*="position: fixed"]');
-          if (debugElement) debugElement.style.display = 'none';
-        }}
-        style={{
-          background: '#f44336',
-          color: 'white',
-          border: 'none',
-          padding: '4px 8px',
-          borderRadius: '3px',
-          cursor: 'pointer',
-          marginTop: '4px',
-          marginLeft: '5px',
-          fontSize: '10px'
-        }}
-      >
-        Ocultar
-      </button>
-    </div>
-  );
-};
-
 // Componente InspectionDetails (sin cambios)
 const InspectionDetails = ({ inspectionData, onBack }) => {
   if (!inspectionData) {
@@ -724,8 +626,6 @@ const InspectionReportContent = ({ inspectionData }) => {
   
   return (
     <div id="database-report-container" key={renderKey} className="database-report-content">
-      {/* COMPONENTE DEBUG TEMPORAL */}
-      <DebugInspectionData />
       <ReportViewDashboard />
     </div>
   );

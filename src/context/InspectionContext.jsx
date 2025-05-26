@@ -36,7 +36,9 @@ const inspectionStateWithFirebase = {
   saveError: null,
   lastSaved: null,
   hasUnsavedChanges: false,
-  isLoadingFromDatabase: false, // ← NUEVO FLAG
+  isLoadingFromDatabase: false,
+  // NUEVO FLAG: Para indicar que los datos vienen de DB y no deben ser sobrescritos
+  dataSourceIsDatabase: false,
 };
 
 // Función de validación de campos requeridos
@@ -92,6 +94,12 @@ function inspectionReducer(state, action) {
       return { ...state, availableComponentCodes: action.payload };
       
     case 'SET_DIMENSIONS':
+      // NUEVA LÓGICA: Si los datos vienen de DB y ya tenemos dimensiones, no sobrescribir
+      if (state.dataSourceIsDatabase && state.dimensions && state.dimensions.length > 0) {
+        console.log('🔒 PRESERVANDO: Datos de DB ya cargados, ignorando SET_DIMENSIONS');
+        return state; // No hacer nada, mantener estado actual
+      }
+      
       // Si estamos cargando desde database, NO borrar las mediciones existentes
       if (state.isLoadingFromDatabase && state.dimensionMeasurements && Object.keys(state.dimensionMeasurements).length > 0) {
         console.log('🔒 Preservando mediciones existentes durante carga desde DB');
@@ -651,6 +659,8 @@ function inspectionReducer(state, action) {
         
         // PASO 6: Marcar que estamos cargando desde database
         isLoadingFromDatabase: true,
+        // NUEVO: Marcar que los datos vienen de DB
+        dataSourceIsDatabase: true,
         
         // PASO 7: Campos de Firebase
         isSaving: false,
@@ -664,7 +674,8 @@ function inspectionReducer(state, action) {
         dimensionMeasurements: Object.keys(newState.dimensionMeasurements || {}).length,
         dimensionMeasurementsDetailed: newState.dimensionMeasurements,
         sampleInfo: newState.sampleInfo,
-        componentName: newState.componentName
+        componentName: newState.componentName,
+        dataSourceIsDatabase: newState.dataSourceIsDatabase
       });
       
       // VERIFICACIÓN CRÍTICA
@@ -677,8 +688,22 @@ function inspectionReducer(state, action) {
       return newState;
 
     case 'FINISH_LOADING_FROM_DATABASE':
+      console.log('🏁 FINALIZANDO carga desde database - preservando dataSourceIsDatabase=true');
       return {
         ...state,
+        isLoadingFromDatabase: false,
+        // MANTENER dataSourceIsDatabase=true para proteger los datos
+      };
+
+    // NUEVO CASO: Para resetear cuando se crea una nueva inspección
+    case 'RESET_TO_NEW_INSPECTION':
+      return {
+        ...inspectionStateWithFirebase,
+        // Mantener algunas configuraciones del usuario
+        inspector: state.inspector,
+        inspectionDate: new Date().toISOString().slice(0, 10),
+        // Asegurar que NO viene de DB
+        dataSourceIsDatabase: false,
         isLoadingFromDatabase: false
       };
     
@@ -709,12 +734,13 @@ export const InspectionProvider = ({ children }) => {
     loadInitialData();
   }, []);
   
-  // Cargar códigos de componente cuando cambia la familia seleccionada
+  // CORREGIDO: Cargar códigos de componente cuando cambia la familia seleccionada
   useEffect(() => {
     const loadComponentCodes = async () => {
-      // NO ejecutar si estamos cargando desde database
-      if (state.componentFamily && !state.isLoadingFromDatabase) {
+      // NO ejecutar si estamos cargando desde database O si los datos vienen de DB
+      if (state.componentFamily && !state.isLoadingFromDatabase && !state.dataSourceIsDatabase) {
         try {
+          console.log('🔍 Cargando component codes para familia:', state.componentFamily);
           const codes = await fetchComponentCodes(state.componentFamily);
           dispatch({ 
             type: 'SET_COMPONENT_CODES', 
@@ -723,18 +749,25 @@ export const InspectionProvider = ({ children }) => {
         } catch (error) {
           console.error('Error loading component codes:', error);
         }
+      } else {
+        console.log('⏭️ Saltando carga de component codes:', {
+          componentFamily: state.componentFamily,
+          isLoadingFromDatabase: state.isLoadingFromDatabase,
+          dataSourceIsDatabase: state.dataSourceIsDatabase
+        });
       }
     };
     
     loadComponentCodes();
-  }, [state.componentFamily, state.isLoadingFromDatabase]);
+  }, [state.componentFamily, state.isLoadingFromDatabase, state.dataSourceIsDatabase]);
   
-  // Cargar dimensiones cuando cambia el código de componente seleccionado
+  // CORREGIDO: Cargar dimensiones cuando cambia el código de componente seleccionado
   useEffect(() => {
     const loadDimensions = async () => {
-      // NO ejecutar si estamos cargando desde database
-      if (state.componentCode && !state.isLoadingFromDatabase) {
+      // NO ejecutar si estamos cargando desde database O si los datos vienen de DB
+      if (state.componentCode && !state.isLoadingFromDatabase && !state.dataSourceIsDatabase) {
         try {
+          console.log('🔍 Cargando dimensiones para código:', state.componentCode);
           const dimensions = await fetchDimensions(state.componentCode);
           dispatch({ 
             type: 'SET_DIMENSIONS', 
@@ -743,16 +776,22 @@ export const InspectionProvider = ({ children }) => {
         } catch (error) {
           console.error('Error loading dimensions:', error);
         }
+      } else {
+        console.log('⏭️ Saltando carga de dimensiones:', {
+          componentCode: state.componentCode,
+          isLoadingFromDatabase: state.isLoadingFromDatabase,
+          dataSourceIsDatabase: state.dataSourceIsDatabase
+        });
       }
     };
     
     loadDimensions();
-  }, [state.componentCode, state.isLoadingFromDatabase]);
+  }, [state.componentCode, state.isLoadingFromDatabase, state.dataSourceIsDatabase]);
   
   // Cargar requisitos de recubrimiento cuando cambia la protección de superficie
   useEffect(() => {
     const loadCoatingRequirements = async () => {
-      if (state.surfaceProtection) {
+      if (state.surfaceProtection && !state.dataSourceIsDatabase) {
         try {
           const requirements = await fetchCoatingRequirements(
             state.surfaceProtection,
@@ -771,7 +810,7 @@ export const InspectionProvider = ({ children }) => {
     };
     
     loadCoatingRequirements();
-  }, [state.surfaceProtection, state.thickness, state.specialCoating]);
+  }, [state.surfaceProtection, state.thickness, state.specialCoating, state.dataSourceIsDatabase]);
   
   // Efecto para actualizar estadísticas de recubrimiento
   useEffect(() => {
@@ -847,7 +886,7 @@ export const InspectionProvider = ({ children }) => {
   // Marcar cambios no guardados cuando se actualiza el state
   useEffect(() => {
     // Solo marcar como no guardado si ya hay una inspección y no estamos cargando
-    if (state.currentInspectionId && !state.isSaving) {
+    if (state.currentInspectionId && !state.isSaving && !state.dataSourceIsDatabase) {
       dispatch({ type: 'SET_UNSAVED_CHANGES', payload: true });
     }
   }, [
@@ -912,17 +951,9 @@ export const InspectionProvider = ({ children }) => {
     }
   };
 
-  // Función para crear nueva inspección (resetear state)
+  // CORREGIDO: Función para crear nueva inspección (resetear state)
   const createNewInspection = () => {
-    // Resetear al estado inicial pero mantener algunas configuraciones
-    const newState = {
-      ...inspectionStateWithFirebase,
-      // Mantener estas configuraciones del usuario
-      inspector: state.inspector,
-      inspectionDate: new Date().toISOString().slice(0, 10)
-    };
-    
-    dispatch({ type: 'LOAD_INSPECTION_DATA', payload: newState });
+    dispatch({ type: 'RESET_TO_NEW_INSPECTION' });
     console.log('Nueva inspección creada');
   };
   

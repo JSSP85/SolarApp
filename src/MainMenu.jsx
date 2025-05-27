@@ -20,11 +20,15 @@ import {
   FileWarning,
   PieChart,
   Database,
-  Lock
+  Lock,
+  Book
 } from 'lucide-react';
 
 // Importar el nuevo componente BackButton
 import BackButton from './components/common/BackButton';
+
+// Import Quality Book Generator
+import QualityBookGenerator from './components/quality/QualityBookGenerator';
 
 // Custom SVG for the hardware components (screw icon)
 const ScrewIcon = () => (
@@ -87,7 +91,7 @@ const USER_CREDENTIALS = {
   'Admin': {
     password: 'valm2025',
     role: 'admin',
-    permissions: ['steel', 'hardware', 'electrical', 'free-inspection', 'non-conformity-manager', 'inspection-dashboard', 'quality-database', 'supplier-management']
+    permissions: ['steel', 'hardware', 'electrical', 'free-inspection', 'non-conformity-manager', 'inspection-dashboard', 'quality-database', 'quality-book', 'supplier-management']
   },
   'Inspector1': {
     password: '4321',
@@ -204,6 +208,7 @@ const MainMenu = () => {
       case 'inspection-dashboard':
         return 'Manager Level Access Required';
       case 'quality-database':
+      case 'quality-book':
       case 'supplier-management':
         return 'Administrator Access Required';
       default:
@@ -334,6 +339,12 @@ const MainMenu = () => {
                 <DashboardApp />
               </InspectionProvider>
             </LanguageProvider>
+          </div>
+        );
+      case 'quality-book':
+        return (
+          <div className={styles.mainMenuAppWrapper}>
+            <QualityBookGenerator onBackClick={() => setSelectedOption(null)} />
           </div>
         );
       case 'hardware':
@@ -595,21 +606,21 @@ const MainMenu = () => {
                   </div>
                 </div>
 
-                {/* Future Option 2 */}
+                {/* Quality Book Generator - NUEVA TARJETA */}
                 <div 
-                  className={`${styles.mainMenuCard} ${styles.mainMenuStagger4} ${styles.mainMenuCardDisabled}`}
-                  onClick={() => handleManagerOptionSelect('supplier-management')}
+                  className={`${styles.mainMenuCard} ${styles.mainMenuStagger4}`}
+                  onClick={() => handleManagerOptionSelect('quality-book')}
                 >
                   <div className={styles.mainMenuCardBody}>
-                    <div className={styles.mainMenuCardIconContainer} style={{ background: 'rgba(124, 58, 237, 0.1)', border: '1px solid rgba(124, 58, 237, 0.2)' }}>
-                      <Briefcase size={32} className={styles.mainMenuCardIcon} />
+                    <div className={styles.mainMenuCardIconContainer} style={{ background: 'rgba(99, 102, 241, 0.1)', border: '1px solid rgba(99, 102, 241, 0.2)' }}>
+                      <Book size={32} className={styles.mainMenuCardIcon} />
                     </div>
-                    <h3 className={styles.mainMenuCardTitle}>Supplier Management</h3>
+                    <h3 className={styles.mainMenuCardTitle}>Generador de Quality Books</h3>
                     <p className={styles.mainMenuCardDescription}>
-                      Evaluate and manage supplier quality performance and documentation
+                      Sistema automatizado de documentación de trazabilidad para libros de control de calidad
                     </p>
                     <div className={styles.mainMenuCardFooter}>
-                      <div className={`${styles.mainMenuBadge} ${styles.mainMenuBadgeDisabled}`}>Coming Soon</div>
+                      <div className={`${styles.mainMenuBadge} ${styles.mainMenuBadgeInfo}`}>Listo para Usar</div>
                       <div className={styles.managerLockIndicator}>
                         <Lock size={14} />
                       </div>

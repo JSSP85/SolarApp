@@ -531,3 +531,580 @@ html, body {
     font-size: 1.5rem;
   }
 }
+/* ==================================================
+   AGREGAR ESTAS CLASES AL FINAL DE MainMenu.module.css
+   ================================================== */
+
+/* Estilos para Quality Book Generator */
+.qualityBookWrapper {
+  position: fixed;
+  inset: 0;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  overflow: auto;
+  z-index: 999;
+  min-height: 100vh;
+}
+
+/* Wrapper para aplicaciones del main menu */
+.mainMenuAppWrapper {
+  position: fixed;
+  inset: 0;
+  background: white;
+  overflow: auto;
+  z-index: 999;
+  min-height: 100vh;
+}
+
+/* Badge para indicar funcionalidad lista */
+.mainMenuBadgeReady {
+  background-color: rgba(34, 197, 94, 0.25);
+  border: 1px solid rgba(34, 197, 94, 0.4);
+  color: rgba(34, 197, 94, 1);
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0.25rem 0.625rem;
+  border-radius: 9999px;
+  font-weight: 500;
+  font-size: 0.75rem;
+  transition: all 0.3s ease;
+}
+
+/* Animación adicional para el botón Quality Book */
+.qualityBookCard {
+  position: relative;
+  overflow: hidden;
+}
+
+.qualityBookCard::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(255, 255, 255, 0.2),
+    transparent
+  );
+  transition: left 0.5s;
+  z-index: 1;
+  pointer-events: none;
+}
+
+.qualityBookCard:hover::before {
+  left: 100%;
+}
+
+/* Mejoras para el diseño responsive del Quality Book */
+@media (max-width: 1024px) {
+  .qualityBookWrapper {
+    padding: 1rem;
+  }
+  
+  .mainMenuAppWrapper {
+    padding: 0.5rem;
+  }
+}
+
+@media (max-width: 768px) {
+  .qualityBookWrapper {
+    padding: 0.5rem;
+  }
+}
+
+/* Estilos específicos para elementos del Quality Book Generator */
+.uploadArea {
+  border: 2px dashed rgba(0, 95, 131, 0.3);
+  border-radius: 12px;
+  padding: 2rem;
+  text-align: center;
+  transition: all 0.3s ease;
+  background: rgba(0, 95, 131, 0.02);
+  cursor: pointer;
+}
+
+.uploadArea:hover {
+  border-color: rgba(0, 95, 131, 0.6);
+  background: rgba(0, 95, 131, 0.05);
+  transform: translateY(-2px);
+}
+
+.documentCard {
+  background: rgba(255, 255, 255, 0.9);
+  border: 1px solid rgba(0, 95, 131, 0.1);
+  border-radius: 8px;
+  padding: 1rem;
+  transition: all 0.2s ease;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+
+.documentCard:hover {
+  background: rgba(255, 255, 255, 1);
+  border-color: rgba(0, 95, 131, 0.3);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 95, 131, 0.15);
+}
+
+/* Animaciones para la carga y transiciones */
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.fadeInUp {
+  animation: fadeInUp 0.6s ease-out forwards;
+}
+
+@keyframes slideInRight {
+  from {
+    opacity: 0;
+    transform: translateX(30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+.slideInRight {
+  animation: slideInRight 0.6s ease-out forwards;
+}
+
+/* Efectos de cristal para paneles */
+.glassPanel {
+  background: rgba(255, 255, 255, 0.25);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.37);
+  border-radius: 12px;
+}
+
+/* Botón de generar con gradiente animado */
+.generateButton {
+  background: linear-gradient(135deg, #005F83 0%, #0077a2 100%);
+  background-size: 200% 200%;
+  animation: gradientShift 3s ease infinite;
+  border: none;
+  border-radius: 12px;
+  color: white;
+  font-weight: 600;
+  padding: 1rem 2rem;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 15px rgba(0, 95, 131, 0.3);
+}
+
+.generateButton:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 25px rgba(0, 95, 131, 0.4);
+}
+
+.generateButton:disabled {
+  background: #9ca3af;
+  cursor: not-allowed;
+  animation: none;
+  transform: none;
+  box-shadow: none;
+}
+
+@keyframes gradientShift {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+
+/* Indicadores de progreso */
+.progressBar {
+  width: 100%;
+  height: 4px;
+  background: rgba(0, 95, 131, 0.1);
+  border-radius: 2px;
+  overflow: hidden;
+  margin: 1rem 0;
+}
+
+.progressFill {
+  height: 100%;
+  background: linear-gradient(90deg, #005F83, #0077a2);
+  border-radius: 2px;
+  transition: width 0.3s ease;
+  animation: progressPulse 2s ease-in-out infinite;
+}
+
+@keyframes progressPulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.7; }
+}
+
+/* Tooltips para información adicional */
+.tooltip {
+  position: relative;
+  display: inline-block;
+}
+
+.tooltip .tooltipText {
+  visibility: hidden;
+  width: 200px;
+  background-color: rgba(0, 0, 0, 0.9);
+  color: white;
+  text-align: center;
+  border-radius: 6px;
+  padding: 8px;
+  position: absolute;
+  z-index: 1000;
+  bottom: 125%;
+  left: 50%;
+  margin-left: -100px;
+  opacity: 0;
+  transition: opacity 0.3s;
+  font-size: 0.875rem;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+}
+
+.tooltip:hover .tooltipText {
+  visibility: visible;
+  opacity: 1;
+}
+
+/* Estilos para estados de carga y éxito */
+.loadingSpinner {
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  border-top: 2px solid white;
+  border-radius: 50%;
+  width: 16px;
+  height: 16px;
+  animation: spin 1s linear infinite;
+  display: inline-block;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+.successMessage {
+  background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+  color: white;
+  padding: 1rem;
+  border-radius: 8px;
+  margin: 1rem 0;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
+}
+
+.errorMessage {
+  background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+  color: white;
+  padding: 1rem;
+  border-radius: 8px;
+  margin: 1rem 0;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  box-shadow: 0 4px 12px rgba(239, 68, 68, 0.3);
+}
+
+/* Estilos para categorías de documentos */
+.documentCategory {
+  background: rgba(255, 255, 255, 0.95);
+  border-radius: 16px;
+  overflow: hidden;
+  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  transition: all 0.3s ease;
+  backdrop-filter: blur(10px);
+}
+
+.documentCategory:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 12px 35px rgba(0, 0, 0, 0.15);
+}
+
+.documentCategoryHeader {
+  padding: 1.5rem 2rem;
+  background: linear-gradient(135deg, #005F83 0%, #0077a2 100%);
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.documentCategoryBody {
+  padding: 2rem;
+}
+
+.documentGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 1rem;
+}
+
+/* Estilos para archivos individuales */
+.fileItem {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 1rem;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  transition: all 0.2s ease;
+}
+
+.fileItem:hover {
+  background: #f1f5f9;
+  border-color: #005F83;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 8px rgba(0, 95, 131, 0.1);
+}
+
+.fileInfo {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  flex: 1;
+  min-width: 0;
+}
+
+.fileName {
+  font-weight: 600;
+  color: #1f2937;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.fileDetails {
+  font-size: 0.875rem;
+  color: #6b7280;
+  margin-top: 0.25rem;
+}
+
+.fileActions {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-left: 1rem;
+}
+
+.fileAction {
+  padding: 0.5rem;
+  background: none;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.fileAction:hover {
+  background: rgba(0, 95, 131, 0.1);
+}
+
+.fileActionDelete:hover {
+  background: rgba(239, 68, 68, 0.1);
+  color: #ef4444;
+}
+
+/* Estilos para vista previa */
+.previewSection {
+  background: rgba(255, 255, 255, 0.95);
+  border-radius: 16px;
+  padding: 2rem;
+  margin-top: 2rem;
+  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  backdrop-filter: blur(10px);
+}
+
+.previewGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 2rem;
+  margin: 2rem 0;
+}
+
+.previewCard {
+  text-align: center;
+  padding: 1.5rem;
+  background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+  border-radius: 12px;
+  border: 1px solid #e2e8f0;
+  transition: all 0.3s ease;
+}
+
+.previewCard:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.1);
+}
+
+.previewIcon {
+  width: 60px;
+  height: 60px;
+  margin: 0 auto 1rem;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(135deg, #005F83 0%, #0077a2 100%);
+  box-shadow: 0 4px 12px rgba(0, 95, 131, 0.3);
+}
+
+/* Estilos para estructura del documento */
+.documentStructure {
+  background: white;
+  border-radius: 8px;
+  padding: 1.5rem;
+  border: 2px solid #f3f4f6;
+  font-family: 'Monaco', 'Menlo', monospace;
+  font-size: 0.9rem;
+  line-height: 1.6;
+  color: #374151;
+}
+
+.structurePage {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 0.5rem;
+  padding: 0.25rem 0;
+}
+
+.pageNumber {
+  color: #3b82f6;
+  font-weight: bold;
+  min-width: 80px;
+}
+
+.pageTitle {
+  color: #1f2937;
+}
+
+.sectionPage {
+  margin-left: 1rem;
+  border-left: 2px solid #e5e7eb;
+  padding-left: 1rem;
+}
+
+.totalPages {
+  margin-top: 1rem;
+  padding: 1rem;
+  background: linear-gradient(135deg, #f3f4f6 0%, #e5e7eb 100%);
+  border-radius: 8px;
+  font-weight: bold;
+  color: #1f2937;
+  text-align: center;
+}
+
+/* Responsive design improvements */
+@media (max-width: 1200px) {
+  .documentGrid {
+    grid-template-columns: 1fr;
+  }
+  
+  .previewGrid {
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  }
+}
+
+@media (max-width: 768px) {
+  .documentCategoryHeader {
+    flex-direction: column;
+    gap: 1rem;
+    text-align: center;
+  }
+  
+  .fileItem {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 1rem;
+  }
+  
+  .fileActions {
+    margin-left: 0;
+    align-self: flex-end;
+  }
+  
+  .previewGrid {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* Estados especiales */
+.disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  pointer-events: none;
+}
+
+.loading {
+  position: relative;
+  overflow: hidden;
+}
+
+.loading::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(255, 255, 255, 0.4),
+    transparent
+  );
+  animation: shimmer 1.5s infinite;
+}
+
+@keyframes shimmer {
+  0% { left: -100%; }
+  100% { left: 100%; }
+}
+
+/* Mejoras de accesibilidad */
+.visuallyHidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* Focus states para accesibilidad */
+.focusable:focus {
+  outline: 2px solid #005F83;
+  outline-offset: 2px;
+}
+
+/* High contrast mode support */
+@media (prefers-contrast: high) {
+  .documentCard,
+  .fileItem,
+  .previewCard {
+    border-width: 2px;
+    border-color: #000;
+  }
+  
+  .generateButton {
+    border: 2px solid #000;
+  }
+}

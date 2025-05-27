@@ -18,9 +18,7 @@ import {
   Award,
   Package,
   ArrowLeft,
-  Settings,
-  FileImage,
-  FilePdf
+  Settings
 } from 'lucide-react';
 
 // Componente BackButton
@@ -296,9 +294,10 @@ const QualityBookGenerator = ({ onBackClick }) => {
     setShowPreview(!showPreview);
   };
 
+  // Función para obtener icono de archivo basado en el tipo - CORREGIDA
   const getFileIcon = (fileType) => {
-    if (fileType?.includes('pdf')) return <FilePdf size={24} color="#dc2626" />;
-    if (fileType?.includes('image')) return <FileImage size={24} color="#059669" />;
+    if (fileType?.includes('pdf')) return <FileText size={24} color="#dc2626" />;
+    if (fileType?.includes('image')) return <FileText size={24} color="#059669" />;
     return <FileText size={24} color="#3b82f6" />;
   };
 

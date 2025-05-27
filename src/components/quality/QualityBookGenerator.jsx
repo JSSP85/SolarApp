@@ -1,4 +1,4 @@
-// src/components/quality/QualityBookGenerator.jsx
+// src/components/quality/QualityBookGenerator.jsx - REAL PDF GENERATION
 import React, { useState, useRef } from 'react';
 import { 
   Upload, 
@@ -20,6 +20,10 @@ import {
   ArrowLeft,
   Settings
 } from 'lucide-react';
+
+// PDF generation imports
+import { PDFDocument, rgb, StandardFonts, PageSizes } from 'pdf-lib';
+import fontkit from '@pdf-lib/fontkit';
 
 // BackButton Component
 const BackButton = ({ onClick }) => (
@@ -202,6 +206,519 @@ const QualityBookGenerator = ({ onBackClick }) => {
     return Object.values(documents).reduce((total, category) => total + category.length, 0);
   };
 
+  // ==================== REAL PDF GENERATION FUNCTIONS ====================
+
+  // Function to load image from URL
+  const loadImageFromUrl = async (url) => {
+    try {
+      const response = await fetch(url);
+      if (!response.ok) throw new Error(`Failed to load image: ${response.status}`);
+      return await response.arrayBuffer();
+    } catch (error) {
+      console.warn(`Could not load image from ${url}:`, error);
+      return null;
+    }
+  };
+
+  // Function to convert File to ArrayBuffer
+  const fileToArrayBuffer = (file) => {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => resolve(reader.result);
+      reader.onerror = reject;
+      reader.readAsArrayBuffer(file);
+    });
+  };
+
+  // Create cover page with background and logo
+  const createCoverPage = async (pdfDoc, projectInfo) => {
+    const page = pdfDoc.addPage(PageSizes.A4);
+    const { width, height } = page.getSize();
+    
+    try {
+      // Try to load and add background image
+      const backgroundImageBytes = await loadImageFromUrl('/images/backgrounds/solar-background1.jpeg');
+      if (backgroundImageBytes) {
+        const backgroundImage = await pdfDoc.embedJpg(backgroundImageBytes);
+        page.drawImage(backgroundImage, {
+          x: 0,
+          y: 0,
+          width: width,
+          height: height,
+        });
+      } else {
+        // Fallback: gradient-like background using rectangles
+        page.drawRectangle({
+          x: 0,
+          y: 0,
+          width: width,
+          height: height,
+          color: rgb(0.02, 0.37, 0.51) // Valmont Solar blue
+        });
+      }
+    } catch (error) {
+      console.warn('Could not add background image, using solid color:', error);
+      page.drawRectangle({
+        x: 0,
+        y: 0,
+        width: width,
+        height: height,
+        color: rgb(0.02, 0.37, 0.51)
+      });
+    }
+
+    // Try to add logo
+    try {
+      const logoBytes = await loadImageFromUrl('/images/logo2.png');
+      if (logoBytes) {
+        const logo = await pdfDoc.embedPng(logoBytes);
+        const logoScale = 0.5;
+        const logoWidth = logo.width * logoScale;
+        const logoHeight = logo.height * logoScale;
+        
+        page.drawImage(logo, {
+          x: width - logoWidth - 50,
+          y: height - logoHeight - 50,
+          width: logoWidth,
+          height: logoHeight,
+        });
+      }
+    } catch (error) {
+      console.warn('Could not add logo:', error);
+    }
+
+    // Add text content
+    const font = await pdfDoc.embedFont(StandardFonts.HelveticaBold);
+    const regularFont = await pdfDoc.embedFont(StandardFonts.Helvetica);
+
+    // Main title
+    page.drawText('QUALITY CONTROL', {
+      x: 50,
+      y: height - 200,
+      size: 48,
+      font: font,
+      color: rgb(1, 1, 1), // White
+    });
+
+    page.drawText('BOOK', {
+      x: 50,
+      y: height - 260,
+      size: 48,
+      font: font,
+      color: rgb(1, 1, 1), // White
+    });
+
+    // Project info
+    const projectText = `PROJECT: ${projectInfo.projectName}`;
+    page.drawText(projectText, {
+      x: 50,
+      y: height - 350,
+      size: 24,
+      font: regularFont,
+      color: rgb(1, 1, 0.2), // Yellow accent
+    });
+
+    // Valmont Solar branding
+    page.drawText('valmont', {
+      x: 50,
+      y: 80,
+      size: 36,
+      font: font,
+      color: rgb(1, 1, 1),
+    });
+
+    page.drawText('SOLAR', {
+      x: 200,
+      y: 80,
+      size: 36,
+      font: font,
+      color: rgb(1, 1, 1),
+    });
+
+    return page;
+  };
+
+  // Create document information page
+  const createDocumentInfoPage = async (pdfDoc, projectInfo) => {
+    const page = pdfDoc.addPage(PageSizes.A4);
+    const { width, height } = page.getSize();
+    
+    const titleFont = await pdfDoc.embedFont(StandardFonts.HelveticaBold);
+    const regularFont = await pdfDoc.embedFont(StandardFonts.Helvetica);
+
+    // Header with Valmont Solar branding
+    page.drawRectangle({
+      x: 0,
+      y: height - 100,
+      width: width,
+      height: 100,
+      color: rgb(0.02, 0.37, 0.51) // Valmont blue
+    });
+
+    page.drawText('DOCUMENT INFORMATION', {
+      x: 50,
+      y: height - 60,
+      size: 24,
+      font: titleFont,
+      color: rgb(1, 1, 1),
+    });
+
+    // Document info table
+    let yPosition = height - 150;
+
+    // Table headers
+    page.drawRectangle({
+      x: 50,
+      y: yPosition - 30,
+      width: 200,
+      height: 30,
+      color: rgb(0.9, 0.9, 0.9)
+    });
+
+    page.drawRectangle({
+      x: 350,
+      y: yPosition - 30,
+      width: 200,
+      height: 30,
+      color: rgb(0.9, 0.9, 0.9)
+    });
+
+    page.drawText('FILLED BY:', {
+      x: 60,
+      y: yPosition - 20,
+      size: 12,
+      font: titleFont,
+      color: rgb(0, 0, 0),
+    });
+
+    page.drawText('APPROVED BY:', {
+      x: 360,
+      y: yPosition - 20,
+      size: 12,
+      font: titleFont,
+      color: rgb(0, 0, 0),
+    });
+
+    yPosition -= 50;
+
+    // Filled by info
+    page.drawText(`NAME: ${projectInfo.createdBy || 'Not specified'}`, {
+      x: 60,
+      y: yPosition,
+      size: 10,
+      font: regularFont,
+      color: rgb(0, 0, 0),
+    });
+
+    page.drawText(`NAME: ${projectInfo.approvedBy || 'Not specified'}`, {
+      x: 360,
+      y: yPosition,
+      size: 10,
+      font: regularFont,
+      color: rgb(0, 0, 0),
+    });
+
+    yPosition -= 20;
+
+    const createdDate = projectInfo.createdDate ? 
+      new Date(projectInfo.createdDate).toLocaleDateString('en-US') : 
+      new Date().toLocaleDateString('en-US');
+
+    const approvedDate = projectInfo.approvedDate ? 
+      new Date(projectInfo.approvedDate).toLocaleDateString('en-US') : 
+      'Pending';
+
+    page.drawText(`DATE: ${createdDate}`, {
+      x: 60,
+      y: yPosition,
+      size: 10,
+      font: regularFont,
+      color: rgb(0, 0, 0),
+    });
+
+    page.drawText(`DATE: ${approvedDate}`, {
+      x: 360,
+      y: yPosition,
+      size: 10,
+      font: regularFont,
+      color: rgb(0, 0, 0),
+    });
+
+    // Revisions table
+    yPosition -= 80;
+    
+    page.drawText('REVISIONS', {
+      x: 50,
+      y: yPosition,
+      size: 16,
+      font: titleFont,
+      color: rgb(0, 0, 0),
+    });
+
+    yPosition -= 40;
+
+    // Revisions table header
+    const tableHeaders = ['No.', 'DATE', 'PAG./SEC.', 'NOTES'];
+    const columnWidths = [50, 100, 100, 200];
+    let xPos = 50;
+
+    page.drawRectangle({
+      x: 50,
+      y: yPosition - 20,
+      width: 450,
+      height: 20,
+      color: rgb(0.8, 0.8, 0.8)
+    });
+
+    tableHeaders.forEach((header, index) => {
+      page.drawText(header, {
+        x: xPos + 5,
+        y: yPosition - 15,
+        size: 10,
+        font: titleFont,
+        color: rgb(0, 0, 0),
+      });
+      xPos += columnWidths[index];
+    });
+
+    // First revision row
+    yPosition -= 20;
+    xPos = 50;
+
+    page.drawRectangle({
+      x: 50,
+      y: yPosition - 20,
+      width: 450,
+      height: 20,
+      color: rgb(0.95, 0.95, 0.95)
+    });
+
+    const revisionData = ['00', '[DATE]', '', ''];
+    revisionData.forEach((data, index) => {
+      page.drawText(data, {
+        x: xPos + 5,
+        y: yPosition - 15,
+        size: 10,
+        font: regularFont,
+        color: rgb(0, 0, 0),
+      });
+      xPos += columnWidths[index];
+    });
+
+    return page;
+  };
+
+  // Create index page
+  const createIndexPage = async (pdfDoc, sections) => {
+    const page = pdfDoc.addPage(PageSizes.A4);
+    const { width, height } = page.getSize();
+    
+    const titleFont = await pdfDoc.embedFont(StandardFonts.HelveticaBold);
+    const regularFont = await pdfDoc.embedFont(StandardFonts.Helvetica);
+
+    // Header
+    page.drawRectangle({
+      x: 0,
+      y: height - 100,
+      width: width,
+      height: 100,
+      color: rgb(0.02, 0.37, 0.51) // Valmont blue
+    });
+
+    page.drawText('INDEX', {
+      x: 50,
+      y: height - 60,
+      size: 24,
+      font: titleFont,
+      color: rgb(1, 1, 1),
+    });
+
+    let yPosition = height - 150;
+
+    sections.forEach((section, index) => {
+      if (section.documents.length > 0) {
+        const pageRange = section.documents.length === 1 ? 
+          `${section.startPage}` : 
+          `${section.startPage} - ${section.endPage}`;
+
+        page.drawText(section.title, {
+          x: 50,
+          y: yPosition,
+          size: 12,
+          font: regularFont,
+          color: rgb(0, 0, 0),
+        });
+
+        page.drawText(pageRange, {
+          x: 450,
+          y: yPosition,
+          size: 12,
+          font: regularFont,
+          color: rgb(0, 0, 0),
+        });
+
+        // Draw dotted line
+        for (let x = 300; x < 440; x += 10) {
+          page.drawText('.', {
+            x: x,
+            y: yPosition,
+            size: 12,
+            font: regularFont,
+            color: rgb(0.5, 0.5, 0.5),
+          });
+        }
+
+        yPosition -= 30;
+      }
+    });
+
+    return page;
+  };
+
+  // Create section separator page
+  const createSectionSeparator = async (pdfDoc, sectionTitle) => {
+    const page = pdfDoc.addPage(PageSizes.A4);
+    const { width, height } = page.getSize();
+    
+    const titleFont = await pdfDoc.embedFont(StandardFonts.HelveticaBold);
+
+    // Full page background
+    page.drawRectangle({
+      x: 0,
+      y: 0,
+      width: width,
+      height: height,
+      color: rgb(0.02, 0.37, 0.51) // Valmont blue
+    });
+
+    // Center the section title
+    const textWidth = titleFont.widthOfTextAtSize(sectionTitle, 24);
+    page.drawText(sectionTitle, {
+      x: (width - textWidth) / 2,
+      y: height / 2,
+      size: 24,
+      font: titleFont,
+      color: rgb(1, 1, 1),
+    });
+
+    return page;
+  };
+
+  // Add document to PDF (handles different file types)
+  const addDocumentToPdf = async (pdfDoc, documentFile) => {
+    try {
+      const arrayBuffer = await fileToArrayBuffer(documentFile.file);
+      
+      if (documentFile.type === 'application/pdf') {
+        // Handle PDF files
+        const existingPdf = await PDFDocument.load(arrayBuffer);
+        const pages = await pdfDoc.copyPages(existingPdf, existingPdf.getPageIndices());
+        pages.forEach((page) => pdfDoc.addPage(page));
+        return pages.length;
+      } else if (documentFile.type.startsWith('image/')) {
+        // Handle image files
+        const page = pdfDoc.addPage(PageSizes.A4);
+        const { width, height } = page.getSize();
+        
+        let image;
+        if (documentFile.type.includes('png')) {
+          image = await pdfDoc.embedPng(arrayBuffer);
+        } else {
+          image = await pdfDoc.embedJpg(arrayBuffer);
+        }
+        
+        // Scale image to fit page while maintaining aspect ratio
+        const imageAspectRatio = image.width / image.height;
+        const pageAspectRatio = width / height;
+        
+        let imageWidth, imageHeight;
+        if (imageAspectRatio > pageAspectRatio) {
+          // Image is wider than page
+          imageWidth = width - 100; // 50px margin on each side
+          imageHeight = imageWidth / imageAspectRatio;
+        } else {
+          // Image is taller than page
+          imageHeight = height - 100; // 50px margin on top and bottom
+          imageWidth = imageHeight * imageAspectRatio;
+        }
+        
+        page.drawImage(image, {
+          x: (width - imageWidth) / 2,
+          y: (height - imageHeight) / 2,
+          width: imageWidth,
+          height: imageHeight,
+        });
+        
+        return 1;
+      } else {
+        // For other file types, create a placeholder page
+        const page = pdfDoc.addPage(PageSizes.A4);
+        const { width, height } = page.getSize();
+        const font = await pdfDoc.embedFont(StandardFonts.Helvetica);
+        
+        page.drawText(`Document: ${documentFile.name}`, {
+          x: 50,
+          y: height - 100,
+          size: 16,
+          font: font,
+          color: rgb(0, 0, 0),
+        });
+        
+        page.drawText(`Type: ${documentFile.type}`, {
+          x: 50,
+          y: height - 130,
+          size: 12,
+          font: font,
+          color: rgb(0.5, 0.5, 0.5),
+        });
+        
+        page.drawText(`Size: ${formatFileSize(documentFile.size)}`, {
+          x: 50,
+          y: height - 150,
+          size: 12,
+          font: font,
+          color: rgb(0.5, 0.5, 0.5),
+        });
+        
+        page.drawText('Note: This file type cannot be directly embedded.', {
+          x: 50,
+          y: height - 200,
+          size: 12,
+          font: font,
+          color: rgb(0.7, 0, 0),
+        });
+        
+        return 1;
+      }
+    } catch (error) {
+      console.error('Error adding document:', error);
+      
+      // Create error page
+      const page = pdfDoc.addPage(PageSizes.A4);
+      const { width, height } = page.getSize();
+      const font = await pdfDoc.embedFont(StandardFonts.Helvetica);
+      
+      page.drawText(`Error loading: ${documentFile.name}`, {
+        x: 50,
+        y: height - 100,
+        size: 16,
+        font: font,
+        color: rgb(0.8, 0, 0),
+      });
+      
+      page.drawText(error.message, {
+        x: 50,
+        y: height - 130,
+        size: 12,
+        font: font,
+        color: rgb(0.5, 0.5, 0.5),
+      });
+      
+      return 1;
+    }
+  };
+
+  // Generate PDF structure for calculations
   const generatePDFStructure = () => {
     const structure = {
       coverPage: {
@@ -266,8 +783,8 @@ const QualityBookGenerator = ({ onBackClick }) => {
     return structure;
   };
 
-  // Generate Quality Book with MOCK PDF download
-  const generateQualityBook = async () => {
+  // MAIN PDF GENERATION FUNCTION
+  const generateRealQualityBook = async () => {
     if (!projectInfo.projectName || !projectInfo.clientName) {
       alert('Please complete project name and client name');
       return;
@@ -281,55 +798,78 @@ const QualityBookGenerator = ({ onBackClick }) => {
     setIsProcessing(true);
     
     try {
-      const pdfStructure = generatePDFStructure();
+      // Create new PDF document
+      const pdfDoc = await PDFDocument.create();
+      pdfDoc.registerFontkit(fontkit);
+
+      // Get PDF structure
+      const structure = generatePDFStructure();
       
-      // Simulate PDF generation process
-      console.log('Generated PDF Structure:', pdfStructure);
-      
-      setTimeout(() => {
-        setIsProcessing(false);
-        
-        // Create filename
-        const filename = `Quality_Book_${projectInfo.projectName.replace(/\s+/g, '_')}_${projectInfo.clientName.replace(/\s+/g, '_')}.pdf`;
-        
-        // CREATE MOCK PDF DOWNLOAD - This simulates a real download
-        const mockPdfContent = `Quality Book Generated Successfully!
+      console.log('Starting PDF generation with structure:', structure);
 
-Project: ${projectInfo.projectName}
-Client: ${projectInfo.clientName}
-Generated: ${new Date().toLocaleDateString('en-US')}
+      // 1. Create cover page
+      await createCoverPage(pdfDoc, projectInfo);
+      console.log('✓ Cover page created');
 
-Structure:
-• Cover Page with background image
-• Document Information page
-• Index with ${pdfStructure.indexContent.length} sections
-• ${pdfStructure.sections.length} section separators  
-• ${getTotalDocuments()} total documents
-• ${pdfStructure.totalPages} total pages
+      // 2. Create document information page
+      await createDocumentInfoPage(pdfDoc, projectInfo);
+      console.log('✓ Document info page created');
 
-This is a mock PDF. In production, this would contain the actual documents.`;
+      // 3. Create index page
+      await createIndexPage(pdfDoc, structure.sections);
+      console.log('✓ Index page created');
 
-        // Create and download mock file
-        const blob = new Blob([mockPdfContent], { type: 'text/plain' });
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = filename.replace('.pdf', '.txt'); // Download as txt for demo
-        document.body.appendChild(a);
-        a.click();
-        document.body.removeChild(a);
-        URL.revokeObjectURL(url);
-        
-        // Success message - IN ENGLISH
-        const message = `Quality Book "${filename}" generated successfully!\n\nStructure:\n• Cover page with background image\n• Document information\n• Index with ${pdfStructure.indexContent.length} sections\n• ${pdfStructure.sections.length} section separators\n• ${getTotalDocuments()} total documents\n• ${pdfStructure.totalPages} total pages\n\nA demo file has been downloaded.`;
-        alert(message);
-        
-      }, 3000);
-      
+      // 4. Add sections with separators and documents
+      for (const section of structure.sections) {
+        if (section.documents.length > 0) {
+          // Add section separator
+          await createSectionSeparator(pdfDoc, section.title);
+          console.log(`✓ Section separator created for: ${section.title}`);
+
+          // Add documents in this section
+          for (const doc of section.documents) {
+            const pagesAdded = await addDocumentToPdf(pdfDoc, doc);
+            console.log(`✓ Added document: ${doc.name} (${pagesAdded} pages)`);
+          }
+        }
+      }
+
+      // 5. Generate and download PDF
+      const pdfBytes = await pdfDoc.save();
+      console.log('✓ PDF generated successfully');
+
+      // Create download
+      const blob = new Blob([pdfBytes], { type: 'application/pdf' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `Quality_Book_${projectInfo.projectName.replace(/\s+/g, '_')}_${projectInfo.clientName.replace(/\s+/g, '_')}.pdf`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+
+      setIsProcessing(false);
+
+      // Success message
+      const message = `Quality Book "${a.download}" generated successfully!\n\nGenerated content:\n• Professional cover page with background\n• Document information page\n• Automatic index with page references\n• ${structure.sections.length} section separators\n• ${getTotalDocuments()} documents included\n• ${structure.totalPages} total pages\n\nPDF downloaded successfully!`;
+      alert(message);
+
     } catch (error) {
       console.error('Error generating PDF:', error);
       setIsProcessing(false);
-      alert('Error generating Quality Book. Please try again.');
+      
+      // More detailed error message
+      let errorMessage = 'Error generating Quality Book: ';
+      if (error.message.includes('Failed to load')) {
+        errorMessage += 'Could not load background image or logo. Check that the image files exist in the public folder.';
+      } else if (error.message.includes('embed')) {
+        errorMessage += 'Error processing one of the uploaded documents. Please check that all files are valid.';
+      } else {
+        errorMessage += error.message;
+      }
+      
+      alert(errorMessage + '\n\nCheck the console for more details.');
     }
   };
 
@@ -354,9 +894,9 @@ This is a mock PDF. In production, this would contain the actual documents.`;
       background: 'linear-gradient(135deg, #005F83 0%, #0077a2 50%, #667eea 100%)',
       minHeight: '100vh'
     }}>
-      {/* Header with DARK background and transparency - FIXED */}
+      {/* Header with DARK background and transparency */}
       <div style={{
-        background: 'rgba(0, 20, 40, 0.9)', // Dark with transparency
+        background: 'rgba(0, 20, 40, 0.9)',
         backdropFilter: 'blur(15px)',
         borderBottom: '1px solid rgba(255, 255, 255, 0.1)',
         boxShadow: '0 8px 32px rgba(0, 0, 0, 0.3)'
@@ -364,13 +904,12 @@ This is a mock PDF. In production, this would contain the actual documents.`;
         <div style={{ maxWidth: '1400px', margin: '0 auto', padding: '2rem' }}>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '1.5rem' }}>
-              {/* Valmont Solar Logo - Now visible on dark background */}
               <img 
                 src="/images/logo2.png" 
                 alt="Valmont Solar Logo" 
                 style={{ 
                   height: '60px',
-                  filter: 'drop-shadow(0 4px 8px rgba(0, 0, 0, 0.3)) brightness(1.1)' // Enhanced visibility
+                  filter: 'drop-shadow(0 4px 8px rgba(0, 0, 0, 0.3)) brightness(1.1)'
                 }}
               />
               <div style={{
@@ -385,7 +924,7 @@ This is a mock PDF. In production, this would contain the actual documents.`;
                 <h1 style={{ 
                   fontSize: '2.5rem', 
                   fontWeight: 'bold', 
-                  color: 'white', // Changed to white for dark background
+                  color: 'white',
                   margin: 0,
                   textShadow: '0 2px 4px rgba(0, 0, 0, 0.5)',
                   letterSpacing: '-0.02em'
@@ -435,7 +974,7 @@ This is a mock PDF. In production, this would contain the actual documents.`;
 
       <div style={{ maxWidth: '1400px', margin: '0 auto', padding: '2rem' }}>
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 2fr', gap: '2rem' }}>
-          {/* Project Information Panel - ALL ENGLISH */}
+          {/* Project Information Panel */}
           <div>
             <div style={{
               background: 'rgba(255, 255, 255, 0.95)',
@@ -653,7 +1192,7 @@ This is a mock PDF. In production, this would contain the actual documents.`;
                 </div>
               </div>
 
-              {/* Action Buttons - ALL ENGLISH */}
+              {/* Action Buttons */}
               <div style={{ marginTop: '3rem', paddingTop: '2rem', borderTop: '2px solid #f3f4f6' }}>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
                   <button
@@ -689,7 +1228,7 @@ This is a mock PDF. In production, this would contain the actual documents.`;
                   </button>
 
                   <button
-                    onClick={generateQualityBook}
+                    onClick={generateRealQualityBook}
                     disabled={!isReadyToGenerate() || isProcessing}
                     style={{
                       width: '100%',
@@ -735,12 +1274,12 @@ This is a mock PDF. In production, this would contain the actual documents.`;
                           borderRadius: '50%',
                           animation: 'spin 1s linear infinite'
                         }}></div>
-                        <span>Generating PDF...</span>
+                        <span>Generating Real PDF...</span>
                       </>
                     ) : (
                       <>
                         <Download size={20} />
-                        <span>Generate Quality Book</span>
+                        <span>Generate Quality Book PDF</span>
                       </>
                     )}
                   </button>
@@ -771,7 +1310,7 @@ This is a mock PDF. In production, this would contain the actual documents.`;
             </div>
           </div>
 
-          {/* Document Categories with DRAG & DROP */}
+          {/* Document Categories with DRAG & DROP - Same as before */}
           <div>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '2rem' }}>
               {documentCategories.map((category) => (
@@ -1024,7 +1563,7 @@ This is a mock PDF. In production, this would contain the actual documents.`;
           </div>
         </div>
 
-        {/* Preview Section - ALL ENGLISH */}
+        {/* Preview Section - Same as before but with updated structure info */}
         {showPreview && (
           <div style={{
             marginTop: '4rem',
@@ -1045,7 +1584,7 @@ This is a mock PDF. In production, this would contain the actual documents.`;
                 <Eye size={24} color="white" />
               </div>
               <h2 style={{ fontSize: '2rem', fontWeight: 'bold', color: '#1a202c', margin: 0 }}>
-                Quality Book Preview
+                Quality Book Preview - REAL PDF GENERATION
               </h2>
             </div>
             
@@ -1072,17 +1611,17 @@ This is a mock PDF. In production, this would contain the actual documents.`;
                     <Book size={40} color="white" style={{ margin: '0 auto' }} />
                   </div>
                   <h3 style={{ fontWeight: 'bold', color: '#1f2937', margin: '0 0 1rem 0', fontSize: '1.25rem' }}>
-                    Cover Page
+                    Professional Cover
                   </h3>
                   <div style={{ background: 'white', padding: '1rem', borderRadius: '8px', fontSize: '0.875rem' }}>
                     <p style={{ color: '#6b7280', margin: '0 0 0.5rem 0' }}>
-                      <strong>Project:</strong> {projectInfo.projectName || 'Not set'}
+                      <strong>✓ Background image:</strong> solar-background1.jpeg
                     </p>
                     <p style={{ color: '#6b7280', margin: '0 0 0.5rem 0' }}>
-                      <strong>Client:</strong> {projectInfo.clientName || 'Not set'}
+                      <strong>✓ Valmont Logo:</strong> Embedded
                     </p>
                     <p style={{ color: '#6b7280', margin: 0 }}>
-                      <strong>Background:</strong> solar-background1.jpeg
+                      <strong>✓ Project info:</strong> {projectInfo.projectName || 'Not set'}
                     </p>
                   </div>
                 </div>
@@ -1102,13 +1641,13 @@ This is a mock PDF. In production, this would contain the actual documents.`;
                   </h3>
                   <div style={{ background: 'white', padding: '1rem', borderRadius: '8px', fontSize: '0.875rem' }}>
                     <p style={{ color: '#6b7280', margin: '0 0 0.5rem 0' }}>
-                      <strong>Created:</strong> {projectInfo.createdBy || 'Not set'}
+                      <strong>✓ Professional table layout</strong>
                     </p>
                     <p style={{ color: '#6b7280', margin: '0 0 0.5rem 0' }}>
-                      <strong>Approved:</strong> {projectInfo.approvedBy || 'Not set'}
+                      <strong>✓ Revisions tracking</strong>
                     </p>
                     <p style={{ color: '#6b7280', margin: 0 }}>
-                      <strong>Revisions:</strong> Table included
+                      <strong>✓ Valmont branding</strong>
                     </p>
                   </div>
                 </div>
@@ -1124,17 +1663,17 @@ This is a mock PDF. In production, this would contain the actual documents.`;
                     <FileCheck size={40} color="white" style={{ margin: '0 auto' }} />
                   </div>
                   <h3 style={{ fontWeight: 'bold', color: '#1f2937', margin: '0 0 1rem 0', fontSize: '1.25rem' }}>
-                    Index
+                    Auto-Generated Index
                   </h3>
                   <div style={{ background: 'white', padding: '1rem', borderRadius: '8px', fontSize: '0.875rem' }}>
                     <p style={{ color: '#6b7280', margin: '0 0 0.5rem 0' }}>
-                      <strong>Sections:</strong> {Object.values(documents).filter(cat => cat.length > 0).length}
+                      <strong>✓ Real page numbers</strong>
                     </p>
                     <p style={{ color: '#6b7280', margin: '0 0 0.5rem 0' }}>
-                      <strong>Page references:</strong> Included
+                      <strong>✓ Section references</strong>
                     </p>
                     <p style={{ color: '#6b7280', margin: 0 }}>
-                      <strong>Format:</strong> Automatic
+                      <strong>✓ Professional layout</strong>
                     </p>
                   </div>
                 </div>
@@ -1150,23 +1689,23 @@ This is a mock PDF. In production, this would contain the actual documents.`;
                     <Package size={40} color="white" style={{ margin: '0 auto' }} />
                   </div>
                   <h3 style={{ fontWeight: 'bold', color: '#1f2937', margin: '0 0 1rem 0', fontSize: '1.25rem' }}>
-                    Documents
+                    Real Document Integration
                   </h3>
                   <div style={{ background: 'white', padding: '1rem', borderRadius: '8px', fontSize: '0.875rem' }}>
                     <p style={{ color: '#6b7280', margin: '0 0 0.5rem 0' }}>
-                      <strong>Total:</strong> {getTotalDocuments()} files
+                      <strong>✓ PDF files:</strong> Merged seamlessly
                     </p>
                     <p style={{ color: '#6b7280', margin: '0 0 0.5rem 0' }}>
-                      <strong>Organization:</strong> By category
+                      <strong>✓ Images:</strong> Auto-scaled to fit
                     </p>
                     <p style={{ color: '#6b7280', margin: 0 }}>
-                      <strong>Separators:</strong> Automatic
+                      <strong>✓ Section separators:</strong> Professional dividers
                     </p>
                   </div>
                 </div>
               </div>
 
-              {/* Document Structure Preview */}
+              {/* Document Structure Preview with REAL PDF info */}
               {isReadyToGenerate() && (
                 <div style={{ 
                   padding: '2rem', 
@@ -1183,7 +1722,7 @@ This is a mock PDF. In production, this would contain the actual documents.`;
                     borderBottom: '2px solid #f3f4f6',
                     paddingBottom: '1rem'
                   }}>
-                    Document Structure:
+                    Real PDF Structure (What will be generated):
                   </h4>
                   <div style={{ 
                     fontFamily: 'Monaco, Menlo, monospace', 
@@ -1197,26 +1736,26 @@ This is a mock PDF. In production, this would contain the actual documents.`;
                         <div>
                           <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.5rem' }}>
                             <span style={{ color: '#3b82f6', fontWeight: 'bold' }}>📄 Page 1:</span>
-                            <span>Cover Page (with solar-background1.jpeg)</span>
+                            <span>Professional Cover (with background image + logo)</span>
                           </div>
                           <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.5rem' }}>
                             <span style={{ color: '#3b82f6', fontWeight: 'bold' }}>📄 Page 2:</span>
-                            <span>Document Information</span>
+                            <span>Document Information Table</span>
                           </div>
                           <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '1rem' }}>
                             <span style={{ color: '#3b82f6', fontWeight: 'bold' }}>📄 Page 3:</span>
-                            <span>Index</span>
+                            <span>Auto-Generated Index</span>
                           </div>
                           {structure.sections.map((section, index) => (
                             <div key={index} style={{ marginLeft: '1rem', marginBottom: '1rem' }}>
                               <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.5rem' }}>
                                 <span style={{ color: section.color, fontWeight: 'bold' }}>📄 Page {section.coverPage}:</span>
-                                <span style={{ fontWeight: '600' }}>{section.title} (Separator)</span>
+                                <span style={{ fontWeight: '600' }}>{section.title} (Professional Separator)</span>
                               </div>
                               <div style={{ marginLeft: '2rem' }}>
                                 <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                                   <span style={{ color: '#6b7280', fontWeight: 'bold' }}>📄 Pages {section.startPage}-{section.endPage}:</span>
-                                  <span>Documents ({section.documents.length} files)</span>
+                                  <span>Real Documents Embedded ({section.documents.length} files)</span>
                                 </div>
                               </div>
                             </div>
@@ -1224,12 +1763,12 @@ This is a mock PDF. In production, this would contain the actual documents.`;
                           <div style={{ 
                             marginTop: '2rem', 
                             padding: '1rem',
-                            background: 'linear-gradient(135deg, #f3f4f6 0%, #e5e7eb 100%)',
+                            background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)',
                             borderRadius: '8px',
                             fontWeight: 'bold',
-                            color: '#1f2937'
+                            color: 'white'
                           }}>
-                            📊 Total Pages: {structure.totalPages}
+                            🎉 Total Pages: {structure.totalPages} | Ready for Professional PDF Generation!
                           </div>
                         </div>
                       );

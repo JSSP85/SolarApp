@@ -21,7 +21,7 @@ import {
   Settings
 } from 'lucide-react';
 
-// Componente BackButton
+// BackButton Component
 const BackButton = ({ onClick }) => (
   <button
     onClick={onClick}
@@ -71,14 +71,15 @@ const QualityBookGenerator = ({ onBackClick }) => {
   const [showPreview, setShowPreview] = useState(false);
   const fileInputRef = useRef(null);
   const [currentUploadCategory, setCurrentUploadCategory] = useState('');
+  const [dragOverCategory, setDragOverCategory] = useState(null);
 
-  // Categorías de documentos basadas en tu Quality Book adjunto
+  // Document categories - ALL IN ENGLISH
   const documentCategories = [
     {
       key: 'transportSuppliers',
       title: 'TRANSPORT DOCUMENT_SUPPLIERS',
       icon: <Truck className="w-5 h-5" />,
-      description: 'Documentos de transporte desde proveedores a Valmont Solar',
+      description: 'Transport documents from suppliers to Valmont Solar',
       color: 'bg-blue-50 border-blue-200',
       iconColor: 'text-blue-600',
       headerColor: 'bg-blue-600',
@@ -88,7 +89,7 @@ const QualityBookGenerator = ({ onBackClick }) => {
       key: 'rawMaterialStandard',
       title: 'RAW MATERIAL CERTIFICATES - STANDARD FAMILY',
       icon: <Award className="w-5 h-5" />,
-      description: 'Certificados de materia prima para familia de componentes estándar',
+      description: 'Raw material certificates for standard component family',
       color: 'bg-green-50 border-green-200',
       iconColor: 'text-green-600',
       headerColor: 'bg-green-600',
@@ -98,7 +99,7 @@ const QualityBookGenerator = ({ onBackClick }) => {
       key: 'rawMaterialKit',
       title: 'RAW MATERIAL CERTIFICATES - KIT FAMILY', 
       icon: <Package className="w-5 h-5" />,
-      description: 'Certificados de materia prima para familia de componentes kit',
+      description: 'Raw material certificates for kit component family',
       color: 'bg-purple-50 border-purple-200',
       iconColor: 'text-purple-600',
       headerColor: 'bg-purple-600',
@@ -108,7 +109,7 @@ const QualityBookGenerator = ({ onBackClick }) => {
       key: 'conformityDeclarations',
       title: 'DECLARATION OF CONFORMITY',
       icon: <FileCheck className="w-5 h-5" />,
-      description: 'Declaraciones de conformidad y certificaciones',
+      description: 'Conformity declarations and certifications',
       color: 'bg-orange-50 border-orange-200',
       iconColor: 'text-orange-600',
       headerColor: 'bg-orange-600',
@@ -118,7 +119,7 @@ const QualityBookGenerator = ({ onBackClick }) => {
       key: 'transportValmont',
       title: 'TRANSPORT DOCUMENT_VALMONT',
       icon: <Truck className="w-5 h-5" />,
-      description: 'Documentos de transporte desde Valmont Solar al cliente',
+      description: 'Transport documents from Valmont Solar to client',
       color: 'bg-red-50 border-red-200',
       iconColor: 'text-red-600',
       headerColor: 'bg-red-600',
@@ -126,29 +127,60 @@ const QualityBookGenerator = ({ onBackClick }) => {
     }
   ];
 
+  // Handle file upload via button
   const handleFileUpload = (categoryKey) => {
     setCurrentUploadCategory(categoryKey);
     fileInputRef.current?.click();
   };
 
+  // Handle file input change
   const handleFileChange = (event) => {
     const files = Array.from(event.target.files);
     if (files.length > 0 && currentUploadCategory) {
-      const newFiles = files.map(file => ({
-        id: Date.now() + Math.random(),
-        name: file.name,
-        size: file.size,
-        type: file.type,
-        file: file,
-        uploadDate: new Date().toLocaleDateString('es-ES')
-      }));
-
-      setDocuments(prev => ({
-        ...prev,
-        [currentUploadCategory]: [...prev[currentUploadCategory], ...newFiles]
-      }));
+      addFilesToCategory(files, currentUploadCategory);
     }
     event.target.value = '';
+  };
+
+  // Add files to category (shared function for button upload and drag & drop)
+  const addFilesToCategory = (files, categoryKey) => {
+    const newFiles = files.map(file => ({
+      id: Date.now() + Math.random(),
+      name: file.name,
+      size: file.size,
+      type: file.type,
+      file: file,
+      uploadDate: new Date().toLocaleDateString('en-US')
+    }));
+
+    setDocuments(prev => ({
+      ...prev,
+      [categoryKey]: [...prev[categoryKey], ...newFiles]
+    }));
+  };
+
+  // Drag & Drop handlers
+  const handleDragOver = (e, categoryKey) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setDragOverCategory(categoryKey);
+  };
+
+  const handleDragLeave = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setDragOverCategory(null);
+  };
+
+  const handleDrop = (e, categoryKey) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setDragOverCategory(null);
+
+    const files = Array.from(e.dataTransfer.files);
+    if (files.length > 0) {
+      addFilesToCategory(files, categoryKey);
+    }
   };
 
   const removeDocument = (categoryKey, documentId) => {
@@ -182,11 +214,11 @@ const QualityBookGenerator = ({ onBackClick }) => {
       documentInfo: {
         filledBy: {
           name: projectInfo.createdBy || 'Not specified',
-          date: projectInfo.createdDate ? new Date(projectInfo.createdDate).toLocaleDateString('es-ES') : ''
+          date: projectInfo.createdDate ? new Date(projectInfo.createdDate).toLocaleDateString('en-US') : ''
         },
         approvedBy: {
           name: projectInfo.approvedBy || 'Not specified',
-          date: projectInfo.approvedDate ? new Date(projectInfo.approvedDate).toLocaleDateString('es-ES') : 'Pending'
+          date: projectInfo.approvedDate ? new Date(projectInfo.approvedDate).toLocaleDateString('en-US') : 'Pending'
         },
         revisions: [
           {
@@ -234,14 +266,15 @@ const QualityBookGenerator = ({ onBackClick }) => {
     return structure;
   };
 
+  // Generate Quality Book with MOCK PDF download
   const generateQualityBook = async () => {
     if (!projectInfo.projectName || !projectInfo.clientName) {
-      alert('Por favor completa el nombre del proyecto y el cliente');
+      alert('Please complete project name and client name');
       return;
     }
 
     if (getTotalDocuments() === 0) {
-      alert('Por favor sube al menos un documento');
+      alert('Please upload at least one document');
       return;
     }
 
@@ -250,37 +283,53 @@ const QualityBookGenerator = ({ onBackClick }) => {
     try {
       const pdfStructure = generatePDFStructure();
       
-      // Simular proceso de generación de PDF con la estructura real
-      console.log('Estructura PDF Generada:', pdfStructure);
-      
-      // Aquí se implementaría la generación real del PDF
-      // usando las especificaciones de tu documento adjunto
+      // Simulate PDF generation process
+      console.log('Generated PDF Structure:', pdfStructure);
       
       setTimeout(() => {
         setIsProcessing(false);
         
-        // Crear nombre de archivo basado en tu formato
+        // Create filename
         const filename = `Quality_Book_${projectInfo.projectName.replace(/\s+/g, '_')}_${projectInfo.clientName.replace(/\s+/g, '_')}.pdf`;
         
-        // Mensaje de éxito con detalles de la estructura
-        const message = `Quality Book "${filename}" generado exitosamente!\n\nEstructura:\n• Portada con imagen de fondo\n• Información del documento\n• Índice con ${pdfStructure.indexContent.length} secciones\n• ${pdfStructure.sections.length} separadores de sección\n• ${getTotalDocuments()} documentos totales\n• ${pdfStructure.totalPages} páginas totales`;
-        alert(message);
+        // CREATE MOCK PDF DOWNLOAD - This simulates a real download
+        const mockPdfContent = `Quality Book Generated Successfully!
+
+Project: ${projectInfo.projectName}
+Client: ${projectInfo.clientName}
+Generated: ${new Date().toLocaleDateString('en-US')}
+
+Structure:
+• Cover Page with background image
+• Document Information page
+• Index with ${pdfStructure.indexContent.length} sections
+• ${pdfStructure.sections.length} section separators  
+• ${getTotalDocuments()} total documents
+• ${pdfStructure.totalPages} total pages
+
+This is a mock PDF. In production, this would contain the actual documents.`;
+
+        // Create and download mock file
+        const blob = new Blob([mockPdfContent], { type: 'text/plain' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = filename.replace('.pdf', '.txt'); // Download as txt for demo
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
         
-        // Aquí se descargaría el PDF real
-        // Por ahora, mostrar la estructura en consola
-        console.log('PDF Structure to Generate:', {
-          cover: pdfStructure.coverPage,
-          documentInfo: pdfStructure.documentInfo,
-          index: pdfStructure.indexContent,
-          sections: pdfStructure.sections
-        });
+        // Success message - IN ENGLISH
+        const message = `Quality Book "${filename}" generated successfully!\n\nStructure:\n• Cover page with background image\n• Document information\n• Index with ${pdfStructure.indexContent.length} sections\n• ${pdfStructure.sections.length} section separators\n• ${getTotalDocuments()} total documents\n• ${pdfStructure.totalPages} total pages\n\nA demo file has been downloaded.`;
+        alert(message);
         
       }, 3000);
       
     } catch (error) {
-      console.error('Error generando PDF:', error);
+      console.error('Error generating PDF:', error);
       setIsProcessing(false);
-      alert('Error generando Quality Book. Por favor inténtalo de nuevo.');
+      alert('Error generating Quality Book. Please try again.');
     }
   };
 
@@ -294,7 +343,6 @@ const QualityBookGenerator = ({ onBackClick }) => {
     setShowPreview(!showPreview);
   };
 
-  // Función para obtener icono de archivo basado en el tipo - CORREGIDA
   const getFileIcon = (fileType) => {
     if (fileType?.includes('pdf')) return <FileText size={24} color="#dc2626" />;
     if (fileType?.includes('image')) return <FileText size={24} color="#059669" />;
@@ -306,30 +354,30 @@ const QualityBookGenerator = ({ onBackClick }) => {
       background: 'linear-gradient(135deg, #005F83 0%, #0077a2 50%, #667eea 100%)',
       minHeight: '100vh'
     }}>
-      {/* Header con diseño mejorado */}
+      {/* Header with DARK background and transparency - FIXED */}
       <div style={{
-        background: 'rgba(255, 255, 255, 0.95)',
+        background: 'rgba(0, 20, 40, 0.9)', // Dark with transparency
         backdropFilter: 'blur(15px)',
-        borderBottom: '1px solid rgba(255, 255, 255, 0.2)',
-        boxShadow: '0 8px 32px rgba(0, 0, 0, 0.1)'
+        borderBottom: '1px solid rgba(255, 255, 255, 0.1)',
+        boxShadow: '0 8px 32px rgba(0, 0, 0, 0.3)'
       }}>
         <div style={{ maxWidth: '1400px', margin: '0 auto', padding: '2rem' }}>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '1.5rem' }}>
-              {/* Logo Valmont Solar */}
+              {/* Valmont Solar Logo - Now visible on dark background */}
               <img 
                 src="/images/logo2.png" 
                 alt="Valmont Solar Logo" 
                 style={{ 
                   height: '60px',
-                  filter: 'drop-shadow(0 4px 8px rgba(0, 0, 0, 0.1))'
+                  filter: 'drop-shadow(0 4px 8px rgba(0, 0, 0, 0.3)) brightness(1.1)' // Enhanced visibility
                 }}
               />
               <div style={{
                 padding: '1rem',
                 background: 'linear-gradient(135deg, #005F83 0%, #0077a2 100%)',
                 borderRadius: '16px',
-                boxShadow: '0 8px 24px rgba(0, 95, 131, 0.3)'
+                boxShadow: '0 8px 24px rgba(0, 95, 131, 0.4)'
               }}>
                 <Book size={32} color="white" />
               </div>
@@ -337,18 +385,15 @@ const QualityBookGenerator = ({ onBackClick }) => {
                 <h1 style={{ 
                   fontSize: '2.5rem', 
                   fontWeight: 'bold', 
-                  color: '#1a202c',
+                  color: 'white', // Changed to white for dark background
                   margin: 0,
-                  background: 'linear-gradient(135deg, #005F83 0%, #0077a2 100%)',
-                  WebkitBackgroundClip: 'text',
-                  WebkitTextFillColor: 'transparent',
-                  backgroundClip: 'text',
+                  textShadow: '0 2px 4px rgba(0, 0, 0, 0.5)',
                   letterSpacing: '-0.02em'
                 }}>
-                  Generador de Quality Books
+                  Quality Book Generator
                 </h1>
-                <p style={{ color: '#4a5568', margin: 0, fontSize: '1.2rem', fontWeight: '500' }}>
-                  Sistema automatizado de documentación de trazabilidad
+                <p style={{ color: 'rgba(255, 255, 255, 0.9)', margin: 0, fontSize: '1.2rem', fontWeight: '500' }}>
+                  Automated traceability documentation system
                 </p>
               </div>
             </div>
@@ -364,8 +409,8 @@ const QualityBookGenerator = ({ onBackClick }) => {
                     {getTotalDocuments()}
                   </p>
                 </div>
-                <p style={{ fontSize: '0.875rem', color: '#6b7280', margin: 0, fontWeight: '500' }}>
-                  Documentos Totales
+                <p style={{ fontSize: '0.875rem', color: 'rgba(255, 255, 255, 0.8)', margin: 0, fontWeight: '500' }}>
+                  Total Documents
                 </p>
               </div>
               <div style={{ textAlign: 'center' }}>
@@ -379,8 +424,8 @@ const QualityBookGenerator = ({ onBackClick }) => {
                     {Object.values(documents).filter(cat => cat.length > 0).length}
                   </p>
                 </div>
-                <p style={{ fontSize: '0.875rem', color: '#6b7280', margin: 0, fontWeight: '500' }}>
-                  Categorías Activas
+                <p style={{ fontSize: '0.875rem', color: 'rgba(255, 255, 255, 0.8)', margin: 0, fontWeight: '500' }}>
+                  Active Categories
                 </p>
               </div>
             </div>
@@ -390,7 +435,7 @@ const QualityBookGenerator = ({ onBackClick }) => {
 
       <div style={{ maxWidth: '1400px', margin: '0 auto', padding: '2rem' }}>
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 2fr', gap: '2rem' }}>
-          {/* Panel de Información del Proyecto */}
+          {/* Project Information Panel - ALL ENGLISH */}
           <div>
             <div style={{
               background: 'rgba(255, 255, 255, 0.95)',
@@ -412,7 +457,7 @@ const QualityBookGenerator = ({ onBackClick }) => {
                   <Building size={24} color="white" />
                 </div>
                 <h2 style={{ fontSize: '1.5rem', fontWeight: 'bold', color: '#1a202c', margin: 0 }}>
-                  Información del Proyecto
+                  Project Information
                 </h2>
               </div>
 
@@ -425,13 +470,13 @@ const QualityBookGenerator = ({ onBackClick }) => {
                     color: '#374151', 
                     marginBottom: '0.75rem' 
                   }}>
-                    Nombre del Proyecto *
+                    Project Name *
                   </label>
                   <input
                     type="text"
                     value={projectInfo.projectName}
                     onChange={(e) => setProjectInfo(prev => ({...prev, projectName: e.target.value}))}
-                    placeholder="ej: DELOS_PIZZO"
+                    placeholder="e.g: DELOS_PIZZO"
                     style={{
                       width: '100%',
                       padding: '1rem',
@@ -464,13 +509,13 @@ const QualityBookGenerator = ({ onBackClick }) => {
                     color: '#374151', 
                     marginBottom: '0.75rem' 
                   }}>
-                    Nombre del Cliente *
+                    Client Name *
                   </label>
                   <input
                     type="text"
                     value={projectInfo.clientName}
                     onChange={(e) => setProjectInfo(prev => ({...prev, clientName: e.target.value}))}
-                    placeholder="Nombre de la empresa cliente"
+                    placeholder="Client company name"
                     style={{
                       width: '100%',
                       padding: '1rem',
@@ -504,13 +549,13 @@ const QualityBookGenerator = ({ onBackClick }) => {
                       color: '#374151', 
                       marginBottom: '0.75rem' 
                     }}>
-                      Creado Por
+                      Created By
                     </label>
                     <input
                       type="text"
                       value={projectInfo.createdBy}
                       onChange={(e) => setProjectInfo(prev => ({...prev, createdBy: e.target.value}))}
-                      placeholder="Tu nombre"
+                      placeholder="Your name"
                       style={{
                         width: '100%',
                         padding: '1rem',
@@ -531,13 +576,13 @@ const QualityBookGenerator = ({ onBackClick }) => {
                       color: '#374151', 
                       marginBottom: '0.75rem' 
                     }}>
-                      Aprobado Por
+                      Approved By
                     </label>
                     <input
                       type="text"
                       value={projectInfo.approvedBy}
                       onChange={(e) => setProjectInfo(prev => ({...prev, approvedBy: e.target.value}))}
-                      placeholder="Nombre del aprobador"
+                      placeholder="Approver name"
                       style={{
                         width: '100%',
                         padding: '1rem',
@@ -561,7 +606,7 @@ const QualityBookGenerator = ({ onBackClick }) => {
                       color: '#374151', 
                       marginBottom: '0.75rem' 
                     }}>
-                      Fecha de Creación
+                      Creation Date
                     </label>
                     <input
                       type="date"
@@ -587,7 +632,7 @@ const QualityBookGenerator = ({ onBackClick }) => {
                       color: '#374151', 
                       marginBottom: '0.75rem' 
                     }}>
-                      Fecha de Aprobación
+                      Approval Date
                     </label>
                     <input
                       type="date"
@@ -608,7 +653,7 @@ const QualityBookGenerator = ({ onBackClick }) => {
                 </div>
               </div>
 
-              {/* Botones de Acción */}
+              {/* Action Buttons - ALL ENGLISH */}
               <div style={{ marginTop: '3rem', paddingTop: '2rem', borderTop: '2px solid #f3f4f6' }}>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
                   <button
@@ -640,7 +685,7 @@ const QualityBookGenerator = ({ onBackClick }) => {
                     }}
                   >
                     <Eye size={20} />
-                    {showPreview ? 'Ocultar Vista Previa' : 'Mostrar Vista Previa'}
+                    {showPreview ? 'Hide Preview' : 'Show Preview'}
                   </button>
 
                   <button
@@ -690,12 +735,12 @@ const QualityBookGenerator = ({ onBackClick }) => {
                           borderRadius: '50%',
                           animation: 'spin 1s linear infinite'
                         }}></div>
-                        <span>Generando PDF...</span>
+                        <span>Generating PDF...</span>
                       </>
                     ) : (
                       <>
                         <Download size={20} />
-                        <span>Generar Quality Book</span>
+                        <span>Generate Quality Book</span>
                       </>
                     )}
                   </button>
@@ -710,14 +755,14 @@ const QualityBookGenerator = ({ onBackClick }) => {
                     }}>
                       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem', marginBottom: '0.5rem' }}>
                         <AlertCircle size={16} color="#f59e0b" />
-                        <span style={{ fontWeight: '600', color: '#92400e' }}>Información Requerida</span>
+                        <span style={{ fontWeight: '600', color: '#92400e' }}>Information Required</span>
                       </div>
                       <p style={{ 
                         fontSize: '0.875rem', 
                         color: '#92400e', 
                         margin: 0
                       }}>
-                        Completa la información del proyecto y sube documentos para generar
+                        Complete the project information and upload documents to generate
                       </p>
                     </div>
                   )}
@@ -726,27 +771,38 @@ const QualityBookGenerator = ({ onBackClick }) => {
             </div>
           </div>
 
-          {/* Categorías de Documentos */}
+          {/* Document Categories with DRAG & DROP */}
           <div>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '2rem' }}>
               {documentCategories.map((category) => (
-                <div key={category.key} style={{
-                  background: 'rgba(255, 255, 255, 0.95)',
-                  borderRadius: '20px',
-                  boxShadow: '0 20px 50px rgba(0, 0, 0, 0.1)',
-                  border: '1px solid rgba(255, 255, 255, 0.2)',
-                  overflow: 'hidden',
-                  backdropFilter: 'blur(15px)',
-                  transition: 'all 0.3s ease'
-                }}
-                onMouseOver={(e) => {
-                  e.currentTarget.style.transform = 'translateY(-5px)';
-                  e.currentTarget.style.boxShadow = '0 25px 60px rgba(0, 0, 0, 0.15)';
-                }}
-                onMouseOut={(e) => {
-                  e.currentTarget.style.transform = 'translateY(0)';
-                  e.currentTarget.style.boxShadow = '0 20px 50px rgba(0, 0, 0, 0.1)';
-                }}
+                <div 
+                  key={category.key} 
+                  style={{
+                    background: 'rgba(255, 255, 255, 0.95)',
+                    borderRadius: '20px',
+                    boxShadow: '0 20px 50px rgba(0, 0, 0, 0.1)',
+                    border: `2px solid ${dragOverCategory === category.key ? category.sectionColor : 'rgba(255, 255, 255, 0.2)'}`,
+                    overflow: 'hidden',
+                    backdropFilter: 'blur(15px)',
+                    transition: 'all 0.3s ease',
+                    transform: dragOverCategory === category.key ? 'scale(1.02)' : 'scale(1)'
+                  }}
+                  onMouseOver={(e) => {
+                    if (dragOverCategory !== category.key) {
+                      e.currentTarget.style.transform = 'translateY(-5px)';
+                      e.currentTarget.style.boxShadow = '0 25px 60px rgba(0, 0, 0, 0.15)';
+                    }
+                  }}
+                  onMouseOut={(e) => {
+                    if (dragOverCategory !== category.key) {
+                      e.currentTarget.style.transform = 'translateY(0)';
+                      e.currentTarget.style.boxShadow = '0 20px 50px rgba(0, 0, 0, 0.1)';
+                    }
+                  }}
+                  // DRAG & DROP events
+                  onDragOver={(e) => handleDragOver(e, category.key)}
+                  onDragLeave={handleDragLeave}
+                  onDrop={(e) => handleDrop(e, category.key)}
                 >
                   <div style={{
                     background: `linear-gradient(135deg, ${category.sectionColor} 0%, ${category.sectionColor}dd 100%)`,
@@ -796,7 +852,7 @@ const QualityBookGenerator = ({ onBackClick }) => {
                           color: 'white',
                           border: '1px solid rgba(255, 255, 255, 0.3)'
                         }}>
-                          {documents[category.key].length} archivos
+                          {documents[category.key].length} files
                         </div>
                         <button
                           onClick={() => handleFileUpload(category.key)}
@@ -826,7 +882,7 @@ const QualityBookGenerator = ({ onBackClick }) => {
                           }}
                         >
                           <Plus size={18} />
-                          <span>Subir Archivos</span>
+                          <span>Upload Files</span>
                         </button>
                       </div>
                     </div>
@@ -834,24 +890,40 @@ const QualityBookGenerator = ({ onBackClick }) => {
 
                   <div style={{ padding: '2rem' }}>
                     {documents[category.key].length === 0 ? (
-                      <div style={{ textAlign: 'center', padding: '4rem 2rem' }}>
+                      <div 
+                        style={{ 
+                          textAlign: 'center', 
+                          padding: '4rem 2rem',
+                          border: dragOverCategory === category.key ? `2px dashed ${category.sectionColor}` : '2px dashed transparent',
+                          borderRadius: '12px',
+                          background: dragOverCategory === category.key ? `${category.sectionColor}10` : 'transparent',
+                          transition: 'all 0.3s'
+                        }}
+                      >
                         <div style={{
                           width: '80px',
                           height: '80px',
-                          background: 'linear-gradient(135deg, #f3f4f6 0%, #e5e7eb 100%)',
+                          background: dragOverCategory === category.key 
+                            ? `linear-gradient(135deg, ${category.sectionColor}20 0%, ${category.sectionColor}30 100%)`
+                            : 'linear-gradient(135deg, #f3f4f6 0%, #e5e7eb 100%)',
                           borderRadius: '20px',
                           display: 'flex',
                           alignItems: 'center',
                           justifyContent: 'center',
                           margin: '0 auto 2rem'
                         }}>
-                          <Upload size={40} color="#9ca3af" />
+                          <Upload size={40} color={dragOverCategory === category.key ? category.sectionColor : "#9ca3af"} />
                         </div>
-                        <p style={{ color: '#6b7280', fontSize: '1.25rem', margin: '0 0 0.75rem 0', fontWeight: '600' }}>
-                          No hay documentos subidos
+                        <p style={{ 
+                          color: dragOverCategory === category.key ? category.sectionColor : '#6b7280', 
+                          fontSize: '1.25rem', 
+                          margin: '0 0 0.75rem 0', 
+                          fontWeight: '600' 
+                        }}>
+                          {dragOverCategory === category.key ? 'Drop files here' : 'No documents uploaded'}
                         </p>
                         <p style={{ color: '#9ca3af', fontSize: '1rem', margin: 0 }}>
-                          Haz clic en "Subir Archivos" para agregar documentos a esta categoría
+                          Click "Upload Files" or drag & drop documents to this area
                         </p>
                       </div>
                     ) : (
@@ -952,7 +1024,7 @@ const QualityBookGenerator = ({ onBackClick }) => {
           </div>
         </div>
 
-        {/* Sección de Vista Previa */}
+        {/* Preview Section - ALL ENGLISH */}
         {showPreview && (
           <div style={{
             marginTop: '4rem',
@@ -973,7 +1045,7 @@ const QualityBookGenerator = ({ onBackClick }) => {
                 <Eye size={24} color="white" />
               </div>
               <h2 style={{ fontSize: '2rem', fontWeight: 'bold', color: '#1a202c', margin: 0 }}>
-                Vista Previa del Quality Book
+                Quality Book Preview
               </h2>
             </div>
             
@@ -1000,17 +1072,17 @@ const QualityBookGenerator = ({ onBackClick }) => {
                     <Book size={40} color="white" style={{ margin: '0 auto' }} />
                   </div>
                   <h3 style={{ fontWeight: 'bold', color: '#1f2937', margin: '0 0 1rem 0', fontSize: '1.25rem' }}>
-                    Portada
+                    Cover Page
                   </h3>
                   <div style={{ background: 'white', padding: '1rem', borderRadius: '8px', fontSize: '0.875rem' }}>
                     <p style={{ color: '#6b7280', margin: '0 0 0.5rem 0' }}>
-                      <strong>Proyecto:</strong> {projectInfo.projectName || 'No establecido'}
+                      <strong>Project:</strong> {projectInfo.projectName || 'Not set'}
                     </p>
                     <p style={{ color: '#6b7280', margin: '0 0 0.5rem 0' }}>
-                      <strong>Cliente:</strong> {projectInfo.clientName || 'No establecido'}
+                      <strong>Client:</strong> {projectInfo.clientName || 'Not set'}
                     </p>
                     <p style={{ color: '#6b7280', margin: 0 }}>
-                      <strong>Fondo:</strong> solar-background1.jpeg
+                      <strong>Background:</strong> solar-background1.jpeg
                     </p>
                   </div>
                 </div>
@@ -1026,17 +1098,17 @@ const QualityBookGenerator = ({ onBackClick }) => {
                     <FileText size={40} color="white" style={{ margin: '0 auto' }} />
                   </div>
                   <h3 style={{ fontWeight: 'bold', color: '#1f2937', margin: '0 0 1rem 0', fontSize: '1.25rem' }}>
-                    Info del Documento
+                    Document Information
                   </h3>
                   <div style={{ background: 'white', padding: '1rem', borderRadius: '8px', fontSize: '0.875rem' }}>
                     <p style={{ color: '#6b7280', margin: '0 0 0.5rem 0' }}>
-                      <strong>Creado:</strong> {projectInfo.createdBy || 'No establecido'}
+                      <strong>Created:</strong> {projectInfo.createdBy || 'Not set'}
                     </p>
                     <p style={{ color: '#6b7280', margin: '0 0 0.5rem 0' }}>
-                      <strong>Aprobado:</strong> {projectInfo.approvedBy || 'No establecido'}
+                      <strong>Approved:</strong> {projectInfo.approvedBy || 'Not set'}
                     </p>
                     <p style={{ color: '#6b7280', margin: 0 }}>
-                      <strong>Revisiones:</strong> Tabla incluida
+                      <strong>Revisions:</strong> Table included
                     </p>
                   </div>
                 </div>
@@ -1052,17 +1124,17 @@ const QualityBookGenerator = ({ onBackClick }) => {
                     <FileCheck size={40} color="white" style={{ margin: '0 auto' }} />
                   </div>
                   <h3 style={{ fontWeight: 'bold', color: '#1f2937', margin: '0 0 1rem 0', fontSize: '1.25rem' }}>
-                    Índice
+                    Index
                   </h3>
                   <div style={{ background: 'white', padding: '1rem', borderRadius: '8px', fontSize: '0.875rem' }}>
                     <p style={{ color: '#6b7280', margin: '0 0 0.5rem 0' }}>
-                      <strong>Secciones:</strong> {Object.values(documents).filter(cat => cat.length > 0).length}
+                      <strong>Sections:</strong> {Object.values(documents).filter(cat => cat.length > 0).length}
                     </p>
                     <p style={{ color: '#6b7280', margin: '0 0 0.5rem 0' }}>
-                      <strong>Referencias:</strong> Páginas incluidas
+                      <strong>Page references:</strong> Included
                     </p>
                     <p style={{ color: '#6b7280', margin: 0 }}>
-                      <strong>Formato:</strong> Automático
+                      <strong>Format:</strong> Automatic
                     </p>
                   </div>
                 </div>
@@ -1078,23 +1150,23 @@ const QualityBookGenerator = ({ onBackClick }) => {
                     <Package size={40} color="white" style={{ margin: '0 auto' }} />
                   </div>
                   <h3 style={{ fontWeight: 'bold', color: '#1f2937', margin: '0 0 1rem 0', fontSize: '1.25rem' }}>
-                    Documentos
+                    Documents
                   </h3>
                   <div style={{ background: 'white', padding: '1rem', borderRadius: '8px', fontSize: '0.875rem' }}>
                     <p style={{ color: '#6b7280', margin: '0 0 0.5rem 0' }}>
-                      <strong>Total:</strong> {getTotalDocuments()} archivos
+                      <strong>Total:</strong> {getTotalDocuments()} files
                     </p>
                     <p style={{ color: '#6b7280', margin: '0 0 0.5rem 0' }}>
-                      <strong>Organización:</strong> Por categoría
+                      <strong>Organization:</strong> By category
                     </p>
                     <p style={{ color: '#6b7280', margin: 0 }}>
-                      <strong>Separadores:</strong> Automáticos
+                      <strong>Separators:</strong> Automatic
                     </p>
                   </div>
                 </div>
               </div>
 
-              {/* Vista Previa de Estructura */}
+              {/* Document Structure Preview */}
               {isReadyToGenerate() && (
                 <div style={{ 
                   padding: '2rem', 
@@ -1111,7 +1183,7 @@ const QualityBookGenerator = ({ onBackClick }) => {
                     borderBottom: '2px solid #f3f4f6',
                     paddingBottom: '1rem'
                   }}>
-                    Estructura del Documento:
+                    Document Structure:
                   </h4>
                   <div style={{ 
                     fontFamily: 'Monaco, Menlo, monospace', 
@@ -1124,27 +1196,27 @@ const QualityBookGenerator = ({ onBackClick }) => {
                       return (
                         <div>
                           <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.5rem' }}>
-                            <span style={{ color: '#3b82f6', fontWeight: 'bold' }}>📄 Página 1:</span>
-                            <span>Portada (con fondo solar-background1.jpeg)</span>
+                            <span style={{ color: '#3b82f6', fontWeight: 'bold' }}>📄 Page 1:</span>
+                            <span>Cover Page (with solar-background1.jpeg)</span>
                           </div>
                           <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.5rem' }}>
-                            <span style={{ color: '#3b82f6', fontWeight: 'bold' }}>📄 Página 2:</span>
-                            <span>Información del Documento</span>
+                            <span style={{ color: '#3b82f6', fontWeight: 'bold' }}>📄 Page 2:</span>
+                            <span>Document Information</span>
                           </div>
                           <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '1rem' }}>
-                            <span style={{ color: '#3b82f6', fontWeight: 'bold' }}>📄 Página 3:</span>
-                            <span>Índice</span>
+                            <span style={{ color: '#3b82f6', fontWeight: 'bold' }}>📄 Page 3:</span>
+                            <span>Index</span>
                           </div>
                           {structure.sections.map((section, index) => (
                             <div key={index} style={{ marginLeft: '1rem', marginBottom: '1rem' }}>
                               <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.5rem' }}>
-                                <span style={{ color: section.color, fontWeight: 'bold' }}>📄 Página {section.coverPage}:</span>
-                                <span style={{ fontWeight: '600' }}>{section.title} (Separador)</span>
+                                <span style={{ color: section.color, fontWeight: 'bold' }}>📄 Page {section.coverPage}:</span>
+                                <span style={{ fontWeight: '600' }}>{section.title} (Separator)</span>
                               </div>
                               <div style={{ marginLeft: '2rem' }}>
                                 <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                                  <span style={{ color: '#6b7280', fontWeight: 'bold' }}>📄 Páginas {section.startPage}-{section.endPage}:</span>
-                                  <span>Documentos ({section.documents.length} archivos)</span>
+                                  <span style={{ color: '#6b7280', fontWeight: 'bold' }}>📄 Pages {section.startPage}-{section.endPage}:</span>
+                                  <span>Documents ({section.documents.length} files)</span>
                                 </div>
                               </div>
                             </div>
@@ -1157,7 +1229,7 @@ const QualityBookGenerator = ({ onBackClick }) => {
                             fontWeight: 'bold',
                             color: '#1f2937'
                           }}>
-                            📊 Total de Páginas: {structure.totalPages}
+                            📊 Total Pages: {structure.totalPages}
                           </div>
                         </div>
                       );
@@ -1170,7 +1242,7 @@ const QualityBookGenerator = ({ onBackClick }) => {
         )}
       </div>
 
-      {/* Input oculto para archivos */}
+      {/* Hidden file input */}
       <input
         ref={fileInputRef}
         type="file"
@@ -1180,10 +1252,10 @@ const QualityBookGenerator = ({ onBackClick }) => {
         style={{ display: 'none' }}
       />
 
-      {/* Botón de Regreso */}
+      {/* Back Button */}
       {onBackClick && <BackButton onClick={onBackClick} />}
 
-      {/* CSS para animaciones */}
+      {/* CSS for animations */}
       <style>
         {`
           @keyframes spin {

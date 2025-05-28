@@ -81,14 +81,27 @@ const QualityBookGenerator = ({ onBackClick }) => {
   const [currentUploadCategory, setCurrentUploadCategory] = useState('');
   const [dragOverCategory, setDragOverCategory] = useState(null);
 
-  // FUNCIÓN CORREGIDA para formato de fecha DD/MM/YYYY
+  // FUNCIÓN CORREGIDA CON VALIDACIONES para formato de fecha DD/MM/YYYY
   const formatDateDDMMYYYY = (dateString) => {
-    if (!dateString) return '';
-    const date = new Date(dateString);
-    const day = date.getDate().toString().padStart(2, '0');
-    const month = (date.getMonth() + 1).toString().padStart(2, '0');
-    const year = date.getFullYear();
-    return `${day}/${month}/${year}`;
+    if (!dateString || dateString.toString().trim() === '') return '';
+    
+    try {
+      const date = new Date(dateString.toString());
+      
+      // Verificar si la fecha es válida
+      if (isNaN(date.getTime())) {
+        console.warn('Invalid date provided:', dateString);
+        return '';
+      }
+      
+      const day = date.getDate().toString().padStart(2, '0');
+      const month = (date.getMonth() + 1).toString().padStart(2, '0');
+      const year = date.getFullYear();
+      return `${day}/${month}/${year}`;
+    } catch (error) {
+      console.warn('Error formatting date:', dateString, error);
+      return '';
+    }
   };
 
   // Document categories - AGREGADA NUEVA SECCIÓN "Test Reports"
@@ -170,15 +183,15 @@ const QualityBookGenerator = ({ onBackClick }) => {
     event.target.value = '';
   };
 
-  // Add files to category (shared function for button upload and drag & drop)
+  // Add files to category (shared function for button upload and drag & drop) CON VALIDACIONES
   const addFilesToCategory = (files, categoryKey) => {
     const newFiles = files.map(file => ({
       id: Date.now() + Math.random(),
-      name: file.name,
-      size: file.size,
-      type: file.type,
+      name: file.name || 'Unnamed file',
+      size: file.size || 0,
+      type: file.type || 'application/octet-stream',
       file: file,
-      uploadDate: formatDateDDMMYYYY(new Date().toISOString().split('T')[0])
+      uploadDate: formatDateDDMMYYYY(new Date().toISOString().split('T')[0]) || new Date().toLocaleDateString()
     }));
 
     setDocuments(prev => ({
@@ -254,7 +267,7 @@ const QualityBookGenerator = ({ onBackClick }) => {
     });
   };
 
-  // COVER PAGE CORREGIDA - Diseño limpio y elegante
+  // COVER PAGE CORREGIDA - CON VALIDACIONES PARA PREVENIR UNDEFINED
   const createCoverPage = async (pdfDoc, projectInfo) => {
     const page = pdfDoc.addPage(PageSizes.A4);
     const { width, height } = page.getSize();
@@ -341,7 +354,7 @@ const QualityBookGenerator = ({ onBackClick }) => {
       color: rgb(1, 1, 0.8), // Light yellow
     });
 
-    // Project info - TEXTO NARANJA Y NEGRITA (CORREGIDO)
+    // Project info - TEXTO NARANJA Y NEGRITA CON VALIDACIÓN
     if (projectInfo.projectName) {
       const projectText = `PROJECT: ${projectInfo.projectName}`;
       const projectWidth = titleFont.widthOfTextAtSize(projectText, 20); // titleFont para negrita
@@ -371,7 +384,7 @@ const QualityBookGenerator = ({ onBackClick }) => {
     return page;
   };
 
-  // Document info page con fechas corregidas
+  // Document info page con fechas corregidas Y VALIDACIONES
   const createDocumentInfoPage = async (pdfDoc, projectInfo) => {
     const page = pdfDoc.addPage(PageSizes.A4);
     const { width, height } = page.getSize();
@@ -433,8 +446,16 @@ const QualityBookGenerator = ({ onBackClick }) => {
 
     yPosition -= 50;
 
-    // Filled by info con fechas corregidas
-    page.drawText(`NAME: ${projectInfo.createdBy || 'Not specified'}`, {
+    // Filled by info con fechas corregidas Y VALIDACIONES
+    const createdByText = (projectInfo.createdBy && projectInfo.createdBy.toString().trim() !== '') 
+      ? projectInfo.createdBy.toString() 
+      : 'Not specified';
+    
+    const approvedByText = (projectInfo.approvedBy && projectInfo.approvedBy.toString().trim() !== '') 
+      ? projectInfo.approvedBy.toString() 
+      : 'Not specified';
+
+    page.drawText(`NAME: ${createdByText}`, {
       x: 60,
       y: yPosition,
       size: 10,
@@ -442,7 +463,7 @@ const QualityBookGenerator = ({ onBackClick }) => {
       color: rgb(0, 0, 0),
     });
 
-    page.drawText(`NAME: ${projectInfo.approvedBy || 'Not specified'}`, {
+    page.drawText(`NAME: ${approvedByText}`, {
       x: 360,
       y: yPosition,
       size: 10,
@@ -452,9 +473,14 @@ const QualityBookGenerator = ({ onBackClick }) => {
 
     yPosition -= 20;
 
-    // FECHAS CORREGIDAS - Formato DD/MM/YYYY
-    const createdDate = formatDateDDMMYYYY(projectInfo.createdDate) || formatDateDDMMYYYY(new Date().toISOString().split('T')[0]);
-    const approvedDate = projectInfo.approvedDate ? formatDateDDMMYYYY(projectInfo.approvedDate) : 'Pending';
+    // FECHAS CORREGIDAS CON VALIDACIÓN - Formato DD/MM/YYYY
+    const createdDate = (projectInfo.createdDate && projectInfo.createdDate.toString().trim() !== '') 
+      ? formatDateDDMMYYYY(projectInfo.createdDate.toString()) 
+      : formatDateDDMMYYYY(new Date().toISOString().split('T')[0]);
+    
+    const approvedDate = (projectInfo.approvedDate && projectInfo.approvedDate.toString().trim() !== '') 
+      ? formatDateDDMMYYYY(projectInfo.approvedDate.toString()) 
+      : 'Pending';
 
     page.drawText(`DATE: ${createdDate}`, {
       x: 60,
@@ -521,9 +547,13 @@ const QualityBookGenerator = ({ onBackClick }) => {
       color: rgb(0.95, 0.95, 0.95)
     });
 
-    const revisionData = ['00', formatDateDDMMYYYY(projectInfo.createdDate) || formatDateDDMMYYYY(new Date().toISOString().split('T')[0]), '', ''];
+    const revisionDate = (projectInfo.createdDate && projectInfo.createdDate.toString().trim() !== '') 
+      ? formatDateDDMMYYYY(projectInfo.createdDate.toString()) 
+      : formatDateDDMMYYYY(new Date().toISOString().split('T')[0]);
+
+    const revisionData = ['00', revisionDate, '', ''];
     revisionData.forEach((data, index) => {
-      page.drawText(data, {
+      page.drawText(data.toString(), {
         x: xPos + 5,
         y: yPosition - 15,
         size: 10,
@@ -536,7 +566,7 @@ const QualityBookGenerator = ({ onBackClick }) => {
     return page;
   };
 
-  // FUNCIÓN DE INDEX CORREGIDA - Se creará después de procesar documentos
+  // FUNCIÓN DE INDEX CORREGIDA CON VALIDACIONES
   const createIndexPage = async (pdfDoc, realStructure) => {
     const page = pdfDoc.addPage(PageSizes.A4);
     const { width, height } = page.getSize();
@@ -563,49 +593,59 @@ const QualityBookGenerator = ({ onBackClick }) => {
 
     let yPosition = height - 150;
 
-    // USAR LA ESTRUCTURA REAL CON PÁGINAS CORRECTAS - SOLO SECCIONES CON DOCUMENTOS
-    realStructure.sections.forEach((section) => {
-      if (section.documentCount > 0) {
-        // CORREGIDO: Mostrar rango correcto de páginas
-        const pageRange = section.documentCount === 1 || section.realStartPage === section.realEndPage ? 
-          `${section.realStartPage}` : 
-          `${section.realStartPage} - ${section.realEndPage}`;
+    // USAR LA ESTRUCTURA REAL CON PÁGINAS CORRECTAS - SOLO SECCIONES CON DOCUMENTOS Y VALIDADAS
+    if (realStructure && realStructure.sections && Array.isArray(realStructure.sections)) {
+      realStructure.sections.forEach((section) => {
+        if (section && section.documentCount > 0) {
+          // VALIDAR DATOS DE LA SECCIÓN
+          const sectionTitle = (section.title && section.title.toString().trim() !== '') 
+            ? section.title.toString().trim() 
+            : 'UNNAMED SECTION';
+          
+          const startPage = section.realStartPage || 1;
+          const endPage = section.realEndPage || startPage;
+          
+          // CORREGIDO: Mostrar rango correcto de páginas
+          const pageRange = (section.documentCount === 1 || startPage === endPage) ? 
+            `${startPage}` : 
+            `${startPage} - ${endPage}`;
 
-        page.drawText(section.title, {
-          x: 50,
-          y: yPosition,
-          size: 12,
-          font: regularFont,
-          color: rgb(0, 0, 0),
-        });
-
-        page.drawText(pageRange, {
-          x: 450,
-          y: yPosition,
-          size: 12,
-          font: regularFont,
-          color: rgb(0, 0, 0),
-        });
-
-        // Draw dotted line
-        for (let x = 300; x < 440; x += 10) {
-          page.drawText('.', {
-            x: x,
+          page.drawText(sectionTitle, {
+            x: 50,
             y: yPosition,
             size: 12,
             font: regularFont,
-            color: rgb(0.5, 0.5, 0.5),
+            color: rgb(0, 0, 0),
           });
-        }
 
-        yPosition -= 30;
-      }
-    });
+          page.drawText(pageRange, {
+            x: 450,
+            y: yPosition,
+            size: 12,
+            font: regularFont,
+            color: rgb(0, 0, 0),
+          });
+
+          // Draw dotted line
+          for (let x = 300; x < 440; x += 10) {
+            page.drawText('.', {
+              x: x,
+              y: yPosition,
+              size: 12,
+              font: regularFont,
+              color: rgb(0.5, 0.5, 0.5),
+            });
+          }
+
+          yPosition -= 30;
+        }
+      });
+    }
 
     return page;
   };
 
-  // Create section separator page - CORREGIDA PARA TEXTO LARGO
+  // Create section separator page - CON VALIDACIONES Y TEXTO LARGO CORREGIDO
   const createSectionSeparator = async (pdfDoc, sectionTitle) => {
     const page = pdfDoc.addPage(PageSizes.A4);
     const { width, height } = page.getSize();
@@ -620,6 +660,11 @@ const QualityBookGenerator = ({ onBackClick }) => {
       height: height,
       color: rgb(0.02, 0.37, 0.51) // Valmont blue
     });
+
+    // VALIDAR TÍTULO ANTES DE PROCESAR
+    const validTitle = (sectionTitle && sectionTitle.toString().trim() !== '') 
+      ? sectionTitle.toString().trim() 
+      : 'UNNAMED SECTION';
 
     // FUNCIÓN PARA DIVIDIR TEXTO LARGO EN MÚLTIPLES LÍNEAS
     const splitTextToFitWidth = (text, font, fontSize, maxWidth) => {
@@ -657,7 +702,7 @@ const QualityBookGenerator = ({ onBackClick }) => {
     const lineHeight = fontSize + 10; // Espacio entre líneas
 
     // Dividir el título en líneas que quepan en la página
-    const textLines = splitTextToFitWidth(sectionTitle, titleFont, fontSize, maxTextWidth);
+    const textLines = splitTextToFitWidth(validTitle, titleFont, fontSize, maxTextWidth);
     
     // Calcular posición Y inicial para centrar verticalmente todo el bloque de texto
     const totalTextHeight = (textLines.length - 1) * lineHeight;
@@ -794,74 +839,91 @@ const QualityBookGenerator = ({ onBackClick }) => {
     }
   };
 
-  // FUNCIÓN PARA PREVIEW PRECISA - Cuenta páginas reales como el PDF final
+  // FUNCIÓN PARA PREVIEW PRECISA CON VALIDACIONES - Cuenta páginas reales como el PDF final
   const generateRealPreviewStructure = async () => {
     if (!isReadyToGenerate()) return null;
     
-    const structure = {
-      sections: [],
-      totalRealPages: 0
-    };
+    try {
+      const structure = {
+        sections: [],
+        totalRealPages: 0
+      };
 
-    let currentRealPage = 4; // Cover + Doc Info + Index + primera sección
+      let currentRealPage = 4; // Cover + Doc Info + Index + primera sección
 
-    // FILTRAR SOLO SECCIONES CON DOCUMENTOS
-    const activeSections = documentCategories.filter(cat => documents[cat.key].length > 0);
+      // FILTRAR SOLO SECCIONES CON DOCUMENTOS Y VALIDAR
+      const activeSections = documentCategories.filter(cat => 
+        cat && cat.key && documents[cat.key] && documents[cat.key].length > 0
+      );
 
-    for (const category of activeSections) {
-      const sectionDocs = documents[category.key];
-      if (sectionDocs.length > 0) {
-        console.log(`Preview counting: ${category.title} with ${sectionDocs.length} documents`);
-        
-        const sectionSeparatorPage = currentRealPage;
-        currentRealPage += 1;
+      for (const category of activeSections) {
+        const sectionDocs = documents[category.key];
+        if (sectionDocs && sectionDocs.length > 0) {
+          console.log(`Preview counting: ${category.title || 'Unknown section'} with ${sectionDocs.length} documents`);
+          
+          const sectionSeparatorPage = currentRealPage;
+          currentRealPage += 1;
 
-        const sectionStartPage = currentRealPage;
-        let sectionTotalPages = 0;
+          const sectionStartPage = currentRealPage;
+          let sectionTotalPages = 0;
 
-        // Contar páginas reales de cada documento
-        for (const doc of sectionDocs) {
-          if (doc.type === 'application/pdf') {
-            // Para PDFs, estimamos o leemos las páginas reales si es posible
-            try {
-              const arrayBuffer = await fileToArrayBuffer(doc.file);
-              const existingPdf = await PDFDocument.load(arrayBuffer);
-              const realPageCount = existingPdf.getPageCount();
-              sectionTotalPages += realPageCount;
-              console.log(`Preview: ${doc.name} has ${realPageCount} real pages`);
-            } catch (error) {
-              console.warn(`Could not count pages in ${doc.name}, estimating 1 page`);
-              sectionTotalPages += 1; // Fallback a 1 página
+          // Contar páginas reales de cada documento CON VALIDACIONES
+          for (const doc of sectionDocs) {
+            if (doc && doc.file) {
+              if (doc.type === 'application/pdf') {
+                // Para PDFs, estimamos o leemos las páginas reales si es posible
+                try {
+                  const arrayBuffer = await fileToArrayBuffer(doc.file);
+                  const existingPdf = await PDFDocument.load(arrayBuffer);
+                  const realPageCount = existingPdf.getPageCount();
+                  sectionTotalPages += realPageCount;
+                  console.log(`Preview: ${doc.name || 'Unknown PDF'} has ${realPageCount} real pages`);
+                } catch (error) {
+                  console.warn(`Could not count pages in ${doc.name || 'Unknown file'}, estimating 1 page`, error);
+                  sectionTotalPages += 1; // Fallback a 1 página
+                }
+              } else {
+                sectionTotalPages += 1; // Imágenes y otros = 1 página
+              }
+            } else {
+              console.warn('Invalid document found, skipping');
             }
-          } else {
-            sectionTotalPages += 1; // Imágenes y otros = 1 página
           }
+
+          const sectionEndPage = currentRealPage + sectionTotalPages - 1;
+          currentRealPage += sectionTotalPages;
+
+          structure.sections.push({
+            title: category.title || 'UNNAMED SECTION',
+            separatorPage: sectionSeparatorPage,
+            realStartPage: sectionStartPage,
+            realEndPage: sectionEndPage,
+            documentCount: sectionDocs.length,
+            realTotalPages: sectionTotalPages
+          });
+
+          console.log(`Preview: Section ${category.title || 'Unknown'}: pages ${sectionStartPage}-${sectionEndPage} (${sectionTotalPages} pages)`);
         }
-
-        const sectionEndPage = currentRealPage + sectionTotalPages - 1;
-        currentRealPage += sectionTotalPages;
-
-        structure.sections.push({
-          title: category.title,
-          separatorPage: sectionSeparatorPage,
-          realStartPage: sectionStartPage,
-          realEndPage: sectionEndPage,
-          documentCount: sectionDocs.length,
-          realTotalPages: sectionTotalPages
-        });
-
-        console.log(`Preview: Section ${category.title}: pages ${sectionStartPage}-${sectionEndPage} (${sectionTotalPages} pages)`);
       }
-    }
 
-    structure.totalRealPages = currentRealPage - 1;
-    return structure;
+      structure.totalRealPages = currentRealPage - 1;
+      return structure;
+    } catch (error) {
+      console.error('Error generating preview structure:', error);
+      return null;
+    }
   };
 
-  // MAIN PDF GENERATION FUNCTION - CORREGIDA PARA EVITAR INDEX DUPLICADO
+  // MAIN PDF GENERATION FUNCTION - CON VALIDACIONES PARA PREVENIR ERRORES
   const generateRealQualityBook = async () => {
-    if (!projectInfo.projectName || !projectInfo.clientName) {
-      alert('Please complete project name and client name');
+    // VALIDACIONES MEJORADAS
+    if (!projectInfo.projectName || projectInfo.projectName.trim() === '') {
+      alert('Please enter a valid project name');
+      return;
+    }
+
+    if (!projectInfo.clientName || projectInfo.clientName.trim() === '') {
+      alert('Please enter a valid client name');
       return;
     }
 
@@ -878,13 +940,31 @@ const QualityBookGenerator = ({ onBackClick }) => {
       pdfDoc.registerFontkit(fontkit);
       
       console.log('Starting PDF generation...');
+      console.log('Project Info:', {
+        projectName: projectInfo.projectName,
+        clientName: projectInfo.clientName,
+        createdBy: projectInfo.createdBy,
+        approvedBy: projectInfo.approvedBy,
+        createdDate: projectInfo.createdDate,
+        approvedDate: projectInfo.approvedDate
+      });
+
+      // VALIDAR DATOS ANTES DE USAR
+      const validatedProjectInfo = {
+        projectName: projectInfo.projectName || 'Unnamed Project',
+        clientName: projectInfo.clientName || 'Unnamed Client',
+        createdBy: projectInfo.createdBy || 'Not specified',
+        approvedBy: projectInfo.approvedBy || 'Not specified',
+        createdDate: projectInfo.createdDate || new Date().toISOString().split('T')[0],
+        approvedDate: projectInfo.approvedDate || ''
+      };
 
       // 1. Create cover page - DISEÑO LIMPIO
-      await createCoverPage(pdfDoc, projectInfo);
+      await createCoverPage(pdfDoc, validatedProjectInfo);
       console.log('✓ Clean cover page created');
 
       // 2. Create document information page - CON FECHAS CORREGIDAS
-      await createDocumentInfoPage(pdfDoc, projectInfo);
+      await createDocumentInfoPage(pdfDoc, validatedProjectInfo);
       console.log('✓ Document info page created with DD/MM/YYYY format');
 
       // 3. PROCESAR SECCIONES PRIMERO SIN INDEX - SOLO SECCIONES CON DOCUMENTOS
@@ -904,8 +984,11 @@ const QualityBookGenerator = ({ onBackClick }) => {
         if (sectionDocs.length > 0) {
           console.log(`Processing section: ${category.title} with ${sectionDocs.length} documents`);
           
+          // VALIDAR TÍTULO DE SECCIÓN
+          const sectionTitle = category.title || 'UNNAMED SECTION';
+          
           // Add section separator
-          await createSectionSeparator(pdfDoc, category.title);
+          await createSectionSeparator(pdfDoc, sectionTitle);
           const sectionSeparatorPage = currentRealPage;
           currentRealPage += 1;
 
@@ -923,9 +1006,9 @@ const QualityBookGenerator = ({ onBackClick }) => {
           const sectionEndPage = currentRealPage + sectionTotalPages - 1;
           currentRealPage += sectionTotalPages;
 
-          // Store real structure
+          // Store real structure CON VALIDACIÓN
           realStructure.sections.push({
-            title: category.title,
+            title: sectionTitle, // USAR TÍTULO VALIDADO
             separatorPage: sectionSeparatorPage,
             realStartPage: sectionStartPage,
             realEndPage: sectionEndPage,
@@ -933,7 +1016,7 @@ const QualityBookGenerator = ({ onBackClick }) => {
             realTotalPages: sectionTotalPages
           });
 
-          console.log(`✓ Section ${category.title}: pages ${sectionStartPage}-${sectionEndPage} (${sectionTotalPages} pages)`);
+          console.log(`✓ Section ${sectionTitle}: pages ${sectionStartPage}-${sectionEndPage} (${sectionTotalPages} pages)`);
         }
       }
 
@@ -963,7 +1046,7 @@ const QualityBookGenerator = ({ onBackClick }) => {
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
-      a.download = `Quality_Book_${projectInfo.projectName.replace(/\s+/g, '_')}_${projectInfo.clientName.replace(/\s+/g, '_')}.pdf`;
+      a.download = `Quality_Book_${validatedProjectInfo.projectName.replace(/\s+/g, '_')}_${validatedProjectInfo.clientName.replace(/\s+/g, '_')}.pdf`;
       document.body.appendChild(a);
       a.click();
       document.body.removeChild(a);
@@ -977,10 +1060,14 @@ const QualityBookGenerator = ({ onBackClick }) => {
 
     } catch (error) {
       console.error('Error generating PDF:', error);
+      console.error('Error stack:', error.stack);
+      console.error('Project Info at time of error:', projectInfo);
       setIsProcessing(false);
       
       let errorMessage = 'Error generating Quality Book: ';
-      if (error.message.includes('Failed to load')) {
+      if (error.message.includes('text') && error.message.includes('undefined')) {
+        errorMessage += 'Some required text fields are empty or invalid. Please check that all project information is properly filled out.';
+      } else if (error.message.includes('Failed to load')) {
         errorMessage += 'Could not load background image or logo. Check that the image files exist in the public folder.';
       } else if (error.message.includes('embed')) {
         errorMessage += 'Error processing one of the uploaded documents. Please check that all files are valid.';

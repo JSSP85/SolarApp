@@ -615,9 +615,9 @@ const MainMenu = () => {
                     <div className={styles.mainMenuCardIconContainer} style={{ background: 'rgba(99, 102, 241, 0.1)', border: '1px solid rgba(99, 102, 241, 0.2)' }}>
                       <Book size={32} className={styles.mainMenuCardIcon} />
                     </div>
-                    <h3 className={styles.mainMenuCardTitle}>Generador de Quality Books</h3>
+                    <h3 className={styles.mainMenuCardTitle}>Quality Book Generator</h3>
                     <p className={styles.mainMenuCardDescription}>
-                      Sistema automatizado de documentación de trazabilidad para libros de control de calidad
+                      Automated traceability documentation system for quality control books
                     </p>
                     <div className={styles.mainMenuCardFooter}>
                       <div className={`${styles.mainMenuBadge} ${styles.mainMenuBadgeInfo}`}>Listo para Usar</div>

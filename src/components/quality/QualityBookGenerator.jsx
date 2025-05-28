@@ -347,10 +347,10 @@ const QualityBookGenerator = ({ onBackClick }) => {
       const projectWidth = titleFont.widthOfTextAtSize(projectText, 20); // titleFont para negrita
       page.drawText(projectText, {
         x: (width - projectWidth) / 2,
-        y: height - 320,
+        y: height - 250,
         size: 20,
         font: titleFont, // Negrita
-        color: rgb(1, 0.6, 0.2), // Color naranja
+        color: rgb(1, 1, 0.8), // Light yellow
       });
     }
 
@@ -359,10 +359,10 @@ const QualityBookGenerator = ({ onBackClick }) => {
       const clientWidth = titleFont.widthOfTextAtSize(clientText, 20); // titleFont para negrita
       page.drawText(clientText, {
         x: (width - clientWidth) / 2,
-        y: height - 350,
+        y: height - 280,
         size: 20,
         font: titleFont, // Negrita
-        color: rgb(1, 0.6, 0.2), // Color naranja
+        color: rgb(1, 1, 0.8), // Light yellow
       });
     }
 

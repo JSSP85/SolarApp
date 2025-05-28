@@ -300,7 +300,7 @@ const QualityBookGenerator = ({ onBackClick }) => {
       const logoBytes = await loadImageFromUrl('/images/logo2.png');
       if (logoBytes) {
         const logo = await pdfDoc.embedPng(logoBytes);
-        const logoScale = 0.1; // 🔧 CAMBIAR AQUÍ EL TAMAÑO: 0.1 = muy pequeño, 0.2 = pequeño, 0.3 = mediano
+        const logoScale = 0.05; // 🔧 CAMBIAR AQUÍ EL TAMAÑO: 0.1 = muy pequeño, 0.2 = pequeño, 0.3 = mediano
         const logoWidth = logo.width * logoScale;
         const logoHeight = logo.height * logoScale;
         

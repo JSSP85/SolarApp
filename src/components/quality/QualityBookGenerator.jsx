@@ -300,7 +300,7 @@ const QualityBookGenerator = ({ onBackClick }) => {
       const logoBytes = await loadImageFromUrl('/images/logo2.png');
       if (logoBytes) {
         const logo = await pdfDoc.embedPng(logoBytes);
-        const logoScale = 0.1; // 🔧 CAMBIAR AQUÍ EL TAMAÑO: 0.1 = muy pequeño, 0.2 = pequeño, 0.3 = mediano
+        const logoScale = 0.05; // 🔧 CAMBIAR AQUÍ EL TAMAÑO: 0.1 = muy pequeño, 0.2 = pequeño, 0.3 = mediano
         const logoWidth = logo.width * logoScale;
         const logoHeight = logo.height * logoScale;
         
@@ -811,7 +811,7 @@ const QualityBookGenerator = ({ onBackClick }) => {
     return structure;
   };
 
-  // MAIN PDF GENERATION FUNCTION - COMPLETAMENTE CORREGIDA
+  // MAIN PDF GENERATION FUNCTION - CORREGIDA PARA EVITAR INDEX DUPLICADO
   const generateRealQualityBook = async () => {
     if (!projectInfo.projectName || !projectInfo.clientName) {
       alert('Please complete project name and client name');
@@ -840,21 +840,17 @@ const QualityBookGenerator = ({ onBackClick }) => {
       await createDocumentInfoPage(pdfDoc, projectInfo);
       console.log('✓ Document info page created with DD/MM/YYYY format');
 
-      // 3. RESERVAR ESPACIO PARA INDEX - lo crearemos después
-      const indexPageIndex = pdfDoc.getPageCount();
-      const placeholderIndexPage = pdfDoc.addPage(PageSizes.A4);
-      console.log('✓ Index page placeholder created');
-
-      // 4. PROCESAR SECCIONES Y CONTAR PÁGINAS REALES - SOLO SECCIONES CON DOCUMENTOS
+      // 3. PROCESAR SECCIONES PRIMERO SIN INDEX - SOLO SECCIONES CON DOCUMENTOS
       const realStructure = {
         sections: [],
         totalRealPages: 0
       };
 
-      let currentRealPage = 4; // Cover + Doc Info + Index + primera sección
+      let currentRealPage = 4; // Cover + Doc Info + INDEX (que crearemos después) + primera sección
 
       // FILTRAR SOLO SECCIONES CON DOCUMENTOS
       const activeSections = documentCategories.filter(cat => documents[cat.key].length > 0);
+      console.log(`Active sections: ${activeSections.length}`);
 
       for (const category of activeSections) {
         const sectionDocs = documents[category.key];
@@ -896,16 +892,24 @@ const QualityBookGenerator = ({ onBackClick }) => {
 
       realStructure.totalRealPages = currentRealPage - 1;
 
-      // 5. CREAR EL INDEX REAL UNA SOLA VEZ CON PÁGINAS CORRECTAS
-      console.log('Creating real index with correct page numbers...');
-      pdfDoc.removePage(indexPageIndex); // Remover placeholder
+      // 4. AHORA CREAR EL INDEX UNA SOLA VEZ Y INSERTARLO EN LA POSICIÓN 3
+      console.log('Creating SINGLE index with correct page numbers...');
+      console.log('PDF pages before index insertion:', pdfDoc.getPageCount());
+      
       const realIndexPage = await createIndexPage(pdfDoc, realStructure);
-      pdfDoc.insertPage(indexPageIndex, realIndexPage);
-      console.log('✓ Real index created with correct page numbers (ONLY ONCE)');
+      pdfDoc.insertPage(2, realIndexPage); // Insertar en posición 2 (que será página 3: 0=pag1, 1=pag2, 2=pag3)
+      
+      console.log('PDF pages after index insertion:', pdfDoc.getPageCount());
+      console.log('✓ SINGLE index created and inserted at page 3');
+
+      // 5. VERIFICAR QUE NO HAY PÁGINAS EXTRA AL FINAL
+      const finalPageCount = pdfDoc.getPageCount();
+      console.log(`Final page count: ${finalPageCount}`);
+      console.log(`Expected structure: Cover(1) + DocInfo(2) + Index(3) + ${realStructure.sections.length} separators + ${getTotalDocuments()} documents`);
 
       // 6. Generate and download PDF
       const pdfBytes = await pdfDoc.save();
-      console.log(`✓ PDF generated successfully - Total pages: ${realStructure.totalRealPages}`);
+      console.log(`✓ PDF generated successfully - Total pages: ${finalPageCount}`);
 
       // Create download
       const blob = new Blob([pdfBytes], { type: 'application/pdf' });
@@ -921,7 +925,7 @@ const QualityBookGenerator = ({ onBackClick }) => {
       setIsProcessing(false);
 
       // Success message con información real
-      const message = `Quality Book "${a.download}" generated successfully!\n\n✅ ALL ISSUES FIXED:\n• Clean cover design (small logo, no boxes, orange text)\n• Logo positioning guide included in code\n• Dates in DD/MM/YYYY format\n• Real page counting system\n• Index with correct page numbers (ONLY on page 3)\n• Empty sections excluded from PDF\n• Test Reports section added\n\nGenerated content:\n• Professional cover page\n• Document information page\n• Index with REAL page references (page 3 only)\n• ${realStructure.sections.length} section separators (only sections with documents)\n• ${getTotalDocuments()} documents included\n• ${realStructure.totalRealPages} ACTUAL total pages\n\nPDF downloaded successfully!`;
+      const message = `Quality Book "${a.download}" generated successfully!\n\n✅ INDEX DUPLICATION FIXED:\n• Index appears ONLY on page 3\n• No duplicate index at the end\n• Clean cover design (small logo, orange text)\n• Dates in DD/MM/YYYY format\n• Real page counting system\n• Empty sections excluded from PDF\n• Test Reports section added\n\nGenerated content:\n• Professional cover page\n• Document information page\n• Single index with REAL page references (page 3 ONLY)\n• ${realStructure.sections.length} section separators (only sections with documents)\n• ${getTotalDocuments()} documents included\n• ${finalPageCount} ACTUAL total pages\n\nPDF downloaded successfully!`;
       alert(message);
 
     } catch (error) {

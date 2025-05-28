@@ -300,7 +300,7 @@ const QualityBookGenerator = ({ onBackClick }) => {
       const logoBytes = await loadImageFromUrl('/images/logo2.png');
       if (logoBytes) {
         const logo = await pdfDoc.embedPng(logoBytes);
-        const logoScale = 0.05; // 🔧 CAMBIAR AQUÍ EL TAMAÑO: 0.1 = muy pequeño, 0.2 = pequeño, 0.3 = mediano
+        const logoScale = 0.1; // 🔧 CAMBIAR AQUÍ EL TAMAÑO: 0.1 = muy pequeño, 0.2 = pequeño, 0.3 = mediano
         const logoWidth = logo.width * logoScale;
         const logoHeight = logo.height * logoScale;
         
@@ -605,7 +605,7 @@ const QualityBookGenerator = ({ onBackClick }) => {
     return page;
   };
 
-  // Create section separator page
+  // Create section separator page - CORREGIDA PARA TEXTO LARGO
   const createSectionSeparator = async (pdfDoc, sectionTitle) => {
     const page = pdfDoc.addPage(PageSizes.A4);
     const { width, height } = page.getSize();
@@ -621,14 +621,61 @@ const QualityBookGenerator = ({ onBackClick }) => {
       color: rgb(0.02, 0.37, 0.51) // Valmont blue
     });
 
-    // Center the section title
-    const textWidth = titleFont.widthOfTextAtSize(sectionTitle, 24);
-    page.drawText(sectionTitle, {
-      x: (width - textWidth) / 2,
-      y: height / 2,
-      size: 24,
-      font: titleFont,
-      color: rgb(1, 1, 1),
+    // FUNCIÓN PARA DIVIDIR TEXTO LARGO EN MÚLTIPLES LÍNEAS
+    const splitTextToFitWidth = (text, font, fontSize, maxWidth) => {
+      const words = text.split(' ');
+      const lines = [];
+      let currentLine = '';
+
+      for (const word of words) {
+        const testLine = currentLine ? `${currentLine} ${word}` : word;
+        const testWidth = font.widthOfTextAtSize(testLine, fontSize);
+        
+        if (testWidth <= maxWidth) {
+          currentLine = testLine;
+        } else {
+          if (currentLine) {
+            lines.push(currentLine);
+            currentLine = word;
+          } else {
+            // Si una sola palabra es muy larga, la añadimos como línea individual
+            lines.push(word);
+          }
+        }
+      }
+      
+      if (currentLine) {
+        lines.push(currentLine);
+      }
+      
+      return lines;
+    };
+
+    // CONFIGURACIÓN PARA TEXTO RESPONSIVO
+    const maxTextWidth = width - 100; // Margen de 50px por cada lado
+    const fontSize = 24;
+    const lineHeight = fontSize + 10; // Espacio entre líneas
+
+    // Dividir el título en líneas que quepan en la página
+    const textLines = splitTextToFitWidth(sectionTitle, titleFont, fontSize, maxTextWidth);
+    
+    // Calcular posición Y inicial para centrar verticalmente todo el bloque de texto
+    const totalTextHeight = (textLines.length - 1) * lineHeight;
+    const startY = (height / 2) + (totalTextHeight / 2);
+
+    // Dibujar cada línea centrada
+    textLines.forEach((line, index) => {
+      const lineWidth = titleFont.widthOfTextAtSize(line, fontSize);
+      const x = (width - lineWidth) / 2; // Centrar horizontalmente cada línea
+      const y = startY - (index * lineHeight); // Posición vertical de cada línea
+      
+      page.drawText(line, {
+        x: x,
+        y: y,
+        size: fontSize,
+        font: titleFont,
+        color: rgb(1, 1, 1),
+      });
     });
 
     return page;
@@ -924,8 +971,8 @@ const QualityBookGenerator = ({ onBackClick }) => {
 
       setIsProcessing(false);
 
-      // Success message con información real
-      const message = `Quality Book "${a.download}" generated successfully!\n\n✅ INDEX DUPLICATION FIXED:\n• Index appears ONLY on page 3\n• No duplicate index at the end\n• Clean cover design (small logo, orange text)\n• Dates in DD/MM/YYYY format\n• Real page counting system\n• Empty sections excluded from PDF\n• Test Reports section added\n\nGenerated content:\n• Professional cover page\n• Document information page\n• Single index with REAL page references (page 3 ONLY)\n• ${realStructure.sections.length} section separators (only sections with documents)\n• ${getTotalDocuments()} documents included\n• ${finalPageCount} ACTUAL total pages\n\nPDF downloaded successfully!`;
+      // Success message profesional
+      const message = `Quality Book "${a.download}" generated successfully!\n\nGenerated content:\n• Professional cover page with corporate branding\n• Document information page with proper date formatting\n• Automatic index with page references\n• ${realStructure.sections.length} organized document sections\n• ${getTotalDocuments()} documents included\n• ${finalPageCount} total pages\n\nPDF downloaded successfully!`;
       alert(message);
 
     } catch (error) {
@@ -1337,12 +1384,12 @@ const QualityBookGenerator = ({ onBackClick }) => {
                           borderRadius: '50%',
                           animation: 'spin 1s linear infinite'
                         }}></div>
-                        <span>Generating Real Preview...</span>
+                        <span>Generating Preview...</span>
                       </>
                     ) : (
                       <>
                         <Eye size={20} />
-                        {showPreview ? 'Hide Preview' : 'Show Real Preview'}
+                        {showPreview ? 'Hide Preview' : 'Show Preview'}
                       </>
                     )}
                   </button>
@@ -1394,12 +1441,12 @@ const QualityBookGenerator = ({ onBackClick }) => {
                           borderRadius: '50%',
                           animation: 'spin 1s linear infinite'
                         }}></div>
-                        <span>Generating FIXED PDF...</span>
+                        <span>Generating PDF...</span>
                       </>
                     ) : (
                       <>
                         <Download size={20} />
-                        <span>Generate FIXED Quality Book PDF</span>
+                        <span>Generate Quality Book PDF</span>
                       </>
                     )}
                   </button>
@@ -1697,14 +1744,14 @@ const QualityBookGenerator = ({ onBackClick }) => {
             <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginBottom: '3rem' }}>
               <div style={{
                 padding: '1rem',
-                background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)',
+                background: 'linear-gradient(135deg, #8b5cf6 0%, #a855f7 100%)',
                 borderRadius: '16px',
-                boxShadow: '0 8px 25px rgba(16, 185, 129, 0.3)'
+                boxShadow: '0 8px 25px rgba(139, 92, 246, 0.3)'
               }}>
-                <CheckCircle size={24} color="white" />
+                <Eye size={24} color="white" />
               </div>
               <h2 style={{ fontSize: '2rem', fontWeight: 'bold', color: '#1a202c', margin: 0 }}>
-                🔧 FIXED Quality Book Preview
+                Quality Book Preview
               </h2>
             </div>
             
@@ -1714,49 +1761,6 @@ const QualityBookGenerator = ({ onBackClick }) => {
               padding: '3rem',
               border: '2px solid #e2e8f0'
             }}>
-              {/* FIXES APPLIED Section */}
-              <div style={{
-                background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)',
-                borderRadius: '16px',
-                padding: '2rem',
-                marginBottom: '3rem',
-                color: 'white'
-              }}>
-                <h3 style={{ fontSize: '1.5rem', fontWeight: 'bold', margin: '0 0 1.5rem 0', textAlign: 'center' }}>
-                  ✅ FIXES APPLIED
-                </h3>
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '1.5rem' }}>
-                  <div style={{ textAlign: 'center' }}>
-                    <div style={{ fontSize: '2rem', marginBottom: '0.5rem' }}>📅</div>
-                    <strong>Dates Fixed</strong>
-                    <p style={{ margin: '0.5rem 0 0 0', fontSize: '0.875rem', opacity: 0.9 }}>
-                      Now using DD/MM/YYYY format
-                    </p>
-                  </div>
-                  <div style={{ textAlign: 'center' }}>
-                    <div style={{ fontSize: '2rem', marginBottom: '0.5rem' }}>📊</div>
-                    <strong>Real Page Counting</strong>
-                    <p style={{ margin: '0.5rem 0 0 0', fontSize: '0.875rem', opacity: 0.9 }}>
-                      Accurate PDF page calculation
-                    </p>
-                  </div>
-                  <div style={{ textAlign: 'center' }}>
-                    <div style={{ fontSize: '2rem', marginBottom: '0.5rem' }}>🎨</div>
-                    <strong>Clean Cover Design</strong>
-                    <p style={{ margin: '0.5rem 0 0 0', fontSize: '0.875rem', opacity: 0.9 }}>
-                      No boxes, proper logo positioning
-                    </p>
-                  </div>
-                  <div style={{ textAlign: 'center' }}>
-                    <div style={{ fontSize: '2rem', marginBottom: '0.5rem' }}>📝</div>
-                    <strong>Correct Index</strong>
-                    <p style={{ margin: '0.5rem 0 0 0', fontSize: '0.875rem', opacity: 0.9 }}>
-                      Generated with real page numbers
-                    </p>
-                  </div>
-                </div>
-              </div>
-
               <div style={{ 
                 display: 'grid', 
                 gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', 
@@ -1774,17 +1778,17 @@ const QualityBookGenerator = ({ onBackClick }) => {
                     <Book size={40} color="white" style={{ margin: '0 auto' }} />
                   </div>
                   <h3 style={{ fontWeight: 'bold', color: '#1f2937', margin: '0 0 1rem 0', fontSize: '1.25rem' }}>
-                    Clean Cover Design
+                    Professional Cover
                   </h3>
                   <div style={{ background: 'white', padding: '1rem', borderRadius: '8px', fontSize: '0.875rem' }}>
-                    <p style={{ color: '#10b981', margin: '0 0 0.5rem 0', fontWeight: 'bold' }}>
-                      ✅ FIXED: No blue/black boxes
+                    <p style={{ color: '#6b7280', margin: '0 0 0.5rem 0' }}>
+                      <strong>Background image:</strong> Professional solar theme
                     </p>
-                    <p style={{ color: '#10b981', margin: '0 0 0.5rem 0', fontWeight: 'bold' }}>
-                      ✅ FIXED: Small logo, proper position
+                    <p style={{ color: '#6b7280', margin: '0 0 0.5rem 0' }}>
+                      <strong>Valmont Logo:</strong> Corporate branding
                     </p>
-                    <p style={{ color: '#10b981', margin: 0, fontWeight: 'bold' }}>
-                      ✅ FIXED: Clean, elegant design
+                    <p style={{ color: '#6b7280', margin: 0 }}>
+                      <strong>Project info:</strong> {projectInfo.projectName || 'Not set'}
                     </p>
                   </div>
                 </div>
@@ -1800,17 +1804,17 @@ const QualityBookGenerator = ({ onBackClick }) => {
                     <Calendar size={40} color="white" style={{ margin: '0 auto' }} />
                   </div>
                   <h3 style={{ fontWeight: 'bold', color: '#1f2937', margin: '0 0 1rem 0', fontSize: '1.25rem' }}>
-                    Date Format Fixed
+                    Date Management
                   </h3>
                   <div style={{ background: 'white', padding: '1rem', borderRadius: '8px', fontSize: '0.875rem' }}>
-                    <p style={{ color: '#10b981', margin: '0 0 0.5rem 0', fontWeight: 'bold' }}>
-                      ✅ FIXED: DD/MM/YYYY format
+                    <p style={{ color: '#6b7280', margin: '0 0 0.5rem 0' }}>
+                      <strong>Format:</strong> DD/MM/YYYY standard
                     </p>
-                    <p style={{ color: '#10b981', margin: '0 0 0.5rem 0', fontWeight: 'bold' }}>
-                      ✅ FIXED: European date standard
+                    <p style={{ color: '#6b7280', margin: '0 0 0.5rem 0' }}>
+                      <strong>Consistency:</strong> European date format
                     </p>
-                    <p style={{ color: '#10b981', margin: 0, fontWeight: 'bold' }}>
-                      ✅ FIXED: All dates consistent
+                    <p style={{ color: '#6b7280', margin: 0 }}>
+                      <strong>Application:</strong> All document sections
                     </p>
                   </div>
                 </div>
@@ -1826,17 +1830,17 @@ const QualityBookGenerator = ({ onBackClick }) => {
                     <FileCheck size={40} color="white" style={{ margin: '0 auto' }} />
                   </div>
                   <h3 style={{ fontWeight: 'bold', color: '#1f2937', margin: '0 0 1rem 0', fontSize: '1.25rem' }}>
-                    Real Page Counting
+                    Document Processing
                   </h3>
                   <div style={{ background: 'white', padding: '1rem', borderRadius: '8px', fontSize: '0.875rem' }}>
-                    <p style={{ color: '#10b981', margin: '0 0 0.5rem 0', fontWeight: 'bold' }}>
-                      ✅ FIXED: Counts actual PDF pages
+                    <p style={{ color: '#6b7280', margin: '0 0 0.5rem 0' }}>
+                      <strong>PDF integration:</strong> Seamless merging
                     </p>
-                    <p style={{ color: '#10b981', margin: '0 0 0.5rem 0', fontWeight: 'bold' }}>
-                      ✅ FIXED: Accurate index page numbers
+                    <p style={{ color: '#6b7280', margin: '0 0 0.5rem 0' }}>
+                      <strong>Page counting:</strong> Accurate calculation
                     </p>
-                    <p style={{ color: '#10b981', margin: 0, fontWeight: 'bold' }}>
-                      ✅ FIXED: Real total page count
+                    <p style={{ color: '#6b7280', margin: 0 }}>
+                      <strong>Index generation:</strong> Automatic referencing
                     </p>
                   </div>
                 </div>
@@ -1852,17 +1856,17 @@ const QualityBookGenerator = ({ onBackClick }) => {
                     <Settings size={40} color="white" style={{ margin: '0 auto' }} />
                   </div>
                   <h3 style={{ fontWeight: 'bold', color: '#1f2937', margin: '0 0 1rem 0', fontSize: '1.25rem' }}>
-                    Index Generation Fixed
+                    Automation Features
                   </h3>
                   <div style={{ background: 'white', padding: '1rem', borderRadius: '8px', fontSize: '0.875rem' }}>
-                    <p style={{ color: '#10b981', margin: '0 0 0.5rem 0', fontWeight: 'bold' }}>
-                      ✅ FIXED: Generated after processing
+                    <p style={{ color: '#6b7280', margin: '0 0 0.5rem 0' }}>
+                      <strong>Auto-indexing:</strong> Real-time page references
                     </p>
-                    <p style={{ color: '#10b981', margin: '0 0 0.5rem 0', fontWeight: 'bold' }}>
-                      ✅ FIXED: Correct page references
+                    <p style={{ color: '#6b7280', margin: '0 0 0.5rem 0' }}>
+                      <strong>Section management:</strong> Professional dividers
                     </p>
-                    <p style={{ color: '#10b981', margin: 0, fontWeight: 'bold' }}>
-                      ✅ FIXED: Professional layout
+                    <p style={{ color: '#6b7280', margin: 0 }}>
+                      <strong>Quality control:</strong> Standardized layout
                     </p>
                   </div>
                 </div>
@@ -1885,7 +1889,7 @@ const QualityBookGenerator = ({ onBackClick }) => {
                     borderBottom: '2px solid #f3f4f6',
                     paddingBottom: '1rem'
                   }}>
-                    📊 REAL PDF Structure (Precise Preview):
+                    📊 PDF Structure Preview:
                   </h4>
 
                   {previewLoading ? (
@@ -1904,10 +1908,10 @@ const QualityBookGenerator = ({ onBackClick }) => {
                         margin: '0 auto 2rem'
                       }}></div>
                       <p style={{ fontSize: '1.25rem', fontWeight: '600' }}>
-                        Counting real pages from your documents...
+                        Analyzing your documents...
                       </p>
                       <p style={{ fontSize: '1rem' }}>
-                        This may take a moment as we analyze each PDF file
+                        Please wait while we calculate the document structure
                       </p>
                     </div>
                   ) : realPreviewStructure ? (
@@ -1920,15 +1924,15 @@ const QualityBookGenerator = ({ onBackClick }) => {
                       <div>
                         <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.5rem' }}>
                           <span style={{ color: '#10b981', fontWeight: 'bold' }}>📄 Page 1:</span>
-                          <span>Cover (Clean Design - Small Logo, Orange Text)</span>
+                          <span>Professional Cover Page</span>
                         </div>
                         <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.5rem' }}>
                           <span style={{ color: '#10b981', fontWeight: 'bold' }}>📄 Page 2:</span>
-                          <span>Document Information (DD/MM/YYYY dates)</span>
+                          <span>Document Information</span>
                         </div>
                         <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '1rem' }}>
                           <span style={{ color: '#10b981', fontWeight: 'bold' }}>📄 Page 3:</span>
-                          <span>Index (Generated with REAL page numbers)</span>
+                          <span>Index with Page References</span>
                         </div>
                         {realPreviewStructure.sections.map((section, index) => (
                           <div key={index} style={{ marginLeft: '1rem', marginBottom: '1rem' }}>
@@ -1941,7 +1945,7 @@ const QualityBookGenerator = ({ onBackClick }) => {
                                 <span style={{ color: '#6b7280', fontWeight: 'bold' }}>
                                   📄 Pages {section.realStartPage}{section.realStartPage !== section.realEndPage ? `-${section.realEndPage}` : ''}:
                                 </span>
-                                <span>Real Documents ({section.documentCount} files - {section.realTotalPages} ACTUAL pages)</span>
+                                <span>Documents ({section.documentCount} files - {section.realTotalPages} pages)</span>
                               </div>
                             </div>
                           </div>
@@ -1954,18 +1958,7 @@ const QualityBookGenerator = ({ onBackClick }) => {
                           fontWeight: 'bold',
                           color: 'white'
                         }}>
-                          🎉 Total Pages: {realPreviewStructure.totalRealPages} | This is the EXACT structure of your PDF!
-                        </div>
-                        <div style={{ 
-                          marginTop: '1rem', 
-                          padding: '1rem',
-                          background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)',
-                          borderRadius: '8px',
-                          fontWeight: 'bold',
-                          color: 'white',
-                          textAlign: 'center'
-                        }}>
-                          ✅ This preview shows REAL page counts from your uploaded files!
+                          🎉 Total Pages: {realPreviewStructure.totalRealPages}
                         </div>
                       </div>
                     </div>

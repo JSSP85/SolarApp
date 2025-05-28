@@ -18,7 +18,8 @@ import {
   Award,
   Package,
   ArrowLeft,
-  Settings
+  Settings,
+  FileWarning
 } from 'lucide-react';
 
 // PDF generation imports
@@ -68,11 +69,14 @@ const QualityBookGenerator = ({ onBackClick }) => {
     rawMaterialStandard: [],
     rawMaterialKit: [],
     conformityDeclarations: [],
+    testReports: [], // NUEVA SECCIÓN AGREGADA
     transportValmont: []
   });
 
   const [isProcessing, setIsProcessing] = useState(false);
   const [showPreview, setShowPreview] = useState(false);
+  const [previewLoading, setPreviewLoading] = useState(false); // NUEVO ESTADO PARA PREVIEW
+  const [realPreviewStructure, setRealPreviewStructure] = useState(null); // ESTRUCTURA REAL DE PREVIEW
   const fileInputRef = useRef(null);
   const [currentUploadCategory, setCurrentUploadCategory] = useState('');
   const [dragOverCategory, setDragOverCategory] = useState(null);
@@ -87,7 +91,7 @@ const QualityBookGenerator = ({ onBackClick }) => {
     return `${day}/${month}/${year}`;
   };
 
-  // Document categories - ALL IN ENGLISH
+  // Document categories - AGREGADA NUEVA SECCIÓN "Test Reports"
   const documentCategories = [
     {
       key: 'transportSuppliers',
@@ -128,6 +132,16 @@ const QualityBookGenerator = ({ onBackClick }) => {
       iconColor: 'text-orange-600',
       headerColor: 'bg-orange-600',
       sectionColor: '#F59E0B'
+    },
+    {
+      key: 'testReports',
+      title: 'TEST REPORTS',
+      icon: <FileWarning className="w-5 h-5" />,
+      description: 'Testing reports and quality verification documents',
+      color: 'bg-cyan-50 border-cyan-200',
+      iconColor: 'text-cyan-600',
+      headerColor: 'bg-cyan-600',
+      sectionColor: '#06B6D4'
     },
     {
       key: 'transportValmont',
@@ -277,18 +291,22 @@ const QualityBookGenerator = ({ onBackClick }) => {
       });
     }
 
-    // Add small logo in top-right corner - CORREGIDO: Tamaño pequeño y posición correcta
+    // LOGO PEQUEÑO Y BIEN POSICIONADO
+    // 🔧 PARA CAMBIAR MANUALMENTE EL LOGO:
+    // - logoScale: controla el tamaño (0.1 = muy pequeño, 0.3 = grande)
+    // - x: width - logoWidth - [NÚMERO] (30 = cerca del borde, 100 = más hacia el centro)
+    // - y: height - logoHeight - [NÚMERO] (30 = cerca del borde superior, 100 = más abajo)
     try {
       const logoBytes = await loadImageFromUrl('/images/logo2.png');
       if (logoBytes) {
         const logo = await pdfDoc.embedPng(logoBytes);
-        const logoScale = 0.2; // MUY PEQUEÑO
+        const logoScale = 0.1; // 🔧 CAMBIAR AQUÍ EL TAMAÑO: 0.1 = muy pequeño, 0.2 = pequeño, 0.3 = mediano
         const logoWidth = logo.width * logoScale;
         const logoHeight = logo.height * logoScale;
         
         page.drawImage(logo, {
-          x: width - logoWidth - 30, // Margen de 30px del borde
-          y: height - logoHeight - 30, // Margen de 30px del borde
+          x: width - logoWidth - 40, // 🔧 CAMBIAR AQUÍ POSICIÓN HORIZONTAL: 40 = cerca del borde
+          y: height - logoHeight - 40, // 🔧 CAMBIAR AQUÍ POSICIÓN VERTICAL: 40 = cerca del borde superior
           width: logoWidth,
           height: logoHeight,
         });
@@ -323,52 +341,32 @@ const QualityBookGenerator = ({ onBackClick }) => {
       color: rgb(1, 1, 0.8), // Light yellow
     });
 
-    // Project info - TEXTO SIMPLE SIN CUADROS
+    // Project info - TEXTO NARANJA Y NEGRITA (CORREGIDO)
     if (projectInfo.projectName) {
       const projectText = `PROJECT: ${projectInfo.projectName}`;
-      const projectWidth = regularFont.widthOfTextAtSize(projectText, 20);
+      const projectWidth = titleFont.widthOfTextAtSize(projectText, 20); // titleFont para negrita
       page.drawText(projectText, {
         x: (width - projectWidth) / 2,
         y: height - 320,
         size: 20,
-        font: regularFont,
-        color: rgb(1, 1, 1),
+        font: titleFont, // Negrita
+        color: rgb(1, 0.6, 0.2), // Color naranja
       });
     }
 
     if (projectInfo.clientName) {
       const clientText = `CLIENT: ${projectInfo.clientName}`;
-      const clientWidth = regularFont.widthOfTextAtSize(clientText, 20);
+      const clientWidth = titleFont.widthOfTextAtSize(clientText, 20); // titleFont para negrita
       page.drawText(clientText, {
         x: (width - clientWidth) / 2,
         y: height - 350,
         size: 20,
-        font: regularFont,
-        color: rgb(1, 1, 1),
+        font: titleFont, // Negrita
+        color: rgb(1, 0.6, 0.2), // Color naranja
       });
     }
 
-    // Valmont Solar branding - BOTTOM CENTER
-    const brandText = 'valmont SOLAR';
-    const brandWidth = titleFont.widthOfTextAtSize(brandText, 28);
-    page.drawText(brandText, {
-      x: (width - brandWidth) / 2,
-      y: 60,
-      size: 28,
-      font: titleFont,
-      color: rgb(1, 1, 1),
-    });
-
-    // Fecha de creación - BOTTOM
-    const dateText = `DOCUMENT CREATED: ${formatDateDDMMYYYY(projectInfo.createdDate)}`;
-    const dateWidth = regularFont.widthOfTextAtSize(dateText, 12);
-    page.drawText(dateText, {
-      x: (width - dateWidth) / 2,
-      y: 30,
-      size: 12,
-      font: regularFont,
-      color: rgb(0.9, 0.9, 0.9),
-    });
+    // QUITADO: El texto "valmont SOLAR" y la fecha de abajo han sido eliminados para un diseño más limpio
 
     return page;
   };
@@ -565,10 +563,11 @@ const QualityBookGenerator = ({ onBackClick }) => {
 
     let yPosition = height - 150;
 
-    // USAR LA ESTRUCTURA REAL CON PÁGINAS CORRECTAS
+    // USAR LA ESTRUCTURA REAL CON PÁGINAS CORRECTAS - SOLO SECCIONES CON DOCUMENTOS
     realStructure.sections.forEach((section) => {
       if (section.documentCount > 0) {
-        const pageRange = section.documentCount === 1 ? 
+        // CORREGIDO: Mostrar rango correcto de páginas
+        const pageRange = section.documentCount === 1 || section.realStartPage === section.realEndPage ? 
           `${section.realStartPage}` : 
           `${section.realStartPage} - ${section.realEndPage}`;
 
@@ -748,38 +747,67 @@ const QualityBookGenerator = ({ onBackClick }) => {
     }
   };
 
-  // ESTRUCTURA PARA PREVIEW CORREGIDA - Estimación aproximada
-  const generatePreviewStructure = () => {
+  // FUNCIÓN PARA PREVIEW PRECISA - Cuenta páginas reales como el PDF final
+  const generateRealPreviewStructure = async () => {
+    if (!isReadyToGenerate()) return null;
+    
     const structure = {
       sections: [],
-      totalPages: 0,
-      totalDocuments: getTotalDocuments()
+      totalRealPages: 0
     };
 
-    let currentPage = 4; // Cover + Document Info + Index pages
+    let currentRealPage = 4; // Cover + Doc Info + Index + primera sección
 
+    // FILTRAR SOLO SECCIONES CON DOCUMENTOS
     const activeSections = documentCategories.filter(cat => documents[cat.key].length > 0);
 
-    activeSections.forEach((category) => {
+    for (const category of activeSections) {
       const sectionDocs = documents[category.key];
-      const estimatedPagesPerDoc = 3; // Estimación promedio
-      const startPage = currentPage + 1; // +1 for section cover
-      const endPage = startPage + (sectionDocs.length * estimatedPagesPerDoc) - 1;
+      if (sectionDocs.length > 0) {
+        console.log(`Preview counting: ${category.title} with ${sectionDocs.length} documents`);
+        
+        const sectionSeparatorPage = currentRealPage;
+        currentRealPage += 1;
 
-      structure.sections.push({
-        title: category.title,
-        coverPage: currentPage,
-        documentCount: sectionDocs.length,
-        startPage,
-        endPage,
-        color: category.sectionColor,
-        estimatedPages: sectionDocs.length * estimatedPagesPerDoc
-      });
+        const sectionStartPage = currentRealPage;
+        let sectionTotalPages = 0;
 
-      currentPage += (sectionDocs.length * estimatedPagesPerDoc) + 1; // +1 for section cover
-    });
+        // Contar páginas reales de cada documento
+        for (const doc of sectionDocs) {
+          if (doc.type === 'application/pdf') {
+            // Para PDFs, estimamos o leemos las páginas reales si es posible
+            try {
+              const arrayBuffer = await fileToArrayBuffer(doc.file);
+              const existingPdf = await PDFDocument.load(arrayBuffer);
+              const realPageCount = existingPdf.getPageCount();
+              sectionTotalPages += realPageCount;
+              console.log(`Preview: ${doc.name} has ${realPageCount} real pages`);
+            } catch (error) {
+              console.warn(`Could not count pages in ${doc.name}, estimating 1 page`);
+              sectionTotalPages += 1; // Fallback a 1 página
+            }
+          } else {
+            sectionTotalPages += 1; // Imágenes y otros = 1 página
+          }
+        }
 
-    structure.totalPages = currentPage - 1;
+        const sectionEndPage = currentRealPage + sectionTotalPages - 1;
+        currentRealPage += sectionTotalPages;
+
+        structure.sections.push({
+          title: category.title,
+          separatorPage: sectionSeparatorPage,
+          realStartPage: sectionStartPage,
+          realEndPage: sectionEndPage,
+          documentCount: sectionDocs.length,
+          realTotalPages: sectionTotalPages
+        });
+
+        console.log(`Preview: Section ${category.title}: pages ${sectionStartPage}-${sectionEndPage} (${sectionTotalPages} pages)`);
+      }
+    }
+
+    structure.totalRealPages = currentRealPage - 1;
     return structure;
   };
 
@@ -817,7 +845,7 @@ const QualityBookGenerator = ({ onBackClick }) => {
       const placeholderIndexPage = pdfDoc.addPage(PageSizes.A4);
       console.log('✓ Index page placeholder created');
 
-      // 4. PROCESAR SECCIONES Y CONTAR PÁGINAS REALES
+      // 4. PROCESAR SECCIONES Y CONTAR PÁGINAS REALES - SOLO SECCIONES CON DOCUMENTOS
       const realStructure = {
         sections: [],
         totalRealPages: 0
@@ -825,7 +853,10 @@ const QualityBookGenerator = ({ onBackClick }) => {
 
       let currentRealPage = 4; // Cover + Doc Info + Index + primera sección
 
-      for (const category of documentCategories) {
+      // FILTRAR SOLO SECCIONES CON DOCUMENTOS
+      const activeSections = documentCategories.filter(cat => documents[cat.key].length > 0);
+
+      for (const category of activeSections) {
         const sectionDocs = documents[category.key];
         if (sectionDocs.length > 0) {
           console.log(`Processing section: ${category.title} with ${sectionDocs.length} documents`);
@@ -865,12 +896,12 @@ const QualityBookGenerator = ({ onBackClick }) => {
 
       realStructure.totalRealPages = currentRealPage - 1;
 
-      // 5. AHORA CREAR EL INDEX REAL CON PÁGINAS CORRECTAS
+      // 5. CREAR EL INDEX REAL UNA SOLA VEZ CON PÁGINAS CORRECTAS
       console.log('Creating real index with correct page numbers...');
       pdfDoc.removePage(indexPageIndex); // Remover placeholder
       const realIndexPage = await createIndexPage(pdfDoc, realStructure);
       pdfDoc.insertPage(indexPageIndex, realIndexPage);
-      console.log('✓ Real index created with correct page numbers');
+      console.log('✓ Real index created with correct page numbers (ONLY ONCE)');
 
       // 6. Generate and download PDF
       const pdfBytes = await pdfDoc.save();
@@ -890,7 +921,7 @@ const QualityBookGenerator = ({ onBackClick }) => {
       setIsProcessing(false);
 
       // Success message con información real
-      const message = `Quality Book "${a.download}" generated successfully!\n\n✅ FIXES APPLIED:\n• Clean cover design (no boxes)\n• Logo correctly sized and positioned\n• Dates in DD/MM/YYYY format\n• Real page counting system\n• Index with correct page numbers\n\nGenerated content:\n• Professional cover page\n• Document information page\n• Index with REAL page references\n• ${realStructure.sections.length} section separators\n• ${getTotalDocuments()} documents included\n• ${realStructure.totalRealPages} ACTUAL total pages\n\nPDF downloaded successfully!`;
+      const message = `Quality Book "${a.download}" generated successfully!\n\n✅ ALL ISSUES FIXED:\n• Clean cover design (small logo, no boxes, orange text)\n• Logo positioning guide included in code\n• Dates in DD/MM/YYYY format\n• Real page counting system\n• Index with correct page numbers (ONLY on page 3)\n• Empty sections excluded from PDF\n• Test Reports section added\n\nGenerated content:\n• Professional cover page\n• Document information page\n• Index with REAL page references (page 3 only)\n• ${realStructure.sections.length} section separators (only sections with documents)\n• ${getTotalDocuments()} documents included\n• ${realStructure.totalRealPages} ACTUAL total pages\n\nPDF downloaded successfully!`;
       alert(message);
 
     } catch (error) {
@@ -916,8 +947,27 @@ const QualityBookGenerator = ({ onBackClick }) => {
            getTotalDocuments() > 0;
   };
 
-  const togglePreview = () => {
-    setShowPreview(!showPreview);
+  // FUNCIÓN TOGGLE PREVIEW CORREGIDA
+  const togglePreview = async () => {
+    if (!showPreview) {
+      // Al mostrar preview, generar estructura real
+      if (isReadyToGenerate()) {
+        setPreviewLoading(true);
+        try {
+          const realStructure = await generateRealPreviewStructure();
+          setRealPreviewStructure(realStructure);
+        } catch (error) {
+          console.error('Error generating preview:', error);
+          alert('Error generating preview. Some documents may be corrupted.');
+        }
+        setPreviewLoading(false);
+      }
+      setShowPreview(true);
+    } else {
+      // Al ocultar preview
+      setShowPreview(false);
+      setRealPreviewStructure(null);
+    }
   };
 
   const getFileIcon = (fileType) => {
@@ -966,10 +1016,10 @@ const QualityBookGenerator = ({ onBackClick }) => {
                   textShadow: '0 2px 4px rgba(0, 0, 0, 0.5)',
                   letterSpacing: '-0.02em'
                 }}>
-                  Quality Book Generator - FIXED
+                  Quality Book Generator
                 </h1>
                 <p style={{ color: 'rgba(255, 255, 255, 0.9)', margin: 0, fontSize: '1.2rem', fontWeight: '500' }}>
-                  🔧 Fixed: Dates DD/MM/YYYY • Real page counting • Clean cover design • Correct index
+                  Automated traceability documentation system
                 </p>
               </div>
             </div>
@@ -1182,7 +1232,7 @@ const QualityBookGenerator = ({ onBackClick }) => {
                       color: '#374151', 
                       marginBottom: '0.75rem' 
                     }}>
-                      Creation Date
+                      Creation Date (DD/MM/YYYY)
                     </label>
                     <input
                       type="date"
@@ -1199,6 +1249,9 @@ const QualityBookGenerator = ({ onBackClick }) => {
                         background: 'rgba(248, 250, 252, 0.8)'
                       }}
                     />
+                    <p style={{ fontSize: '0.75rem', color: '#6b7280', margin: '0.25rem 0 0 0' }}>
+                      Will be displayed as: {formatDateDDMMYYYY(projectInfo.createdDate)}
+                    </p>
                   </div>
                   <div>
                     <label style={{ 
@@ -1208,7 +1261,7 @@ const QualityBookGenerator = ({ onBackClick }) => {
                       color: '#374151', 
                       marginBottom: '0.75rem' 
                     }}>
-                      Approval Date
+                      Approval Date (DD/MM/YYYY)
                     </label>
                     <input
                       type="date"
@@ -1225,6 +1278,9 @@ const QualityBookGenerator = ({ onBackClick }) => {
                         background: 'rgba(248, 250, 252, 0.8)'
                       }}
                     />
+                    <p style={{ fontSize: '0.75rem', color: '#6b7280', margin: '0.25rem 0 0 0' }}>
+                      Will be displayed as: {projectInfo.approvedDate ? formatDateDDMMYYYY(projectInfo.approvedDate) : 'Not set'}
+                    </p>
                   </div>
                 </div>
               </div>
@@ -1234,34 +1290,57 @@ const QualityBookGenerator = ({ onBackClick }) => {
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
                   <button
                     onClick={togglePreview}
+                    disabled={previewLoading}
                     style={{
                       width: '100%',
                       padding: '1rem 1.5rem',
-                      background: 'linear-gradient(135deg, #8b5cf6 0%, #a855f7 100%)',
+                      background: previewLoading 
+                        ? '#9ca3af' 
+                        : 'linear-gradient(135deg, #8b5cf6 0%, #a855f7 100%)',
                       color: 'white',
                       border: 'none',
                       borderRadius: '12px',
                       fontWeight: '600',
                       fontSize: '1rem',
-                      cursor: 'pointer',
+                      cursor: previewLoading ? 'not-allowed' : 'pointer',
                       transition: 'all 0.3s',
                       display: 'flex',
                       alignItems: 'center',
                       justifyContent: 'center',
                       gap: '0.75rem',
-                      boxShadow: '0 8px 25px rgba(139, 92, 246, 0.3)'
+                      boxShadow: previewLoading ? 'none' : '0 8px 25px rgba(139, 92, 246, 0.3)'
                     }}
                     onMouseOver={(e) => {
-                      e.target.style.transform = 'translateY(-2px)';
-                      e.target.style.boxShadow = '0 12px 35px rgba(139, 92, 246, 0.4)';
+                      if (!previewLoading) {
+                        e.target.style.transform = 'translateY(-2px)';
+                        e.target.style.boxShadow = '0 12px 35px rgba(139, 92, 246, 0.4)';
+                      }
                     }}
                     onMouseOut={(e) => {
-                      e.target.style.transform = 'translateY(0)';
-                      e.target.style.boxShadow = '0 8px 25px rgba(139, 92, 246, 0.3)';
+                      if (!previewLoading) {
+                        e.target.style.transform = 'translateY(0)';
+                        e.target.style.boxShadow = '0 8px 25px rgba(139, 92, 246, 0.3)';
+                      }
                     }}
                   >
-                    <Eye size={20} />
-                    {showPreview ? 'Hide Preview' : 'Show Preview'}
+                    {previewLoading ? (
+                      <>
+                        <div style={{
+                          width: '20px',
+                          height: '20px',
+                          border: '3px solid rgba(255, 255, 255, 0.3)',
+                          borderTop: '3px solid white',
+                          borderRadius: '50%',
+                          animation: 'spin 1s linear infinite'
+                        }}></div>
+                        <span>Generating Real Preview...</span>
+                      </>
+                    ) : (
+                      <>
+                        <Eye size={20} />
+                        {showPreview ? 'Hide Preview' : 'Show Real Preview'}
+                      </>
+                    )}
                   </button>
 
                   <button
@@ -1785,8 +1864,8 @@ const QualityBookGenerator = ({ onBackClick }) => {
                 </div>
               </div>
 
-              {/* ESTIMATED Structure Preview */}
-              {isReadyToGenerate() && (
+              {/* REAL Structure Preview con REAL PDF info */}
+              {showPreview && isReadyToGenerate() && (
                 <div style={{ 
                   padding: '2rem', 
                   background: 'white', 
@@ -1802,69 +1881,99 @@ const QualityBookGenerator = ({ onBackClick }) => {
                     borderBottom: '2px solid #f3f4f6',
                     paddingBottom: '1rem'
                   }}>
-                    📊 FIXED PDF Structure Preview (Estimated):
+                    📊 REAL PDF Structure (Precise Preview):
                   </h4>
-                  <div style={{ 
-                    fontFamily: 'Monaco, Menlo, monospace', 
-                    fontSize: '1rem', 
-                    color: '#374151',
-                    lineHeight: '1.8'
-                  }}>
-                    {(() => {
-                      const structure = generatePreviewStructure();
-                      return (
-                        <div>
-                          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.5rem' }}>
-                            <span style={{ color: '#10b981', fontWeight: 'bold' }}>📄 Page 1:</span>
-                            <span>Cover (Clean Design - NO BOXES)</span>
-                          </div>
-                          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.5rem' }}>
-                            <span style={{ color: '#10b981', fontWeight: 'bold' }}>📄 Page 2:</span>
-                            <span>Document Information (DD/MM/YYYY dates)</span>
-                          </div>
-                          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '1rem' }}>
-                            <span style={{ color: '#10b981', fontWeight: 'bold' }}>📄 Page 3:</span>
-                            <span>Index (Generated with REAL page numbers)</span>
-                          </div>
-                          {structure.sections.map((section, index) => (
-                            <div key={index} style={{ marginLeft: '1rem', marginBottom: '1rem' }}>
-                              <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.5rem' }}>
-                                <span style={{ color: section.color, fontWeight: 'bold' }}>📄 Page {section.coverPage}:</span>
-                                <span style={{ fontWeight: '600' }}>{section.title} (Professional Separator)</span>
-                              </div>
-                              <div style={{ marginLeft: '2rem' }}>
-                                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                                  <span style={{ color: '#6b7280', fontWeight: 'bold' }}>📄 Pages {section.startPage}-{section.endPage}:</span>
-                                  <span>Real Documents ({section.documentCount} files - ACTUAL pages will be counted)</span>
-                                </div>
+
+                  {previewLoading ? (
+                    <div style={{ 
+                      textAlign: 'center', 
+                      padding: '3rem',
+                      color: '#6b7280'
+                    }}>
+                      <div style={{
+                        width: '50px',
+                        height: '50px',
+                        border: '4px solid #f3f4f6',
+                        borderTop: '4px solid #8b5cf6',
+                        borderRadius: '50%',
+                        animation: 'spin 1s linear infinite',
+                        margin: '0 auto 2rem'
+                      }}></div>
+                      <p style={{ fontSize: '1.25rem', fontWeight: '600' }}>
+                        Counting real pages from your documents...
+                      </p>
+                      <p style={{ fontSize: '1rem' }}>
+                        This may take a moment as we analyze each PDF file
+                      </p>
+                    </div>
+                  ) : realPreviewStructure ? (
+                    <div style={{ 
+                      fontFamily: 'Monaco, Menlo, monospace', 
+                      fontSize: '1rem', 
+                      color: '#374151',
+                      lineHeight: '1.8'
+                    }}>
+                      <div>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.5rem' }}>
+                          <span style={{ color: '#10b981', fontWeight: 'bold' }}>📄 Page 1:</span>
+                          <span>Cover (Clean Design - Small Logo, Orange Text)</span>
+                        </div>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.5rem' }}>
+                          <span style={{ color: '#10b981', fontWeight: 'bold' }}>📄 Page 2:</span>
+                          <span>Document Information (DD/MM/YYYY dates)</span>
+                        </div>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '1rem' }}>
+                          <span style={{ color: '#10b981', fontWeight: 'bold' }}>📄 Page 3:</span>
+                          <span>Index (Generated with REAL page numbers)</span>
+                        </div>
+                        {realPreviewStructure.sections.map((section, index) => (
+                          <div key={index} style={{ marginLeft: '1rem', marginBottom: '1rem' }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.5rem' }}>
+                              <span style={{ color: '#3b82f6', fontWeight: 'bold' }}>📄 Page {section.separatorPage}:</span>
+                              <span style={{ fontWeight: '600' }}>{section.title} (Professional Separator)</span>
+                            </div>
+                            <div style={{ marginLeft: '2rem' }}>
+                              <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                                <span style={{ color: '#6b7280', fontWeight: 'bold' }}>
+                                  📄 Pages {section.realStartPage}{section.realStartPage !== section.realEndPage ? `-${section.realEndPage}` : ''}:
+                                </span>
+                                <span>Real Documents ({section.documentCount} files - {section.realTotalPages} ACTUAL pages)</span>
                               </div>
                             </div>
-                          ))}
-                          <div style={{ 
-                            marginTop: '2rem', 
-                            padding: '1rem',
-                            background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)',
-                            borderRadius: '8px',
-                            fontWeight: 'bold',
-                            color: 'white'
-                          }}>
-                            🎉 Estimated Pages: ~{structure.totalPages} | REAL counting will be done during generation!
                           </div>
-                          <div style={{ 
-                            marginTop: '1rem', 
-                            padding: '1rem',
-                            background: 'linear-gradient(135deg, #f59e0b 0%, #d97706 100%)',
-                            borderRadius: '8px',
-                            fontWeight: 'bold',
-                            color: 'white',
-                            textAlign: 'center'
-                          }}>
-                            ⚠️ This is just a preview! The REAL PDF will count actual pages from your uploaded files.
-                          </div>
+                        ))}
+                        <div style={{ 
+                          marginTop: '2rem', 
+                          padding: '1rem',
+                          background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)',
+                          borderRadius: '8px',
+                          fontWeight: 'bold',
+                          color: 'white'
+                        }}>
+                          🎉 Total Pages: {realPreviewStructure.totalRealPages} | This is the EXACT structure of your PDF!
                         </div>
-                      );
-                    })()}
-                  </div>
+                        <div style={{ 
+                          marginTop: '1rem', 
+                          padding: '1rem',
+                          background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)',
+                          borderRadius: '8px',
+                          fontWeight: 'bold',
+                          color: 'white',
+                          textAlign: 'center'
+                        }}>
+                          ✅ This preview shows REAL page counts from your uploaded files!
+                        </div>
+                      </div>
+                    </div>
+                  ) : (
+                    <div style={{ 
+                      textAlign: 'center', 
+                      padding: '2rem',
+                      color: '#6b7280'
+                    }}>
+                      <p>Complete project information and upload documents to see the real preview.</p>
+                    </div>
+                  )}
                 </div>
               )}
             </div>

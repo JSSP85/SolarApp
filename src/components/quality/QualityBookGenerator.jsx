@@ -1240,7 +1240,7 @@ const QualityBookGenerator = ({ onBackClick }) => {
                     type="text"
                     value={projectInfo.projectName}
                     onChange={(e) => setProjectInfo(prev => ({...prev, projectName: e.target.value}))}
-                    placeholder="e.g: DELOS_PIZZO"
+                    placeholder="Project Name?"
                     style={{
                       width: '100%',
                       padding: '1rem',

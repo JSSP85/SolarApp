@@ -217,113 +217,149 @@ const MainMenu = () => {
   };
 
   // Function to handle application background issue - MODIFICADO PARA USAR IMAGEN
-  useEffect(() => {
-    if (selectedOption === 'steel') {
-      // Detectar si estamos en GitHub Pages para ajustar la ruta de la imagen
-      const isGitHubPages = window.location.hostname.includes('github.io');
-      const baseUrl = isGitHubPages ? '/SolarApp' : '';
-      
-      // Apply the background fix to the entire document
-      const applyBackgroundFix = () => {
-        const styleElement = document.createElement('style');
-        styleElement.id = 'main-menu-global-fix';
-        styleElement.innerHTML = `
-          /* Fondo con imagen en lugar de gradiente */
-          body { 
-            background-image: url('${baseUrl}/images/backgrounds/solar-background2.jpeg') !important;
-            background-size: cover !important;
-            background-position: center !important;
-            background-attachment: fixed !important;
-            background-color: #f5f9fd !important;
-          }
-          
-          /* Asegurar que el patrón sea visible y tenga el z-index correcto */
-          body::after {
-            content: '';
-            position: fixed;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background-image: url("data:image/svg+xml,%3Csvg width='100' height='100' viewBox='0 0 100 100' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M11 18c3.866 0 7-3.134 7-7s-3.134-7-7-7-7 3.134-7 7 3.134 7 7 7zm48 25c3.866 0 7-3.134 7-7s-3.134-7-7-7-7 3.134-7 7 3.134 7 7 7zm-43-7c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zm63 31c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zM34 90c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zm56-76c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zM12 86c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm28-65c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm23-11c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zm-6 60c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm29 22c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zM32 63c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zm57-13c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zm-9-21c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2zM60 91c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2zM35 41c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2zM12 60c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2z' fill='%23ffffff' fill-opacity='0.06' fill-rule='evenodd'/%3E%3C/svg%3E");
-            opacity: 0.5; /* Reducido para no ocultar la imagen de fondo */
-            z-index: -1;
-            pointer-events: none;
-          }
-          
-          /* Hacer que los elementos del app-container sean transparentes */
-          .app-container, .main-content { 
-            background: transparent !important; 
-            min-height: 100vh !important; 
-          }
-          
-          /* Hacer que las tarjetas sean más claras con transparencia */
-          .dashboard-card {
-            background: rgba(255, 255, 255, 0.85) !important;
-            border: 1px solid rgba(255, 255, 255, 0.5) !important;
-            backdrop-filter: blur(5px);
-          }
-          
-          /* Mejorar apariencia de cabeceras */
-          .card-header {
-            background: linear-gradient(to right, rgba(90, 103, 216, 0.85), rgba(104, 117, 245, 0.75)) !important;
-          }
-
-          /* Make sure charts and tables fit well */
-          .chart-container {
-            page-break-inside: avoid;
-            height: auto !important;
-            max-height: 70vh !important;
-          }
-
-          /* Estilos adicionales para garantizar que todo el fondo esté cubierto */
-          html, body {
-            height: 100%;
-            margin: 0;
-            padding: 0;
-            overflow-x: hidden;
-          }
-
-          html {
-            overflow-y: auto;
-          }
-
-          .sidebar {
-            background-color: #005F83 !important;
-          }
-
-          /* Garantizar que elementos del dashboard tengan fondo transparente */
-          #root, [data-reactroot], .app-container > * {
-            background: transparent !important;
-          }
-
-          /* Asegurar que las tarjetas destacan sobre el fondo */
-          .dashboard-card {
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15) !important;
-          }
-          
-          /* Mejorar visibilidad del texto */
-          .card-body {
-            color: #333 !important;
-          }
-          
-          /* Estilos adicionales para arreglar problemas de scroll */
-          .main-content {
-            overflow-y: auto !important;
-          }
-        `;
-        document.head.appendChild(styleElement);
-      };
-      
-      applyBackgroundFix();
-      
-      // Clean up when navigating back to menu
-      return () => {
-        const styleElement = document.getElementById('main-menu-global-fix');
-        if (styleElement) styleElement.remove();
-      };
-    }
-  }, [selectedOption]);
+useEffect(() => {
+  if (selectedOption === 'steel') {
+    const isGitHubPages = window.location.hostname.includes('github.io');
+    const baseUrl = isGitHubPages ? '/SolarApp' : '';
+    
+    const applyBackgroundFix = () => {
+      const styleElement = document.createElement('style');
+      styleElement.id = 'main-menu-global-fix';
+      styleElement.innerHTML = `
+        /* SOLUCIÓN CORREGIDA PARA STEEL COMPONENTS */
+        
+        /* Background con múltiples fallbacks */
+        body.steel-active { 
+          background: #f5f9fd url('${baseUrl}/images/backgrounds/solar-background2.jpeg') center/cover fixed !important;
+          min-height: 100vh !important;
+          margin: 0 !important;
+          padding: 0 !important;
+          color: #2d3748 !important;
+        }
+        
+        /* ANCHO LIMITADO A 1100px (como pediste) */
+        body.steel-active #root {
+          max-width: 1100px !important;
+          width: 100% !important;
+          margin: 0 auto !important;
+          padding: 1rem !important;
+          text-align: left !important;
+          box-sizing: border-box !important;
+        }
+        
+        /* Contenedores transparentes */
+        body.steel-active .app-container { 
+          background: transparent !important;
+          max-width: none !important;
+          width: 100% !important;
+          margin: 0 !important;
+          padding: 0 !important;
+        }
+        
+        body.steel-active .main-content { 
+          background: transparent !important;
+          min-height: 100vh !important;
+          max-width: none !important;
+          width: 100% !important;
+          margin: 0 !important;
+          padding: 1rem !important;
+          box-shadow: -8px 0 16px -6px rgba(0, 0, 0, 0.1) !important;
+        }
+        
+        /* Tarjetas con altura normal (NO alargadas) */
+        body.steel-active .dashboard-card {
+          background: rgba(255, 255, 255, 0.90) !important;
+          border: 1px solid rgba(255, 255, 255, 0.6) !important;
+          backdrop-filter: blur(8px) !important;
+          box-shadow: 0 8px 32px rgba(100, 116, 139, 0.15) !important;
+          border-radius: 12px !important;
+          margin-bottom: 1.5rem !important;
+          height: auto !important;
+          max-height: none !important;
+          min-height: auto !important;
+        }
+        
+        /* Headers mejorados */
+        body.steel-active .card-header {
+          background: linear-gradient(135deg, rgba(74, 111, 160, 0.95), rgba(111, 140, 182, 0.90)) !important;
+          color: white !important;
+          border-radius: 12px 12px 0 0 !important;
+          padding: 1.25rem 1.5rem !important;
+          font-weight: 600 !important;
+        }
+        
+        body.steel-active .card-body {
+          padding: 1.5rem !important;
+          background: rgba(255, 255, 255, 0.95) !important;
+        }
+        
+        /* Patrón sutil de fondo */
+        body.steel-active::after {
+          content: '';
+          position: fixed;
+          top: 0;
+          left: 0;
+          right: 0;
+          bottom: 0;
+          background-image: url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='0.05'%3E%3Ccircle cx='7' cy='7' r='1'/%3E%3Ccircle cx='21' cy='21' r='1'/%3E%3Ccircle cx='35' cy='35' r='1'/%3E%3Ccircle cx='49' cy='49' r='1'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
+          z-index: -1;
+          pointer-events: none;
+          opacity: 0.7;
+        }
+        
+        /* Sidebar */
+        body.steel-active .sidebar {
+          background: linear-gradient(180deg, #005F83 0%, #004666 100%) !important;
+          box-shadow: 2px 0 12px rgba(0, 95, 131, 0.2) !important;
+        }
+        
+        /* Formularios mejorados */
+        body.steel-active .form-control {
+          background: rgba(255, 255, 255, 0.95) !important;
+          border: 2px solid rgba(180, 200, 220, 0.8) !important;
+          border-radius: 8px !important;
+          padding: 0.75rem 1rem !important;
+          transition: all 0.3s ease !important;
+        }
+        
+        body.steel-active .form-control:focus {
+          border-color: rgba(74, 111, 160, 0.8) !important;
+          box-shadow: 0 0 0 4px rgba(74, 111, 160, 0.15) !important;
+          background: rgba(255, 255, 255, 1) !important;
+        }
+        
+        /* Botones mejorados */
+        body.steel-active .btn-primary {
+          background: linear-gradient(135deg, #4a6fa0, #6b8bc3) !important;
+          border: none !important;
+          color: white !important;
+          font-weight: 600 !important;
+          padding: 0.75rem 1.5rem !important;
+          border-radius: 8px !important;
+          box-shadow: 0 4px 12px rgba(74, 111, 160, 0.3) !important;
+          transition: all 0.3s ease !important;
+        }
+        
+        body.steel-active .btn-primary:hover {
+          background: linear-gradient(135deg, #3e5d8a, #5a7ab3) !important;
+          transform: translateY(-2px) !important;
+          box-shadow: 0 6px 20px rgba(74, 111, 160, 0.4) !important;
+        }
+      `;
+      document.head.appendChild(styleElement);
+    };
+    
+    // Aplicar clase al body y estilos
+    document.body.classList.add('steel-active');
+    applyBackgroundFix();
+    
+    return () => {
+      document.body.classList.remove('steel-active');
+      const styleElement = document.getElementById('main-menu-global-fix');
+      if (styleElement) styleElement.remove();
+    };
+  }
+}, [selectedOption]);
 
   // Function to render the selected application
   const renderSelectedApp = () => {

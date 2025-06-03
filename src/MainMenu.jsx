@@ -226,8 +226,14 @@ useEffect(() => {
       const styleElement = document.createElement('style');
       styleElement.id = 'main-menu-global-fix';
       styleElement.innerHTML = `
-        /* SOLUCIÓN CORREGIDA PARA STEEL COMPONENTS */
-        
+       
+        /* FORZAR FONDO TRANSPARENTE EN HTML Y ROOT */
+html.steel-active,
+html.steel-active :root {
+  background: transparent !important;
+  background-color: transparent !important;
+}
+       
         /* Background con múltiples fallbacks */
 body.steel-active { 
   background: #f5f9fd url('/images/backgrounds/solar-background2.jpeg') center/cover fixed !important;
@@ -262,15 +268,20 @@ body.steel-active .main-content {
         
         /* Tarjetas con altura normal (NO alargadas) */
         body.steel-active .dashboard-card {
-          background: rgba(255, 255, 255, 0.90) !important;
-          border: 1px solid rgba(255, 255, 255, 0.6) !important;
-          backdrop-filter: blur(8px) !important;
-          box-shadow: 0 8px 32px rgba(100, 116, 139, 0.15) !important;
-          border-radius: 12px !important;
-          margin-bottom: 1.5rem !important;
-          height: auto !important;
-          max-height: none !important;
-          min-height: auto !important;
+  background: rgba(255, 255, 255, 0.90) !important;
+  border: 1px solid rgba(255, 255, 255, 0.6) !important;
+  backdrop-filter: blur(8px) !important;
+  box-shadow: 0 8px 32px rgba(100, 116, 139, 0.15) !important;
+  border-radius: 12px !important;
+  margin-bottom: 1.5rem !important;
+  margin-right: 1% !important;
+  max-width: 450px !important;
+  width: 48% !important;
+  display: inline-block !important;
+  vertical-align: top !important;
+  height: auto !important;
+  max-height: none !important;
+  min-height: auto !important;
         }
         
         /* Headers mejorados */
@@ -345,6 +356,7 @@ body.steel-active .main-content {
     
     // Aplicar clase al body y estilos
     document.body.classList.add('steel-active');
+    document.documentElement.classList.add('steel-active');
     applyBackgroundFix();
     
     return () => {

@@ -230,7 +230,7 @@ useEffect(() => {
         
         /* Background con múltiples fallbacks */
         body.steel-active { 
-          background: #f5f9fd url('${baseUrl}/images/backgrounds/solar-background2.jpeg') center/cover fixed !important;
+          background: #f5f9fd url('/images/backgrounds/solar-background2.jpeg') center/cover fixed !important;
           min-height: 100vh !important;
           margin: 0 !important;
           padding: 0 !important;
@@ -239,7 +239,7 @@ useEffect(() => {
         
         /* ANCHO LIMITADO A 1100px (como pediste) */
         body.steel-active #root {
-          max-width: 1100px !important;
+          max-width: 800px !important;
           width: 100% !important;
           margin: 0 auto !important;
           padding: 1rem !important;

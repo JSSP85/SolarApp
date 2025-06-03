@@ -229,42 +229,36 @@ useEffect(() => {
         /* SOLUCIÓN CORREGIDA PARA STEEL COMPONENTS */
         
         /* Background con múltiples fallbacks */
-        body.steel-active { 
-          background: #f5f9fd url('/images/backgrounds/solar-background2.jpeg') center/cover fixed !important;
-          min-height: 100vh !important;
-          margin: 0 !important;
-          padding: 0 !important;
-          color: #2d3748 !important;
-        }
+body.steel-active { 
+  background: #f5f9fd url('/images/backgrounds/solar-background2.jpeg') center/cover fixed !important;
+  min-height: 100vh !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  color: #2d3748 !important;
+}
+
+/* FORZAR TRANSPARENCIA EN TODOS LOS CONTENEDORES */
+body.steel-active #root {
+  background: transparent !important;
+  background-color: transparent !important;
+  max-width: 800px !important;
+  width: 100% !important;
+  margin: 0 auto !important;
+  padding: 1rem !important;
+  text-align: left !important;
+  box-sizing: border-box !important;
+}
+
+body.steel-active .app-container {
+  background: transparent !important;
+  background-color: transparent !important;
+}
+
+body.steel-active .main-content {
+  background: transparent !important;
+  background-color: transparent !important;
+}
         
-        /* ANCHO LIMITADO A 1100px (como pediste) */
-        body.steel-active #root {
-          max-width: 800px !important;
-          width: 100% !important;
-          margin: 0 auto !important;
-          padding: 1rem !important;
-          text-align: left !important;
-          box-sizing: border-box !important;
-        }
-        
-        /* Contenedores transparentes */
-        body.steel-active .app-container { 
-          background: transparent !important;
-          max-width: none !important;
-          width: 100% !important;
-          margin: 0 !important;
-          padding: 0 !important;
-        }
-        
-        body.steel-active .main-content { 
-          background: transparent !important;
-          min-height: 100vh !important;
-          max-width: none !important;
-          width: 100% !important;
-          margin: 0 !important;
-          padding: 1rem !important;
-          box-shadow: -8px 0 16px -6px rgba(0, 0, 0, 0.1) !important;
-        }
         
         /* Tarjetas con altura normal (NO alargadas) */
         body.steel-active .dashboard-card {
@@ -302,7 +296,7 @@ useEffect(() => {
           right: 0;
           bottom: 0;
           background-image: url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='0.05'%3E%3Ccircle cx='7' cy='7' r='1'/%3E%3Ccircle cx='21' cy='21' r='1'/%3E%3Ccircle cx='35' cy='35' r='1'/%3E%3Ccircle cx='49' cy='49' r='1'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
-          z-index: -1;
+          z-index: -10;
           pointer-events: none;
           opacity: 0.7;
         }

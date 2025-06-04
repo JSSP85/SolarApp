@@ -376,6 +376,27 @@ const DashboardApp = () => {
     document.body.classList.add('steel-active');
     document.documentElement.classList.add('steel-active');
     
+    // FORZAR BACKGROUND DIRECTAMENTE EN EL DOM (SOLUCIÓN DEFINITIVA)
+    document.documentElement.style.setProperty('background-color', 'transparent', 'important');
+    document.body.style.setProperty('background-color', 'transparent', 'important');
+    
+    // Verificar si la imagen existe y aplicarla
+    const testImg = new Image();
+    testImg.onload = () => {
+      console.log('✅ Background image loaded successfully');
+      document.body.style.setProperty('background', '#f5f9fd url("/images/backgrounds/solar-background2.jpeg") center/cover fixed', 'important');
+      
+      // Debug info
+      console.log('Background applied:', document.body.style.background);
+    };
+    testImg.onerror = () => {
+      console.error('❌ Background image failed to load');
+      console.log('Applying fallback gradient background...');
+      // Fallback a gradiente azul
+      document.body.style.setProperty('background', 'linear-gradient(135deg, #f0f4f8 0%, #d6e8f5 50%, #b8ddf0 100%) fixed', 'important');
+    };
+    testImg.src = '/images/backgrounds/solar-background2.jpeg';
+    
     // Forzar recarga de estilos
     document.body.style.display = 'none';
     document.body.offsetHeight; // Trigger reflow
@@ -390,6 +411,11 @@ const DashboardApp = () => {
       // LIMPIAR CLASES STEEL-ACTIVE
       document.body.classList.remove('steel-active');
       document.documentElement.classList.remove('steel-active');
+      
+      // LIMPIAR ESTILOS FORZADOS
+      document.documentElement.style.removeProperty('background-color');
+      document.body.style.removeProperty('background');
+      document.body.style.removeProperty('background-color');
     };
   }, []); // Sin dependencias para ejecutarse solo una vez
 

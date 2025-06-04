@@ -13,32 +13,45 @@ const DashboardApp = () => {
   const { state } = useInspection();
   const { activeTab, userRole } = state;
 
-  // Efecto para añadir los estilos del tema - CORREGIDO
+  // Efecto para añadir los estilos del tema - CORREGIDO CON MÁXIMA ESPECIFICIDAD
   useEffect(() => {
     // CORREGIDO: Ruta fija para Codespaces (sin detección automática)
     const baseUrl = ''; // Ruta local para Codespaces
     
-    // Definir los estilos CSS con la ruta de imagen correcta - MEJORADO
+    // Definir los estilos CSS con MÁXIMA ESPECIFICIDAD - VERSIÓN FINAL
     const mediumModernThemeStyles = `
-      /* ESTILOS CORREGIDOS PARA STEEL COMPONENTS */
+      /* ESTILOS CORREGIDOS PARA STEEL COMPONENTS - MÁXIMA ESPECIFICIDAD */
       
-      body {
-        background-image: url('/images/backgrounds/solar-background2.jpeg') !important;
-        background-size: cover !important;
-        background-position: center !important;
-        background-attachment: fixed !important;
-        color: #2d3748;
-        min-height: 100vh;
-        margin: 0 !important;
-        padding: 0 !important;
-      }
-      
-      /* FORZAR TRANSPARENCIA EN HTML Y ROOT */
-      html, 
-      html body {
+      /* FORZAR FONDO TRANSPARENTE CON MÁXIMA PRIORIDAD */
+      html,
+      html body,
+      html body.steel-active,
+      body.steel-active,
+      :root {
         background-color: transparent !important;
       }
       
+      /* APLICAR BACKGROUND CON MÁXIMA ESPECIFICIDAD */
+      html body.steel-active {
+        background: #f5f9fd url('/images/backgrounds/solar-background2.jpeg') center/cover fixed !important;
+        min-height: 100vh !important;
+        margin: 0 !important;
+        padding: 0 !important;
+        color: #2d3748 !important;
+      }
+      
+      /* FALLBACK SI NO HAY CLASE STEEL-ACTIVE */
+      html body {
+        background: #f5f9fd url('/images/backgrounds/solar-background2.jpeg') center/cover fixed !important;
+        min-height: 100vh !important;
+        margin: 0 !important;
+        padding: 0 !important;
+        color: #2d3748 !important;
+      }
+      
+      /* CONTENEDOR ROOT CON MÁXIMA ESPECIFICIDAD */
+      html body.steel-active #root,
+      html body #root,
       #root {
         max-width: 1000px !important;
         width: 100% !important;
@@ -50,11 +63,16 @@ const DashboardApp = () => {
         box-sizing: border-box !important;
       }
       
+      /* CONTENEDORES CON MÁXIMA ESPECIFICIDAD */
+      html body.steel-active .app-container,
+      html body .app-container,
       .app-container {
         background: transparent !important;
         background-color: transparent !important;
       }
       
+      html body.steel-active .main-content,
+      html body .main-content,
       .main-content {
         background: transparent !important;
         background-color: transparent !important;
@@ -63,7 +81,9 @@ const DashboardApp = () => {
         box-shadow: -8px 0 16px -6px rgba(0, 0, 0, 0.1);
       }
       
-      /* TARJETAS MEJORADAS */
+      /* TARJETAS MEJORADAS CON MÁXIMA ESPECIFICIDAD */
+      html body.steel-active .dashboard-card,
+      html body .dashboard-card,
       .dashboard-card {
         background: rgba(242, 245, 250, 0.95) !important;
         border: 1px solid rgba(203, 213, 225, 0.8) !important;
@@ -73,6 +93,8 @@ const DashboardApp = () => {
         backdrop-filter: blur(10px) !important;
       }
       
+      html body.steel-active .card-header,
+      html body .card-header,
       .card-header {
         background: linear-gradient(to right, rgba(74, 111, 160, 0.95), rgba(111, 140, 182, 0.90)) !important;
         color: white !important;
@@ -81,12 +103,16 @@ const DashboardApp = () => {
         font-weight: 600 !important;
       }
       
+      html body.steel-active .card-body,
+      html body .card-body,
       .card-body {
         padding: 1.5rem !important;
         background: rgba(255, 255, 255, 0.98) !important;
       }
       
-      /* GRID DE DOS COLUMNAS PARA TARJETAS */
+      /* GRID DE DOS COLUMNAS PARA TARJETAS CON MÁXIMA ESPECIFICIDAD */
+      html body.steel-active .cards-grid-2,
+      html body .cards-grid-2,
       .cards-grid-2 {
         display: grid !important;
         grid-template-columns: 1fr 1fr !important;
@@ -94,7 +120,9 @@ const DashboardApp = () => {
         margin-bottom: 2rem !important;
       }
       
-      /* FORMULARIOS MEJORADOS */
+      /* FORMULARIOS MEJORADOS CON MÁXIMA ESPECIFICIDAD */
+      html body.steel-active .form-control,
+      html body .form-control,
       .form-control {
         background-color: rgba(255, 255, 255, 0.95) !important;
         border: 2px solid rgba(180, 200, 220, 0.8) !important;
@@ -104,23 +132,31 @@ const DashboardApp = () => {
         transition: all 0.3s ease !important;
       }
       
+      html body.steel-active .form-control::placeholder,
+      html body .form-control::placeholder,
       .form-control::placeholder {
         color: #94a3b8 !important;
       }
       
+      html body.steel-active .form-control:focus,
+      html body .form-control:focus,
       .form-control:focus {
         border-color: #4a6fa0 !important;
         box-shadow: 0 0 0 4px rgba(74, 111, 160, 0.15) !important;
         background-color: rgba(255, 255, 255, 1) !important;
       }
       
+      html body.steel-active .form-label,
+      html body .form-label,
       .form-label {
         color: #3d4a5c !important;
         font-weight: 600 !important;
         margin-bottom: 0.75rem !important;
       }
       
-      /* BOTONES MEJORADOS */
+      /* BOTONES MEJORADOS CON MÁXIMA ESPECIFICIDAD */
+      html body.steel-active .btn-primary,
+      html body .btn-primary,
       .btn-primary {
         background: linear-gradient(to right, #4a6fa0, #6b8bc3) !important;
         border: none !important;
@@ -132,12 +168,16 @@ const DashboardApp = () => {
         transition: all 0.3s ease !important;
       }
       
+      html body.steel-active .btn-primary:hover,
+      html body .btn-primary:hover,
       .btn-primary:hover {
         background: linear-gradient(to right, #3e5d8a, #5a7ab3) !important;
         box-shadow: 0 6px 20px rgba(74, 111, 160, 0.4) !important;
         transform: translateY(-2px) !important;
       }
       
+      html body.steel-active .btn-secondary,
+      html body .btn-secondary,
       .btn-secondary {
         background: rgba(231, 237, 245, 0.95) !important;
         border: 1px solid #b2c0d0 !important;
@@ -148,12 +188,16 @@ const DashboardApp = () => {
         transition: all 0.3s ease !important;
       }
       
+      html body.steel-active .btn-secondary:hover,
+      html body .btn-secondary:hover,
       .btn-secondary:hover {
         background: rgba(217, 226, 238, 0.95) !important;
         transform: translateY(-1px) !important;
       }
       
-      /* TABLAS MEJORADAS */
+      /* TABLAS MEJORADAS CON MÁXIMA ESPECIFICIDAD */
+      html body.steel-active .data-table,
+      html body .data-table,
       .data-table {
         width: 100% !important;
         border-collapse: separate !important;
@@ -164,6 +208,8 @@ const DashboardApp = () => {
         box-shadow: 0 4px 12px rgba(100, 116, 139, 0.15) !important;
       }
       
+      html body.steel-active .data-table th,
+      html body .data-table th,
       .data-table th {
         background-color: rgba(231, 237, 245, 0.95) !important;
         color: #3d4a5c !important;
@@ -173,6 +219,8 @@ const DashboardApp = () => {
         border-bottom: 1px solid #d1dce8 !important;
       }
       
+      html body.steel-active .data-table td,
+      html body .data-table td,
       .data-table td {
         padding: 1rem 1.25rem !important;
         border-bottom: 1px solid #e7edf5 !important;
@@ -180,21 +228,29 @@ const DashboardApp = () => {
         background-color: rgba(248, 250, 253, 0.95) !important;
       }
       
+      html body.steel-active .data-table tr:nth-child(even) td,
+      html body .data-table tr:nth-child(even) td,
       .data-table tr:nth-child(even) td {
         background-color: rgba(248, 250, 253, 0.98) !important;
       }
       
+      html body.steel-active .data-table tr:hover td,
+      html body .data-table tr:hover td,
       .data-table tr:hover td {
         background-color: rgba(231, 237, 245, 0.95) !important;
       }
       
-      /* SIDEBAR MEJORADO */
+      /* SIDEBAR MEJORADO CON MÁXIMA ESPECIFICIDAD */
+      html body.steel-active .sidebar,
+      html body .sidebar,
       .sidebar {
         background: linear-gradient(180deg, #005F83 0%, #004666 100%) !important;
         box-shadow: 2px 0 12px rgba(0, 95, 131, 0.2) !important;
       }
       
-      /* SECCIONES DE REPORTE */
+      /* SECCIONES DE REPORTE CON MÁXIMA ESPECIFICIDAD */
+      html body.steel-active .report-section-title,
+      html body .report-section-title,
       .report-section-title {
         color: #2d3748 !important;
         font-weight: 600 !important;
@@ -204,6 +260,8 @@ const DashboardApp = () => {
         position: relative !important;
       }
       
+      html body.steel-active .report-section-title::after,
+      html body .report-section-title::after,
       .report-section-title::after {
         content: '' !important;
         position: absolute !important;
@@ -215,7 +273,9 @@ const DashboardApp = () => {
         border-radius: 2px !important;
       }
       
-      /* BADGES Y ESTADOS */
+      /* BADGES Y ESTADOS CON MÁXIMA ESPECIFICIDAD */
+      html body.steel-active .badge,
+      html body .badge,
       .badge {
         display: inline-flex !important;
         align-items: center !important;
@@ -225,22 +285,30 @@ const DashboardApp = () => {
         font-weight: 600 !important;
       }
       
+      html body.steel-active .badge-success,
+      html body .badge-success,
       .badge-success {
         background-color: #d1fae5 !important;
         color: #065f46 !important;
       }
       
+      html body.steel-active .badge-danger,
+      html body .badge-danger,
       .badge-danger {
         background-color: #fee2e2 !important;
         color: #b91c1c !important;
       }
       
+      html body.steel-active .badge-info,
+      html body .badge-info,
       .badge-info {
         background-color: #dbeafe !important;
         color: #1e40af !important;
       }
       
-      /* GRÁFICOS Y CONTENEDORES ESPECIALES */
+      /* GRÁFICOS Y CONTENEDORES ESPECIALES CON MÁXIMA ESPECIFICIDAD */
+      html body.steel-active .chart-container,
+      html body .chart-container,
       .chart-container {
         background: rgba(255, 255, 255, 0.95) !important;
         border-radius: 12px !important;
@@ -252,8 +320,9 @@ const DashboardApp = () => {
         max-height: 70vh !important;
       }
       
-      /* PATRÓN SUTIL DE FONDO */
-      body::after {
+      /* PATRÓN SUTIL DE FONDO CON MÁXIMA ESPECIFICIDAD */
+      html body.steel-active::after,
+      html body::after {
         content: '';
         position: fixed;
         top: 0;
@@ -266,23 +335,31 @@ const DashboardApp = () => {
         opacity: 0.6;
       }
       
-      /* RESPONSIVE DESIGN */
+      /* RESPONSIVE DESIGN CON MÁXIMA ESPECIFICIDAD */
       @media (max-width: 1024px) {
+        html body.steel-active #root,
+        html body #root,
         #root {
           max-width: 95% !important;
           padding: 0.75rem !important;
         }
         
+        html body.steel-active .cards-grid-2,
+        html body .cards-grid-2,
         .cards-grid-2 {
           grid-template-columns: 1fr !important;
         }
       }
       
       @media (max-width: 768px) {
+        html body.steel-active .main-content,
+        html body .main-content,
         .main-content {
           padding: 0.5rem !important;
         }
         
+        html body.steel-active .dashboard-card,
+        html body .dashboard-card,
         .dashboard-card {
           margin-bottom: 1rem !important;
         }
@@ -295,12 +372,24 @@ const DashboardApp = () => {
     styleElement.textContent = mediumModernThemeStyles;
     document.head.appendChild(styleElement);
     
+    // APLICAR CLASES STEEL-ACTIVE PARA MAYOR ESPECIFICIDAD
+    document.body.classList.add('steel-active');
+    document.documentElement.classList.add('steel-active');
+    
+    // Forzar recarga de estilos
+    document.body.style.display = 'none';
+    document.body.offsetHeight; // Trigger reflow
+    document.body.style.display = '';
+    
     // Limpiar al desmontar el componente
     return () => {
       const element = document.getElementById('dashboard-app-styles');
       if (element) {
         document.head.removeChild(element);
       }
+      // LIMPIAR CLASES STEEL-ACTIVE
+      document.body.classList.remove('steel-active');
+      document.documentElement.classList.remove('steel-active');
     };
   }, []); // Sin dependencias para ejecutarse solo una vez
 

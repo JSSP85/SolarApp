@@ -248,13 +248,6 @@ const QualityBookGenerator = ({ onBackClick }) => {
       ...prev,
       [categoryKey]: [...prev[categoryKey], ...newFiles]
     }));
-    
-    // Show success message with file count
-    if (newFiles.length === 1) {
-      alert(`✅ Document "${newFiles[0].name}" successfully uploaded!`);
-    } else {
-      alert(`✅ ${newFiles.length} documents successfully uploaded!`);
-    }
   };
 
   // Drag & Drop handlers
@@ -727,7 +720,7 @@ const QualityBookGenerator = ({ onBackClick }) => {
           const sectionTitle = section.title || 'UNNAMED SECTION';
           
           // Add separator page
-          structureItems.push(`Page ${section.separatorPage}: ${sectionTitle} (Professional Separator)`);
+          structureItems.push(`Page ${section.separatorPage}: ${sectionTitle} (Separator)`);
           
           // Add document pages
           const pageRange = section.realStartPage === section.realEndPage 
@@ -2208,7 +2201,7 @@ const QualityBookGenerator = ({ onBackClick }) => {
                           <div key={index} style={{ marginLeft: '1rem', marginBottom: '1rem' }}>
                             <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.5rem' }}>
                               <span style={{ color: '#3b82f6', fontWeight: 'bold' }}>📄 Page {section.separatorPage}:</span>
-                              <span style={{ fontWeight: '600' }}>{section.title} (Professional Separator)</span>
+                              <span style={{ fontWeight: '600' }}>{section.title} (Separator)</span>
                             </div>
                             <div style={{ marginLeft: '2rem' }}>
                               <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>

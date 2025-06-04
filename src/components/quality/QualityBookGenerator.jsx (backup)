@@ -1,4 +1,4 @@
-// src/components/quality/QualityBookGenerator.jsx - CORREGIDO CON 3 NUEVAS MEJORAS
+// src/components/quality/QualityBookGenerator.jsx - CORREGIDO
 import React, { useState, useRef } from 'react';
 import { 
   Upload, 
@@ -19,8 +19,7 @@ import {
   Package,
   ArrowLeft,
   Settings,
-  FileWarning,
-  RotateCcw
+  FileWarning
 } from 'lucide-react';
 
 // PDF generation imports
@@ -169,46 +168,6 @@ const QualityBookGenerator = ({ onBackClick }) => {
     }
   ];
 
-  // MEJORA #2: Function to check if a document with the same name already exists
-  const checkForDuplicateFiles = (files) => {
-    const allExistingFiles = [];
-    Object.values(documents).forEach(categoryFiles => {
-      allExistingFiles.push(...categoryFiles.map(doc => doc.name));
-    });
-
-    const duplicates = files.filter(file => 
-      allExistingFiles.includes(file.name)
-    );
-
-    return duplicates;
-  };
-
-  // MEJORA #1: Function to clean all documents from all categories
-  const cleanAllDocuments = () => {
-    if (getTotalDocuments() === 0) {
-      alert('No documents to clean.');
-      return;
-    }
-
-    const confirmClean = window.confirm(
-      `Are you sure you want to remove ALL ${getTotalDocuments()} documents from all categories?\n\nThis action cannot be undone.`
-    );
-
-    if (confirmClean) {
-      const emptyDocuments = {};
-      documentCategories.forEach(category => {
-        emptyDocuments[category.key] = [];
-      });
-      setDocuments(emptyDocuments);
-      
-      // Also clear preview if it's showing
-      setShowPreview(false);
-      setRealPreviewStructure(null);
-      
-      alert('✅ All documents have been successfully removed from all categories.');
-    }
-  };
-
   // Handle file upload via button
   const handleFileUpload = (categoryKey) => {
     setCurrentUploadCategory(categoryKey);
@@ -224,17 +183,8 @@ const QualityBookGenerator = ({ onBackClick }) => {
     event.target.value = '';
   };
 
-  // MEJORA #2: Add files to category (shared function for button upload and drag & drop) CON VALIDACIONES Y DETECCIÓN DE DUPLICADOS
+  // Add files to category (shared function for button upload and drag & drop) CON VALIDACIONES
   const addFilesToCategory = (files, categoryKey) => {
-    // Check for duplicates first
-    const duplicateFiles = checkForDuplicateFiles(files);
-    
-    if (duplicateFiles.length > 0) {
-      const duplicateNames = duplicateFiles.map(file => `• ${file.name}`).join('\n');
-      alert(`⚠️ Duplicate Files Detected!\n\nThe following documents are already uploaded:\n\n${duplicateNames}\n\nPlease choose different files or rename them before uploading.`);
-      return;
-    }
-
     const newFiles = files.map(file => ({
       id: Date.now() + Math.random(),
       name: file.name || 'Unnamed file',
@@ -248,13 +198,6 @@ const QualityBookGenerator = ({ onBackClick }) => {
       ...prev,
       [categoryKey]: [...prev[categoryKey], ...newFiles]
     }));
-    
-    // Show success message with file count
-    if (newFiles.length === 1) {
-      alert(`✅ Document "${newFiles[0].name}" successfully uploaded!`);
-    } else {
-      alert(`✅ ${newFiles.length} documents successfully uploaded!`);
-    }
   };
 
   // Drag & Drop handlers
@@ -623,7 +566,7 @@ const QualityBookGenerator = ({ onBackClick }) => {
     return page;
   };
 
-  // MEJORA #3: FUNCIÓN DE INDEX CORREGIDA CON VALIDACIONES Y ESTRUCTURA DEL PDF
+  // FUNCIÓN DE INDEX CORREGIDA CON VALIDACIONES
   const createIndexPage = async (pdfDoc, realStructure) => {
     const page = pdfDoc.addPage(PageSizes.A4);
     const { width, height } = page.getSize();
@@ -650,7 +593,7 @@ const QualityBookGenerator = ({ onBackClick }) => {
 
     let yPosition = height - 150;
 
-    // TRADITIONAL INDEX - USAR LA ESTRUCTURA REAL CON PÁGINAS CORRECTAS - SOLO SECCIONES CON DOCUMENTOS Y VALIDADAS
+    // USAR LA ESTRUCTURA REAL CON PÁGINAS CORRECTAS - SOLO SECCIONES CON DOCUMENTOS Y VALIDADAS
     if (realStructure && realStructure.sections && Array.isArray(realStructure.sections)) {
       realStructure.sections.forEach((section) => {
         if (section && section.documentCount > 0) {
@@ -696,92 +639,6 @@ const QualityBookGenerator = ({ onBackClick }) => {
 
           yPosition -= 30;
         }
-      });
-    }
-
-    // MEJORA #3: ADD PDF STRUCTURE SECTION
-    yPosition -= 50; // Add more space before PDF structure
-
-    // PDF Structure Header
-    page.drawText('PDF STRUCTURE DETAIL', {
-      x: 50,
-      y: yPosition,
-      size: 16,
-      font: titleFont,
-      color: rgb(0.02, 0.37, 0.51), // Valmont blue
-    });
-
-    yPosition -= 30;
-
-    // Add base pages
-    const structureItems = [
-      'Page 1: Professional Cover Page',
-      'Page 2: Document Information',
-      'Page 3: Index with Page References'
-    ];
-
-    // Add sections from real structure
-    if (realStructure && realStructure.sections) {
-      realStructure.sections.forEach((section) => {
-        if (section && section.documentCount > 0) {
-          const sectionTitle = section.title || 'UNNAMED SECTION';
-          
-          // Add separator page
-          structureItems.push(`Page ${section.separatorPage}: ${sectionTitle} (Professional Separator)`);
-          
-          // Add document pages
-          const pageRange = section.realStartPage === section.realEndPage 
-            ? `${section.realStartPage}` 
-            : `${section.realStartPage}-${section.realEndPage}`;
-          
-          structureItems.push(`Pages ${pageRange}: Documents (${section.documentCount} files - ${section.realTotalPages} pages)`);
-        }
-      });
-    }
-
-    // Draw structure items
-    structureItems.forEach((item, index) => {
-      if (yPosition < 100) return; // Stop if we're running out of space
-      
-      // Use different formatting for different types of items
-      const isPageItem = item.includes('Page ') && !item.includes('Pages ');
-      const isDocumentItem = item.includes('Documents (');
-      
-      let fontSize = 10;
-      let font = regularFont;
-      let color = rgb(0, 0, 0);
-      let xOffset = 50;
-
-      if (isPageItem) {
-        font = titleFont;
-        fontSize = 10;
-        color = rgb(0.02, 0.37, 0.51); // Valmont blue for page items
-      } else if (isDocumentItem) {
-        fontSize = 9;
-        color = rgb(0.4, 0.4, 0.4); // Gray for document items
-        xOffset = 70; // Indent document items
-      }
-
-      page.drawText(item, {
-        x: xOffset,
-        y: yPosition,
-        size: fontSize,
-        font: font,
-        color: color,
-      });
-
-      yPosition -= 18;
-    });
-
-    // Add total pages at the bottom
-    if (yPosition > 120 && realStructure) {
-      yPosition -= 20;
-      page.drawText(`Total Pages: ${realStructure.totalRealPages}`, {
-        x: 50,
-        y: yPosition,
-        size: 12,
-        font: titleFont,
-        color: rgb(0.02, 0.37, 0.51), // Valmont blue
       });
     }
 
@@ -1569,46 +1426,6 @@ const QualityBookGenerator = ({ onBackClick }) => {
               {/* Action Buttons */}
               <div style={{ marginTop: '3rem', paddingTop: '2rem', borderTop: '2px solid #f3f4f6' }}>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-                  {/* MEJORA #1: Clean All Documents Button */}
-                  <button
-                    onClick={cleanAllDocuments}
-                    disabled={getTotalDocuments() === 0}
-                    style={{
-                      width: '100%',
-                      padding: '1rem 1.5rem',
-                      background: getTotalDocuments() === 0 
-                        ? '#9ca3af' 
-                        : 'linear-gradient(135deg, #ef4444 0%, #dc2626 100%)',
-                      color: 'white',
-                      border: 'none',
-                      borderRadius: '12px',
-                      fontWeight: '600',
-                      fontSize: '1rem',
-                      cursor: getTotalDocuments() === 0 ? 'not-allowed' : 'pointer',
-                      transition: 'all 0.3s',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      gap: '0.75rem',
-                      boxShadow: getTotalDocuments() === 0 ? 'none' : '0 8px 25px rgba(239, 68, 68, 0.3)'
-                    }}
-                    onMouseOver={(e) => {
-                      if (getTotalDocuments() > 0) {
-                        e.target.style.transform = 'translateY(-2px)';
-                        e.target.style.boxShadow = '0 12px 35px rgba(239, 68, 68, 0.4)';
-                      }
-                    }}
-                    onMouseOut={(e) => {
-                      if (getTotalDocuments() > 0) {
-                        e.target.style.transform = 'translateY(0)';
-                        e.target.style.boxShadow = '0 8px 25px rgba(239, 68, 68, 0.3)';
-                      }
-                    }}
-                  >
-                    <RotateCcw size={20} />
-                    <span>Clean All Documents ({getTotalDocuments()})</span>
-                  </button>
-
                   <button
                     onClick={togglePreview}
                     disabled={previewLoading}

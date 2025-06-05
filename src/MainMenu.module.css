@@ -549,7 +549,7 @@ html, body {
 .mainMenuAppWrapper {
   position: fixed;
   inset: 0;
-  background: white;
+  background: transparent;
   overflow: auto;
   z-index: 999;
   min-height: 100vh;

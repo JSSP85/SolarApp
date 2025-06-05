@@ -532,24 +532,34 @@ html, body {
   }
 }
 /* ==================================================
-   AGREGAR ESTAS CLASES AL FINAL DE MainMenu.module.css
+   CORRECCIÓN PARA MainMenu.module.css
    ================================================== */
 
-/* Estilos para Quality Book Generator */
+/* CLASE SEPARADA PARA QUALITY BOOK GENERATOR */
 .qualityBookWrapper {
   position: fixed;
   inset: 0;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: linear-gradient(135deg, #005F83 0%, #0077a2 50%, #667eea 100%);
   overflow: auto;
   z-index: 999;
   min-height: 100vh;
 }
 
-/* Wrapper para aplicaciones del main menu */
+/* CLASE SEPARADA PARA STEEL COMPONENTS (DASHBOARD APP) */
+.steelComponentsWrapper {
+  position: fixed;
+  inset: 0;
+  background: transparent; /* ← TRANSPARENTE para que funcione el sistema de fondos del DashboardApp */
+  overflow: auto;
+  z-index: 999;
+  min-height: 100vh;
+}
+
+/* CLASE GENÉRICA PARA OTRAS APLICACIONES */
 .mainMenuAppWrapper {
   position: fixed;
   inset: 0;
-  background: transparent;
+  background: white;
   overflow: auto;
   z-index: 999;
   min-height: 100vh;
@@ -598,10 +608,14 @@ html, body {
   left: 100%;
 }
 
-/* Mejoras para el diseño responsive del Quality Book */
+/* Mejoras para el diseño responsive */
 @media (max-width: 1024px) {
   .qualityBookWrapper {
     padding: 1rem;
+  }
+  
+  .steelComponentsWrapper {
+    padding: 0; /* Sin padding para mantener el diseño original */
   }
   
   .mainMenuAppWrapper {
@@ -613,9 +627,13 @@ html, body {
   .qualityBookWrapper {
     padding: 0.5rem;
   }
+  
+  .steelComponentsWrapper {
+    padding: 0; /* Sin padding para mantener el diseño original */
+  }
 }
 
-/* Estilos específicos para elementos del Quality Book Generator */
+/* RESTO DE LOS ESTILOS DEL QUALITY BOOK GENERATOR PERMANECEN IGUAL */
 .uploadArea {
   border: 2px dashed rgba(0, 95, 131, 0.3);
   border-radius: 12px;

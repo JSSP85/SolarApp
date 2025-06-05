@@ -221,7 +221,7 @@ const MainMenu = () => {
     switch (selectedOption) {
       case 'steel':
         return (
-          <div className={styles.steelComponentsWrapper}>
+          <div className={styles.mainMenuAppWrapper}>
             {/* Reemplazar el botón original con el nuevo componente BackButton */}
             <BackButton onClick={() => setSelectedOption(null)} />
             
@@ -234,7 +234,7 @@ const MainMenu = () => {
         );
       case 'quality-book':
         return (
-          <div className={styles.qualityBookWrapper}>
+          <div className={styles.mainMenuAppWrapper}>
             <QualityBookGenerator onBackClick={() => setSelectedOption(null)} />
           </div>
         );

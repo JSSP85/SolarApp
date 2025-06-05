@@ -26,6 +26,7 @@ import {
 // PDF generation imports
 import { PDFDocument, rgb, StandardFonts, PageSizes } from 'pdf-lib';
 import fontkit from '@pdf-lib/fontkit';
+import './QualityBookGenerator.css';
 
 // BackButton Component
 const BackButton = ({ onClick }) => (
@@ -1250,11 +1251,9 @@ const QualityBookGenerator = ({ onBackClick }) => {
     return <FileText size={24} color="#3b82f6" />;
   };
 
-  return (
-    <div className="min-h-screen" style={{
-      background: 'linear-gradient(135deg, #005F83 0%, #0077a2 50%, #667eea 100%)',
-      minHeight: '100vh'
-    }}>
+return (
+  <div className="quality-book-main-container">
+    
       {/* Header with DARK background and transparency */}
       <div style={{
         background: 'rgba(0, 20, 40, 0.9)',

@@ -234,7 +234,7 @@ const MainMenu = () => {
         );
       case 'quality-book':
         return (
-          <div className={styles.mainMenuAppWrapper}>
+          <div>
             <QualityBookGenerator onBackClick={() => setSelectedOption(null)} />
           </div>
         );

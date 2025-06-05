@@ -1,0 +1,112 @@
+/* src/styles/component-isolation.css */
+/* CSS para prevenir interferencias entre componentes */
+
+/* ============================================
+   ISOLATION STYLES - PREVENIR CONFLICTOS
+   ============================================ */
+
+/* Reset solo para MainMenu cuando está activo */
+.main-menu-global-reset {
+  margin: 0 !important;
+  padding: 0 !important;
+  height: 100% !important;
+  overflow-x: hidden !important;
+}
+
+/* Asegurar que Steel Components tenga su propio contexto */
+.steel-components-wrapper {
+  isolation: isolate;
+  position: relative;
+  z-index: 1;
+}
+
+/* Asegurar que QualityBook tenga su propio contexto */
+.quality-book-wrapper {
+  isolation: isolate;
+  position: relative;
+  z-index: 1;
+}
+
+/* Prevenir que los estilos del MainMenu afecten otras aplicaciones */
+.mainMenuContainer ~ * {
+  isolation: isolate;
+}
+
+/* Reset específico para aplicaciones internas */
+.steel-components-wrapper *,
+.quality-book-wrapper * {
+  box-sizing: border-box;
+}
+
+/* Asegurar que cada aplicación tenga su propio stacking context */
+.steel-components-wrapper {
+  contain: layout style;
+}
+
+.quality-book-wrapper {
+  contain: layout style;
+}
+
+/* Prevenir herencia de estilos problemáticos */
+.steel-components-wrapper,
+.quality-book-wrapper {
+  font-family: inherit;
+  color: inherit;
+  background: inherit;
+}
+
+/* Forzar reset de transformaciones para cada aplicación */
+.steel-components-wrapper .dashboard-card,
+.quality-book-wrapper .dashboard-card {
+  transform: none;
+}
+
+/* Asegurar que las transiciones no se hereden incorrectamente */
+.steel-components-wrapper *,
+.quality-book-wrapper * {
+  transition: inherit;
+}
+
+/* Media queries para mantener aislamiento en responsive */
+@media (max-width: 768px) {
+  .steel-components-wrapper,
+  .quality-book-wrapper {
+    isolation: isolate;
+    contain: layout style;
+  }
+}
+
+/* Debugging: identificar qué componente está activo */
+.steel-components-wrapper::before {
+  content: 'Steel Components Active';
+  position: fixed;
+  top: 0;
+  right: 0;
+  background: rgba(74, 111, 160, 0.8);
+  color: white;
+  padding: 0.25rem 0.5rem;
+  font-size: 0.75rem;
+  z-index: 9999;
+  display: none; /* Mostrar solo para debugging */
+}
+
+.quality-book-wrapper::before {
+  content: 'Quality Book Active';
+  position: fixed;
+  top: 0;
+  right: 0;
+  background: rgba(139, 92, 246, 0.8);
+  color: white;
+  padding: 0.25rem 0.5rem;
+  font-size: 0.75rem;
+  z-index: 9999;
+  display: none; /* Mostrar solo para debugging */
+}
+
+/* Para debugging, descomentar la siguiente línea: */
+/*
+.steel-components-wrapper::before,
+.quality-book-wrapper::before {
+  display: block !important;
+}
+*/

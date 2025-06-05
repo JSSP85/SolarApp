@@ -1,4 +1,4 @@
-// src/MainMenu.jsx - VERSIÓN CORREGIDA SIN ESTILOS GLOBALES
+// src/MainMenu.jsx
 import React, { useState, useEffect } from 'react';
 import styles from './MainMenu.module.css'; // Importar CSS Module en lugar de CSS regular
 
@@ -127,38 +127,6 @@ const MainMenu = () => {
   const [loginError, setLoginError] = useState('');
   const [pendingManagerOption, setPendingManagerOption] = useState(null);
   const [pendingModuleType, setPendingModuleType] = useState(null);
-
-  // ✅ AGREGADO: useEffect para aplicar reset específico del MainMenu sin interferir globalmente
-  useEffect(() => {
-    // Solo aplicar reset específico cuando MainMenu está montado
-    const mainMenuResetStyles = `
-      .main-menu-global-reset {
-        margin: 0;
-        padding: 0;
-        height: 100%;
-        overflow-x: hidden;
-      }
-    `;
-    
-    const styleElement = document.createElement('style');
-    styleElement.id = 'main-menu-reset-styles';
-    styleElement.textContent = mainMenuResetStyles;
-    document.head.appendChild(styleElement);
-    
-    // Aplicar clases solo al html y body cuando MainMenu está activo
-    document.documentElement.classList.add('main-menu-global-reset');
-    document.body.classList.add('main-menu-global-reset');
-    
-    // Cleanup cuando el componente se desmonta
-    return () => {
-      const element = document.getElementById('main-menu-reset-styles');
-      if (element) {
-        document.head.removeChild(element);
-      }
-      document.documentElement.classList.remove('main-menu-global-reset');
-      document.body.classList.remove('main-menu-global-reset');
-    };
-  }, []);
 
   // Function to handle authentication
   const handleLogin = (e) => {
@@ -644,7 +612,105 @@ const MainMenu = () => {
             </div>
           )}
 
-          {/* ❌ REMOVIDO: Estilos JSX globales que causaban conflictos */}
+          {/* Estilos adicionales para las mejoras de animación */}
+          <style jsx>{`
+            .${styles.mainMenuCard} {
+              transform: translateY(0);
+              transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+              overflow: hidden;
+              position: relative;
+            }
+            
+            .${styles.mainMenuCard}:hover {
+              transform: translateY(-8px);
+              box-shadow: 0 12px 24px rgba(0, 0, 0, 0.15);
+            }
+            
+            .${styles.mainMenuCard}:hover .${styles.mainMenuCardIconContainer} {
+              transform: scale(1.08);
+            }
+            
+            .${styles.mainMenuCard}:hover .${styles.mainMenuCardArrow} {
+              transform: translateX(4px);
+              opacity: 1;
+            }
+            
+            .${styles.mainMenuCardIconContainer} {
+              transition: transform 0.3s ease;
+            }
+            
+            .${styles.mainMenuCardArrow} {
+              transition: all 0.3s ease;
+              opacity: 0.7;
+            }
+            
+            .${styles.mainMenuCardDisabled} {
+              opacity: 0.6;
+              cursor: not-allowed;
+            }
+            
+            .${styles.mainMenuCardDisabled}:hover {
+              transform: translateY(0);
+              box-shadow: none;
+            }
+            
+            .${styles.mainMenuBadgeDisabled} {
+              background-color: rgba(107, 114, 128, 0.25);
+              border: 1px solid rgba(107, 114, 128, 0.4);
+            }
+            
+            .${styles.mainMenuCard}::before {
+              content: '';
+              position: absolute;
+              top: 0;
+              left: 0;
+              width: 100%;
+              height: 100%;
+              background: linear-gradient(
+                to right,
+                rgba(255, 255, 255, 0) 0%,
+                rgba(255, 255, 255, 0.2) 50%,
+                rgba(255, 255, 255, 0) 100%
+              );
+              transform: translateX(-100%);
+              transition: transform 0.6s ease;
+              z-index: 1;
+              pointer-events: none;
+            }
+            
+            .${styles.mainMenuCard}:hover::before {
+              transform: translateX(100%);
+            }
+            
+            .${styles.mainMenuHeader} {
+              padding: 0.75rem 2rem;
+              margin-bottom: 2.5rem;
+              background: rgba(0, 95, 131, 0.8);
+              height: auto;
+            }
+            
+            .${styles.mainMenuTitle} {
+              margin: 0;
+              text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+            }
+            
+            .${styles.mainMenuSectionHeader} {
+              border-left: 4px solid rgba(255, 255, 255, 0.4);
+            }
+            
+            .${styles.mainMenuSectionTitle} {
+              display: flex;
+              align-items: center;
+              gap: 0.75rem;
+            }
+
+            .${styles.managerLockIndicator} {
+              display: flex;
+              align-items: center;
+              justify-content: center;
+              color: rgba(255, 255, 255, 0.7);
+            }
+          `}</style>
         </div>
       </div>
     );

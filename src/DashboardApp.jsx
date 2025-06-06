@@ -1,4 +1,4 @@
-// src/DashboardApp.jsx - ESTILOS ESPECÍFICOS SOLO PARA STEEL COMPONENTS
+// src/DashboardApp.jsx - VERSIÓN ANTERIOR MEJORADA
 import React, { useEffect } from 'react';
 import { useInspection } from './context/InspectionContext';
 import SidebarNav from './components/layout/SidebarNav';
@@ -13,288 +13,263 @@ const DashboardApp = () => {
   const { state } = useInspection();
   const { activeTab, userRole } = state;
 
-  // ESTILOS MUY ESPECÍFICOS - SOLO AFECTAN AL STEEL-COMPONENTS-WRAPPER
+  // EFECTO LIMPIO PARA APLICAR TEMA - BASADO EN VERSIÓN ANTERIOR QUE FUNCIONABA
   useEffect(() => {
-    const specificSteelStyles = `
-      /* ========================================
-         ESTILOS ESPECÍFICOS SOLO PARA STEEL COMPONENTS
-         NO AFECTAN MAINMENU NI OTRAS SECCIONES
-         ======================================== */
-      
-      /* SOLO aplicar fondo cuando estamos en steel-components-wrapper */
-      .steel-components-wrapper {
-        background: #f5f9fd url('/images/backgrounds/solar-background2.jpeg') center/cover fixed !important;
-        min-height: 100vh !important;
-        margin: 0 !important;
-        padding: 0 !important;
-        color: #2d3748 !important;
+    // Determinar la ruta base según el entorno
+    const isGitHubPages = window.location.hostname.includes('github.io');
+    const baseUrl = isGitHubPages ? '/SolarApp' : '';
+    
+    // ESTILOS LIMPIOS Y EFECTIVOS (sin selectores agresivos)
+    const cleanThemeStyles = `
+      /* FONDO PRINCIPAL - SIMPLE Y DIRECTO */
+      body {
+        background-image: url('${baseUrl}/images/backgrounds/solar-background2.jpeg') !important;
+        background-size: cover !important;
+        background-position: center !important;
+        background-attachment: fixed !important;
+        background-color: #f5f9fd !important;
+        color: #2d3748;
+        min-height: 100vh;
       }
       
-      /* MAIN CONTENT - SOLO dentro de steel-components-wrapper */
-      .steel-components-wrapper .main-content {
+      /* CONTENEDORES PRINCIPALES - TRANSPARENTES */
+      .app-container {
         background: transparent !important;
-        background-color: transparent !important;
-        position: relative !important;
-        z-index: 1 !important;
-        margin-left: 240px !important;
-        padding: 2rem !important;
       }
       
-      /* APP CONTAINER - SOLO dentro de steel-components-wrapper */
-      .steel-components-wrapper .app-container {
-        background: transparent !important;
-        background-color: transparent !important;
-        min-height: 100vh !important;
-        display: flex !important;
+      .main-content {
+        background: transparent;
+        position: relative;
+        z-index: 1;
+        box-shadow: -8px 0 16px -6px rgba(0, 0, 0, 0.1);
       }
       
-      /* CONTENT HEADER - SOLO dentro de steel-components-wrapper */
-      .steel-components-wrapper .content-header {
-        background: transparent !important;
-        background-color: transparent !important;
-        display: flex !important;
-        justify-content: space-between !important;
-        align-items: center !important;
-        margin-bottom: 2rem !important;
-        padding: 1rem 0 !important;
+      /* CARDS CON TRANSPARENCIA EQUILIBRADA */
+      .dashboard-card {
+        background: rgba(242, 245, 250, 0.85);
+        border: 1px solid rgba(203, 213, 225, 0.8);
+        box-shadow: 0 4px 12px rgba(100, 116, 139, 0.2);
+        border-radius: 8px;
+        margin-bottom: 1rem;
+        backdrop-filter: blur(10px);
       }
       
-      /* CARDS - SOLO dentro de steel-components-wrapper */
-      .steel-components-wrapper .dashboard-card {
-        background: rgba(255, 255, 255, 0.88) !important;
-        backdrop-filter: blur(10px) !important;
-        border: 1px solid rgba(203, 213, 225, 0.6) !important;
-        box-shadow: 0 8px 32px rgba(100, 116, 139, 0.15) !important;
-        border-radius: 12px !important;
-        margin-bottom: 1.5rem !important;
+      .card-header {
+        background: linear-gradient(to right, rgba(74, 111, 160, 0.9), rgba(111, 140, 182, 0.9));
+        color: white;
+        border-radius: 8px 8px 0 0;
+        padding: 1rem;
       }
       
-      .steel-components-wrapper .card-header {
-        background: linear-gradient(to right, rgba(74, 111, 160, 0.90), rgba(111, 140, 182, 0.85)) !important;
-        color: white !important;
-        border-radius: 12px 12px 0 0 !important;
-        padding: 1.25rem 1.5rem !important;
-        font-weight: 600 !important;
+      .card-title {
+        font-weight: 600;
       }
       
-      .steel-components-wrapper .card-body {
-        padding: 1.5rem !important;
-        background: rgba(255, 255, 255, 0.95) !important;
+      .card-body {
+        padding: 1.25rem;
       }
       
-      /* DIVS GENÉRICOS - SOLO dentro de steel-components-wrapper */
-      .steel-components-wrapper > div:not(.sidebar),
-      .steel-components-wrapper .main-content > div:not(.dashboard-card):not(.card-body):not(.data-table):not(.chart-container),
-      .steel-components-wrapper .app-container > div:not(.sidebar):not(.main-content) {
-        background-color: transparent !important;
+      /* FORMULARIOS */
+      .form-control {
+        background-color: rgba(255, 255, 255, 0.9);
+        border-color: #b2c0d0;
+        color: #334155;
+        border-radius: 6px;
+        padding: 0.5rem 0.75rem;
+        transition: all 0.2s;
       }
       
-      /* SIDEBAR - SOLO dentro de steel-components-wrapper */
-      .steel-components-wrapper .sidebar {
-        background: linear-gradient(180deg, #005F83 0%, #004666 100%) !important;
-        box-shadow: 2px 0 12px rgba(0, 95, 131, 0.2) !important;
-        position: fixed !important;
-        left: 0 !important;
-        top: 0 !important;
-        width: 240px !important;
-        height: 100vh !important;
-        z-index: 10 !important;
+      .form-control::placeholder {
+        color: #94a3b8;
       }
       
-      /* FORMULARIOS - SOLO dentro de steel-components-wrapper */
-      .steel-components-wrapper .form-control {
-        background-color: rgba(255, 255, 255, 0.95) !important;
-        border: 2px solid rgba(180, 200, 220, 0.8) !important;
-        color: #334155 !important;
-        border-radius: 8px !important;
-        padding: 0.75rem 1rem !important;
-        transition: all 0.3s ease !important;
+      .form-control:focus {
+        border-color: #4a6fa0;
+        box-shadow: 0 0 0 3px rgba(74, 111, 160, 0.25);
       }
       
-      .steel-components-wrapper .form-control:focus {
-        border-color: #4a6fa0 !important;
-        box-shadow: 0 0 0 4px rgba(74, 111, 160, 0.15) !important;
-        background-color: rgba(255, 255, 255, 1) !important;
-        outline: none !important;
+      .form-label {
+        color: #3d4a5c;
+        font-weight: 500;
+        margin-bottom: 0.5rem;
       }
       
-      .steel-components-wrapper .form-label {
-        color: #3d4a5c !important;
-        font-weight: 600 !important;
-        margin-bottom: 0.75rem !important;
+      /* BOTONES */
+      .btn-primary {
+        background: linear-gradient(to right, #3e6394, #5980b3);
+        border: none;
+        color: white;
+        font-weight: 500;
+        padding: 0.5rem 1rem;
+        border-radius: 6px;
+        box-shadow: 0 2px 6px rgba(62, 99, 148, 0.3);
+        transition: all 0.2s;
       }
       
-      /* BOTONES - SOLO dentro de steel-components-wrapper */
-      .steel-components-wrapper .btn-primary {
-        background: linear-gradient(to right, #4a6fa0, #6b8bc3) !important;
-        border: none !important;
-        color: white !important;
-        font-weight: 600 !important;
-        padding: 0.75rem 1.5rem !important;
-        border-radius: 8px !important;
-        box-shadow: 0 4px 12px rgba(74, 111, 160, 0.3) !important;
-        transition: all 0.3s ease !important;
+      .btn-primary:hover {
+        background: linear-gradient(to right, #34568a, #4871a6);
+        box-shadow: 0 4px 8px rgba(62, 99, 148, 0.4);
+        transform: translateY(-1px);
       }
       
-      .steel-components-wrapper .btn-primary:hover {
-        background: linear-gradient(to right, #3e5d8a, #5a7ab3) !important;
-        box-shadow: 0 6px 20px rgba(74, 111, 160, 0.4) !important;
-        transform: translateY(-2px) !important;
+      .btn-secondary {
+        background: rgba(231, 237, 245, 0.9);
+        border: 1px solid #b2c0d0;
+        color: #3d4a5c;
+        font-weight: 500;
+        padding: 0.5rem 1rem;
+        border-radius: 6px;
       }
       
-      .steel-components-wrapper .btn-secondary {
-        background: rgba(231, 237, 245, 0.95) !important;
-        border: 1px solid #b2c0d0 !important;
-        color: #3d4a5c !important;
-        font-weight: 500 !important;
-        padding: 0.75rem 1.5rem !important;
-        border-radius: 8px !important;
-        transition: all 0.3s ease !important;
+      .btn-secondary:hover {
+        background: rgba(217, 226, 238, 0.9);
       }
       
-      /* TABLAS - SOLO dentro de steel-components-wrapper */
-      .steel-components-wrapper .data-table {
-        width: 100% !important;
-        border-collapse: separate !important;
-        border-spacing: 0 !important;
-        border-radius: 8px !important;
-        overflow: hidden !important;
-        background-color: rgba(255, 255, 255, 0.95) !important;
-        box-shadow: 0 4px 12px rgba(100, 116, 139, 0.15) !important;
+      /* TABLAS */
+      .data-table {
+        width: 100%;
+        border-collapse: separate;
+        border-spacing: 0;
+        border-radius: 6px;
+        overflow: hidden;
+        background-color: rgba(255, 255, 255, 0.9);
+        box-shadow: 0 2px 6px rgba(100, 116, 139, 0.15);
       }
       
-      .steel-components-wrapper .data-table th {
-        background-color: rgba(231, 237, 245, 0.95) !important;
-        color: #3d4a5c !important;
-        font-weight: 600 !important;
-        text-align: left !important;
-        padding: 1rem 1.25rem !important;
-        border-bottom: 1px solid #d1dce8 !important;
+      .data-table th {
+        background-color: rgba(231, 237, 245, 0.9);
+        color: #3d4a5c;
+        font-weight: 600;
+        text-align: left;
+        padding: 0.75rem 1rem;
+        border-bottom: 1px solid #d1dce8;
       }
       
-      .steel-components-wrapper .data-table td {
-        padding: 1rem 1.25rem !important;
-        border-bottom: 1px solid #e7edf5 !important;
-        color: #334155 !important;
-        background-color: rgba(248, 250, 253, 0.95) !important;
+      .data-table td {
+        padding: 0.75rem 1rem;
+        border-bottom: 1px solid #e7edf5;
+        color: #334155;
+        background-color: rgba(248, 250, 253, 0.9);
       }
       
-      /* CHARTS - SOLO dentro de steel-components-wrapper */
-      .steel-components-wrapper .chart-container {
-        background: rgba(255, 255, 255, 0.92) !important;
-        border-radius: 12px !important;
-        padding: 1.5rem !important;
-        margin-bottom: 1.5rem !important;
-        box-shadow: 0 4px 12px rgba(100, 116, 139, 0.1) !important;
-        page-break-inside: avoid !important;
-        height: auto !important;
-        max-height: 70vh !important;
-        backdrop-filter: blur(8px) !important;
+      .data-table tr:nth-child(even) td {
+        background-color: rgba(248, 250, 253, 0.95);
       }
       
-      /* TÍTULOS DE SECCIÓN - SOLO dentro de steel-components-wrapper */
-      .steel-components-wrapper .report-section-title {
-        color: #2d3748 !important;
-        font-weight: 600 !important;
-        border-bottom: 2px solid #d1dce8 !important;
-        padding-bottom: 0.75rem !important;
-        margin-bottom: 1.5rem !important;
-        position: relative !important;
+      .data-table tr:hover td {
+        background-color: rgba(231, 237, 245, 0.9);
       }
       
-      .steel-components-wrapper .report-section-title::after {
-        content: '' !important;
-        position: absolute !important;
-        left: 0 !important;
-        bottom: -2px !important;
-        width: 60px !important;
-        height: 3px !important;
-        background: linear-gradient(to right, #4a6fa0, #6b8bc3) !important;
-        border-radius: 2px !important;
+      /* TÍTULOS DE SECCIÓN */
+      .report-section-title {
+        color: #2d3748;
+        font-weight: 600;
+        border-bottom: 2px solid #d1dce8;
+        padding-bottom: 0.5rem;
+        margin-bottom: 1rem;
+        position: relative;
       }
       
-      /* BADGES - SOLO dentro de steel-components-wrapper */
-      .steel-components-wrapper .badge {
-        display: inline-flex !important;
-        align-items: center !important;
-        padding: 0.375rem 0.875rem !important;
-        border-radius: 50px !important;
-        font-size: 0.875rem !important;
-        font-weight: 600 !important;
+      .report-section-title::after {
+        content: '';
+        position: absolute;
+        left: 0;
+        bottom: -2px;
+        width: 50px;
+        height: 2px;
+        background: linear-gradient(to right, #3e6394, #5980b3);
       }
       
-      .steel-components-wrapper .badge-success {
-        background-color: #d1fae5 !important;
-        color: #065f46 !important;
+      /* BADGES */
+      .badge {
+        display: inline-flex;
+        align-items: center;
+        padding: 0.25rem 0.75rem;
+        border-radius: 9999px;
+        font-size: 0.75rem;
+        font-weight: 600;
       }
       
-      .steel-components-wrapper .badge-danger {
-        background-color: #fee2e2 !important;
-        color: #b91c1c !important;
+      .badge-success {
+        background-color: #d1fae5;
+        color: #065f46;
       }
       
-      .steel-components-wrapper .badge-info {
-        background-color: #dbeafe !important;
-        color: #1e40af !important;
+      .badge-danger {
+        background-color: #fee2e2;
+        color: #b91c1c;
       }
       
-      /* RESPONSIVE - SOLO para steel-components-wrapper */
-      @media (max-width: 1024px) {
-        .steel-components-wrapper .main-content {
-          margin-left: 0 !important;
-          padding: 1rem !important;
-        }
-        
-        .steel-components-wrapper .sidebar {
-          transform: translateX(-100%) !important;
-        }
+      .badge-info {
+        background-color: #dbeafe;
+        color: #1e40af;
       }
       
-      @media (max-width: 768px) {
-        .steel-components-wrapper .main-content {
-          padding: 0.5rem !important;
-        }
-        
-        .steel-components-wrapper .dashboard-card {
-          margin-bottom: 1rem !important;
-        }
+      /* CHARTS Y CONTENEDORES ESPECIALES */
+      .chart-container {
+        background: rgba(255, 255, 255, 0.9);
+        border-radius: 8px;
+        padding: 1rem;
+        margin-bottom: 1rem;
+        box-shadow: 0 2px 6px rgba(100, 116, 139, 0.15);
+        backdrop-filter: blur(5px);
+      }
+      
+      .content-container {
+        background: rgba(242, 245, 250, 0.7);
+        backdrop-filter: blur(10px);
+        border-radius: 12px;
+        box-shadow: 
+          0 10px 15px -3px rgba(0, 0, 0, 0.1),
+          0 4px 6px -2px rgba(0, 0, 0, 0.05);
+        border: 1px solid rgba(255, 255, 255, 0.3);
+        padding: 1rem;
       }
     `;
     
-    // Crear elemento de estilo MUY ESPECÍFICO
+    // Crear elemento de estilo único con ID específico
     const styleElement = document.createElement('style');
-    styleElement.id = 'steel-specific-styles-only';
-    styleElement.textContent = specificSteelStyles;
+    styleElement.id = 'dashboard-clean-theme';
+    styleElement.textContent = cleanThemeStyles;
+    
+    // LIMPIEZA PREVENTIVA - Eliminar estilos conflictivos anteriores
+    const oldStyles = [
+      'steel-components-styles',
+      'steel-components-fixed-styles', 
+      'steel-specific-styles-only',
+      'test-background-fix',
+      'fix-white-box-specific',
+      'fix-potente-background'
+    ];
+    
+    oldStyles.forEach(id => {
+      const oldElement = document.getElementById(id);
+      if (oldElement) {
+        document.head.removeChild(oldElement);
+        console.log(`🗑️ Eliminated conflicting style: ${id}`);
+      }
+    });
+    
+    // Aplicar el nuevo estilo limpio
     document.head.appendChild(styleElement);
-    
-    // LIMPIAR ESTILOS ANTERIORES QUE ERAN DEMASIADO AGRESIVOS
-    const oldGlobalStyle = document.getElementById('steel-components-fixed-styles');
-    if (oldGlobalStyle) {
-      document.head.removeChild(oldGlobalStyle);
-    }
-    
-    const testStyle = document.getElementById('test-background-fix');
-    if (testStyle) {
-      document.head.removeChild(testStyle);
-    }
-    
-    console.log('✅ Estilos específicos aplicados SOLO a Steel Components - MainMenu y Database protegidos');
+    console.log('✅ Clean theme applied successfully');
     
     // Verificar imagen de fondo
     const testImg = new Image();
     testImg.onload = () => {
-      console.log('✅ Background image loaded for Steel Components only');
+      console.log('✅ Background image loaded successfully');
     };
     testImg.onerror = () => {
-      console.error('❌ Background image failed to load');
+      console.error('❌ Background image failed to load. Check path:', `${baseUrl}/images/backgrounds/solar-background2.jpeg`);
     };
-    testImg.src = '/images/backgrounds/solar-background2.jpeg';
+    testImg.src = `${baseUrl}/images/backgrounds/solar-background2.jpeg`;
     
-    // Limpiar al desmontar
+    // LIMPIEZA al desmontar - Simple y efectiva
     return () => {
-      const element = document.getElementById('steel-specific-styles-only');
+      const element = document.getElementById('dashboard-clean-theme');
       if (element) {
         document.head.removeChild(element);
+        console.log('🧹 Clean theme styles removed');
       }
     };
   }, []);
@@ -317,22 +292,20 @@ const DashboardApp = () => {
   };
 
   return (
-    <div className="steel-components-wrapper">
-      <div className="min-h-screen">
-        <div className="app-container">
-          <SidebarNav />
+    <div className="min-h-screen">
+      <div className="app-container">
+        <SidebarNav />
+        
+        <div className="main-content">
+          <ContentHeader title={getPageTitle()} />
           
-          <div className="main-content">
-            <ContentHeader title={getPageTitle()} />
-            
-            <div className="p-4">
-              {activeTab === 'setup' && <SetupForm />}
-              {activeTab === 'inspection' && <InspectionPanelSistem />}
-              {activeTab === 'report' && <ReportViewDashboard />}
-              {activeTab === 'database' && userRole === 'admin' && <DatabaseView />}
-              {activeTab === 'gallery' && userRole === 'admin' && <PhotoGallery />}
-              {activeTab === 'dashboard' && userRole === 'admin' && <div>Dashboard content here</div>}
-            </div>
+          <div className="p-4">
+            {activeTab === 'setup' && <SetupForm />}
+            {activeTab === 'inspection' && <InspectionPanelSistem />}
+            {activeTab === 'report' && <ReportViewDashboard />}
+            {activeTab === 'database' && userRole === 'admin' && <DatabaseView />}
+            {activeTab === 'gallery' && userRole === 'admin' && <PhotoGallery />}
+            {activeTab === 'dashboard' && userRole === 'admin' && <div>Dashboard content here</div>}
           </div>
         </div>
       </div>

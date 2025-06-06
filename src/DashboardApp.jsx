@@ -1,4 +1,4 @@
-// src/DashboardApp.jsx - VERSIÓN CORREGIDA SIN ESTILOS GLOBALES AGRESIVOS
+// src/DashboardApp.jsx - VERSIÓN FINAL CORREGIDA (basada en prueba exitosa)
 import React, { useEffect } from 'react';
 import { useInspection } from './context/InspectionContext';
 import SidebarNav from './components/layout/SidebarNav';
@@ -13,251 +13,285 @@ const DashboardApp = () => {
   const { state } = useInspection();
   const { activeTab, userRole } = state;
 
-  // Efecto simplificado que solo aplica estilos específicos sin interferir globalmente
+  // APLICAR LOS ESTILOS QUE FUNCIONARON EN LA PRUEBA DE CONSOLA
   useEffect(() => {
-    // Crear un estilo menos agresivo y más específico
-    const steelComponentsStyles = `
-      /* Estilos específicos para Steel Components - SIN !important agresivos */
+    const steelComponentsStylesFixed = `
+      /* ESTILOS VERIFICADOS Y FUNCIONANDO - BASADOS EN PRUEBA EXITOSA */
+      
+      /* FORZAR TRANSPARENCIA TOTAL */
+      body {
+        background: #f5f9fd url('/images/backgrounds/solar-background2.jpeg') center/cover fixed !important;
+        background-color: transparent !important;
+        min-height: 100vh !important;
+      }
+      
+      html {
+        background-color: transparent !important;
+      }
+      
+      #root {
+        background: transparent !important;
+        background-color: transparent !important;
+      }
+      
+      /* STEEL COMPONENTS WRAPPER - TRANSPARENTE CON IMAGEN */
       .steel-components-wrapper {
-        background: #f5f9fd url('/images/backgrounds/solar-background2.jpeg') center/cover fixed;
-        min-height: 100vh;
-        margin: 0;
-        padding: 0;
-        color: #2d3748;
+        background: #f5f9fd url('/images/backgrounds/solar-background2.jpeg') center/cover fixed !important;
+        min-height: 100vh !important;
+        margin: 0 !important;
+        padding: 0 !important;
+        color: #2d3748 !important;
       }
       
-      .steel-components-wrapper #root {
-        max-width: 1000px;
-        width: 100%;
-        margin: 0 auto;
-        padding: 1rem;
-        background: transparent;
-        text-align: left;
-        box-sizing: border-box;
-      }
-      
-      .steel-components-wrapper .app-container {
-        background: transparent;
-      }
-      
+      /* MAIN CONTENT - SIN FONDO BLANCO */
       .steel-components-wrapper .main-content {
-        background: transparent;
-        position: relative;
-        z-index: 1;
-        box-shadow: -8px 0 16px -6px rgba(0, 0, 0, 0.1);
+        background: transparent !important;
+        background-color: transparent !important;
+        position: relative !important;
+        z-index: 1 !important;
+        margin-left: 240px !important;
+        padding: 2rem !important;
       }
       
+      /* APP CONTAINER - TRANSPARENTE */
+      .steel-components-wrapper .app-container {
+        background: transparent !important;
+        background-color: transparent !important;
+        min-height: 100vh !important;
+        display: flex !important;
+      }
+      
+      /* CONTENT HEADER - TRANSPARENTE */
+      .steel-components-wrapper .content-header {
+        background: transparent !important;
+        background-color: transparent !important;
+        display: flex !important;
+        justify-content: space-between !important;
+        align-items: center !important;
+        margin-bottom: 2rem !important;
+        padding: 1rem 0 !important;
+      }
+      
+      /* CARDS MÁS TRANSPARENTES CON BACKDROP BLUR */
       .steel-components-wrapper .dashboard-card {
-        background: rgba(242, 245, 250, 0.95);
-        border: 1px solid rgba(203, 213, 225, 0.8);
-        box-shadow: 0 8px 32px rgba(100, 116, 139, 0.2);
-        border-radius: 12px;
-        margin-bottom: 1.5rem;
-        backdrop-filter: blur(10px);
+        background: rgba(255, 255, 255, 0.88) !important;
+        backdrop-filter: blur(10px) !important;
+        border: 1px solid rgba(203, 213, 225, 0.6) !important;
+        box-shadow: 0 8px 32px rgba(100, 116, 139, 0.15) !important;
+        border-radius: 12px !important;
+        margin-bottom: 1.5rem !important;
       }
       
       .steel-components-wrapper .card-header {
-        background: linear-gradient(to right, rgba(74, 111, 160, 0.95), rgba(111, 140, 182, 0.90));
-        color: white;
-        border-radius: 12px 12px 0 0;
-        padding: 1.25rem 1.5rem;
-        font-weight: 600;
+        background: linear-gradient(to right, rgba(74, 111, 160, 0.90), rgba(111, 140, 182, 0.85)) !important;
+        color: white !important;
+        border-radius: 12px 12px 0 0 !important;
+        padding: 1.25rem 1.5rem !important;
+        font-weight: 600 !important;
       }
       
       .steel-components-wrapper .card-body {
-        padding: 1.5rem;
-        background: rgba(255, 255, 255, 0.98);
+        padding: 1.5rem !important;
+        background: rgba(255, 255, 255, 0.95) !important;
       }
       
-      .steel-components-wrapper .cards-grid-2 {
-        display: grid;
-        grid-template-columns: 1fr 1fr;
-        gap: 1.5rem;
-        margin-bottom: 2rem;
+      /* QUITAR FONDOS BLANCOS DE DIVS GENÉRICOS - REGLA CLAVE */
+      .steel-components-wrapper div:not(.sidebar):not(.dashboard-card):not(.card-body):not(.data-table):not(.chart-container) {
+        background-color: transparent !important;
       }
       
+      /* SIDEBAR MANTENER OPACO PARA FUNCIONALIDAD */
+      .steel-components-wrapper .sidebar {
+        background: linear-gradient(180deg, #005F83 0%, #004666 100%) !important;
+        box-shadow: 2px 0 12px rgba(0, 95, 131, 0.2) !important;
+        position: fixed !important;
+        left: 0 !important;
+        top: 0 !important;
+        width: 240px !important;
+        height: 100vh !important;
+        z-index: 10 !important;
+      }
+      
+      /* FORMULARIOS */
       .steel-components-wrapper .form-control {
-        background-color: rgba(255, 255, 255, 0.95);
-        border: 2px solid rgba(180, 200, 220, 0.8);
-        color: #334155;
-        border-radius: 8px;
-        padding: 0.75rem 1rem;
-        transition: all 0.3s ease;
-      }
-      
-      .steel-components-wrapper .form-control::placeholder {
-        color: #94a3b8;
+        background-color: rgba(255, 255, 255, 0.95) !important;
+        border: 2px solid rgba(180, 200, 220, 0.8) !important;
+        color: #334155 !important;
+        border-radius: 8px !important;
+        padding: 0.75rem 1rem !important;
+        transition: all 0.3s ease !important;
       }
       
       .steel-components-wrapper .form-control:focus {
-        border-color: #4a6fa0;
-        box-shadow: 0 0 0 4px rgba(74, 111, 160, 0.15);
-        background-color: rgba(255, 255, 255, 1);
-        outline: none;
+        border-color: #4a6fa0 !important;
+        box-shadow: 0 0 0 4px rgba(74, 111, 160, 0.15) !important;
+        background-color: rgba(255, 255, 255, 1) !important;
+        outline: none !important;
       }
       
       .steel-components-wrapper .form-label {
-        color: #3d4a5c;
-        font-weight: 600;
-        margin-bottom: 0.75rem;
+        color: #3d4a5c !important;
+        font-weight: 600 !important;
+        margin-bottom: 0.75rem !important;
       }
       
+      /* BOTONES */
       .steel-components-wrapper .btn-primary {
-        background: linear-gradient(to right, #4a6fa0, #6b8bc3);
-        border: none;
-        color: white;
-        font-weight: 600;
-        padding: 0.75rem 1.5rem;
-        border-radius: 8px;
-        box-shadow: 0 4px 12px rgba(74, 111, 160, 0.3);
-        transition: all 0.3s ease;
+        background: linear-gradient(to right, #4a6fa0, #6b8bc3) !important;
+        border: none !important;
+        color: white !important;
+        font-weight: 600 !important;
+        padding: 0.75rem 1.5rem !important;
+        border-radius: 8px !important;
+        box-shadow: 0 4px 12px rgba(74, 111, 160, 0.3) !important;
+        transition: all 0.3s ease !important;
       }
       
       .steel-components-wrapper .btn-primary:hover {
-        background: linear-gradient(to right, #3e5d8a, #5a7ab3);
-        box-shadow: 0 6px 20px rgba(74, 111, 160, 0.4);
-        transform: translateY(-2px);
+        background: linear-gradient(to right, #3e5d8a, #5a7ab3) !important;
+        box-shadow: 0 6px 20px rgba(74, 111, 160, 0.4) !important;
+        transform: translateY(-2px) !important;
       }
       
       .steel-components-wrapper .btn-secondary {
-        background: rgba(231, 237, 245, 0.95);
-        border: 1px solid #b2c0d0;
-        color: #3d4a5c;
-        font-weight: 500;
-        padding: 0.75rem 1.5rem;
-        border-radius: 8px;
-        transition: all 0.3s ease;
+        background: rgba(231, 237, 245, 0.95) !important;
+        border: 1px solid #b2c0d0 !important;
+        color: #3d4a5c !important;
+        font-weight: 500 !important;
+        padding: 0.75rem 1.5rem !important;
+        border-radius: 8px !important;
+        transition: all 0.3s ease !important;
       }
       
-      .steel-components-wrapper .btn-secondary:hover {
-        background: rgba(217, 226, 238, 0.95);
-        transform: translateY(-1px);
-      }
-      
+      /* TABLAS */
       .steel-components-wrapper .data-table {
-        width: 100%;
-        border-collapse: separate;
-        border-spacing: 0;
-        border-radius: 8px;
-        overflow: hidden;
-        background-color: rgba(255, 255, 255, 0.95);
-        box-shadow: 0 4px 12px rgba(100, 116, 139, 0.15);
+        width: 100% !important;
+        border-collapse: separate !important;
+        border-spacing: 0 !important;
+        border-radius: 8px !important;
+        overflow: hidden !important;
+        background-color: rgba(255, 255, 255, 0.95) !important;
+        box-shadow: 0 4px 12px rgba(100, 116, 139, 0.15) !important;
       }
       
       .steel-components-wrapper .data-table th {
-        background-color: rgba(231, 237, 245, 0.95);
-        color: #3d4a5c;
-        font-weight: 600;
-        text-align: left;
-        padding: 1rem 1.25rem;
-        border-bottom: 1px solid #d1dce8;
+        background-color: rgba(231, 237, 245, 0.95) !important;
+        color: #3d4a5c !important;
+        font-weight: 600 !important;
+        text-align: left !important;
+        padding: 1rem 1.25rem !important;
+        border-bottom: 1px solid #d1dce8 !important;
       }
       
       .steel-components-wrapper .data-table td {
-        padding: 1rem 1.25rem;
-        border-bottom: 1px solid #e7edf5;
-        color: #334155;
-        background-color: rgba(248, 250, 253, 0.95);
+        padding: 1rem 1.25rem !important;
+        border-bottom: 1px solid #e7edf5 !important;
+        color: #334155 !important;
+        background-color: rgba(248, 250, 253, 0.95) !important;
       }
       
-      .steel-components-wrapper .data-table tr:nth-child(even) td {
-        background-color: rgba(248, 250, 253, 0.98);
+      /* CHARTS Y GRÁFICOS */
+      .steel-components-wrapper .chart-container {
+        background: rgba(255, 255, 255, 0.92) !important;
+        border-radius: 12px !important;
+        padding: 1.5rem !important;
+        margin-bottom: 1.5rem !important;
+        box-shadow: 0 4px 12px rgba(100, 116, 139, 0.1) !important;
+        page-break-inside: avoid !important;
+        height: auto !important;
+        max-height: 70vh !important;
+        backdrop-filter: blur(8px) !important;
       }
       
-      .steel-components-wrapper .data-table tr:hover td {
-        background-color: rgba(231, 237, 245, 0.95);
-      }
-      
-      .steel-components-wrapper .sidebar {
-        background: linear-gradient(180deg, #005F83 0%, #004666 100%);
-        box-shadow: 2px 0 12px rgba(0, 95, 131, 0.2);
-      }
-      
+      /* TÍTULOS DE SECCIÓN */
       .steel-components-wrapper .report-section-title {
-        color: #2d3748;
-        font-weight: 600;
-        border-bottom: 2px solid #d1dce8;
-        padding-bottom: 0.75rem;
-        margin-bottom: 1.5rem;
-        position: relative;
+        color: #2d3748 !important;
+        font-weight: 600 !important;
+        border-bottom: 2px solid #d1dce8 !important;
+        padding-bottom: 0.75rem !important;
+        margin-bottom: 1.5rem !important;
+        position: relative !important;
       }
       
       .steel-components-wrapper .report-section-title::after {
-        content: '';
-        position: absolute;
-        left: 0;
-        bottom: -2px;
-        width: 60px;
-        height: 3px;
-        background: linear-gradient(to right, #4a6fa0, #6b8bc3);
-        border-radius: 2px;
+        content: '' !important;
+        position: absolute !important;
+        left: 0 !important;
+        bottom: -2px !important;
+        width: 60px !important;
+        height: 3px !important;
+        background: linear-gradient(to right, #4a6fa0, #6b8bc3) !important;
+        border-radius: 2px !important;
       }
       
+      /* BADGES */
       .steel-components-wrapper .badge {
-        display: inline-flex;
-        align-items: center;
-        padding: 0.375rem 0.875rem;
-        border-radius: 50px;
-        font-size: 0.875rem;
-        font-weight: 600;
+        display: inline-flex !important;
+        align-items: center !important;
+        padding: 0.375rem 0.875rem !important;
+        border-radius: 50px !important;
+        font-size: 0.875rem !important;
+        font-weight: 600 !important;
       }
       
       .steel-components-wrapper .badge-success {
-        background-color: #d1fae5;
-        color: #065f46;
+        background-color: #d1fae5 !important;
+        color: #065f46 !important;
       }
       
       .steel-components-wrapper .badge-danger {
-        background-color: #fee2e2;
-        color: #b91c1c;
+        background-color: #fee2e2 !important;
+        color: #b91c1c !important;
       }
       
       .steel-components-wrapper .badge-info {
-        background-color: #dbeafe;
-        color: #1e40af;
+        background-color: #dbeafe !important;
+        color: #1e40af !important;
       }
       
-      .steel-components-wrapper .chart-container {
-        background: rgba(255, 255, 255, 0.95);
-        border-radius: 12px;
-        padding: 1.5rem;
-        margin-bottom: 1.5rem;
-        box-shadow: 0 4px 12px rgba(100, 116, 139, 0.1);
-        page-break-inside: avoid;
-        height: auto;
-        max-height: 70vh;
-      }
-      
-      /* Responsive design */
+      /* RESPONSIVE DESIGN */
       @media (max-width: 1024px) {
-        .steel-components-wrapper #root {
-          max-width: 95%;
-          padding: 0.75rem;
+        .steel-components-wrapper .main-content {
+          margin-left: 0 !important;
+          padding: 1rem !important;
         }
         
-        .steel-components-wrapper .cards-grid-2 {
-          grid-template-columns: 1fr;
+        .steel-components-wrapper .sidebar {
+          transform: translateX(-100%) !important;
         }
       }
       
       @media (max-width: 768px) {
         .steel-components-wrapper .main-content {
-          padding: 0.5rem;
+          padding: 0.5rem !important;
         }
         
         .steel-components-wrapper .dashboard-card {
-          margin-bottom: 1rem;
+          margin-bottom: 1rem !important;
         }
       }
     `;
     
-    // Crear elemento de estilo específico
+    // Crear elemento de estilo con los estilos verificados
     const styleElement = document.createElement('style');
-    styleElement.id = 'steel-components-styles';
-    styleElement.textContent = steelComponentsStyles;
+    styleElement.id = 'steel-components-fixed-styles';
+    styleElement.textContent = steelComponentsStylesFixed;
     document.head.appendChild(styleElement);
     
-    // Verificar si la imagen existe y aplicarla solo al wrapper
+    // LIMPIAR ESTILOS ANTERIORES CONFLICTIVOS
+    const oldStyle = document.getElementById('steel-components-styles');
+    if (oldStyle) {
+      document.head.removeChild(oldStyle);
+    }
+    
+    const testStyle = document.getElementById('test-background-fix');
+    if (testStyle) {
+      document.head.removeChild(testStyle);
+    }
+    
+    console.log('✅ Estilos corregidos aplicados permanentemente - Background funcionando');
+    
+    // Verificar imagen de fondo
     const testImg = new Image();
     testImg.onload = () => {
       console.log('✅ Background image loaded successfully for Steel Components');
@@ -269,12 +303,12 @@ const DashboardApp = () => {
     
     // Limpiar al desmontar el componente
     return () => {
-      const element = document.getElementById('steel-components-styles');
+      const element = document.getElementById('steel-components-fixed-styles');
       if (element) {
         document.head.removeChild(element);
       }
     };
-  }, []); // Sin dependencias para ejecutarse solo una vez
+  }, []);
 
   const getPageTitle = () => {
     switch (activeTab) {
@@ -306,9 +340,7 @@ const DashboardApp = () => {
               {activeTab === 'setup' && <SetupForm />}
               {activeTab === 'inspection' && <InspectionPanelSistem />}
               {activeTab === 'report' && <ReportViewDashboard />}
-              {/* Nueva pestaña Database - Solo visible para usuarios Admin */}
               {activeTab === 'database' && userRole === 'admin' && <DatabaseView />}
-              {/* NUEVA PESTAÑA GALLERY - Solo visible para usuarios Admin */}
               {activeTab === 'gallery' && userRole === 'admin' && <PhotoGallery />}
               {activeTab === 'dashboard' && userRole === 'admin' && <div>Dashboard content here</div>}
             </div>

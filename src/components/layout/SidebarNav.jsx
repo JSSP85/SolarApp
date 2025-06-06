@@ -1,5 +1,5 @@
-// src/components/layout/SidebarNav.jsx
-import React, { useState } from 'react';
+// src/components/layout/SidebarNav.jsx - CORREGIDO CON LÓGICA DE PERMISOS
+import React, { useState, useEffect } from 'react';
 import { useInspection } from '../../context/InspectionContext';
 import { 
   Settings, 
@@ -15,12 +15,102 @@ import {
 
 const SidebarNav = () => {
   const { state, dispatch, validateRequiredFields } = useInspection();
-  const { activeTab, userRole } = state;
+  const { activeTab } = state;
   const [showValidationModal, setShowValidationModal] = useState(false);
   const [attemptedTab, setAttemptedTab] = useState(null);
   const [validationError, setValidationError] = useState('');
+  const [currentUserRole, setCurrentUserRole] = useState('inspector'); // Estado local para el rol
+  
+  // NUEVO: Efecto para sincronizar el userRole desde sessionStorage
+  useEffect(() => {
+    const syncUserRole = () => {
+      try {
+        const savedUserRole = sessionStorage.getItem('userRole');
+        console.log('🔍 Rol encontrado en sessionStorage:', savedUserRole);
+        
+        if (savedUserRole) {
+          // Actualizar estado local
+          setCurrentUserRole(savedUserRole);
+          
+          // Actualizar el contexto también si es diferente
+          if (state.userRole !== savedUserRole) {
+            dispatch({ 
+              type: 'UPDATE_SETUP_FIELD', 
+              payload: { field: 'userRole', value: savedUserRole }
+            });
+            console.log('✅ UserRole actualizado en contexto:', savedUserRole);
+          }
+        } else {
+          console.log('⚠️ No se encontró userRole en sessionStorage, usando valor por defecto');
+          setCurrentUserRole('inspector');
+        }
+      } catch (error) {
+        console.error('❌ Error al sincronizar userRole:', error);
+        setCurrentUserRole('inspector');
+      }
+    };
+
+    // Sincronizar inmediatamente
+    syncUserRole();
+    
+    // Escuchar cambios en sessionStorage (por si cambia en otra pestaña)
+    const handleStorageChange = (e) => {
+      if (e.key === 'userRole') {
+        console.log('🔄 UserRole cambió en sessionStorage:', e.newValue);
+        syncUserRole();
+      }
+    };
+    
+    window.addEventListener('storage', handleStorageChange);
+    
+    // También verificar periódicamente (por si acaso)
+    const interval = setInterval(syncUserRole, 5000);
+    
+    return () => {
+      window.removeEventListener('storage', handleStorageChange);
+      clearInterval(interval);
+    };
+  }, [state.userRole, dispatch]);
+
+  // FUNCIÓN MEJORADA: Verificar si el usuario es admin
+  const isAdmin = () => {
+    const roleToCheck = currentUserRole || state.userRole || 'inspector';
+    const isAdminRole = roleToCheck === 'admin';
+    
+    console.log('🔐 Verificando permisos admin:', {
+      currentUserRole,
+      stateUserRole: state.userRole,
+      roleToCheck,
+      isAdminRole
+    });
+    
+    return isAdminRole;
+  };
+
+  // FUNCIÓN MEJORADA: Verificar si el usuario puede acceder a una pestaña
+  const canAccessTab = (tab) => {
+    // Las pestañas básicas (setup, inspection, report) están disponibles para todos
+    const basicTabs = ['setup', 'inspection', 'report'];
+    if (basicTabs.includes(tab)) {
+      return true;
+    }
+    
+    // Las pestañas admin solo para administradores
+    const adminTabs = ['database', 'gallery', 'dashboard'];
+    if (adminTabs.includes(tab)) {
+      return isAdmin();
+    }
+    
+    return true; // Por defecto, permitir acceso
+  };
   
   const handleTabChange = (tab) => {
+    // NUEVA VALIDACIÓN: Verificar permisos antes de cambiar de pestaña
+    if (!canAccessTab(tab)) {
+      console.log('🚫 Acceso denegado a pestaña:', tab, 'para rol:', currentUserRole);
+      return;
+    }
+
     // Si queremos ir a inspection o report, necesitamos validar primero
     if ((tab === 'inspection' || tab === 'report') && activeTab === 'setup') {
       const validation = validateRequiredFields();
@@ -101,8 +191,8 @@ const SidebarNav = () => {
           </div>
         </div>
         
-        {/* Admin section */}
-        {userRole === 'admin' && (
+        {/* SECCIÓN ADMIN CORREGIDA - Solo mostrar si es admin */}
+        {isAdmin() && (
           <>
             <div className="sidebar-divider admin-divider"></div>
             
@@ -120,7 +210,6 @@ const SidebarNav = () => {
                 <span>Database</span>
               </div>
               
-              {/* NUEVA SECCIÓN: Photo Gallery */}
               <div 
                 className={`nav-item admin-item ${activeTab === 'gallery' ? 'admin-active' : ''}`}
                 onClick={() => handleTabChange('gallery')}
@@ -138,6 +227,23 @@ const SidebarNav = () => {
               </div>
             </div>
           </>
+        )}
+
+        {/* DEBUGGING INFO - Solo mostrar en desarrollo */}
+        {process.env.NODE_ENV === 'development' && (
+          <div style={{ 
+            position: 'absolute', 
+            bottom: '10px', 
+            left: '10px', 
+            fontSize: '10px', 
+            color: 'rgba(255,255,255,0.5)',
+            background: 'rgba(0,0,0,0.3)',
+            padding: '4px',
+            borderRadius: '4px'
+          }}>
+            Role: {currentUserRole}<br/>
+            Admin: {isAdmin() ? 'Yes' : 'No'}
+          </div>
         )}
 
         {/* Estilos específicos con alta prioridad y posición corregida */}

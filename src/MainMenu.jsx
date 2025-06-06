@@ -1,12 +1,11 @@
-// src/MainMenu.jsx
-import React, { useState, useEffect } from 'react';
-import styles from './MainMenu.module.css'; // Importar CSS Module en lugar de CSS regular
+// src/MainMenu.jsx - Versión actualizada sin modales de login
+import React, { useState } from 'react';
+import styles from './MainMenu.module.css';
 
-// Import icons from lucide-react - using only basic icons that should be available in all versions
+// Import icons from lucide-react
 import { 
   ChevronRight, 
   Shield, 
-  Settings,
   LayoutDashboard, 
   ArrowLeft,
   Ruler,
@@ -18,19 +17,22 @@ import {
   UserCog,
   Briefcase,
   FileWarning,
-  PieChart,
   Database,
-  Lock,
-  Book
+  Book,
+  LogOut,
+  User
 } from 'lucide-react';
 
-// Importar el nuevo componente BackButton
+// Importar el contexto de autenticación
+import { useAuth } from './context/AuthContext';
+
+// Importar el componente BackButton existente
 import BackButton from './components/common/BackButton';
 
 // Import Quality Book Generator
 import QualityBookGenerator from './components/quality/QualityBookGenerator';
 
-// Custom SVG for the hardware components (screw icon)
+// Custom SVG para hardware components
 const ScrewIcon = () => (
   <svg 
     xmlns="http://www.w3.org/2000/svg" 
@@ -50,7 +52,7 @@ const ScrewIcon = () => (
   </svg>
 );
 
-// Custom SVG for measurement (caliper icon)
+// Custom SVG para measurement (caliper icon)
 const CaliperIcon = () => (
   <svg 
     xmlns="http://www.w3.org/2000/svg" 
@@ -86,133 +88,23 @@ import DashboardApp from './DashboardApp';
 import { InspectionProvider } from './context/InspectionContext';
 import { LanguageProvider } from './context/LanguageContext';
 
-// Configuración de usuarios y permisos
-const USER_CREDENTIALS = {
-  'Admin': {
-    password: 'valm2025',
-    role: 'admin',
-    permissions: ['steel', 'hardware', 'electrical', 'free-inspection', 'non-conformity-manager', 'inspection-dashboard', 'quality-database', 'quality-book', 'supplier-management']
-  },
-  'Inspector1': {
-    password: '4321',
-    role: 'inspect1',
-    permissions: ['steel', 'hardware', 'electrical', 'free-inspection']
-  },
-  'Inspector2': {
-    password: '0099',
-    role: 'inspect2', 
-    permissions: ['steel', 'hardware', 'electrical', 'free-inspection']
-  },
-  'Inspector3': {
-    password: '1199',
-    role: 'inspect3',
-    permissions: ['steel', 'hardware', 'electrical', 'free-inspection']
-  },
-  'Inspector4': {
-    password: '9900',
-    role: 'inspect4',
-    permissions: ['steel', 'hardware', 'electrical', 'free-inspection']
-  },
-  'Inspector5': {
-    password: '6789',
-    role: 'inspect5',
-    permissions: ['steel', 'hardware', 'electrical', 'free-inspection']
-  }
-};
-
 const MainMenu = () => {
+  const { currentUser, logout, hasPermission } = useAuth();
   const [selectedOption, setSelectedOption] = useState(null);
-  const [showLoginModal, setShowLoginModal] = useState(false);
-  const [loginCredentials, setLoginCredentials] = useState({ username: '', password: '' });
-  const [loginError, setLoginError] = useState('');
-  const [pendingManagerOption, setPendingManagerOption] = useState(null);
-  const [pendingModuleType, setPendingModuleType] = useState(null);
 
-  // Function to handle authentication
-  const handleLogin = (e) => {
-    e.preventDefault();
-    
-    const user = USER_CREDENTIALS[loginCredentials.username];
-    
-    if (user && user.password === loginCredentials.password) {
-      // Verificar si el usuario tiene permisos para el módulo solicitadoo
-      if (user.permissions.includes(pendingManagerOption)) {
-        setShowLoginModal(false); 
-        setLoginError('');
-        setSelectedOption(pendingManagerOption);
-
-         // Guardar el rol del usuario para usarlo en la aplicación
-        sessionStorage.setItem('userRole', user.role);
-      } else {
-        setLoginError(`Access denied. Your role (${user.role}) does not have permission to access this module.`);
-      }
-    } else {
-      setLoginError('Invalid username or password. Please try again.');
+  // Function to handle logout
+  const handleLogout = () => {
+    if (window.confirm('¿Estás seguro de que quieres cerrar sesión?')) {
+      logout();
     }
   };
 
-  // Function to handle manager option selection that requires authentication
-  const handleManagerOptionSelect = (option) => {
-    setPendingManagerOption(option);
-    setPendingModuleType('manager');
-    setShowLoginModal(true);
-    setLoginCredentials({ username: '', password: '' });
-    setLoginError('');
-  };
-
-  // Function to handle Steel Components selection with authentication
-  const handleSteelSelection = () => {
-    setPendingManagerOption('steel');
-    setPendingModuleType('inspector');
-    setShowLoginModal(true);
-    setLoginCredentials({ username: '', password: '' });
-    setLoginError('');
-  };
-
-  // Function to handle Hardware Components selection with authentication
-  const handleHardwareSelection = () => {
-    setPendingManagerOption('hardware');
-    setPendingModuleType('inspector');
-    setShowLoginModal(true);
-    setLoginCredentials({ username: '', password: '' });
-    setLoginError('');
-  };
-
-  // Function to handle Electrical Components selection with authentication
-  const handleElectricalSelection = () => {
-    setPendingManagerOption('electrical');
-    setPendingModuleType('inspector');
-    setShowLoginModal(true);
-    setLoginCredentials({ username: '', password: '' });
-    setLoginError('');
-  };
-
-  // Function to handle Free Inspection selection with authentication
-  const handleFreeInspectionSelection = () => {
-    setPendingManagerOption('free-inspection');
-    setPendingModuleType('inspector');
-    setShowLoginModal(true);
-    setLoginCredentials({ username: '', password: '' });
-    setLoginError('');
-  };
-
-  // Function to get required access level
-  const getRequiredAccessLevel = (module) => {
-    switch(module) {
-      case 'steel':
-      case 'hardware':
-      case 'electrical':
-      case 'free-inspection':
-        return 'Inspector Level Access Required';
-      case 'non-conformity-manager':
-      case 'inspection-dashboard':
-        return 'Manager Level Access Required';
-      case 'quality-database':
-      case 'quality-book':
-      case 'supplier-management':
-        return 'Administrator Access Required';
-      default:
-        return 'Authentication Required';
+  // Function to handle direct option selection (sin autenticación adicional)
+  const handleOptionSelect = (option) => {
+    if (hasPermission(option)) {
+      setSelectedOption(option);
+    } else {
+      alert('No tienes permisos para acceder a esta sección.');
     }
   };
 
@@ -222,11 +114,10 @@ const MainMenu = () => {
       case 'steel':
         return (
           <div className={styles.mainMenuAppWrapper}>
-            {/* Reemplazar el botón original con el nuevo componente BackButton */}
             <BackButton onClick={() => setSelectedOption(null)} />
             
             <LanguageProvider>
-              <InspectionProvider initialUserRole={sessionStorage.getItem('userRole')}>
+              <InspectionProvider initialUserRole={currentUser.role}>
                 <DashboardApp />
               </InspectionProvider>
             </LanguageProvider>
@@ -282,33 +173,93 @@ const MainMenu = () => {
     }
   };
 
-  // If no option is selected, show the main menu
+  // Si no hay opción seleccionada, mostrar el menú principal
   if (!selectedOption) {
     return (
       <div className={styles.mainMenuContainer}>
         <div className={styles.mainMenuContent}>
-          {/* Header - Modificado: Logo a la izquierda, título centrado y espacio a la derecha para equilibrar */}
+          {/* Header con información del usuario y logout */}
           <div className={`${styles.mainMenuHeader} ${styles.mainMenuFadeIn}`}>
             <div className={styles.headerContainer}>
-              {/* Logo y título en línea */}
               <div className={styles.headerRow}>
-                {/* Logo de la empresa */}
+                {/* Logo */}
                 <img 
                   src="/images/logo.png" 
                   alt="Company Logo" 
                   className={styles.companyLogo} 
                 />
+                
+                {/* Título central */}
                 <h1 className={styles.mainMenuTitle}>TEST REPORTS - INSPECTION SYSTEM</h1>
-                {/* Elemento invisible para equilibrar el diseño */}
-                <div className={styles.logoPlaceholder}></div>
+                
+                {/* Información del usuario y logout */}
+                <div style={{ 
+                  display: 'flex', 
+                  alignItems: 'center', 
+                  gap: '1rem',
+                  background: 'rgba(255, 255, 255, 0.1)',
+                  padding: '0.75rem 1rem',
+                  borderRadius: '12px',
+                  border: '1px solid rgba(255, 255, 255, 0.2)'
+                }}>
+                  <div style={{ textAlign: 'right' }}>
+                    <div style={{ 
+                      color: 'white', 
+                      fontWeight: '600',
+                      fontSize: '0.95rem',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '0.5rem'
+                    }}>
+                      <User size={16} />
+                      {currentUser.displayName}
+                    </div>
+                    <div style={{ 
+                      color: 'rgba(255, 255, 255, 0.8)', 
+                      fontSize: '0.8rem',
+                      textTransform: 'uppercase',
+                      letterSpacing: '0.5px'
+                    }}>
+                      {currentUser.role}
+                    </div>
+                  </div>
+                  
+                  <button
+                    onClick={handleLogout}
+                    style={{
+                      background: 'rgba(255, 255, 255, 0.2)',
+                      border: '1px solid rgba(255, 255, 255, 0.3)',
+                      borderRadius: '8px',
+                      padding: '0.5rem',
+                      cursor: 'pointer',
+                      transition: 'all 0.2s ease',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      color: 'white'
+                    }}
+                    onMouseOver={(e) => {
+                      e.target.style.background = 'rgba(255, 255, 255, 0.3)';
+                      e.target.style.transform = 'translateY(-2px)';
+                    }}
+                    onMouseOut={(e) => {
+                      e.target.style.background = 'rgba(255, 255, 255, 0.2)';
+                      e.target.style.transform = 'translateY(0)';
+                    }}
+                    title="Logout"
+                  >
+                    <LogOut size={18} />
+                  </button>
+                </div>
               </div>
+              
               <p className={styles.mainMenuSubtitle}>
                 Advanced quality control solution for solar component manufacturing
               </p>
             </div>
           </div>
 
-          {/* Main content - Inspection modules */}
+          {/* Sección de módulos de inspección */}
           <div className={`${styles.mainMenuSection} ${styles.mainMenuStagger1}`}>
             <div className={styles.mainMenuSectionHeader}>
               <h2 className={styles.mainMenuSectionTitle}>
@@ -318,10 +269,12 @@ const MainMenu = () => {
             </div>
             <div className={styles.mainMenuSectionBody}>
               <div className={styles.mainMenuCards}>
-                {/* Steel Components Card - CON AUTENTICACIÓN */}
+                {/* Steel Components Card */}
                 <div 
-                  className={`${styles.mainMenuCard} ${styles.mainMenuStagger1}`}
-                  onClick={() => handleSteelSelection()}
+                  className={`${styles.mainMenuCard} ${styles.mainMenuStagger1} ${
+                    !hasPermission('steel') ? styles.mainMenuCardDisabled : ''
+                  }`}
+                  onClick={() => hasPermission('steel') && handleOptionSelect('steel')}
                 >
                   <div className={styles.mainMenuCardBody}>
                     <div className={styles.mainMenuCardIconContainer} style={{ background: 'rgba(108, 207, 255, 0.1)', border: '1px solid rgba(108, 207, 255, 0.2)' }}>
@@ -332,21 +285,20 @@ const MainMenu = () => {
                       Structural steel components inspection for solar mounting systems
                     </p>
                     <div className={styles.mainMenuCardFooter}>
-                      <div className={`${styles.mainMenuBadge} ${styles.mainMenuBadgeAuth}`}>
-                        <Lock size={12} />
-                        Inspector Access
+                      <div className={`${styles.mainMenuBadge} ${hasPermission('steel') ? styles.mainMenuBadgeInfo : styles.mainMenuBadgeDisabled}`}>
+                        {hasPermission('steel') ? 'Available' : 'Access Denied'}
                       </div>
-                      <div className={styles.managerLockIndicator}>
-                        <Lock size={14} />
-                      </div>
+                      <ChevronRight className={styles.mainMenuCardArrow} size={20} />
                     </div>
                   </div>
                 </div>
 
-                {/* Hardware Components Card - CON AUTENTICACIÓN */}
+                {/* Hardware Components Card */}
                 <div 
-                  className={`${styles.mainMenuCard} ${styles.mainMenuStagger2}`}
-                  onClick={() => handleHardwareSelection()}
+                  className={`${styles.mainMenuCard} ${styles.mainMenuStagger2} ${
+                    !hasPermission('hardware') ? styles.mainMenuCardDisabled : ''
+                  }`}
+                  onClick={() => hasPermission('hardware') && handleOptionSelect('hardware')}
                 >
                   <div className={styles.mainMenuCardBody}>
                     <div className={styles.mainMenuCardIconContainer} style={{ background: 'rgba(251, 211, 141, 0.1)', border: '1px solid rgba(251, 211, 141, 0.2)' }}>
@@ -357,21 +309,20 @@ const MainMenu = () => {
                       Fasteners and mounting hardware inspection for solar systems
                     </p>
                     <div className={styles.mainMenuCardFooter}>
-                      <div className={`${styles.mainMenuBadge} ${styles.mainMenuBadgeAuth}`}>
-                        <Lock size={12} />
-                        Inspector Access
+                      <div className={`${styles.mainMenuBadge} ${hasPermission('hardware') ? styles.mainMenuBadgeWarning : styles.mainMenuBadgeDisabled}`}>
+                        {hasPermission('hardware') ? 'Under Construction' : 'Access Denied'}
                       </div>
-                      <div className={styles.managerLockIndicator}>
-                        <Lock size={14} />
-                      </div>
+                      <ChevronRight className={styles.mainMenuCardArrow} size={20} />
                     </div>
                   </div>
                 </div>
 
-                {/* Electrical & Electronic Components Card - CON AUTENTICACIÓN */}
+                {/* Electrical & Electronic Components Card */}
                 <div 
-                  className={`${styles.mainMenuCard} ${styles.mainMenuStagger3}`}
-                  onClick={() => handleElectricalSelection()}
+                  className={`${styles.mainMenuCard} ${styles.mainMenuStagger3} ${
+                    !hasPermission('electrical') ? styles.mainMenuCardDisabled : ''
+                  }`}
+                  onClick={() => hasPermission('electrical') && handleOptionSelect('electrical')}
                 >
                   <div className={styles.mainMenuCardBody}>
                     <div className={styles.mainMenuCardIconContainer} style={{ background: 'rgba(72, 187, 120, 0.1)', border: '1px solid rgba(72, 187, 120, 0.2)' }}>
@@ -382,21 +333,20 @@ const MainMenu = () => {
                       Electrical and electronic components inspection for solar systems
                     </p>
                     <div className={styles.mainMenuCardFooter}>
-                      <div className={`${styles.mainMenuBadge} ${styles.mainMenuBadgeAuth}`}>
-                        <Lock size={12} />
-                        Inspector Access
+                      <div className={`${styles.mainMenuBadge} ${hasPermission('electrical') ? styles.mainMenuBadgeWarning : styles.mainMenuBadgeDisabled}`}>
+                        {hasPermission('electrical') ? 'Under Construction' : 'Access Denied'}
                       </div>
-                      <div className={styles.managerLockIndicator}>
-                        <Lock size={14} />
-                      </div>
+                      <ChevronRight className={styles.mainMenuCardArrow} size={20} />
                     </div>
                   </div>
                 </div>
 
-                {/* Free Inspection Card - CON AUTENTICACIÓN */}
+                {/* Free Inspection Card */}
                 <div 
-                  className={`${styles.mainMenuCard} ${styles.mainMenuStagger4}`}
-                  onClick={() => handleFreeInspectionSelection()}
+                  className={`${styles.mainMenuCard} ${styles.mainMenuStagger4} ${
+                    !hasPermission('free-inspection') ? styles.mainMenuCardDisabled : ''
+                  }`}
+                  onClick={() => hasPermission('free-inspection') && handleOptionSelect('free-inspection')}
                 >
                   <div className={styles.mainMenuCardBody}>
                     <div className={styles.mainMenuCardIconContainer} style={{ background: 'rgba(168, 85, 247, 0.1)', border: '1px solid rgba(168, 85, 247, 0.2)' }}>
@@ -407,13 +357,10 @@ const MainMenu = () => {
                       Flexible inspection framework for custom notes and photo documentation
                     </p>
                     <div className={styles.mainMenuCardFooter}>
-                      <div className={`${styles.mainMenuBadge} ${styles.mainMenuBadgeAuth}`}>
-                        <Lock size={12} />
-                        Inspector Access
+                      <div className={`${styles.mainMenuBadge} ${hasPermission('free-inspection') ? styles.mainMenuBadgeWarning : styles.mainMenuBadgeDisabled}`}>
+                        {hasPermission('free-inspection') ? 'Under Construction' : 'Access Denied'}
                       </div>
-                      <div className={styles.managerLockIndicator}>
-                        <Lock size={14} />
-                      </div>
+                      <ChevronRight className={styles.mainMenuCardArrow} size={20} />
                     </div>
                   </div>
                 </div>
@@ -421,106 +368,107 @@ const MainMenu = () => {
             </div>
           </div>
 
-          {/* NUEVA SECCIÓN - Manager module */}
-          <div className={`${styles.mainMenuSection} ${styles.mainMenuStagger2}`} style={{ marginTop: '2rem' }}>
-            <div className={styles.mainMenuSectionHeader} style={{ background: 'rgba(0, 80, 120, 0.8)' }}>
-              <h2 className={styles.mainMenuSectionTitle}>
-                <UserCog size={20} />
-                Manager Module Selection
-              </h2>
-            </div>
-            <div className={styles.mainMenuSectionBody}>
-              <div className={styles.mainMenuCards}>
-                {/* Non-Conformity Manager Card */}
-                <div 
-                  className={`${styles.mainMenuCard} ${styles.mainMenuStagger1}`}
-                  onClick={() => handleManagerOptionSelect('non-conformity-manager')}
-                >
-                  <div className={styles.mainMenuCardBody}>
-                    <div className={styles.mainMenuCardIconContainer} style={{ background: 'rgba(239, 68, 68, 0.1)', border: '1px solid rgba(239, 68, 68, 0.2)' }}>
-                      <AlertTriangle size={32} className={styles.mainMenuCardIcon} />
-                    </div>
-                    <h3 className={styles.mainMenuCardTitle}>Non-Conformity Manager</h3>
-                    <p className={styles.mainMenuCardDescription}>
-                      Track, manage and resolve non-conformities across manufacturing plants
-                    </p>
-                    <div className={styles.mainMenuCardFooter}>
-                      <div className={`${styles.mainMenuBadge} ${styles.mainMenuBadgeWarning}`}>Page Under Construction</div>
-                      <div className={styles.managerLockIndicator}>
-                        <Lock size={14} />
+          {/* Sección Manager module - Solo visible si el usuario tiene permisos */}
+          {(hasPermission('non-conformity-manager') || hasPermission('inspection-dashboard') || hasPermission('quality-database') || hasPermission('quality-book')) && (
+            <div className={`${styles.mainMenuSection} ${styles.mainMenuStagger2}`} style={{ marginTop: '2rem' }}>
+              <div className={styles.mainMenuSectionHeader} style={{ background: 'rgba(0, 80, 120, 0.8)' }}>
+                <h2 className={styles.mainMenuSectionTitle}>
+                  <UserCog size={20} />
+                  Manager Module Selection
+                </h2>
+              </div>
+              <div className={styles.mainMenuSectionBody}>
+                <div className={styles.mainMenuCards}>
+                  {/* Non-Conformity Manager Card */}
+                  {hasPermission('non-conformity-manager') && (
+                    <div 
+                      className={`${styles.mainMenuCard} ${styles.mainMenuStagger1}`}
+                      onClick={() => handleOptionSelect('non-conformity-manager')}
+                    >
+                      <div className={styles.mainMenuCardBody}>
+                        <div className={styles.mainMenuCardIconContainer} style={{ background: 'rgba(239, 68, 68, 0.1)', border: '1px solid rgba(239, 68, 68, 0.2)' }}>
+                          <AlertTriangle size={32} className={styles.mainMenuCardIcon} />
+                        </div>
+                        <h3 className={styles.mainMenuCardTitle}>Non-Conformity Manager</h3>
+                        <p className={styles.mainMenuCardDescription}>
+                          Track, manage and resolve non-conformities across manufacturing plants
+                        </p>
+                        <div className={styles.mainMenuCardFooter}>
+                          <div className={`${styles.mainMenuBadge} ${styles.mainMenuBadgeWarning}`}>Under Construction</div>
+                          <ChevronRight className={styles.mainMenuCardArrow} size={20} />
+                        </div>
                       </div>
                     </div>
-                  </div>
-                </div>
+                  )}
 
-                {/* Inspection Dashboard Card */}
-                <div 
-                  className={`${styles.mainMenuCard} ${styles.mainMenuStagger2}`}
-                  onClick={() => handleManagerOptionSelect('inspection-dashboard')}
-                >
-                  <div className={styles.mainMenuCardBody}>
-                    <div className={styles.mainMenuCardIconContainer} style={{ background: 'rgba(59, 130, 246, 0.1)', border: '1px solid rgba(59, 130, 246, 0.2)' }}>
-                      <BarChart2 size={32} className={styles.mainMenuCardIcon} />
-                    </div>
-                    <h3 className={styles.mainMenuCardTitle}>Inspection Dashboard</h3>
-                    <p className={styles.mainMenuCardDescription}>
-                      Comprehensive analytics and reports for quality control performance
-                    </p>
-                    <div className={styles.mainMenuCardFooter}>
-                      <div className={`${styles.mainMenuBadge} ${styles.mainMenuBadgeWarning}`}>Page Under Construction</div>
-                      <div className={styles.managerLockIndicator}>
-                        <Lock size={14} />
+                  {/* Inspection Dashboard Card */}
+                  {hasPermission('inspection-dashboard') && (
+                    <div 
+                      className={`${styles.mainMenuCard} ${styles.mainMenuStagger2}`}
+                      onClick={() => handleOptionSelect('inspection-dashboard')}
+                    >
+                      <div className={styles.mainMenuCardBody}>
+                        <div className={styles.mainMenuCardIconContainer} style={{ background: 'rgba(59, 130, 246, 0.1)', border: '1px solid rgba(59, 130, 246, 0.2)' }}>
+                          <BarChart2 size={32} className={styles.mainMenuCardIcon} />
+                        </div>
+                        <h3 className={styles.mainMenuCardTitle}>Inspection Dashboard</h3>
+                        <p className={styles.mainMenuCardDescription}>
+                          Comprehensive analytics and reports for quality control performance
+                        </p>
+                        <div className={styles.mainMenuCardFooter}>
+                          <div className={`${styles.mainMenuBadge} ${styles.mainMenuBadgeWarning}`}>Under Construction</div>
+                          <ChevronRight className={styles.mainMenuCardArrow} size={20} />
+                        </div>
                       </div>
                     </div>
-                  </div>
-                </div>
+                  )}
 
-                {/* Future Option 1 */}
-                <div 
-                  className={`${styles.mainMenuCard} ${styles.mainMenuStagger3} ${styles.mainMenuCardDisabled}`}
-                  onClick={() => handleManagerOptionSelect('quality-database')}
-                >
-                  <div className={styles.mainMenuCardBody}>
-                    <div className={styles.mainMenuCardIconContainer} style={{ background: 'rgba(99, 102, 241, 0.1)', border: '1px solid rgba(99, 102, 241, 0.2)' }}>
-                      <Database size={32} className={styles.mainMenuCardIcon} />
-                    </div>
-                    <h3 className={styles.mainMenuCardTitle}>Quality Database</h3>
-                    <p className={styles.mainMenuCardDescription}>
-                      Centralized database for all quality control data and documentation
-                    </p>
-                    <div className={styles.mainMenuCardFooter}>
-                      <div className={`${styles.mainMenuBadge} ${styles.mainMenuBadgeDisabled}`}>Coming Soon</div>
-                      <div className={styles.managerLockIndicator}>
-                        <Lock size={14} />
+                  {/* Quality Database Card */}
+                  {hasPermission('quality-database') && (
+                    <div 
+                      className={`${styles.mainMenuCard} ${styles.mainMenuStagger3} ${styles.mainMenuCardDisabled}`}
+                    >
+                      <div className={styles.mainMenuCardBody}>
+                        <div className={styles.mainMenuCardIconContainer} style={{ background: 'rgba(99, 102, 241, 0.1)', border: '1px solid rgba(99, 102, 241, 0.2)' }}>
+                          <Database size={32} className={styles.mainMenuCardIcon} />
+                        </div>
+                        <h3 className={styles.mainMenuCardTitle}>Quality Database</h3>
+                        <p className={styles.mainMenuCardDescription}>
+                          Centralized database for all quality control data and documentation
+                        </p>
+                        <div className={styles.mainMenuCardFooter}>
+                          <div className={`${styles.mainMenuBadge} ${styles.mainMenuBadgeDisabled}`}>Coming Soon</div>
+                          <ChevronRight className={styles.mainMenuCardArrow} size={20} />
+                        </div>
                       </div>
                     </div>
-                  </div>
-                </div>
+                  )}
 
-                {/* Quality Book Generator - NUEVA TARJETA */}
-                <div 
-                  className={`${styles.mainMenuCard} ${styles.mainMenuStagger4}`}
-                  onClick={() => handleManagerOptionSelect('quality-book')}
-                >
-                  <div className={styles.mainMenuCardBody}>
-                    <div className={styles.mainMenuCardIconContainer} style={{ background: 'rgba(99, 102, 241, 0.1)', border: '1px solid rgba(99, 102, 241, 0.2)' }}>
-                      <Book size={32} className={styles.mainMenuCardIcon} />
-                    </div>
-                    <h3 className={styles.mainMenuCardTitle}>Quality Book Generator</h3>
-                    <p className={styles.mainMenuCardDescription}>
-                      Automated traceability documentation system for quality control books
-                    </p>
-                    <div className={styles.mainMenuCardFooter}>
-                      <div className={`${styles.mainMenuBadge} ${styles.mainMenuBadgeInfo}`}>Listo para Usar</div>
-                      <div className={styles.managerLockIndicator}>
-                        <Lock size={14} />
+                  {/* Quality Book Generator */}
+                  {hasPermission('quality-book') && (
+                    <div 
+                      className={`${styles.mainMenuCard} ${styles.mainMenuStagger4}`}
+                      onClick={() => handleOptionSelect('quality-book')}
+                    >
+                      <div className={styles.mainMenuCardBody}>
+                        <div className={styles.mainMenuCardIconContainer} style={{ background: 'rgba(99, 102, 241, 0.1)', border: '1px solid rgba(99, 102, 241, 0.2)' }}>
+                          <Book size={32} className={styles.mainMenuCardIcon} />
+                        </div>
+                        <h3 className={styles.mainMenuCardTitle}>Quality Book Generator</h3>
+                        <p className={styles.mainMenuCardDescription}>
+                          Automated traceability documentation system for quality control books
+                        </p>
+                        <div className={styles.mainMenuCardFooter}>
+                          <div className={`${styles.mainMenuBadge} ${styles.mainMenuBadgeInfo}`}>Available</div>
+                          <ChevronRight className={styles.mainMenuCardArrow} size={20} />
+                        </div>
                       </div>
                     </div>
-                  </div>
+                  )}
                 </div>
               </div>
             </div>
-          </div>
+          )}
 
           {/* Footer */}
           <div className={`${styles.mainMenuFooter} ${styles.mainMenuStagger3}`}>
@@ -530,193 +478,12 @@ const MainMenu = () => {
             </div>
             <p>© 2025 Valmont Solar</p>
           </div>
-
-          {/* Modal de login mejorado */}
-          {showLoginModal && (
-            <div className={styles.modalOverlay}>
-              <div className={styles.modalContent}>
-                <h3 className={styles.modalTitle}>
-                  <Lock size={18} className="mr-2" /> Authentication Required
-                </h3>
-                <div className={styles.modalAccessLevel}>
-                  {getRequiredAccessLevel(pendingManagerOption)}
-                </div>
-                <p className={styles.modalDescription}>
-                  Please enter your credentials to access the {pendingManagerOption?.replace('-', ' ')} module
-                </p>
-                
-                {loginError && (
-                  <div className={styles.loginError}>
-                    {loginError}
-                  </div>
-                )}
-
-                <form onSubmit={handleLogin}>
-                  <div className={styles.formGroup}>
-                    <label htmlFor="username">Username</label>
-                    <input 
-                      type="text" 
-                      id="username"
-                      value={loginCredentials.username}
-                      onChange={(e) => setLoginCredentials({...loginCredentials, username: e.target.value})}
-                      placeholder="Enter your username"
-                      required
-                    />
-                  </div>
-                  <div className={styles.formGroup}>
-                    <label htmlFor="password">Password</label>
-                    <input 
-                      type="password" 
-                      id="password"
-                      value={loginCredentials.password}
-                      onChange={(e) => setLoginCredentials({...loginCredentials, password: e.target.value})}
-                      placeholder="Enter your password"
-                      required
-                    />
-                  </div>
-                  <div className={styles.modalActions}>
-                    <button 
-                      type="button" 
-                      className={styles.cancelButton}
-                      onClick={() => {
-                        setShowLoginModal(false);
-                        setLoginError('');
-                        setLoginCredentials({ username: '', password: '' });
-                      }}
-                    >
-                      Cancel
-                    </button>
-                    <button 
-                      type="submit" 
-                      className={styles.loginButton}
-                    >
-                      Login
-                    </button>
-                  </div>
-                </form>
-
-                {/* Información de roles disponibles */}
-                <div style={{ 
-                  marginTop: '1rem', 
-                  padding: '0.75rem', 
-                  background: '#f8fafc', 
-                  borderRadius: '0.5rem',
-                  fontSize: '0.875rem',
-                  color: '#64748b'
-                }}>
-                  <strong>Available Roles:</strong><br />
-                  • Admin: Full system access<br />
-                  • Inspector1-5: Steel, Hardware, Electrical, Free Inspection access
-                </div>
-              </div>
-            </div>
-          )}
-
-          {/* Estilos adicionales para las mejoras de animación */}
-          <style jsx>{`
-            .${styles.mainMenuCard} {
-              transform: translateY(0);
-              transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
-              overflow: hidden;
-              position: relative;
-            }
-            
-            .${styles.mainMenuCard}:hover {
-              transform: translateY(-8px);
-              box-shadow: 0 12px 24px rgba(0, 0, 0, 0.15);
-            }
-            
-            .${styles.mainMenuCard}:hover .${styles.mainMenuCardIconContainer} {
-              transform: scale(1.08);
-            }
-            
-            .${styles.mainMenuCard}:hover .${styles.mainMenuCardArrow} {
-              transform: translateX(4px);
-              opacity: 1;
-            }
-            
-            .${styles.mainMenuCardIconContainer} {
-              transition: transform 0.3s ease;
-            }
-            
-            .${styles.mainMenuCardArrow} {
-              transition: all 0.3s ease;
-              opacity: 0.7;
-            }
-            
-            .${styles.mainMenuCardDisabled} {
-              opacity: 0.6;
-              cursor: not-allowed;
-            }
-            
-            .${styles.mainMenuCardDisabled}:hover {
-              transform: translateY(0);
-              box-shadow: none;
-            }
-            
-            .${styles.mainMenuBadgeDisabled} {
-              background-color: rgba(107, 114, 128, 0.25);
-              border: 1px solid rgba(107, 114, 128, 0.4);
-            }
-            
-            .${styles.mainMenuCard}::before {
-              content: '';
-              position: absolute;
-              top: 0;
-              left: 0;
-              width: 100%;
-              height: 100%;
-              background: linear-gradient(
-                to right,
-                rgba(255, 255, 255, 0) 0%,
-                rgba(255, 255, 255, 0.2) 50%,
-                rgba(255, 255, 255, 0) 100%
-              );
-              transform: translateX(-100%);
-              transition: transform 0.6s ease;
-              z-index: 1;
-              pointer-events: none;
-            }
-            
-            .${styles.mainMenuCard}:hover::before {
-              transform: translateX(100%);
-            }
-            
-            .${styles.mainMenuHeader} {
-              padding: 0.75rem 2rem;
-              margin-bottom: 2.5rem;
-              background: rgba(0, 95, 131, 0.8);
-              height: auto;
-            }
-            
-            .${styles.mainMenuTitle} {
-              margin: 0;
-              text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
-            }
-            
-            .${styles.mainMenuSectionHeader} {
-              border-left: 4px solid rgba(255, 255, 255, 0.4);
-            }
-            
-            .${styles.mainMenuSectionTitle} {
-              display: flex;
-              align-items: center;
-              gap: 0.75rem;
-            }
-
-            .${styles.managerLockIndicator} {
-              display: flex;
-              align-items: center;
-              justify-content: center;
-              color: rgba(255, 255, 255, 0.7);
-            }
-          `}</style>
         </div>
       </div>
     );
   }
 
-  // If an option is selected, render the corresponding application
+  // Si una opción está seleccionada, renderizar la aplicación correspondiente
   return renderSelectedApp();
 };
 

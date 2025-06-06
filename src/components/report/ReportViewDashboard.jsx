@@ -476,7 +476,7 @@ const ReportViewDashboard = () => {
                     
                     <div className="report-info-item">
                       <span className="report-info-label">Project Name</span>
-                      <span className="report-info-value">{projectName || "NEPI"}</span>
+                      <span className="report-info-value">{projectName || "NA"}</span>
                     </div>
                     
                     <div className="report-info-item">

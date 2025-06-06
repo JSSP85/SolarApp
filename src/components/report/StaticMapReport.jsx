@@ -93,7 +93,7 @@ const StaticMapReport = ({ coords }) => {
         backgroundColor: '#f1f5f9',
         textAlign: 'center'
       }}>
-        Mapa de ubicación
+        Map
       </div>
       
       {/* Contenedor del mapa */}
@@ -116,10 +116,10 @@ const StaticMapReport = ({ coords }) => {
         backgroundColor: '#ffffff'
       }}>
         <div>
-          <span style={{fontWeight: 'bold'}}>Posición:</span> {lat.toFixed(6)}, {lng.toFixed(6)}
+          <span style={{fontWeight: 'bold'}}>Position:</span> {lat.toFixed(6)}, {lng.toFixed(6)}
         </div>
         <div style={{color: '#3b82f6'}}>
-          Ubicación personalizada
+          Custom location
         </div>
       </div>
     </div>

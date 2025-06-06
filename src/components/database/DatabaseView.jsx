@@ -84,7 +84,7 @@ const InspectionDetails = ({ inspectionData, onBack }) => {
               <input
                 type="text"
                 className="form-control"
-                value={inspectionData.projectName || 'NEPI'}
+                value={inspectionData.projectName || 'NA'}
                 readOnly
               />
             </div>

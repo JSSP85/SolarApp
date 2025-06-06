@@ -1,4 +1,4 @@
-// src/DashboardApp.jsx - VERSIÓN FINAL CORREGIDA (basada en prueba exitosa)
+// src/DashboardApp.jsx - ESTILOS ESPECÍFICOS SOLO PARA STEEL COMPONENTS
 import React, { useEffect } from 'react';
 import { useInspection } from './context/InspectionContext';
 import SidebarNav from './components/layout/SidebarNav';
@@ -13,28 +13,15 @@ const DashboardApp = () => {
   const { state } = useInspection();
   const { activeTab, userRole } = state;
 
-  // APLICAR LOS ESTILOS QUE FUNCIONARON EN LA PRUEBA DE CONSOLA
+  // ESTILOS MUY ESPECÍFICOS - SOLO AFECTAN AL STEEL-COMPONENTS-WRAPPER
   useEffect(() => {
-    const steelComponentsStylesFixed = `
-      /* ESTILOS VERIFICADOS Y FUNCIONANDO - BASADOS EN PRUEBA EXITOSA */
+    const specificSteelStyles = `
+      /* ========================================
+         ESTILOS ESPECÍFICOS SOLO PARA STEEL COMPONENTS
+         NO AFECTAN MAINMENU NI OTRAS SECCIONES
+         ======================================== */
       
-      /* FORZAR TRANSPARENCIA TOTAL */
-      body {
-        background: #f5f9fd url('/images/backgrounds/solar-background2.jpeg') center/cover fixed !important;
-        background-color: transparent !important;
-        min-height: 100vh !important;
-      }
-      
-      html {
-        background-color: transparent !important;
-      }
-      
-      #root {
-        background: transparent !important;
-        background-color: transparent !important;
-      }
-      
-      /* STEEL COMPONENTS WRAPPER - TRANSPARENTE CON IMAGEN */
+      /* SOLO aplicar fondo cuando estamos en steel-components-wrapper */
       .steel-components-wrapper {
         background: #f5f9fd url('/images/backgrounds/solar-background2.jpeg') center/cover fixed !important;
         min-height: 100vh !important;
@@ -43,7 +30,7 @@ const DashboardApp = () => {
         color: #2d3748 !important;
       }
       
-      /* MAIN CONTENT - SIN FONDO BLANCO */
+      /* MAIN CONTENT - SOLO dentro de steel-components-wrapper */
       .steel-components-wrapper .main-content {
         background: transparent !important;
         background-color: transparent !important;
@@ -53,7 +40,7 @@ const DashboardApp = () => {
         padding: 2rem !important;
       }
       
-      /* APP CONTAINER - TRANSPARENTE */
+      /* APP CONTAINER - SOLO dentro de steel-components-wrapper */
       .steel-components-wrapper .app-container {
         background: transparent !important;
         background-color: transparent !important;
@@ -61,7 +48,7 @@ const DashboardApp = () => {
         display: flex !important;
       }
       
-      /* CONTENT HEADER - TRANSPARENTE */
+      /* CONTENT HEADER - SOLO dentro de steel-components-wrapper */
       .steel-components-wrapper .content-header {
         background: transparent !important;
         background-color: transparent !important;
@@ -72,7 +59,7 @@ const DashboardApp = () => {
         padding: 1rem 0 !important;
       }
       
-      /* CARDS MÁS TRANSPARENTES CON BACKDROP BLUR */
+      /* CARDS - SOLO dentro de steel-components-wrapper */
       .steel-components-wrapper .dashboard-card {
         background: rgba(255, 255, 255, 0.88) !important;
         backdrop-filter: blur(10px) !important;
@@ -95,12 +82,14 @@ const DashboardApp = () => {
         background: rgba(255, 255, 255, 0.95) !important;
       }
       
-      /* QUITAR FONDOS BLANCOS DE DIVS GENÉRICOS - REGLA CLAVE */
-      .steel-components-wrapper div:not(.sidebar):not(.dashboard-card):not(.card-body):not(.data-table):not(.chart-container) {
+      /* DIVS GENÉRICOS - SOLO dentro de steel-components-wrapper */
+      .steel-components-wrapper > div:not(.sidebar),
+      .steel-components-wrapper .main-content > div:not(.dashboard-card):not(.card-body):not(.data-table):not(.chart-container),
+      .steel-components-wrapper .app-container > div:not(.sidebar):not(.main-content) {
         background-color: transparent !important;
       }
       
-      /* SIDEBAR MANTENER OPACO PARA FUNCIONALIDAD */
+      /* SIDEBAR - SOLO dentro de steel-components-wrapper */
       .steel-components-wrapper .sidebar {
         background: linear-gradient(180deg, #005F83 0%, #004666 100%) !important;
         box-shadow: 2px 0 12px rgba(0, 95, 131, 0.2) !important;
@@ -112,7 +101,7 @@ const DashboardApp = () => {
         z-index: 10 !important;
       }
       
-      /* FORMULARIOS */
+      /* FORMULARIOS - SOLO dentro de steel-components-wrapper */
       .steel-components-wrapper .form-control {
         background-color: rgba(255, 255, 255, 0.95) !important;
         border: 2px solid rgba(180, 200, 220, 0.8) !important;
@@ -135,7 +124,7 @@ const DashboardApp = () => {
         margin-bottom: 0.75rem !important;
       }
       
-      /* BOTONES */
+      /* BOTONES - SOLO dentro de steel-components-wrapper */
       .steel-components-wrapper .btn-primary {
         background: linear-gradient(to right, #4a6fa0, #6b8bc3) !important;
         border: none !important;
@@ -163,7 +152,7 @@ const DashboardApp = () => {
         transition: all 0.3s ease !important;
       }
       
-      /* TABLAS */
+      /* TABLAS - SOLO dentro de steel-components-wrapper */
       .steel-components-wrapper .data-table {
         width: 100% !important;
         border-collapse: separate !important;
@@ -190,7 +179,7 @@ const DashboardApp = () => {
         background-color: rgba(248, 250, 253, 0.95) !important;
       }
       
-      /* CHARTS Y GRÁFICOS */
+      /* CHARTS - SOLO dentro de steel-components-wrapper */
       .steel-components-wrapper .chart-container {
         background: rgba(255, 255, 255, 0.92) !important;
         border-radius: 12px !important;
@@ -203,7 +192,7 @@ const DashboardApp = () => {
         backdrop-filter: blur(8px) !important;
       }
       
-      /* TÍTULOS DE SECCIÓN */
+      /* TÍTULOS DE SECCIÓN - SOLO dentro de steel-components-wrapper */
       .steel-components-wrapper .report-section-title {
         color: #2d3748 !important;
         font-weight: 600 !important;
@@ -224,7 +213,7 @@ const DashboardApp = () => {
         border-radius: 2px !important;
       }
       
-      /* BADGES */
+      /* BADGES - SOLO dentro de steel-components-wrapper */
       .steel-components-wrapper .badge {
         display: inline-flex !important;
         align-items: center !important;
@@ -249,7 +238,7 @@ const DashboardApp = () => {
         color: #1e40af !important;
       }
       
-      /* RESPONSIVE DESIGN */
+      /* RESPONSIVE - SOLO para steel-components-wrapper */
       @media (max-width: 1024px) {
         .steel-components-wrapper .main-content {
           margin-left: 0 !important;
@@ -272,16 +261,16 @@ const DashboardApp = () => {
       }
     `;
     
-    // Crear elemento de estilo con los estilos verificados
+    // Crear elemento de estilo MUY ESPECÍFICO
     const styleElement = document.createElement('style');
-    styleElement.id = 'steel-components-fixed-styles';
-    styleElement.textContent = steelComponentsStylesFixed;
+    styleElement.id = 'steel-specific-styles-only';
+    styleElement.textContent = specificSteelStyles;
     document.head.appendChild(styleElement);
     
-    // LIMPIAR ESTILOS ANTERIORES CONFLICTIvVOS
-    const oldStyle = document.getElementById('steel-components-styles');
-    if (oldStyle) {
-      document.head.removeChild(oldStyle);
+    // LIMPIAR ESTILOS ANTERIORES QUE ERAN DEMASIADO AGRESIVOS
+    const oldGlobalStyle = document.getElementById('steel-components-fixed-styles');
+    if (oldGlobalStyle) {
+      document.head.removeChild(oldGlobalStyle);
     }
     
     const testStyle = document.getElementById('test-background-fix');
@@ -289,21 +278,21 @@ const DashboardApp = () => {
       document.head.removeChild(testStyle);
     }
     
-    console.log('✅ Estilos corregidos aplicados permanentemente - Background funcionando');
+    console.log('✅ Estilos específicos aplicados SOLO a Steel Components - MainMenu y Database protegidos');
     
     // Verificar imagen de fondo
     const testImg = new Image();
     testImg.onload = () => {
-      console.log('✅ Background image loaded successfully for Steel Components');
+      console.log('✅ Background image loaded for Steel Components only');
     };
     testImg.onerror = () => {
-      console.error('❌ Background image failed to load for Steel Components');
+      console.error('❌ Background image failed to load');
     };
     testImg.src = '/images/backgrounds/solar-background2.jpeg';
     
-    // Limpiar al desmontar el componente
+    // Limpiar al desmontar
     return () => {
-      const element = document.getElementById('steel-components-fixed-styles');
+      const element = document.getElementById('steel-specific-styles-only');
       if (element) {
         document.head.removeChild(element);
       }

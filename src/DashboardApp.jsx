@@ -278,7 +278,7 @@ const DashboardApp = () => {
     styleElement.textContent = steelComponentsStylesFixed;
     document.head.appendChild(styleElement);
     
-    // LIMPIAR ESTILOS ANTERIORES CONFLICTIVOS
+    // LIMPIAR ESTILOS ANTERIORES CONFLICTIvVOS
     const oldStyle = document.getElementById('steel-components-styles');
     if (oldStyle) {
       document.head.removeChild(oldStyle);

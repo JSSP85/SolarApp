@@ -1,4 +1,4 @@
-// src/components/quality/QualityBookGenerator.jsx - CORREGIDO CON 3 NUEVAS MEJORAS
+// src/components/quality/QualityBookGenerator.jsx - CÓDIGO COMPLETO CON 2 NUEVAS CATEGORÍAS
 import React, { useState, useRef } from 'react';
 import { 
   Upload, 
@@ -20,7 +20,9 @@ import {
   ArrowLeft,
   Settings,
   FileWarning,
-  RotateCcw
+  RotateCcw,
+  Wrench,        // 🆕 NUEVO ICONO PARA HARDWARE
+  Zap           // 🆕 NUEVO ICONO PARA ELECTRONIC
 } from 'lucide-react';
 
 // PDF generation imports
@@ -66,19 +68,22 @@ const QualityBookGenerator = ({ onBackClick }) => {
     approvedDate: ''
   });
 
+  // ESTADO ACTUALIZADO CON LAS 2 NUEVAS CATEGORÍAS
   const [documents, setDocuments] = useState({
     transportSuppliers: [],
     rawMaterialStandard: [],
     rawMaterialKit: [],
+    rawMaterialHardware: [],        // 🆕 NUEVA CATEGORÍA HARDWARE
+    rawMaterialElectronic: [],      // 🆕 NUEVA CATEGORÍA ELECTRONIC
     conformityDeclarations: [],
-    testReports: [], // NUEVA SECCIÓN AGREGADA
+    testReports: [],
     transportValmont: []
   });
 
   const [isProcessing, setIsProcessing] = useState(false);
   const [showPreview, setShowPreview] = useState(false);
-  const [previewLoading, setPreviewLoading] = useState(false); // NUEVO ESTADO PARA PREVIEW
-  const [realPreviewStructure, setRealPreviewStructure] = useState(null); // ESTRUCTURA REAL DE PREVIEW
+  const [previewLoading, setPreviewLoading] = useState(false);
+  const [realPreviewStructure, setRealPreviewStructure] = useState(null);
   const fileInputRef = useRef(null);
   const [currentUploadCategory, setCurrentUploadCategory] = useState('');
   const [dragOverCategory, setDragOverCategory] = useState(null);
@@ -106,7 +111,7 @@ const QualityBookGenerator = ({ onBackClick }) => {
     }
   };
 
-  // Document categories - AGREGADA NUEVA SECCIÓN "Test Reports"
+  // CATEGORÍAS DE DOCUMENTOS ACTUALIZADAS - CON 2 NUEVAS SECCIONES
   const documentCategories = [
     {
       key: 'transportSuppliers',
@@ -137,6 +142,28 @@ const QualityBookGenerator = ({ onBackClick }) => {
       iconColor: 'text-purple-600',
       headerColor: 'bg-purple-600',
       sectionColor: '#8B5CF6'
+    },
+    // 🆕 NUEVA CATEGORÍA 1: HARDWARE
+    {
+      key: 'rawMaterialHardware',
+      title: 'RAW MATERIAL CERTIFICATES - HARDWARE',
+      icon: <Wrench className="w-5 h-5" />,
+      description: 'Raw material certificates for hardware components',
+      color: 'bg-indigo-50 border-indigo-200',
+      iconColor: 'text-indigo-600',
+      headerColor: 'bg-indigo-600',
+      sectionColor: '#6366F1'
+    },
+    // 🆕 NUEVA CATEGORÍA 2: ELECTRONIC & ELECTRONICAL
+    {
+      key: 'rawMaterialElectronic',
+      title: 'RAW MATERIAL CERTIFICATES - ELECTRONIC & ELECTRONICAL',
+      icon: <Zap className="w-5 h-5" />,
+      description: 'Raw material certificates for electronic and electronical components',
+      color: 'bg-yellow-50 border-yellow-200',
+      iconColor: 'text-yellow-600',
+      headerColor: 'bg-yellow-600',
+      sectionColor: '#EAB308'
     },
     {
       key: 'conformityDeclarations',
@@ -184,7 +211,7 @@ const QualityBookGenerator = ({ onBackClick }) => {
     return duplicates;
   };
 
-  // MEJORA #1: Function to clean all documents from all categories
+  // MEJORA #1: Function to clean all documents from all categories (INCLUYE NUEVAS CATEGORÍAS)
   const cleanAllDocuments = () => {
     if (getTotalDocuments() === 0) {
       alert('No documents to clean.');
@@ -356,21 +383,17 @@ const QualityBookGenerator = ({ onBackClick }) => {
     }
 
     // LOGO PEQUEÑO Y BIEN POSICIONADO
-    // 🔧 PARA CAMBIAR MANUALMENTE EL LOGO:
-    // - logoScale: controla el tamaño (0.1 = muy pequeño, 0.3 = grande)
-    // - x: width - logoWidth - [NÚMERO] (30 = cerca del borde, 100 = más hacia el centro)
-    // - y: height - logoHeight - [NÚMERO] (30 = cerca del borde superior, 100 = más abajo)
     try {
       const logoBytes = await loadImageFromUrl('/images/logo2.png');
       if (logoBytes) {
         const logo = await pdfDoc.embedPng(logoBytes);
-        const logoScale = 0.05; // 🔧 CAMBIAR AQUÍ EL TAMAÑO: 0.1 = muy pequeño, 0.2 = pequeño, 0.3 = mediano
+        const logoScale = 0.05;
         const logoWidth = logo.width * logoScale;
         const logoHeight = logo.height * logoScale;
         
         page.drawImage(logo, {
-          x: width - logoWidth - 40, // 🔧 CAMBIAR AQUÍ POSICIÓN HORIZONTAL: 40 = cerca del borde
-          y: height - logoHeight - 40, // 🔧 CAMBIAR AQUÍ POSICIÓN VERTICAL: 40 = cerca del borde superior
+          x: width - logoWidth - 40,
+          y: height - logoHeight - 40,
           width: logoWidth,
           height: logoHeight,
         });
@@ -408,29 +431,27 @@ const QualityBookGenerator = ({ onBackClick }) => {
     // Project info - TEXTO NARANJA Y NEGRITA CON VALIDACIÓN
     if (projectInfo.projectName) {
       const projectText = `PROJECT: ${projectInfo.projectName}`;
-      const projectWidth = titleFont.widthOfTextAtSize(projectText, 20); // titleFont para negrita
+      const projectWidth = titleFont.widthOfTextAtSize(projectText, 20);
       page.drawText(projectText, {
         x: (width - projectWidth) / 2,
         y: height - 250,
         size: 20,
-        font: titleFont, // Negrita
-        color: rgb(1, 1, 0.8), // Light yellow
+        font: titleFont,
+        color: rgb(1, 1, 0.8),
       });
     }
 
     if (projectInfo.clientName) {
       const clientText = `CLIENT: ${projectInfo.clientName}`;
-      const clientWidth = titleFont.widthOfTextAtSize(clientText, 20); // titleFont para negrita
+      const clientWidth = titleFont.widthOfTextAtSize(clientText, 20);
       page.drawText(clientText, {
         x: (width - clientWidth) / 2,
         y: height - 280,
         size: 20,
-        font: titleFont, // Negrita
-        color: rgb(1, 1, 0.8), // Light yellow
+        font: titleFont,
+        color: rgb(1, 1, 0.8),
       });
     }
-
-    // QUITADO: El texto "valmont SOLAR" y la fecha de abajo han sido eliminados para un diseño más limpio
 
     return page;
   };
@@ -988,7 +1009,7 @@ const QualityBookGenerator = ({ onBackClick }) => {
 
       let currentRealPage = 4; // Cover + Doc Info + Index + primera sección
 
-      // FILTRAR SOLO SECCIONES CON DOCUMENTOS Y VALIDAR
+      // FILTRAR SOLO SECCIONES CON DOCUMENTOS Y VALIDAR (INCLUYE LAS NUEVAS CATEGORÍAS)
       const activeSections = documentCategories.filter(cat => 
         cat && cat.key && documents[cat.key] && documents[cat.key].length > 0
       );
@@ -1077,14 +1098,6 @@ const QualityBookGenerator = ({ onBackClick }) => {
       pdfDoc.registerFontkit(fontkit);
       
       console.log('Starting PDF generation...');
-      console.log('Project Info:', {
-        projectName: projectInfo.projectName,
-        clientName: projectInfo.clientName,
-        createdBy: projectInfo.createdBy,
-        approvedBy: projectInfo.approvedBy,
-        createdDate: projectInfo.createdDate,
-        approvedDate: projectInfo.approvedDate
-      });
 
       // VALIDAR DATOS ANTES DE USAR
       const validatedProjectInfo = {
@@ -1104,7 +1117,7 @@ const QualityBookGenerator = ({ onBackClick }) => {
       await createDocumentInfoPage(pdfDoc, validatedProjectInfo);
       console.log('✓ Document info page created with DD/MM/YYYY format');
 
-      // 3. PROCESAR SECCIONES PRIMERO SIN INDEX - SOLO SECCIONES CON DOCUMENTOS
+      // 3. PROCESAR SECCIONES PRIMERO SIN INDEX - SOLO SECCIONES CON DOCUMENTOS (INCLUYE NUEVAS CATEGORÍAS)
       const realStructure = {
         sections: [],
         totalRealPages: 0
@@ -1112,7 +1125,7 @@ const QualityBookGenerator = ({ onBackClick }) => {
 
       let currentRealPage = 4; // Cover + Doc Info + INDEX (que crearemos después) + primera sección
 
-      // FILTRAR SOLO SECCIONES CON DOCUMENTOS
+      // FILTRAR SOLO SECCIONES CON DOCUMENTOS (INCLUYE LAS NUEVAS CATEGORÍAS)
       const activeSections = documentCategories.filter(cat => documents[cat.key].length > 0);
       console.log(`Active sections: ${activeSections.length}`);
 
@@ -1172,7 +1185,6 @@ const QualityBookGenerator = ({ onBackClick }) => {
       // 5. VERIFICAR QUE NO HAY PÁGINAS EXTRA AL FINAL
       const finalPageCount = pdfDoc.getPageCount();
       console.log(`Final page count: ${finalPageCount}`);
-      console.log(`Expected structure: Cover(1) + DocInfo(2) + Index(3) + ${realStructure.sections.length} separators + ${getTotalDocuments()} documents`);
 
       // 6. Generate and download PDF
       const pdfBytes = await pdfDoc.save();
@@ -1197,8 +1209,6 @@ const QualityBookGenerator = ({ onBackClick }) => {
 
     } catch (error) {
       console.error('Error generating PDF:', error);
-      console.error('Error stack:', error.stack);
-      console.error('Project Info at time of error:', projectInfo);
       setIsProcessing(false);
       
       let errorMessage = 'Error generating Quality Book: ';
@@ -1561,7 +1571,7 @@ return (
               {/* Action Buttons */}
               <div style={{ marginTop: '3rem', paddingTop: '2rem', borderTop: '2px solid #f3f4f6' }}>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-                  {/* MEJORA #1: Clean All Documents Button */}
+                  {/* MEJORA #1: Clean All Documents Button (INCLUYE NUEVAS CATEGORÍAS) */}
                   <button
                     onClick={cleanAllDocuments}
                     disabled={getTotalDocuments() === 0}
@@ -1739,7 +1749,7 @@ return (
             </div>
           </div>
 
-          {/* Document Categories with DRAG & DROP */}
+          {/* Document Categories with DRAG & DROP - INCLUYE LAS 2 NUEVAS CATEGORÍAS */}
           <div>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '2rem' }}>
               {documentCategories.map((category) => (
@@ -1992,7 +2002,7 @@ return (
           </div>
         </div>
 
-        {/* Preview Section - CORREGIDA CON ESTIMACIÓN */}
+        {/* Preview Section - CORREGIDA CON ESTIMACIÓN (INCLUYE NUEVAS CATEGORÍAS) */}
         {showPreview && (
           <div style={{
             marginTop: '4rem',
@@ -2134,7 +2144,7 @@ return (
                 </div>
               </div>
 
-              {/* REAL Structure Preview con REAL PDF info */}
+              {/* REAL Structure Preview con REAL PDF info (INCLUYE NUEVAS CATEGORÍAS) */}
               {showPreview && isReadyToGenerate() && (
                 <div style={{ 
                   padding: '2rem', 

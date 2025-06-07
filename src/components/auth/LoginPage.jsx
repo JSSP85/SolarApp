@@ -392,10 +392,10 @@ const LoginPage = () => {
             
             <div style={{ fontSize: '0.9rem', color: '#6b7280', lineHeight: '1.6' }}>
               <div style={{ marginBottom: '0.5rem' }}>
-                <strong style={{ color: '#005F83' }}>Admin:</strong> Full system access including database and quality book generation
+                <strong style={{ color: '#005F83' }}>Admin:</strong> Full system access
               </div>
               <div>
-                <strong style={{ color: '#005F83' }}>Inspector1-5:</strong> Component inspection access (Steel, Hardware, Electrical, Free Inspection)
+                <strong style={{ color: '#005F83' }}>Inspector:</strong> Component inspection access (Steel, Hardware, Electrical, Free Inspection)
               </div>
             </div>
           </div>

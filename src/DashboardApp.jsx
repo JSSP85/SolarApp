@@ -8,6 +8,8 @@ import { InspectionPanelSistem } from './components/inspection';
 import ReportViewDashboard from './components/report/ReportViewDashboard';
 import DatabaseView from './components/database/DatabaseView';
 import PhotoGallery from './components/gallery/PhotoGallery'; 
+// Al inicio del archivo, con los otros imports
+import Dashboard from './components/dashboard/Dashboard';
 
 const DashboardApp = () => {
   const { state } = useInspection();
@@ -305,7 +307,7 @@ const DashboardApp = () => {
             {activeTab === 'report' && <ReportViewDashboard />}
             {activeTab === 'database' && userRole === 'admin' && <DatabaseView />}
             {activeTab === 'gallery' && userRole === 'admin' && <PhotoGallery />}
-            {activeTab === 'dashboard' && userRole === 'admin' && <div>Dashboard content here</div>}
+            {activeTab === 'dashboard' && userRole === 'admin' && <Dashboard />}
           </div>
         </div>
       </div>

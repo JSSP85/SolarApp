@@ -1,4 +1,3 @@
-// src/components/dashboard/Dashboard.jsx
 import React, { useState, useEffect } from 'react';
 import { 
   BarChart, 
@@ -15,8 +14,7 @@ import {
   LineChart,
   Line,
   Area,
-  AreaChart,
-  ComposedChart
+  AreaChart
 } from 'recharts';
 import { 
   TrendingUp, 
@@ -53,12 +51,14 @@ const Dashboard = () => {
     trendsData: [],
     weeklyData: [],
     statusData: [],
+    passFailData: [],
     isLoading: true,
     error: null
   });
   
-  const [timeFilter, setTimeFilter] = useState('12months');
+  const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
   const [isRefreshing, setIsRefreshing] = useState(false);
+  const [availableYears, setAvailableYears] = useState([]);
 
   // Colores para los gráficos con tema oscuro
   const colors = {
@@ -79,11 +79,18 @@ const Dashboard = () => {
       // Obtener todas las inspecciones
       const inspections = await getInspections({ limit: 1000 });
       
+      // Generar lista de años disponibles
+      const years = [...new Set(inspections.map(inspection => {
+        const date = new Date(inspection.inspectionDate || inspection.createdAt?.toDate?.() || new Date());
+        return date.getFullYear();
+      }))].sort((a, b) => b - a);
+      setAvailableYears(years);
+      
       // Procesar datos para los KPIs
       const kpis = calculateKPIs(inspections);
       
       // Procesar datos para gráficos
-      const timelineData = processTimelineData(inspections);
+      const timelineData = processTimelineData(inspections, selectedYear);
       const suppliersData = processSuppliersData(inspections);
       const familiesData = processFamiliesData(inspections);
       const componentsData = processComponentsData(inspections);
@@ -91,6 +98,7 @@ const Dashboard = () => {
       const trendsData = processTrendsData(inspections);
       const weeklyData = processWeeklyData(inspections);
       const statusData = processStatusData(inspections);
+      const passFailData = processPassFailData(inspections, selectedYear);
 
       setDashboardData({
         kpis,
@@ -102,6 +110,7 @@ const Dashboard = () => {
         trendsData,
         weeklyData,
         statusData,
+        passFailData,
         isLoading: false,
         error: null
       });
@@ -121,7 +130,7 @@ const Dashboard = () => {
   // Efecto para cargar datos iniciales
   useEffect(() => {
     loadDashboardData();
-  }, [timeFilter]);
+  }, [selectedYear]);
 
   // Funciones de procesamiento de datos
   const calculateKPIs = (inspections) => {
@@ -143,25 +152,60 @@ const Dashboard = () => {
     };
   };
 
-  const processTimelineData = (inspections) => {
+  const processTimelineData = (inspections, year) => {
+    // Crear estructura de 12 meses para el año seleccionado
+    const monthNames = [
+      'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
+      'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'
+    ];
+    
     const monthlyData = {};
     
+    // Inicializar todos los meses del año
+    monthNames.forEach((month, index) => {
+      const monthKey = `${year}-${String(index + 1).padStart(2, '0')}`;
+      monthlyData[monthKey] = { 
+        month: month, 
+        monthKey: monthKey,
+        total: 0 
+      };
+    });
+    
+    // Filtrar inspecciones del año seleccionado y contar por mes
     inspections.forEach(inspection => {
       const date = new Date(inspection.inspectionDate || inspection.createdAt?.toDate?.() || new Date());
-      const monthKey = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
-      
-      if (!monthlyData[monthKey]) {
-        monthlyData[monthKey] = { month: monthKey, total: 0, passed: 0, failed: 0 };
+      if (date.getFullYear() === year) {
+        const monthKey = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
+        if (monthlyData[monthKey]) {
+          monthlyData[monthKey].total++;
+        }
       }
-      
-      monthlyData[monthKey].total++;
-      if (inspection.inspectionStatus === 'pass') monthlyData[monthKey].passed++;
-      if (inspection.inspectionStatus === 'reject') monthlyData[monthKey].failed++;
     });
 
-    return Object.values(monthlyData)
-      .sort((a, b) => a.month.localeCompare(b.month))
-      .slice(-12); // Últimos 12 meses
+    return Object.values(monthlyData);
+  };
+
+  const processPassFailData = (inspections, year) => {
+    let passed = 0;
+    let failed = 0;
+    let inProgress = 0;
+    
+    // Filtrar inspecciones del año seleccionado
+    inspections.forEach(inspection => {
+      const date = new Date(inspection.inspectionDate || inspection.createdAt?.toDate?.() || new Date());
+      if (date.getFullYear() === year) {
+        const status = inspection.inspectionStatus || 'in-progress';
+        if (status === 'pass') passed++;
+        else if (status === 'reject') failed++;
+        else inProgress++;
+      }
+    });
+
+    return [
+      { name: 'Passed', value: passed, fill: colors.success },
+      { name: 'Failed', value: failed, fill: colors.danger },
+      { name: 'In Progress', value: inProgress, fill: colors.warning }
+    ];
   };
 
   const processSuppliersData = (inspections) => {
@@ -423,14 +467,30 @@ const Dashboard = () => {
         />
       </div>
 
-      {/* Timeline Chart */}
+      {/* Timeline Chart con selector de año */}
       <ChartCard 
-        title="📅 Inspections Timeline" 
-        subtitle="Monthly trends with pass/fail breakdown"
+        title={`📅 Inspections by Month - ${selectedYear}`} 
+        subtitle="Monthly inspection volume for selected year"
         className="timeline-chart"
       >
+        <div className="year-selector-container">
+          <label className="year-selector-label">Select Year:</label>
+          <select 
+            className="year-selector"
+            value={selectedYear}
+            onChange={(e) => setSelectedYear(parseInt(e.target.value))}
+          >
+            {availableYears.length > 0 ? (
+              availableYears.map(year => (
+                <option key={year} value={year}>{year}</option>
+              ))
+            ) : (
+              <option value={selectedYear}>{selectedYear}</option>
+            )}
+          </select>
+        </div>
         <ResponsiveContainer width="100%" height={300}>
-          <ComposedChart data={dashboardData.timelineData}>
+          <BarChart data={dashboardData.timelineData}>
             <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.1)" />
             <XAxis dataKey="month" stroke="#94a3b8" />
             <YAxis stroke="#94a3b8" />
@@ -442,16 +502,40 @@ const Dashboard = () => {
                 color: '#f1f5f9'
               }}
             />
-            <Legend />
-            <Bar dataKey="passed" fill={colors.success} name="Passed" />
-            <Bar dataKey="failed" fill={colors.danger} name="Failed" />
-            <Line type="monotone" dataKey="total" stroke={colors.primary} name="Total" />
-          </ComposedChart>
+            <Bar dataKey="total" fill={colors.primary} name="Total Inspections" />
+          </BarChart>
         </ResponsiveContainer>
       </ChartCard>
 
       {/* Charts Grid */}
       <div className="charts-grid">
+        {/* Pass/Fail Chart */}
+        <ChartCard title={`✅ Pass/Fail Distribution - ${selectedYear}`} subtitle="Inspection results for selected year">
+          <ResponsiveContainer width="100%" height={250}>
+            <PieChart>
+              <Pie
+                data={dashboardData.passFailData}
+                cx="50%"
+                cy="50%"
+                outerRadius={80}
+                dataKey="value"
+                label={({ name, value, percent }) => value > 0 ? `${name}: ${value} (${(percent * 100).toFixed(1)}%)` : ''}
+              >
+                {dashboardData.passFailData.map((entry, index) => (
+                  <Cell key={`cell-${index}`} fill={entry.fill} />
+                ))}
+              </Pie>
+              <Tooltip 
+                contentStyle={{
+                  backgroundColor: 'rgba(15, 23, 42, 0.9)',
+                  border: '1px solid rgba(255, 255, 255, 0.1)',
+                  borderRadius: '8px',
+                  color: '#f1f5f9'
+                }}
+              />
+            </PieChart>
+          </ResponsiveContainer>
+        </ChartCard>
         {/* Suppliers Chart */}
         <ChartCard title="🏭 Top Suppliers" subtitle="Inspection distribution">
           <ResponsiveContainer width="100%" height={250}>
@@ -750,6 +834,45 @@ const Dashboard = () => {
           grid-column: 1 / -1;
         }
 
+        .year-selector-container {
+          display: flex;
+          align-items: center;
+          gap: 12px;
+          margin-bottom: 20px;
+          padding: 12px 16px;
+          background: rgba(30, 41, 59, 0.6);
+          border-radius: 8px;
+          border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .year-selector-label {
+          font-size: 0.9rem;
+          color: #cbd5e1;
+          font-weight: 500;
+        }
+
+        .year-selector {
+          padding: 8px 12px;
+          border-radius: 6px;
+          border: 1px solid rgba(255, 255, 255, 0.2);
+          background: rgba(15, 23, 42, 0.8);
+          color: #f1f5f9;
+          font-size: 0.9rem;
+          cursor: pointer;
+          transition: all 0.3s ease;
+        }
+
+        .year-selector:focus {
+          outline: none;
+          border-color: #60a5fa;
+          box-shadow: 0 0 0 2px rgba(96, 165, 250, 0.2);
+        }
+
+        .year-selector:hover {
+          background: rgba(15, 23, 42, 0.9);
+          border-color: rgba(255, 255, 255, 0.3);
+        }
+
         .charts-grid {
           display: grid;
           grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
@@ -891,6 +1014,16 @@ const Dashboard = () => {
 
           .header-badges {
             flex-wrap: wrap;
+          }
+
+          .year-selector-container {
+            flex-direction: column;
+            align-items: flex-start;
+            gap: 8px;
+          }
+
+          .year-selector {
+            width: 100%;
           }
         }
       `}</style>

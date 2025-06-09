@@ -1,216 +1,191 @@
-// src/components/non-conformity/NonConformityApp.jsx - VERSIÓN SIMPLIFICADA PARA TESTING
-import React from 'react';
+// src/components/non-conformity/NonConformityApp.jsx - Versión Original Completa
+import React, { useEffect } from 'react';
+import { NonConformityProvider, useNonConformity } from '../../context/NonConformityContext';
+import NonConformitySidebar from './layout/NonConformitySidebar';
+import CreateNCPanel from './panels/CreateNCPanel';
+import TrackingPanel from './panels/TrackingPanel';
+import HistoryPanel from './panels/HistoryPanel';
+import DashboardPanel from './panels/DashboardPanel';
+import DatabasePanel from './panels/DatabasePanel';
+import AnalyticsPanel from './panels/AnalyticsPanel';
+import LoadingSpinner from '../common/LoadingSpinner';
+import ErrorMessage from '../common/ErrorMessage';
+import '../../styles/non-conformity.css';
 
-const NonConformityApp = ({ onBack }) => {
+// Main content component that handles rendering different panels
+const NonConformityContent = () => {
+  const { state, dispatch, helpers } = useNonConformity();
+  const { activeTab, loading, error, userRole } = state;
+
+  // Update metrics on component mount
+  useEffect(() => {
+    const metrics = helpers.calculateMetrics();
+    // You can dispatch an action to update metrics if needed
+  }, [helpers]);
+
+  // Handle loading state
+  if (loading) {
+    return (
+      <div className="nc-loading-container">
+        <LoadingSpinner message="Loading Non-Conformity Management..." />
+      </div>
+    );
+  }
+
+  // Handle error state
+  if (error) {
+    return (
+      <div className="nc-error-container">
+        <ErrorMessage 
+          message={error} 
+          onRetry={() => dispatch({ type: 'CLEAR_ERROR' })} 
+        />
+      </div>
+    );
+  }
+
+  // Render appropriate panel based on active tab
+  const renderActivePanel = () => {
+    switch (activeTab) {
+      case 'create':
+        return <CreateNCPanel />;
+      
+      case 'tracking':
+        return <TrackingPanel />;
+      
+      case 'history':
+        return <HistoryPanel />;
+      
+      case 'dashboard':
+        if (!helpers.canAccess('dashboard')) {
+          return (
+            <div className="nc-access-denied">
+              <h3>🔒 Access Denied</h3>
+              <p>You don't have permission to access the Dashboard. Manager or Admin role required.</p>
+            </div>
+          );
+        }
+        return <DashboardPanel />;
+      
+      case 'database':
+        if (!helpers.canAccess('database')) {
+          return (
+            <div className="nc-access-denied">
+              <h3>🔒 Access Denied</h3>
+              <p>You don't have permission to access the Database. Manager or Admin role required.</p>
+            </div>
+          );
+        }
+        return <DatabasePanel />;
+      
+      case 'analytics':
+        if (!helpers.canAccess('analytics')) {
+          return (
+            <div className="nc-access-denied">
+              <h3>🔒 Access Denied</h3>
+              <p>You don't have permission to access Analytics. Admin role required.</p>
+            </div>
+          );
+        }
+        return <AnalyticsPanel />;
+      
+      default:
+        return <CreateNCPanel />;
+    }
+  };
+
+  // Helper function to get breadcrumb title
+  const getBreadcrumbTitle = (tab) => {
+    const titles = {
+      'create': 'Create New',
+      'tracking': 'Tracking',
+      'history': 'History',
+      'dashboard': 'Dashboard',
+      'database': 'Database',
+      'analytics': 'Analytics'
+    };
+    return titles[tab] || 'Create New';
+  };
+
   return (
-    <div style={{
-      position: 'fixed',
-      top: 0,
-      left: 0,
-      width: '100%',
-      height: '100%',
-      background: '#f7fafc',
-      zIndex: 1000,
-      padding: '2rem',
-      overflow: 'auto'
-    }}>
-      {/* Header */}
-      <div style={{
-        background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-        color: 'white',
-        padding: '1.5rem',
-        borderRadius: '12px',
-        marginBottom: '2rem',
-        textAlign: 'center'
-      }}>
-        <h1 style={{ margin: 0, fontSize: '2rem' }}>
-          🚨 Non-Conformity Management
-        </h1>
-        <p style={{ margin: '0.5rem 0 0 0', opacity: 0.9 }}>
-          Sistema de gestión de no conformidades - Versión Funcional
-        </p>
-      </div>
-
-      {/* Content Cards */}
-      <div style={{
-        display: 'grid',
-        gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))',
-        gap: '1.5rem',
-        marginBottom: '2rem'
-      }}>
-        {/* Create NC Card */}
-        <div style={{
-          background: 'white',
-          padding: '1.5rem',
-          borderRadius: '12px',
-          boxShadow: '0 4px 6px rgba(0, 0, 0, 0.1)',
-          border: '1px solid #e2e8f0'
-        }}>
-          <h3 style={{ margin: '0 0 1rem 0', color: '#2d3748' }}>
-            ➕ Crear Nueva NC
-          </h3>
-          <p style={{ color: '#718096', margin: '0 0 1rem 0' }}>
-            Registrar una nueva no conformidad
-          </p>
-          <button style={{
-            background: '#e53e3e',
-            color: 'white',
-            border: 'none',
-            padding: '0.75rem 1.5rem',
-            borderRadius: '8px',
-            cursor: 'pointer',
-            fontWeight: '600'
-          }}>
-            Crear NC
-          </button>
-        </div>
-
-        {/* Tracking Card */}
-        <div style={{
-          background: 'white',
-          padding: '1.5rem',
-          borderRadius: '12px',
-          boxShadow: '0 4px 6px rgba(0, 0, 0, 0.1)',
-          border: '1px solid #e2e8f0'
-        }}>
-          <h3 style={{ margin: '0 0 1rem 0', color: '#2d3748' }}>
-            📊 Seguimiento
-          </h3>
-          <p style={{ color: '#718096', margin: '0 0 1rem 0' }}>
-            Monitorear estado de NCs activas
-          </p>
-          <button style={{
-            background: '#ed8936',
-            color: 'white',
-            border: 'none',
-            padding: '0.75rem 1.5rem',
-            borderRadius: '8px',
-            cursor: 'pointer',
-            fontWeight: '600'
-          }}>
-            Ver Tracking
-          </button>
-        </div>
-
-        {/* History Card */}
-        <div style={{
-          background: 'white',
-          padding: '1.5rem',
-          borderRadius: '12px',
-          boxShadow: '0 4px 6px rgba(0, 0, 0, 0.1)',
-          border: '1px solid #e2e8f0'
-        }}>
-          <h3 style={{ margin: '0 0 1rem 0', color: '#2d3748' }}>
-            📚 Historial
-          </h3>
-          <p style={{ color: '#718096', margin: '0 0 1rem 0' }}>
-            Consultar NCs cerradas
-          </p>
-          <button style={{
-            background: '#38a169',
-            color: 'white',
-            border: 'none',
-            padding: '0.75rem 1.5rem',
-            borderRadius: '8px',
-            cursor: 'pointer',
-            fontWeight: '600'
-          }}>
-            Ver Historial
-          </button>
-        </div>
-
-        {/* Dashboard Card */}
-        <div style={{
-          background: 'white',
-          padding: '1.5rem',
-          borderRadius: '12px',
-          boxShadow: '0 4px 6px rgba(0, 0, 0, 0.1)',
-          border: '1px solid #e2e8f0'
-        }}>
-          <h3 style={{ margin: '0 0 1rem 0', color: '#2d3748' }}>
-            📈 Dashboard
-          </h3>
-          <p style={{ color: '#718096', margin: '0 0 1rem 0' }}>
-            Métricas y estadísticas
-          </p>
-          <button style={{
-            background: '#4299e1',
-            color: 'white',
-            border: 'none',
-            padding: '0.75rem 1.5rem',
-            borderRadius: '8px',
-            cursor: 'pointer',
-            fontWeight: '600'
-          }}>
-            Ver Dashboard
-          </button>
-        </div>
-      </div>
-
-      {/* Status Section */}
-      <div style={{
-        background: 'white',
-        padding: '1.5rem',
-        borderRadius: '12px',
-        boxShadow: '0 4px 6px rgba(0, 0, 0, 0.1)',
-        border: '1px solid #e2e8f0',
-        marginBottom: '2rem'
-      }}>
-        <h3 style={{ margin: '0 0 1rem 0', color: '#2d3748' }}>
-          ✅ Estado del Sistema
-        </h3>
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '1rem' }}>
-          <div style={{ textAlign: 'center', padding: '1rem', background: '#f0fff4', borderRadius: '8px' }}>
-            <div style={{ fontSize: '2rem', marginBottom: '0.5rem' }}>12</div>
-            <div style={{ color: '#38a169', fontWeight: '600' }}>NCs Activas</div>
+    <div className="nc-app-container">
+      {/* Sidebar Navigation */}
+      <NonConformitySidebar />
+      
+      {/* Main Content Area */}
+      <div className="nc-main-content">
+        {/* Content Header */}
+        <div className="nc-content-header">
+          <div className="nc-header-info">
+            <h1 className="nc-main-title">Non-Conformity Management</h1>
+            <div className="nc-breadcrumb">
+              Quality Control → Non-Conformities → {getBreadcrumbTitle(activeTab)}
+            </div>
           </div>
-          <div style={{ textAlign: 'center', padding: '1rem', background: '#fffaf0', borderRadius: '8px' }}>
-            <div style={{ fontSize: '2rem', marginBottom: '0.5rem' }}>3</div>
-            <div style={{ color: '#ed8936', fontWeight: '600' }}>Críticas</div>
-          </div>
-          <div style={{ textAlign: 'center', padding: '1rem', background: '#f0f9ff', borderRadius: '8px' }}>
-            <div style={{ fontSize: '2rem', marginBottom: '0.5rem' }}>45</div>
-            <div style={{ color: '#4299e1', fontWeight: '600' }}>Resueltas</div>
+          
+          {/* Quick Action Button */}
+          <div className="nc-header-actions">
+            {activeTab !== 'create' && (
+              <button 
+                className="nc-btn nc-btn-primary"
+                onClick={() => dispatch({ type: 'SET_ACTIVE_TAB', payload: 'create' })}
+              >
+                <span className="nc-btn-icon">➕</span>
+                Quick Create NC
+              </button>
+            )}
+            
+            {/* User Role Indicator */}
+            <div className="nc-user-role-indicator">
+              <span className={`nc-role-badge nc-role-${userRole}`}>
+                {userRole.toUpperCase()}
+              </span>
+            </div>
           </div>
         </div>
-      </div>
-
-      {/* Back Button */}
-      {onBack && (
-        <div style={{ textAlign: 'center' }}>
-          <button
-            onClick={onBack}
-            style={{
-              background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-              color: 'white',
-              border: 'none',
-              padding: '1rem 2rem',
-              borderRadius: '8px',
-              cursor: 'pointer',
-              fontSize: '1rem',
-              fontWeight: '600',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '0.5rem',
-              margin: '0 auto',
-              transition: 'all 0.2s ease'
-            }}
-            onMouseOver={(e) => {
-              e.target.style.transform = 'translateY(-2px)';
-              e.target.style.boxShadow = '0 8px 15px rgba(102, 126, 234, 0.4)';
-            }}
-            onMouseOut={(e) => {
-              e.target.style.transform = 'translateY(0)';
-              e.target.style.boxShadow = 'none';
-            }}
-          >
-            <span>←</span>
-            <span>Volver al Menú Principal</span>
-          </button>
+        
+        {/* Active Panel Content */}
+        <div className="nc-panel-container">
+          {renderActivePanel()}
         </div>
-      )}
+      </div>
     </div>
   );
 };
 
+// Main App Component with Provider
+const NonConformityApp = ({ onBack }) => {
+  return (
+    <NonConformityProvider>
+      <div className="non-conformity-wrapper">
+        {/* Back Button to Main Menu */}
+        {onBack && (
+          <button 
+            className="nc-back-to-menu"
+            onClick={onBack}
+            title="Back to Main Menu"
+          >
+            <span>←</span>
+            <span>Back to Main Menu</span>
+          </button>
+        )}
+        
+        {/* Main Non-Conformity Application */}
+        <NonConformityContent />
+      </div>
+    </NonConformityProvider>
+  );
+};
+
 export default NonConformityApp;
+
+// Export individual components for testing or standalone use
+export { 
+  NonConformityContent,
+  CreateNCPanel,
+  TrackingPanel,
+  HistoryPanel,
+  DashboardPanel,
+  DatabasePanel,
+  AnalyticsPanel
+};

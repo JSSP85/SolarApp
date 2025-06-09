@@ -346,31 +346,6 @@ const MainMenu = () => {
           </div>
         );
       
-      // AGREGADO: Manejo de casos para módulos manager que van a "Under Construction"
-      case 'inspection-dashboard':
-      case 'quality-database':
-      case 'supplier-management':
-        return (
-          <div className={styles.mainMenuPlaceholder}>
-            <div className={styles.mainMenuPlaceholderContent}>
-              <div className={styles.mainMenuPlaceholderIcon}>
-                <BarChart2 size={48} />
-              </div>
-              <h2 className={styles.mainMenuPlaceholderTitle}>Module Under Construction</h2>
-              <p className={styles.mainMenuPlaceholderDescription}>
-                This module is currently under development and will be available soon.
-              </p>
-              <button 
-                className={styles.mainMenuPlaceholderButton}
-                onClick={() => setSelectedOption(null)}
-              >
-                <ArrowLeft size={20} />
-                Back to Main Menu
-              </button>
-            </div>
-          </div>
-        );
-      
       default:
         return null;
     }
@@ -578,7 +553,7 @@ const MainMenu = () => {
                 {hasPermission('inspection-dashboard') && (
                   <div 
                     className={`${styles.mainMenuCard} ${styles.mainMenuStagger2}`}
-                    onClick={() => handleManagerOptionSelect('inspection-dashboard')}
+                    onClick={() => handleOptionSelect('inspection-dashboard')}
                   >
                     <div className={styles.mainMenuCardBody}>
                       <div className={styles.mainMenuCardIconContainer} style={{ background: 'rgba(59, 130, 246, 0.1)', border: '1px solid rgba(59, 130, 246, 0.2)' }}>
@@ -600,7 +575,7 @@ const MainMenu = () => {
                 {hasPermission('quality-database') && (
                   <div 
                     className={`${styles.mainMenuCard} ${styles.mainMenuStagger3}`}
-                    onClick={() => handleManagerOptionSelect('quality-database')}
+                    onClick={() => handleOptionSelect('quality-database')}
                   >
                     <div className={styles.mainMenuCardBody}>
                       <div className={styles.mainMenuCardIconContainer} style={{ background: 'rgba(16, 185, 129, 0.1)', border: '1px solid rgba(16, 185, 129, 0.2)' }}>
@@ -644,7 +619,7 @@ const MainMenu = () => {
                 {hasPermission('supplier-management') && (
                   <div 
                     className={`${styles.mainMenuCard} ${styles.mainMenuStagger5}`}
-                    onClick={() => handleManagerOptionSelect('supplier-management')}
+                    onClick={() => handleOptionSelect('supplier-management')}
                   >
                     <div className={styles.mainMenuCardBody}>
                       <div className={styles.mainMenuCardIconContainer} style={{ background: 'rgba(245, 158, 11, 0.1)', border: '1px solid rgba(245, 158, 11, 0.2)' }}>

@@ -1,272 +1,142 @@
-/* Agregar estos estilos al final de src/MainMenu.module.css */
+/* src/styles/component-isolation.css */
+/* CSS para prevenir interferencias entre componentes */
 
 /* ============================================
-   HOVER EFFECTS - EFECTOS DE BRILLO Y ANIMACIONES
+   ISOLATION STYLES - PREVENIR CONFLICTOS
    ============================================ */
 
-/* Efectos de hover para las cards principales */
-.mainMenuCard {
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
-  cursor: pointer !important;
-  transform: translateY(0) !important;
-  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05) !important;
+/* Reset solo para MainMenu cuando está activo */
+.main-menu-global-reset {
+  margin: 0 !important;
+  padding: 0 !important;
+  height: 100% !important;
+  overflow-x: hidden !important;
 }
 
-/* Hover effect principal - BRILLO Y ELEVACIÓN */
-.mainMenuCard:hover {
-  transform: translateY(-8px) !important;
-  box-shadow: 
-    0 20px 25px rgba(0, 0, 0, 0.1),
-    0 10px 10px rgba(0, 0, 0, 0.04),
-    0 0 0 1px rgba(255, 255, 255, 0.05) !important;
+/* Asegurar que Steel Components tenga su propio contexto */
+.steel-components-wrapper {
+  isolation: isolate;
+  position: relative;
+  z-index: 1;
 }
 
-/* Efecto de brillo en el contenedor de iconos */
-.mainMenuCard:hover .mainMenuCardIconContainer {
-  transform: scale(1.1);
-  box-shadow: 0 0 20px rgba(255, 255, 255, 0.3);
-  background: rgba(255, 255, 255, 0.15) !important;
-  border-color: rgba(255, 255, 255, 0.4) !important;
+/* Asegurar que QualityBook tenga su propio contexto */
+.quality-book-wrapper {
+  isolation: isolate;
+  position: relative;
+  z-index: 1;
 }
 
-/* Animación de la flecha */
-.mainMenuCard:hover .mainMenuCardArrow {
-  transform: translateX(6px);
-  color: #ffffff;
+/* Asegurar que NonConformity tenga su propio contexto */
+.non-conformity-wrapper {
+  isolation: isolate;
+  position: relative;
+  z-index: 1;
 }
 
-/* Efecto de brillo en el título */
-.mainMenuCard:hover .mainMenuCardTitle {
-  color: #ffffff;
-  text-shadow: 0 0 8px rgba(255, 255, 255, 0.3);
+/* Prevenir que los estilos del MainMenu afecten otras aplicaciones */
+.mainMenuContainer ~ * {
+  isolation: isolate;
 }
 
-/* Efecto en la descripción */
-.mainMenuCard:hover .mainMenuCardDescription {
-  color: rgba(255, 255, 255, 0.9);
+/* Reset específico para aplicaciones internas */
+.steel-components-wrapper *,
+.quality-book-wrapper *,
+.non-conformity-wrapper * {
+  box-sizing: border-box;
 }
 
-/* Efecto en los badges */
-.mainMenuCard:hover .mainMenuBadge {
-  transform: scale(1.05);
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+/* Asegurar que cada aplicación tenga su propio stacking context */
+.steel-components-wrapper {
+  contain: layout style;
 }
 
-/* Estados específicos para diferentes tipos de badges */
-.mainMenuCard:hover .mainMenuBadgeInfo {
-  background: linear-gradient(135deg, #4ade80, #22d3ee);
-  color: white;
-  box-shadow: 0 4px 15px rgba(34, 211, 238, 0.4);
+.quality-book-wrapper {
+  contain: layout style;
 }
 
-.mainMenuCard:hover .mainMenuBadgeWarning {
-  background: linear-gradient(135deg, #fbbf24, #f59e0b);
-  color: white;
-  box-shadow: 0 4px 15px rgba(251, 191, 36, 0.4);
+.non-conformity-wrapper {
+  contain: layout style;
 }
 
-.mainMenuCard:hover .mainMenuBadgeDisabled {
-  background: linear-gradient(135deg, #6b7280, #4b5563);
-  color: white;
+/* Prevenir herencia de estilos problemáticos */
+.steel-components-wrapper,
+.quality-book-wrapper,
+.non-conformity-wrapper {
+  font-family: inherit;
+  color: inherit;
+  background: inherit;
 }
 
-/* Efectos para cards deshabilitadas */
-.mainMenuCardDisabled {
-  opacity: 0.6 !important;
-  cursor: not-allowed !important;
+/* Forzar reset de transformaciones para cada aplicación */
+.steel-components-wrapper .dashboard-card,
+.quality-book-wrapper .dashboard-card,
+.non-conformity-wrapper .dashboard-card {
+  transform: none;
 }
 
-.mainMenuCardDisabled:hover {
-  transform: none !important;
-  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05) !important;
+/* Asegurar que las transiciones no se hereden incorrectamente */
+.steel-components-wrapper *,
+.quality-book-wrapper *,
+.non-conformity-wrapper * {
+  transition: inherit;
 }
 
-.mainMenuCardDisabled:hover .mainMenuCardIconContainer,
-.mainMenuCardDisabled:hover .mainMenuCardArrow,
-.mainMenuCardDisabled:hover .mainMenuCardTitle,
-.mainMenuCardDisabled:hover .mainMenuCardDescription,
-.mainMenuCardDisabled:hover .mainMenuBadge {
-  transform: none !important;
-  box-shadow: none !important;
-  text-shadow: none !important;
-}
-
-/* ============================================
-   BUTTON HOVER EFFECTS
-   ============================================ */
-
-/* Efectos para el botón de logout en el header */
-.mainMenuHeaderActions button {
-  transition: all 0.2s ease !important;
-}
-
-.mainMenuHeaderActions button:hover {
-  background: rgba(255, 255, 255, 0.3) !important;
-  transform: translateY(-2px) !important;
-  box-shadow: 0 4px 12px rgba(255, 255, 255, 0.2) !important;
-}
-
-/* Efectos para botones placeholder */
-.mainMenuPlaceholderButton {
-  transition: all 0.2s ease !important;
-}
-
-.mainMenuPlaceholderButton:hover {
-  transform: translateY(-2px) !important;
-  box-shadow: 0 6px 20px rgba(0, 119, 162, 0.3) !important;
-  background: linear-gradient(to right, #0088cc, #006699) !important;
-}
-
-/* ============================================
-   MODAL HOVER EFFECTS
-   ============================================ */
-
-/* Efectos para botones del modal */
-.mainMenuModalSubmit {
-  transition: all 0.2s ease !important;
-}
-
-.mainMenuModalSubmit:hover {
-  transform: translateY(-1px) !important;
-  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3) !important;
-  background: linear-gradient(to right, #2563eb, #1d4ed8) !important;
-}
-
-.mainMenuModalCancel {
-  transition: all 0.2s ease !important;
-}
-
-.mainMenuModalCancel:hover {
-  background: #f3f4f6 !important;
-  transform: translateY(-1px) !important;
-}
-
-/* ============================================
-   ENHANCED ANIMATIONS
-   ============================================ */
-
-/* Animación de aparición para las cards */
-@keyframes cardAppear {
-  from {
-    opacity: 0;
-    transform: translateY(20px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
-.mainMenuCard {
-  animation: cardAppear 0.6s ease-out;
-}
-
-/* Animación de pulso para badges "Available" */
-@keyframes badgePulse {
-  0%, 100% {
-    box-shadow: 0 0 0 0 rgba(34, 211, 238, 0.4);
-  }
-  50% {
-    box-shadow: 0 0 0 8px rgba(34, 211, 238, 0);
-  }
-}
-
-.mainMenuBadgeInfo {
-  animation: badgePulse 2s infinite;
-}
-
-/* ============================================
-   RESPONSIVE HOVER EFFECTS
-   ============================================ */
-
-/* Reducir efectos en tablets */
-@media (max-width: 1024px) {
-  .mainMenuCard:hover {
-    transform: translateY(-4px) !important;
-  }
-  
-  .mainMenuCard:hover .mainMenuCardIconContainer {
-    transform: scale(1.05);
-  }
-}
-
-/* Desactivar hover en móviles */
+/* Media queries para mantener aislamiento en responsive */
 @media (max-width: 768px) {
-  .mainMenuCard:hover {
-    transform: none !important;
-    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05) !important;
-  }
-  
-  .mainMenuCard:hover .mainMenuCardIconContainer,
-  .mainMenuCard:hover .mainMenuCardArrow,
-  .mainMenuCard:hover .mainMenuCardTitle,
-  .mainMenuCard:hover .mainMenuCardDescription,
-  .mainMenuCard:hover .mainMenuBadge {
-    transform: none !important;
-    box-shadow: none !important;
-    text-shadow: none !important;
+  .steel-components-wrapper,
+  .quality-book-wrapper,
+  .non-conformity-wrapper {
+    isolation: isolate;
+    contain: layout style;
   }
 }
 
-/* ============================================
-   PERFORMANCE OPTIMIZATIONS
-   ============================================ */
-
-/* Optimizar rendimiento con will-change */
-.mainMenuCard {
-  will-change: transform, box-shadow;
+/* Debugging: identificar qué componente está activo */
+.steel-components-wrapper::before {
+  content: 'Steel Components Active';
+  position: fixed;
+  top: 0;
+  right: 0;
+  background: rgba(74, 111, 160, 0.8);
+  color: white;
+  padding: 0.25rem 0.5rem;
+  font-size: 0.75rem;
+  z-index: 9999;
+  display: none; /* Mostrar solo para debugging */
 }
 
-.mainMenuCardIconContainer {
-  will-change: transform, box-shadow, background, border-color;
+.quality-book-wrapper::before {
+  content: 'Quality Book Active';
+  position: fixed;
+  top: 0;
+  right: 0;
+  background: rgba(139, 92, 246, 0.8);
+  color: white;
+  padding: 0.25rem 0.5rem;
+  font-size: 0.75rem;
+  z-index: 9999;
+  display: none; /* Mostrar solo para debugging */
 }
 
-.mainMenuCardArrow {
-  will-change: transform, color;
+.non-conformity-wrapper::before {
+  content: 'Non-Conformity Management Active';
+  position: fixed;
+  top: 0;
+  right: 0;
+  background: rgba(229, 62, 62, 0.8);
+  color: white;
+  padding: 0.25rem 0.5rem;
+  font-size: 0.75rem;
+  z-index: 9999;
+  display: none; /* Mostrar solo para debugging */
 }
 
-.mainMenuBadge {
-  will-change: transform, box-shadow, background;
+/* Para debugging, descomentar la siguiente línea: */
+/*
+.steel-components-wrapper::before,
+.quality-book-wrapper::before,
+.non-conformity-wrapper::before {
+  display: block !important;
 }
-
-/* Prevenir repaints innecesarios */
-.mainMenuCard,
-.mainMenuCardIconContainer,
-.mainMenuCardArrow,
-.mainMenuBadge {
-  backface-visibility: hidden;
-  perspective: 1000px;
-}
-
-/* ============================================
-   SPECIAL EFFECTS FOR NON-CONFORMITY
-   ============================================ */
-
-/* Efecto especial para la card de Non-Conformity */
-.mainMenuCard:hover .mainMenuCardIconContainer[style*="rgba(229, 62, 62"] {
-  background: rgba(229, 62, 62, 0.2) !important;
-  border-color: rgba(229, 62, 62, 0.5) !important;
-  box-shadow: 
-    0 0 20px rgba(229, 62, 62, 0.3),
-    0 0 40px rgba(229, 62, 62, 0.1) !important;
-}
-
-/* Efecto de pulsación para Non-Conformity Available badge */
-.mainMenuCard .mainMenuCardIconContainer[style*="rgba(229, 62, 62"] ~ * .mainMenuBadgeInfo {
-  animation: badgePulse 2s infinite;
-  background: linear-gradient(135deg, #ef4444, #dc2626) !important;
-  box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.4);
-}
-
-@keyframes nonConformityPulse {
-  0%, 100% {
-    box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.4);
-  }
-  50% {
-    box-shadow: 0 0 0 8px rgba(239, 68, 68, 0);
-  }
-}
-
-.mainMenuCard .mainMenuCardIconContainer[style*="rgba(229, 62, 62"] ~ * .mainMenuBadgeInfo {
-  animation: nonConformityPulse 2s infinite;
-}
+*/

@@ -4,30 +4,173 @@
    BACKGROUND FIX - NUEVO FONDO SOLAR
    ============================================ */
 
-.non-conformity-wrapper {
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  background-image: url('/images/backgrounds/solar-background2.jpeg');
-  background-size: cover;
-  background-position: center;
-  background-repeat: no-repeat;
-  background-attachment: fixed;
-  overflow: auto;
-  z-index: 1000;
+/* ============================================
+   BACKGROUND FIX - FONDO SOLAR CORREGIDO
+   Agregar estas líneas al INICIO de non-conformity.css
+   ============================================ */
+
+/* Override body background cuando Non-Conformity está activo */
+body.non-conformity-active {
+  background: transparent !important;
+  background-color: transparent !important;
+  overflow: hidden;
 }
 
+/* Fondo principal para toda la aplicación Non-Conformity */
+.non-conformity-wrapper {
+  position: fixed !important;
+  top: 0 !important;
+  left: 0 !important;
+  right: 0 !important;
+  bottom: 0 !important;
+  width: 100vw !important;
+  height: 100vh !important;
+  background-image: url('/images/backgrounds/solar-background2.jpeg') !important;
+  background-size: cover !important;
+  background-position: center center !important;
+  background-repeat: no-repeat !important;
+  background-attachment: fixed !important;
+  overflow: auto !important;
+  z-index: 1000 !important;
+  margin: 0 !important;
+  padding: 0 !important;
+}
+
+/* Overlay MUY LIGERO para mejorar legibilidad SIN tapar la imagen */
 .non-conformity-wrapper::before {
   content: '';
   position: fixed;
   top: 0;
   left: 0;
+  right: 0;
+  bottom: 0;
   width: 100%;
   height: 100%;
-  background: rgba(15, 23, 42, 0.85);
-  z-index: -1;
+  background: rgba(0, 0, 0, 0.25) !important; /* SOLO 25% de opacidad */
+  z-index: 1;
+  pointer-events: none; /* Para que no interfiera con clicks */
+}
+
+/* Asegurar que el contenedor principal esté por encima del overlay */
+.nc-app-container {
+  position: relative !important;
+  z-index: 2 !important;
+  background: transparent !important;
+  min-height: 100vh;
+}
+
+/* Sidebar con transparencia pero legible */
+.nc-sidebar {
+  background: rgba(30, 41, 59, 0.9) !important;
+  backdrop-filter: blur(12px) !important;
+  border-right: 1px solid rgba(255, 255, 255, 0.15) !important;
+  box-shadow: 4px 0 12px rgba(0, 0, 0, 0.1) !important;
+}
+
+/* Contenido principal con fondo semitransparente */
+.nc-main-content {
+  background: transparent !important;
+}
+
+/* Header con glassmorphism ligero */
+.nc-content-header {
+  background: rgba(255, 255, 255, 0.85) !important;
+  backdrop-filter: blur(12px) !important;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.2) !important;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1) !important;
+}
+
+/* Paneles con glassmorphism */
+.nc-panel-container {
+  background: rgba(255, 255, 255, 0.9) !important;
+  border-radius: 16px !important;
+  backdrop-filter: blur(16px) !important;
+  border: 1px solid rgba(255, 255, 255, 0.3) !important;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.15) !important;
+  margin: 1rem !important;
+}
+
+/* Back button prominente */
+.nc-back-to-menu {
+  position: fixed !important;
+  top: 1rem !important;
+  right: 1rem !important;
+  z-index: 999 !important;
+  background: rgba(239, 68, 68, 0.95) !important;
+  backdrop-filter: blur(8px) !important;
+  border: 1px solid rgba(255, 255, 255, 0.3) !important;
+  box-shadow: 0 4px 16px rgba(239, 68, 68, 0.4) !important;
+  color: white !important;
+  padding: 0.75rem 1.5rem !important;
+  border-radius: 8px !important;
+  font-weight: 600 !important;
+  cursor: pointer !important;
+  transition: all 0.2s ease !important;
+  display: flex !important;
+  align-items: center !important;
+  gap: 0.5rem !important;
+}
+
+.nc-back-to-menu:hover {
+  background: rgba(220, 38, 38, 1) !important;
+  transform: translateY(-2px) !important;
+  box-shadow: 0 6px 20px rgba(239, 68, 68, 0.5) !important;
+}
+
+/* Cards con mejor contraste */
+.nc-card {
+  background: rgba(255, 255, 255, 0.9) !important;
+  backdrop-filter: blur(8px) !important;
+  border: 1px solid rgba(255, 255, 255, 0.2) !important;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1) !important;
+}
+
+/* Forms con mejor legibilidad */
+.nc-form-input,
+.nc-form-select,
+.nc-form-textarea {
+  background: rgba(255, 255, 255, 0.95) !important;
+  border: 1px solid rgba(203, 213, 224, 0.5) !important;
+  backdrop-filter: blur(4px) !important;
+}
+
+.nc-form-input:focus,
+.nc-form-select:focus,
+.nc-form-textarea:focus {
+  background: rgba(255, 255, 255, 1) !important;
+  border-color: #4299e1 !important;
+  box-shadow: 0 0 0 3px rgba(66, 153, 225, 0.2) !important;
+}
+
+/* Loading y error states */
+.nc-loading-container,
+.nc-error-container {
+  background: rgba(255, 255, 255, 0.95) !important;
+  backdrop-filter: blur(16px) !important;
+  border-radius: 12px !important;
+  border: 1px solid rgba(255, 255, 255, 0.3) !important;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.15) !important;
+  margin: 2rem !important;
+  padding: 2rem !important;
+}
+
+/* Responsive fix para móviles */
+@media (max-width: 768px) {
+  .non-conformity-wrapper {
+    background-attachment: scroll !important;
+  }
+  
+  .nc-back-to-menu {
+    top: 0.5rem !important;
+    right: 0.5rem !important;
+    padding: 0.5rem 1rem !important;
+    font-size: 0.875rem !important;
+  }
+}
+
+/* Debug - temporal para verificar que se aplica */
+.non-conformity-wrapper {
+  border: 3px solid red !important; /* QUITAR después de confirmar que funciona */
 }
 
 /* Aquí siguen tus 2511 líneas originales... */

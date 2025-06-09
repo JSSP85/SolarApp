@@ -94,6 +94,19 @@ const NonConformityContent = () => {
     }
   };
 
+  // Helper function to get breadcrumb title
+  const getBreadcrumbTitle = (tab) => {
+    const titles = {
+      'create': 'Create New',
+      'tracking': 'Tracking',
+      'history': 'History',
+      'dashboard': 'Dashboard',
+      'database': 'Database',
+      'analytics': 'Analytics'
+    };
+    return titles[tab] || 'Create New';
+  };
+
   return (
     <div className="nc-app-container">
       {/* Sidebar Navigation */}
@@ -138,19 +151,6 @@ const NonConformityContent = () => {
       </div>
     </div>
   );
-};
-
-// Helper function to get breadcrumb title
-const getBreadcrumbTitle = (tab) => {
-  const titles = {
-    'create': 'Create New',
-    'tracking': 'Tracking',
-    'history': 'History',
-    'dashboard': 'Dashboard',
-    'database': 'Database',
-    'analytics': 'Analytics'
-  };
-  return titles[tab] || 'Create New';
 };
 
 // Main App Component with Provider

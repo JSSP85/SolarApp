@@ -67,7 +67,7 @@ body.non-conformity-active {
   padding: 0 !important;
 }
 
-/* Sidebar - TRANSPARENTE para ver fondo */
+/* Sidebar - FIJO al lado izquierdo */
 .nc-sidebar {
   background: rgba(30, 41, 59, 0.75) !important; /* Más transparente */
   backdrop-filter: blur(16px) !important;
@@ -76,18 +76,20 @@ body.non-conformity-active {
   width: 250px !important; /* Ancho fijo como antes */
   min-width: 250px !important;
   height: 100vh !important;
-  position: sticky !important;
+  position: fixed !important; /* FIJO al lado izquierdo */
   top: 0 !important;
-  flex-shrink: 0 !important;
+  left: 0 !important; /* Fijo al lado izquierdo */
+  z-index: 10 !important;
 }
 
-/* Contenido principal - DIMENSIONES ORIGINALES */
+/* Contenido principal - con margen para el sidebar fijo */
 .nc-main-content {
   flex: 1 !important;
   background: transparent !important;
   padding: 0 !important;
   margin: 0 !important;
-  max-width: calc(100% - 250px) !important; /* Resto del ancho disponible */
+  margin-left: 250px !important; /* Espacio para el sidebar fijo */
+  width: calc(100% - 250px) !important; /* Ancho disponible */
 }
 
 /* Header con glassmorphism - ANCHO CONTENIDO */

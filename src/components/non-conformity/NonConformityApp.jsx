@@ -1,4 +1,4 @@
-// src/components/non-conformity/NonConformityApp.jsx - Versión Original Completa
+// src/components/non-conformity/NonConformityApp.jsx - Sin restricciones internas
 import React, { useEffect } from 'react';
 import { NonConformityProvider, useNonConformity } from '../../context/NonConformityContext';
 import NonConformitySidebar from './layout/NonConformitySidebar';
@@ -15,7 +15,7 @@ import '../../styles/non-conformity.css';
 // Main content component that handles rendering different panels
 const NonConformityContent = () => {
   const { state, dispatch, helpers } = useNonConformity();
-  const { activeTab, loading, error, userRole } = state;
+  const { activeTab, loading, error } = state;
 
   // Update metrics on component mount
   useEffect(() => {
@@ -44,7 +44,7 @@ const NonConformityContent = () => {
     );
   }
 
-  // Render appropriate panel based on active tab
+  // Render appropriate panel based on active tab - SIN RESTRICCIONES
   const renderActivePanel = () => {
     switch (activeTab) {
       case 'create':
@@ -57,36 +57,15 @@ const NonConformityContent = () => {
         return <HistoryPanel />;
       
       case 'dashboard':
-        if (!helpers.canAccess('dashboard')) {
-          return (
-            <div className="nc-access-denied">
-              <h3>🔒 Access Denied</h3>
-              <p>You don't have permission to access the Dashboard. Manager or Admin role required.</p>
-            </div>
-          );
-        }
+        // ACCESO COMPLETO - Si llegaste aquí eres Admin
         return <DashboardPanel />;
       
       case 'database':
-        if (!helpers.canAccess('database')) {
-          return (
-            <div className="nc-access-denied">
-              <h3>🔒 Access Denied</h3>
-              <p>You don't have permission to access the Database. Manager or Admin role required.</p>
-            </div>
-          );
-        }
+        // ACCESO COMPLETO - Si llegaste aquí eres Admin
         return <DatabasePanel />;
       
       case 'analytics':
-        if (!helpers.canAccess('analytics')) {
-          return (
-            <div className="nc-access-denied">
-              <h3>🔒 Access Denied</h3>
-              <p>You don't have permission to access Analytics. Admin role required.</p>
-            </div>
-          );
-        }
+        // ACCESO COMPLETO - Si llegaste aquí eres Admin
         return <AnalyticsPanel />;
       
       default:
@@ -135,10 +114,10 @@ const NonConformityContent = () => {
               </button>
             )}
             
-            {/* User Role Indicator */}
+            {/* User Role Indicator - SIEMPRE ADMIN */}
             <div className="nc-user-role-indicator">
-              <span className={`nc-role-badge nc-role-${userRole}`}>
-                {userRole.toUpperCase()}
+              <span className="nc-role-badge nc-role-admin">
+                ADMIN
               </span>
             </div>
           </div>

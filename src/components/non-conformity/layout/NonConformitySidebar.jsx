@@ -19,6 +19,14 @@ const NonConformitySidebar = () => {
     };
 
     const permission = requiredPermissions[tab];
+    
+    // 🔧 ADMIN ACCESS: Si estás en NonConformity = eres Admin = acceso completo
+    // No verificar permisos para dashboard, database, analytics
+    if (tab === 'dashboard' || tab === 'database' || tab === 'analytics') {
+      dispatch({ type: 'SET_ACTIVE_TAB', payload: tab });
+      return;
+    }
+    
     if (permission && !helpers.canAccess(permission)) {
       console.log(`🚫 Access denied to ${tab} for role: ${userRole}`);
       return;
@@ -37,6 +45,11 @@ const NonConformitySidebar = () => {
       'database': 'database',
       'analytics': 'analytics'
     };
+
+    // 🔧 ADMIN ACCESS: Dashboard, Database y Analytics siempre accesibles
+    if (tab === 'dashboard' || tab === 'database' || tab === 'analytics') {
+      return true;
+    }
 
     const permission = requiredPermissions[tab];
     return !permission || helpers.canAccess(permission);
@@ -107,38 +120,38 @@ const NonConformitySidebar = () => {
       </div>
       
       <div className="nc-sidebar-nav">
-        {/* Dashboard */}
+        {/* Dashboard - SIN CANDADO */}
         <div 
-          className={`nc-nav-item nc-admin-item ${activeTab === 'dashboard' ? 'nc-admin-active' : ''} ${!isTabAccessible('dashboard') ? 'disabled' : ''}`}
-          onClick={() => isTabAccessible('dashboard') && handleTabChange('dashboard')}
+          className={`nc-nav-item nc-admin-item ${activeTab === 'dashboard' ? 'nc-admin-active' : ''}`}
+          onClick={() => handleTabChange('dashboard')}
         >
           <span className="nc-nav-icon">📊</span>
           <span className="nc-nav-text">Dashboard</span>
-          {!isTabAccessible('dashboard') && <span className="nc-lock-icon">🔒</span>}
+          {/* 🔧 REMOVED: Candado eliminado */}
           {activeTab === 'dashboard' && <div className="nc-nav-indicator nc-admin-indicator"></div>}
         </div>
         
-        {/* Database */}
+        {/* Database - SIN CANDADO */}
         <div 
-          className={`nc-nav-item nc-admin-item ${activeTab === 'database' ? 'nc-admin-active' : ''} ${!isTabAccessible('database') ? 'disabled' : ''}`}
-          onClick={() => isTabAccessible('database') && handleTabChange('database')}
+          className={`nc-nav-item nc-admin-item ${activeTab === 'database' ? 'nc-admin-active' : ''}`}
+          onClick={() => handleTabChange('database')}
         >
           <span className="nc-nav-icon">🗄️</span>
           <span className="nc-nav-text">Database</span>
           {/* Show total NCs count */}
           <span className="nc-nav-badge nc-admin-badge">{state.ncList.length}</span>
-          {!isTabAccessible('database') && <span className="nc-lock-icon">🔒</span>}
+          {/* 🔧 REMOVED: Candado eliminado */}
           {activeTab === 'database' && <div className="nc-nav-indicator nc-admin-indicator"></div>}
         </div>
         
-        {/* Analytics */}
+        {/* Analytics - SIN CANDADO */}
         <div 
-          className={`nc-nav-item nc-admin-item ${activeTab === 'analytics' ? 'nc-admin-active' : ''} ${!isTabAccessible('analytics') ? 'disabled' : ''}`}
-          onClick={() => isTabAccessible('analytics') && handleTabChange('analytics')}
+          className={`nc-nav-item nc-admin-item ${activeTab === 'analytics' ? 'nc-admin-active' : ''}`}
+          onClick={() => handleTabChange('analytics')}
         >
           <span className="nc-nav-icon">📈</span>
           <span className="nc-nav-text">Analytics</span>
-          {!isTabAccessible('analytics') && <span className="nc-lock-icon">🔒</span>}
+          {/* 🔧 REMOVED: Candado eliminado */}
           {activeTab === 'analytics' && <div className="nc-nav-indicator nc-admin-indicator"></div>}
         </div>
       </div>

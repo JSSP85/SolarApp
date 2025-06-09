@@ -5,8 +5,8 @@
    ============================================ */
 
 /* ============================================
-   BACKGROUND FIX - FONDO SOLAR CORREGIDO
-   Agregar estas líneas al INICIO de non-conformity.css
+   LAYOUT FIX - Fondo fullscreen + Contenido centrado
+   REEMPLAZAR las líneas anteriores en non-conformity.css
    ============================================ */
 
 /* Override body background cuando Non-Conformity está activo */
@@ -16,7 +16,7 @@ body.non-conformity-active {
   overflow: hidden;
 }
 
-/* Fondo principal para toda la aplicación Non-Conformity */
+/* Fondo fullscreen - SOLO para la imagen */
 .non-conformity-wrapper {
   position: fixed !important;
   top: 0 !important;
@@ -34,9 +34,12 @@ body.non-conformity-active {
   z-index: 1000 !important;
   margin: 0 !important;
   padding: 0 !important;
+  display: flex !important;
+  justify-content: center !important;
+  align-items: flex-start !important;
 }
 
-/* Overlay MUY LIGERO para mejorar legibilidad SIN tapar la imagen */
+/* Overlay MUY LIGERO para mejorar legibilidad */
 .non-conformity-wrapper::before {
   content: '';
   position: fixed;
@@ -46,57 +49,76 @@ body.non-conformity-active {
   bottom: 0;
   width: 100%;
   height: 100%;
-  background: rgba(0, 0, 0, 0.25) !important; /* SOLO 25% de opacidad */
+  background: rgba(0, 0, 0, 0.2) !important; /* Solo 20% opacidad */
   z-index: 1;
-  pointer-events: none; /* Para que no interfiera con clicks */
+  pointer-events: none;
 }
 
-/* Asegurar que el contenedor principal esté por encima del overlay */
+/* Contenedor principal - DIMENSIONES CONTENIDAS como antes */
 .nc-app-container {
   position: relative !important;
   z-index: 2 !important;
   background: transparent !important;
-  min-height: 100vh;
+  width: 100% !important;
+  max-width: 1400px !important; /* Limitar ancho máximo */
+  min-height: 100vh !important;
+  display: flex !important;
+  margin: 0 auto !important; /* Centrar horizontalmente */
+  padding: 0 !important;
 }
 
-/* Sidebar con transparencia pero legible */
+/* Sidebar - TRANSPARENTE para ver fondo */
 .nc-sidebar {
-  background: rgba(30, 41, 59, 0.9) !important;
-  backdrop-filter: blur(12px) !important;
+  background: rgba(30, 41, 59, 0.75) !important; /* Más transparente */
+  backdrop-filter: blur(16px) !important;
   border-right: 1px solid rgba(255, 255, 255, 0.15) !important;
-  box-shadow: 4px 0 12px rgba(0, 0, 0, 0.1) !important;
+  box-shadow: 4px 0 20px rgba(0, 0, 0, 0.15) !important;
+  width: 250px !important; /* Ancho fijo como antes */
+  min-width: 250px !important;
+  height: 100vh !important;
+  position: sticky !important;
+  top: 0 !important;
+  flex-shrink: 0 !important;
 }
 
-/* Contenido principal con fondo semitransparente */
+/* Contenido principal - DIMENSIONES ORIGINALES */
 .nc-main-content {
+  flex: 1 !important;
   background: transparent !important;
+  padding: 0 !important;
+  margin: 0 !important;
+  max-width: calc(100% - 250px) !important; /* Resto del ancho disponible */
 }
 
-/* Header con glassmorphism ligero */
+/* Header con glassmorphism - ANCHO CONTENIDO */
 .nc-content-header {
   background: rgba(255, 255, 255, 0.85) !important;
   backdrop-filter: blur(12px) !important;
   border-bottom: 1px solid rgba(255, 255, 255, 0.2) !important;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1) !important;
+  margin: 0 !important;
+  padding: 1.5rem 2rem !important; /* Padding interno como antes */
 }
 
-/* Paneles con glassmorphism */
+/* Paneles - DIMENSIONES CONTENIDAS como antes */
 .nc-panel-container {
   background: rgba(255, 255, 255, 0.9) !important;
   border-radius: 16px !important;
   backdrop-filter: blur(16px) !important;
   border: 1px solid rgba(255, 255, 255, 0.3) !important;
   box-shadow: 0 8px 32px rgba(0, 0, 0, 0.15) !important;
-  margin: 1rem !important;
+  margin: 1.5rem 2rem !important; /* Márgenes como antes */
+  padding: 0 !important; /* El padding interno lo manejan los paneles */
+  max-width: none !important; /* No limitar ancho artificial */
 }
 
-/* Back button prominente */
+/* Back button - posición fija pero bien ubicado */
 .nc-back-to-menu {
   position: fixed !important;
   top: 1rem !important;
   right: 1rem !important;
   z-index: 999 !important;
-  background: rgba(239, 68, 68, 0.95) !important;
+  background: rgba(239, 68, 68, 0.9) !important;
   backdrop-filter: blur(8px) !important;
   border: 1px solid rgba(255, 255, 255, 0.3) !important;
   box-shadow: 0 4px 16px rgba(239, 68, 68, 0.4) !important;
@@ -117,21 +139,23 @@ body.non-conformity-active {
   box-shadow: 0 6px 20px rgba(239, 68, 68, 0.5) !important;
 }
 
-/* Cards con mejor contraste */
+/* Cards internas - mantener dimensiones originales */
 .nc-card {
   background: rgba(255, 255, 255, 0.9) !important;
   backdrop-filter: blur(8px) !important;
   border: 1px solid rgba(255, 255, 255, 0.2) !important;
   box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1) !important;
+  /* Sin cambios de dimensiones - mantener como está */
 }
 
-/* Forms con mejor legibilidad */
+/* Forms - mantener dimensiones originales */
 .nc-form-input,
 .nc-form-select,
 .nc-form-textarea {
   background: rgba(255, 255, 255, 0.95) !important;
   border: 1px solid rgba(203, 213, 224, 0.5) !important;
   backdrop-filter: blur(4px) !important;
+  /* Sin cambios de dimensiones */
 }
 
 .nc-form-input:focus,
@@ -142,7 +166,7 @@ body.non-conformity-active {
   box-shadow: 0 0 0 3px rgba(66, 153, 225, 0.2) !important;
 }
 
-/* Loading y error states */
+/* Loading y error states - centrados */
 .nc-loading-container,
 .nc-error-container {
   background: rgba(255, 255, 255, 0.95) !important;
@@ -150,14 +174,35 @@ body.non-conformity-active {
   border-radius: 12px !important;
   border: 1px solid rgba(255, 255, 255, 0.3) !important;
   box-shadow: 0 8px 32px rgba(0, 0, 0, 0.15) !important;
-  margin: 2rem !important;
+  margin: 2rem auto !important; /* Centrar horizontalmente */
   padding: 2rem !important;
+  max-width: 600px !important; /* Limitar ancho */
 }
 
-/* Responsive fix para móviles */
+/* Responsive - mantener diseño en móviles */
 @media (max-width: 768px) {
   .non-conformity-wrapper {
     background-attachment: scroll !important;
+  }
+  
+  .nc-app-container {
+    max-width: 100% !important;
+    flex-direction: column !important;
+  }
+  
+  .nc-sidebar {
+    width: 100% !important;
+    min-width: 100% !important;
+    height: auto !important;
+    position: relative !important;
+  }
+  
+  .nc-main-content {
+    max-width: 100% !important;
+  }
+  
+  .nc-panel-container {
+    margin: 1rem !important;
   }
   
   .nc-back-to-menu {
@@ -168,9 +213,18 @@ body.non-conformity-active {
   }
 }
 
-/* Debug - temporal para verificar que se aplica */
-.non-conformity-wrapper {
-  border: 3px solid red !important; /* QUITAR después de confirmar que funciona */
+/* Mejorar transparencia de elementos de sidebar */
+.nc-sidebar-item {
+  background: rgba(255, 255, 255, 0.1) !important;
+  backdrop-filter: blur(4px) !important;
+}
+
+.nc-sidebar-item:hover {
+  background: rgba(255, 255, 255, 0.2) !important;
+}
+
+.nc-sidebar-item.active {
+  background: rgba(66, 153, 225, 0.3) !important;
 }
 
 /* Aquí siguen tus 2511 líneas originales... */

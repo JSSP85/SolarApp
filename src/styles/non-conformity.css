@@ -2841,3 +2841,198 @@ body.non-conformity-active {
 .nc-validation-message {
   color: #ef4444 !important;
 }
+/* ============================================
+   CORRECCIONES ADICIONALES - AGREGAR AL FINAL DEL CSS
+   ============================================ */
+
+/* ✅ PROBLEMA 1: Tracking y History con mismo estilo que Create NC */
+
+/* Tarjetas principales de Tracking */
+.nc-tracking-header,
+.nc-selector-section,
+.nc-overview-card,
+.nc-add-update-form,
+.nc-timeline-section {
+  background: rgba(255, 255, 255, 0.95) !important;
+  border: 1px solid rgba(255, 255, 255, 0.3) !important;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1) !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+}
+
+/* Headers de Tracking y History - azulados */
+.nc-tracking-header,
+.nc-history-header {
+  background: rgba(0, 95, 131, 0.75) !important;
+  backdrop-filter: blur(15px) !important;
+  -webkit-backdrop-filter: blur(15px) !important;
+  border: 1px solid rgba(255, 255, 255, 0.2) !important;
+}
+
+/* Títulos en headers azulados - texto blanco */
+.nc-tracking-header h3,
+.nc-tracking-header .nc-tracking-subtitle,
+.nc-history-header h3,
+.nc-history-header .nc-history-subtitle {
+  color: white !important;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3) !important;
+}
+
+/* Secciones internas de Tracking/History - fondos claros */
+.nc-selector-section,
+.nc-overview-card,
+.nc-add-update-form,
+.nc-timeline-section,
+.nc-history-filters,
+.nc-history-content {
+  background: rgba(255, 255, 255, 0.95) !important;
+  border: 1px solid rgba(255, 255, 255, 0.3) !important;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1) !important;
+}
+
+/* Texto en secciones claras de Tracking/History */
+.nc-selector-section .nc-selector-label,
+.nc-overview-card .nc-subsection-title,
+.nc-add-update-form .nc-form-title,
+.nc-timeline-section .nc-timeline-title,
+.nc-detail-label {
+  color: #374151 !important;
+  text-shadow: none !important;
+}
+
+.nc-detail-value,
+.nc-description-text,
+.nc-timeline-entry-title {
+  color: #374151 !important;
+}
+
+.nc-timeline-date,
+.nc-detail-label {
+  color: #6b7280 !important;
+}
+
+/* ✅ PROBLEMA 2: Espaciado de formularios - textboxes más cortos */
+
+/* Grid de formulario con mejor espaciado */
+.nc-form-grid {
+  display: grid !important;
+  grid-template-columns: 1fr 1fr !important;
+  gap: 1.5rem !important; /* Más espacio entre columnas */
+  margin-bottom: 1rem !important;
+}
+
+/* Inputs más cortos y con mejor espaciado */
+.nc-form-input,
+.nc-form-select {
+  width: 100% !important;
+  max-width: 100% !important;
+  box-sizing: border-box !important;
+  padding: 0.75rem !important;
+  margin: 0 !important;
+}
+
+/* Form groups con spacing apropiado */
+.nc-form-group {
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 0.5rem !important;
+  width: 100% !important;
+  box-sizing: border-box !important;
+}
+
+/* Casos específicos para campos que necesitan menos ancho */
+.nc-form-group:has(input[readonly]) {
+  max-width: 200px !important; /* NC Number más corto */
+}
+
+/* Priority select más corto */
+.nc-form-group:has(select) {
+  max-width: 250px !important;
+}
+
+/* Date input más corto */
+.nc-form-group:has(input[type="date"]) {
+  max-width: 200px !important;
+}
+
+/* Number input (quantity) más corto */
+.nc-form-group:has(input[type="number"]) {
+  max-width: 150px !important;
+}
+
+/* ✅ MEJORES SELECTORES ESPECÍFICOS PARA CAMPOS CORTOS */
+
+/* Usar atributos data para identificar campos específicos si es necesario */
+.nc-form-input[readonly] {
+  max-width: 200px !important; /* NC Number */
+}
+
+.nc-form-input[type="date"] {
+  max-width: 200px !important; /* Date */
+}
+
+.nc-form-input[type="number"] {
+  max-width: 150px !important; /* Quantity */
+}
+
+.nc-form-select {
+  max-width: 250px !important; /* Todos los selects */
+}
+
+/* Campos de texto que pueden ser más largos */
+.nc-form-input[placeholder*="project"],
+.nc-form-input[placeholder*="Project"],
+.nc-form-input[placeholder*="supplier"],
+.nc-form-input[placeholder*="Supplier"],
+.nc-form-input[placeholder*="component"],
+.nc-form-input[placeholder*="Component"],
+.nc-form-input[placeholder*="inspector"],
+.nc-form-input[placeholder*="Inspector"],
+.nc-form-input[placeholder*="sector"],
+.nc-form-input[placeholder*="Sector"] {
+  max-width: 300px !important; /* Un poco más largos pero no tanto */
+}
+
+/* ✅ RESPONSIVE: En pantallas pequeñas, usar columna única */
+@media (max-width: 768px) {
+  .nc-form-grid {
+    grid-template-columns: 1fr !important;
+    gap: 1rem !important;
+  }
+  
+  .nc-form-input,
+  .nc-form-select {
+    max-width: 100% !important;
+  }
+}
+
+/* ✅ TEXTAREA - asegurar que ocupe ancho completo en su contenedor */
+.nc-form-textarea-limited {
+  max-width: 100% !important;
+  width: 100% !important;
+  grid-column: 1 / -1 !important; /* Ocupa toda la fila en el grid */
+}
+
+/* ✅ FORM SECTIONS - mejor espaciado interno */
+.nc-form-section {
+  padding: 1.5rem !important;
+  margin-bottom: 1.5rem !important;
+}
+
+/* ✅ PHOTO UPLOAD - ocupar toda la fila */
+.nc-photo-upload-area {
+  grid-column: 1 / -1 !important; /* Ocupa toda la fila */
+}
+
+/* ✅ FORM ACTIONS - ocupar toda la fila */
+.nc-form-actions {
+  grid-column: 1 / -1 !important; /* Ocupa toda la fila */
+  margin-top: 1.5rem !important;
+  padding-top: 1.5rem !important;
+}
+
+/* ✅ GRUPOS DE FORMULARIO QUE OCUPAN TODA LA FILA */
+.nc-form-group:has(.nc-form-textarea-limited),
+.nc-form-group:has(.nc-photo-upload-area) {
+  grid-column: 1 / -1 !important; /* Description y photo upload ocupan toda la fila */
+}

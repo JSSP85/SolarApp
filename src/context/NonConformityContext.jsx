@@ -1,4 +1,4 @@
-// src/context/NonConformityContext.jsx
+// src/context/NonConformityContext.jsx - ACTUALIZADO CON NUEVOS CAMPOS
 import React, { createContext, useContext, useReducer } from 'react';
 
 // Initial state for Non-Conformity Management
@@ -12,13 +12,18 @@ const initialState = {
     number: '',
     priority: '',
     project: '',
-    projectCode: '',
+    projectCode: '', // ✅ NUEVO CAMPO
+    date: '', // ✅ NUEVO CAMPO
     supplier: '',
     ncType: '',
     description: '',
+    purchaseOrder: '', // ✅ NUEVO CAMPO (opcional)
+    componentCode: '', // ✅ NUEVO CAMPO (obligatorio)
+    quantity: '', // ✅ NUEVO CAMPO (obligatorio)
     component: '',
     status: 'open',
-    createdBy: '',
+    createdBy: '', // ✅ NUEVO CAMPO (Inspector Name)
+    sector: '', // ✅ NUEVO CAMPO
     createdDate: '',
     assignedTo: '',
     plannedClosureDate: '',
@@ -26,6 +31,9 @@ const initialState = {
     rootCause: '',
     correctiveAction: '',
     preventiveAction: '',
+    // ✅ NUEVOS CAMPOS PARA CORRECTIVE ACTION REQUEST
+    rootCauseAnalysis: '',
+    correctiveActionPlan: '',
     materialDisposition: '',
     containmentAction: '',
     photos: []
@@ -42,19 +50,27 @@ const initialState = {
       number: 'RNC-564',
       priority: 'major',
       project: 'JESI',
-      projectCode: '12926',
+      projectCode: '12926', // ✅ NUEVO CAMPO
+      date: '2025-05-05', // ✅ NUEVO CAMPO
       supplier: 'SCI-FAPI',
       ncType: 'defective_product',
       description: 'Field detection that slots of 232 pali L4 LATERAL POST are smaller than minimum required, preventing assembly.',
+      purchaseOrder: 'PO-2024-564', // ✅ NUEVO CAMPO
+      componentCode: 'L4-155X110X50X4.5', // ✅ NUEVO CAMPO
+      quantity: '232', // ✅ NUEVO CAMPO
       component: 'L4 LATERAL POST - 155X110X50X4.5MM, 4200MM, S420MC, HDG_100',
       status: 'progress',
-      createdBy: 'Juan Sebastian Sanchez',
+      createdBy: 'Juan Sebastian Sanchez', // ✅ NUEVO CAMPO
+      sector: 'Quality Control', // ✅ NUEVO CAMPO
       createdDate: '05/05/2025',
       assignedTo: 'Quality Control',
       plannedClosureDate: '29/05/2025',
       actualClosureDate: '08/05/2025',
       daysOpen: 3,
       materialDisposition: 'rework_by_convert',
+      // ✅ NUEVOS CAMPOS PARA CORRECTIVE ACTION REQUEST
+      rootCauseAnalysis: 'Investigation revealed that the punching tool dimensions were not calibrated correctly during the manufacturing process. The tool specification was 0.5mm smaller than the required minimum slot size.',
+      correctiveActionPlan: 'Implement mandatory tool calibration verification before each production batch. Update quality control procedures to include dimensional verification of critical components during first article inspection.',
       timeline: [
         {
           date: '08/05/2025 - 14:30',
@@ -87,70 +103,72 @@ const initialState = {
       number: 'RNC-563',
       priority: 'critical',
       project: 'SOLAR PARK A',
-      projectCode: '12345',
+      projectCode: '12345', // ✅ NUEVO CAMPO
+      date: '2025-05-03', // ✅ NUEVO CAMPO
       supplier: 'SUPPLIER_B',
       ncType: 'design_error',
       description: 'Critical structural issue in main foundation design.',
-      component: 'Main Structure',
-      status: 'open',
-      createdBy: 'Inspector Team',
+      purchaseOrder: 'PO-2024-563', // ✅ NUEVO CAMPO
+      componentCode: 'FOUND-001', // ✅ NUEVO CAMPO
+      quantity: '15', // ✅ NUEVO CAMPO
+      component: 'Main Foundation Structure',
+      status: 'critical',
+      createdBy: 'Maria Rodriguez', // ✅ NUEVO CAMPO
+      sector: 'Engineering', // ✅ NUEVO CAMPO
       createdDate: '03/05/2025',
-      daysOpen: 5,
-      timeline: []
-    },
-    {
-      id: '562',
-      number: 'RNC-562',
-      priority: 'minor',
-      project: 'JESI',
-      projectCode: '12926',
-      supplier: 'SCI-FAPI',
-      ncType: 'damaged_package',
-      description: 'Minor damage to bracket packaging during transport.',
-      component: 'Brackets',
-      status: 'resolved',
-      createdBy: 'Logistics Team',
-      createdDate: '01/05/2025',
-      actualClosureDate: '04/05/2025',
-      daysOpen: 7,
-      timeline: []
+      assignedTo: 'Engineering Team',
+      plannedClosureDate: '15/05/2025',
+      daysOpen: 8,
+      materialDisposition: 'reject',
+      // ✅ NUEVOS CAMPOS PARA CORRECTIVE ACTION REQUEST
+      rootCauseAnalysis: 'Design calculations did not account for local soil conditions. Foundation depth calculations were based on standard soil parameters rather than site-specific geotechnical data.',
+      correctiveActionPlan: 'Revise all foundation designs based on actual site geotechnical report. Implement mandatory site-specific soil analysis for all future projects before design finalization.',
+      timeline: [
+        {
+          date: '03/05/2025 - 08:30',
+          title: '🚨 Critical NC Detected',
+          description: 'Critical structural issue identified during foundation inspection.',
+          type: 'detection'
+        }
+      ]
     }
   ],
   
-  // Filters and search
+  // Search and filtering
+  searchTerm: '',
   filters: {
     status: 'all',
     priority: 'all',
     project: 'all',
-    supplier: 'all',
     dateRange: 'all'
   },
-  searchTerm: '',
   
-  // Dashboard metrics
-  metrics: {
-    activeNCs: 23,
-    criticalNCs: 3,
-    avgResolutionTime: 12,
-    closedThisMonth: 8,
-    targetThisMonth: 10
-  },
-  
-  // User permissions
-  userRole: 'inspector', // 'inspector', 'manager', 'admin'
-  
-  // UI state
+  // UI State
   loading: false,
   error: null,
-  showValidationModal: false
+  showValidationModal: false,
+  
+  // User role (will be set from AuthContext)
+  userRole: 'inspector',
+  
+  // Metrics calculation
+  metrics: {
+    totalNCs: 0,
+    activeNCs: 0,
+    criticalNCs: 0,
+    majorNCs: 0,
+    minorNCs: 0,
+    resolvedNCs: 0,
+    avgResolutionTime: 0
+  }
 };
 
 // Action types
-export const NC_ACTIONS = {
+const NC_ACTIONS = {
   // Navigation
   SET_ACTIVE_TAB: 'SET_ACTIVE_TAB',
   
-  // NC Form Management
+  // Current NC Management
   SET_CURRENT_NC: 'SET_CURRENT_NC',
   UPDATE_NC_FIELD: 'UPDATE_NC_FIELD',
   CLEAR_CURRENT_NC: 'CLEAR_CURRENT_NC',
@@ -361,112 +379,104 @@ export const NonConformityProvider = ({ children }) => {
     generateNCNumber: () => {
       const lastNumber = state.ncList.length > 0 
         ? Math.max(...state.ncList.map(nc => parseInt(nc.number.split('-')[1]) || 0))
-        : 564;
+        : 563;
       return `RNC-${lastNumber + 1}`;
     },
-    
-    // Validate required fields for NC creation
-    validateNC: (nc = state.currentNC) => {
+
+    // Calculate metrics
+    calculateMetrics: () => {
+      const { ncList } = state;
+      
+      const metrics = {
+        totalNCs: ncList.length,
+        activeNCs: ncList.filter(nc => nc.status !== 'closed' && nc.status !== 'resolved').length,
+        criticalNCs: ncList.filter(nc => nc.priority === 'critical' && nc.status !== 'closed').length,
+        majorNCs: ncList.filter(nc => nc.priority === 'major' && nc.status !== 'closed').length,
+        minorNCs: ncList.filter(nc => nc.priority === 'minor' && nc.status !== 'closed').length,
+        resolvedNCs: ncList.filter(nc => nc.status === 'resolved' || nc.status === 'closed').length,
+        avgResolutionTime: ncList.filter(nc => nc.daysOpen).reduce((acc, nc) => acc + nc.daysOpen, 0) / Math.max(ncList.filter(nc => nc.daysOpen).length, 1)
+      };
+
+      return metrics;
+    },
+
+    // Validation helpers
+    validateNC: (nc) => {
       const errors = {};
       
       if (!nc.priority) errors.priority = 'Priority is required';
       if (!nc.project) errors.project = 'Project is required';
-      if (!nc.description) errors.description = 'Description is required';
-      if (!nc.ncType) errors.ncType = 'Non-conformity type is required';
-      
-      const isValid = Object.keys(errors).length === 0;
-      
-      dispatch({ type: NC_ACTIONS.SET_VALIDATION_ERRORS, payload: errors });
-      dispatch({ type: NC_ACTIONS.SET_FORM_VALIDITY, payload: isValid });
-      
-      return { isValid, errors };
-    },
-    
-    // Get filtered NC list
-    getFilteredNCs: () => {
-      let filtered = [...state.ncList];
-      
-      // Apply status filter
-      if (state.filters.status !== 'all') {
-        filtered = filtered.filter(nc => nc.status === state.filters.status);
-      }
-      
-      // Apply priority filter
-      if (state.filters.priority !== 'all') {
-        filtered = filtered.filter(nc => nc.priority === state.filters.priority);
-      }
-      
-      // Apply project filter
-      if (state.filters.project !== 'all') {
-        filtered = filtered.filter(nc => nc.project === state.filters.project);
-      }
-      
-      // Apply search term
-      if (state.searchTerm) {
-        const searchLower = state.searchTerm.toLowerCase();
-        filtered = filtered.filter(nc => 
-          nc.number.toLowerCase().includes(searchLower) ||
-          nc.project.toLowerCase().includes(searchLower) ||
-          nc.supplier.toLowerCase().includes(searchLower) ||
-          nc.description.toLowerCase().includes(searchLower) ||
-          nc.component.toLowerCase().includes(searchLower)
-        );
-      }
-      
-      return filtered;
-    },
-    
-    // Get NC by ID
-    getNCById: (id) => {
-      return state.ncList.find(nc => nc.id === id);
-    },
-    
-    // Check user permissions
-    canAccess: (feature) => {
-      const { userRole } = state;
-      
-      const permissions = {
-        create: ['inspector', 'manager', 'admin'],
-        tracking: ['inspector', 'manager', 'admin'],
-        history: ['inspector', 'manager', 'admin'],
-        dashboard: ['manager', 'admin'],
-        database: ['manager', 'admin'],
-        analytics: ['admin'],
-        delete: ['admin'],
-        export: ['manager', 'admin']
-      };
-      
-      return permissions[feature]?.includes(userRole) || false;
-    },
-    
-    // Calculate metrics
-    calculateMetrics: () => {
-      const activeNCs = state.ncList.filter(nc => nc.status !== 'closed' && nc.status !== 'resolved').length;
-      const criticalNCs = state.ncList.filter(nc => nc.priority === 'critical').length;
-      const resolvedNCs = state.ncList.filter(nc => nc.status === 'resolved' || nc.status === 'closed');
-      const avgResolutionTime = resolvedNCs.length > 0 
-        ? Math.round(resolvedNCs.reduce((sum, nc) => sum + (nc.daysOpen || 0), 0) / resolvedNCs.length)
-        : 0;
-      
-      const currentMonth = new Date().getMonth();
-      const closedThisMonth = state.ncList.filter(nc => {
-        if (!nc.actualClosureDate) return false;
-        const closureDate = new Date(nc.actualClosureDate.split('/').reverse().join('-'));
-        return closureDate.getMonth() === currentMonth;
-      }).length;
-      
+      if (!nc.projectCode) errors.projectCode = 'Project Code CM is required';
+      if (!nc.date) errors.date = 'Date is required';
+      if (!nc.ncType) errors.ncType = 'Non-Conformity Type is required';
+      if (!nc.description) errors.description = 'Problem Description is required';
+      if (!nc.componentCode) errors.componentCode = 'Component Code is required';
+      if (!nc.quantity) errors.quantity = 'Quantity is required';
+      if (!nc.createdBy) errors.createdBy = 'Inspector Name is required';
+      if (!nc.sector) errors.sector = 'Sector is required';
+
       return {
-        activeNCs,
-        criticalNCs,
-        avgResolutionTime,
-        closedThisMonth,
-        targetThisMonth: 10
+        isValid: Object.keys(errors).length === 0,
+        errors
       };
+    },
+
+    // Permission helpers
+    canAccess: (permission) => {
+      // Basic permission check - can be expanded
+      const rolePermissions = {
+        'admin': ['create', 'tracking', 'history', 'dashboard', 'database', 'analytics'],
+        'manager': ['create', 'tracking', 'history', 'dashboard'],
+        'inspector': ['create', 'tracking', 'history']
+      };
+
+      return rolePermissions[state.userRole]?.includes(permission) || false;
+    },
+
+    // Search and filter helpers
+    filterNCs: (searchTerm, filters) => {
+      return state.ncList.filter(nc => {
+        // Search term filter
+        const matchesSearch = !searchTerm || 
+          nc.number.toLowerCase().includes(searchTerm.toLowerCase()) ||
+          nc.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
+          nc.project.toLowerCase().includes(searchTerm.toLowerCase()) ||
+          nc.component.toLowerCase().includes(searchTerm.toLowerCase());
+
+        // Status filter
+        const matchesStatus = filters.status === 'all' || nc.status === filters.status;
+
+        // Priority filter
+        const matchesPriority = filters.priority === 'all' || nc.priority === filters.priority;
+
+        // Project filter
+        const matchesProject = filters.project === 'all' || nc.project === filters.project;
+
+        return matchesSearch && matchesStatus && matchesPriority && matchesProject;
+      });
     }
   };
-  
+
+  // Update metrics when ncList changes
+  React.useEffect(() => {
+    const newMetrics = helpers.calculateMetrics();
+    if (JSON.stringify(newMetrics) !== JSON.stringify(state.metrics)) {
+      dispatch({ type: 'SET_METRICS', payload: newMetrics });
+    }
+  }, [state.ncList]);
+
+  const value = {
+    state: {
+      ...state,
+      metrics: helpers.calculateMetrics()
+    },
+    dispatch,
+    helpers,
+    actions: NC_ACTIONS
+  };
+
   return (
-    <NonConformityContext.Provider value={{ state, dispatch, helpers }}>
+    <NonConformityContext.Provider value={value}>
       {children}
     </NonConformityContext.Provider>
   );

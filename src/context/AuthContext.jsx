@@ -9,6 +9,12 @@ const USER_CREDENTIALS = {
     permissions: ['steel', 'hardware', 'electrical', 'free-inspection', 'non-conformity-manager', 'inspection-dashboard', 'quality-database', 'quality-book', 'supplier-management'],
     displayName: 'Administrator'
   },
+  'Manager': {
+    password: 'valm2025',
+    role: 'manager',
+    permissions: ['steel', 'hardware', 'electrical', 'free-inspection', 'non-conformity-manager', 'inspection-dashboard'],
+    displayName: 'Manager'
+  },
   'Inspector1': {
     password: '4321',
     role: 'inspect1',

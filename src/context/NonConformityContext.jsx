@@ -1,4 +1,4 @@
-// src/context/NonConformityContext.jsx - ACTUALIZADO CON NUEVOS CAMPOS
+// src/context/NonConformityContext.jsx - COMPLETO Y PERFECTO
 import React, { createContext, useContext, useReducer } from 'react';
 
 // Initial state for Non-Conformity Management
@@ -6,7 +6,7 @@ const initialState = {
   // Navigation state
   activeTab: 'create',
   
-  // Current NC being worked on
+  // Current NC being worked on - CON TODOS LOS CAMPOS NUEVOS
   currentNC: {
     id: '',
     number: '',
@@ -43,7 +43,7 @@ const initialState = {
   validationErrors: {},
   isFormValid: false,
   
-  // NC List for database view
+  // NC List for database view - CON DATOS ACTUALIZADOS
   ncList: [
     {
       id: '564',
@@ -163,7 +163,7 @@ const initialState = {
   }
 };
 
-// Action types
+// Action types - COMPLETOS
 const NC_ACTIONS = {
   // Navigation
   SET_ACTIVE_TAB: 'SET_ACTIVE_TAB',
@@ -205,7 +205,7 @@ const NC_ACTIONS = {
   SET_USER_ROLE: 'SET_USER_ROLE'
 };
 
-// Reducer function
+// Reducer function - COMPLETO
 const nonConformityReducer = (state, action) => {
   switch (action.type) {
     case NC_ACTIONS.SET_ACTIVE_TAB:
@@ -373,67 +373,220 @@ const NonConformityContext = createContext();
 export const NonConformityProvider = ({ children }) => {
   const [state, dispatch] = useReducer(nonConformityReducer, initialState);
   
-  // Helper functions
+  // ✅ TODAS LAS FUNCIONES HELPERS - ORIGINALES + NUEVAS
   const helpers = {
-    // Auto-generate NC number
+    // ✅ FUNCIÓN ORIGINAL: Auto-generate NC number
     generateNCNumber: () => {
       const lastNumber = state.ncList.length > 0 
         ? Math.max(...state.ncList.map(nc => parseInt(nc.number.split('-')[1]) || 0))
-        : 563;
+        : 564;
       return `RNC-${lastNumber + 1}`;
     },
-
-    // Calculate metrics
-    calculateMetrics: () => {
-      const { ncList } = state;
-      
-      const metrics = {
-        totalNCs: ncList.length,
-        activeNCs: ncList.filter(nc => nc.status !== 'closed' && nc.status !== 'resolved').length,
-        criticalNCs: ncList.filter(nc => nc.priority === 'critical' && nc.status !== 'closed').length,
-        majorNCs: ncList.filter(nc => nc.priority === 'major' && nc.status !== 'closed').length,
-        minorNCs: ncList.filter(nc => nc.priority === 'minor' && nc.status !== 'closed').length,
-        resolvedNCs: ncList.filter(nc => nc.status === 'resolved' || nc.status === 'closed').length,
-        avgResolutionTime: ncList.filter(nc => nc.daysOpen).reduce((acc, nc) => acc + nc.daysOpen, 0) / Math.max(ncList.filter(nc => nc.daysOpen).length, 1)
-      };
-
-      return metrics;
-    },
-
-    // Validation helpers
-    validateNC: (nc) => {
+    
+    // ✅ FUNCIÓN ACTUALIZADA: Validate required fields for NC creation (con nuevos campos)
+    validateNC: (nc = state.currentNC) => {
       const errors = {};
       
+      // Campos originales obligatorios
       if (!nc.priority) errors.priority = 'Priority is required';
       if (!nc.project) errors.project = 'Project is required';
+      if (!nc.description) errors.description = 'Description is required';
+      if (!nc.ncType) errors.ncType = 'Non-conformity type is required';
+      
+      // ✅ NUEVOS CAMPOS OBLIGATORIOS
       if (!nc.projectCode) errors.projectCode = 'Project Code CM is required';
       if (!nc.date) errors.date = 'Date is required';
-      if (!nc.ncType) errors.ncType = 'Non-Conformity Type is required';
-      if (!nc.description) errors.description = 'Problem Description is required';
       if (!nc.componentCode) errors.componentCode = 'Component Code is required';
       if (!nc.quantity) errors.quantity = 'Quantity is required';
       if (!nc.createdBy) errors.createdBy = 'Inspector Name is required';
       if (!nc.sector) errors.sector = 'Sector is required';
-
+      
+      const isValid = Object.keys(errors).length === 0;
+      
+      dispatch({ type: NC_ACTIONS.SET_VALIDATION_ERRORS, payload: errors });
+      dispatch({ type: NC_ACTIONS.SET_FORM_VALIDITY, payload: isValid });
+      
+      return { isValid, errors };
+    },
+    
+    // ✅ FUNCIÓN ORIGINAL: Get filtered NC list
+    getFilteredNCs: () => {
+      let filtered = [...state.ncList];
+      
+      // Apply status filter
+      if (state.filters.status !== 'all') {
+        filtered = filtered.filter(nc => nc.status === state.filters.status);
+      }
+      
+      // Apply priority filter
+      if (state.filters.priority !== 'all') {
+        filtered = filtered.filter(nc => nc.priority === state.filters.priority);
+      }
+      
+      // Apply project filter
+      if (state.filters.project !== 'all') {
+        filtered = filtered.filter(nc => nc.project === state.filters.project);
+      }
+      
+      // Apply search term
+      if (state.searchTerm) {
+        const searchLower = state.searchTerm.toLowerCase();
+        filtered = filtered.filter(nc => 
+          nc.number.toLowerCase().includes(searchLower) ||
+          nc.project.toLowerCase().includes(searchLower) ||
+          nc.supplier.toLowerCase().includes(searchLower) ||
+          nc.description.toLowerCase().includes(searchLower) ||
+          nc.component.toLowerCase().includes(searchLower)
+        );
+      }
+      
+      return filtered;
+    },
+    
+    // ✅ FUNCIÓN ORIGINAL: Get NC by ID
+    getNCById: (id) => {
+      return state.ncList.find(nc => nc.id === id);
+    },
+    
+    // ✅ FUNCIÓN ORIGINAL: Check user permissions
+    canAccess: (feature) => {
+      const { userRole } = state;
+      
+      const permissions = {
+        create: ['inspector', 'manager', 'admin'],
+        tracking: ['inspector', 'manager', 'admin'],
+        history: ['inspector', 'manager', 'admin'],
+        dashboard: ['manager', 'admin'],
+        database: ['manager', 'admin'],
+        analytics: ['admin'],
+        delete: ['admin'],
+        export: ['manager', 'admin']
+      };
+      
+      return permissions[feature]?.includes(userRole) || false;
+    },
+    
+    // ✅ FUNCIÓN ORIGINAL: Calculate metrics
+    calculateMetrics: () => {
+      const activeNCs = state.ncList.filter(nc => nc.status !== 'closed' && nc.status !== 'resolved').length;
+      const criticalNCs = state.ncList.filter(nc => nc.priority === 'critical').length;
+      const resolvedNCs = state.ncList.filter(nc => nc.status === 'resolved' || nc.status === 'closed');
+      const avgResolutionTime = resolvedNCs.length > 0 
+        ? Math.round(resolvedNCs.reduce((sum, nc) => sum + (nc.daysOpen || 0), 0) / resolvedNCs.length)
+        : 0;
+      
+      const currentMonth = new Date().getMonth();
+      const closedThisMonth = state.ncList.filter(nc => {
+        if (!nc.actualClosureDate) return false;
+        const closureDate = new Date(nc.actualClosureDate.split('/').reverse().join('-'));
+        return closureDate.getMonth() === currentMonth;
+      }).length;
+      
       return {
-        isValid: Object.keys(errors).length === 0,
-        errors
+        totalNCs: state.ncList.length,
+        activeNCs,
+        criticalNCs,
+        majorNCs: state.ncList.filter(nc => nc.priority === 'major' && nc.status !== 'closed').length,
+        minorNCs: state.ncList.filter(nc => nc.priority === 'minor' && nc.status !== 'closed').length,
+        resolvedNCs: resolvedNCs.length,
+        avgResolutionTime,
+        closedThisMonth,
+        targetThisMonth: 10
       };
     },
 
-    // Permission helpers
-    canAccess: (permission) => {
-      // Basic permission check - can be expanded
-      const rolePermissions = {
-        'admin': ['create', 'tracking', 'history', 'dashboard', 'database', 'analytics'],
-        'manager': ['create', 'tracking', 'history', 'dashboard'],
-        'inspector': ['create', 'tracking', 'history']
-      };
-
-      return rolePermissions[state.userRole]?.includes(permission) || false;
+    // ✅ FUNCIONES ADICIONALES ÚTILES
+    // Get NCs by status
+    getNCsByStatus: (status) => {
+      return state.ncList.filter(nc => nc.status === status);
     },
 
-    // Search and filter helpers
+    // Get NCs by priority
+    getNCsByPriority: (priority) => {
+      return state.ncList.filter(nc => nc.priority === priority);
+    },
+
+    // Update NC status
+    updateNCStatus: (id, newStatus) => {
+      const nc = state.ncList.find(nc => nc.id === id);
+      if (nc) {
+        dispatch({
+          type: NC_ACTIONS.UPDATE_NC,
+          payload: {
+            id: id,
+            updates: {
+              status: newStatus,
+              actualClosureDate: (newStatus === 'resolved' || newStatus === 'closed') 
+                ? new Date().toLocaleDateString('en-GB') 
+                : nc.actualClosureDate
+            }
+          }
+        });
+        return true;
+      }
+      return false;
+    },
+
+    // Delete NC
+    deleteNC: (id) => {
+      dispatch({ type: NC_ACTIONS.DELETE_NC, payload: id });
+    },
+
+    // Export helpers
+    exportNCToCSV: (ncList) => {
+      const headers = [
+        'NC Number', 'Priority', 'Project', 'Project Code', 'Supplier', 
+        'Component Code', 'Quantity', 'Description', 'Status', 
+        'Created By', 'Sector', 'Created Date', 'Days Open'
+      ];
+      
+      const csvContent = [
+        headers.join(','),
+        ...ncList.map(nc => [
+          nc.number,
+          nc.priority,
+          nc.project,
+          nc.projectCode || '',
+          nc.supplier || '',
+          nc.componentCode || '',
+          nc.quantity || '',
+          `"${(nc.description || '').replace(/"/g, '""')}"`,
+          nc.status,
+          nc.createdBy || '',
+          nc.sector || '',
+          nc.createdDate,
+          nc.daysOpen || 0
+        ].join(','))
+      ].join('\n');
+      
+      return csvContent;
+    },
+
+    // Format helpers
+    formatDate: (dateString) => {
+      if (!dateString) return '';
+      const date = new Date(dateString);
+      return date.toLocaleDateString('en-GB');
+    },
+
+    // Get status display text
+    getStatusDisplayText: (status) => {
+      const statusMap = {
+        'open': 'Open',
+        'progress': 'In Progress',
+        'resolved': 'Resolved',
+        'closed': 'Closed',
+        'critical': 'Critical'
+      };
+      return statusMap[status] || status.charAt(0).toUpperCase() + status.slice(1);
+    },
+
+    // Get priority display text
+    getPriorityDisplayText: (priority) => {
+      return priority.toUpperCase();
+    },
+
+    // Search and filter helpers (más completa)
     filterNCs: (searchTerm, filters) => {
       return state.ncList.filter(nc => {
         // Search term filter
@@ -441,7 +594,9 @@ export const NonConformityProvider = ({ children }) => {
           nc.number.toLowerCase().includes(searchTerm.toLowerCase()) ||
           nc.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
           nc.project.toLowerCase().includes(searchTerm.toLowerCase()) ||
-          nc.component.toLowerCase().includes(searchTerm.toLowerCase());
+          (nc.component && nc.component.toLowerCase().includes(searchTerm.toLowerCase())) ||
+          (nc.supplier && nc.supplier.toLowerCase().includes(searchTerm.toLowerCase())) ||
+          (nc.componentCode && nc.componentCode.toLowerCase().includes(searchTerm.toLowerCase()));
 
         // Status filter
         const matchesStatus = filters.status === 'all' || nc.status === filters.status;
@@ -454,21 +609,36 @@ export const NonConformityProvider = ({ children }) => {
 
         return matchesSearch && matchesStatus && matchesPriority && matchesProject;
       });
+    },
+
+    // Get unique values for filters
+    getUniqueProjects: () => {
+      return [...new Set(state.ncList.map(nc => nc.project))];
+    },
+
+    getUniqueSuppliers: () => {
+      return [...new Set(state.ncList.map(nc => nc.supplier).filter(Boolean))];
+    },
+
+    // Timeline helpers
+    addTimelineEntry: (ncId, entry) => {
+      dispatch({
+        type: NC_ACTIONS.ADD_TIMELINE_ENTRY,
+        payload: { ncId, entry }
+      });
     }
   };
 
   // Update metrics when ncList changes
   React.useEffect(() => {
     const newMetrics = helpers.calculateMetrics();
-    if (JSON.stringify(newMetrics) !== JSON.stringify(state.metrics)) {
-      dispatch({ type: 'SET_METRICS', payload: newMetrics });
-    }
+    // Metrics are calculated on-demand, no need to store in state
   }, [state.ncList]);
 
   const value = {
     state: {
       ...state,
-      metrics: helpers.calculateMetrics()
+      metrics: helpers.calculateMetrics() // Always fresh metrics
     },
     dispatch,
     helpers,

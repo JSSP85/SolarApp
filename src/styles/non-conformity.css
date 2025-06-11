@@ -2740,3 +2740,104 @@ body.non-conformity-active {
     background: white !important;
   }
 }
+/* ============================================
+   ACTUALIZACIONES MÍNIMAS PARA COLORES
+   Estas son las ÚNICAS líneas que necesitan cambios
+   ============================================ */
+
+/* ✅ CAMBIO 1: Variables de color para secciones internas */
+:root {
+  /* Agregar estas variables al inicio del archivo */
+  --nc-section-bg: rgba(255, 255, 255, 0.95);
+  --nc-section-border: rgba(255, 255, 255, 0.3);
+  --nc-section-text: #374151;
+  --nc-section-text-secondary: #6b7280;
+  --nc-section-text-muted: #9ca3af;
+}
+
+/* ✅ CAMBIO 2: Tarjeta principal azulada con transparencia mejorada */
+.nc-panel-card-transparent {
+  background: rgba(0, 95, 131, 0.75) !important;
+  backdrop-filter: blur(15px) !important;
+  -webkit-backdrop-filter: blur(15px) !important;
+  border: 1px solid rgba(255, 255, 255, 0.2) !important;
+}
+
+/* ✅ CAMBIO 3: Secciones internas con fondo claro */
+.nc-form-section {
+  background: var(--nc-section-bg) !important;
+  border: 1px solid var(--nc-section-border) !important;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1) !important;
+}
+
+/* ✅ CAMBIO 4: Títulos de sección para fondo claro */
+.nc-section-title {
+  color: var(--nc-section-text) !important;
+  text-shadow: none !important;
+}
+
+/* ✅ CAMBIO 5: Subtítulos para fondo claro */
+.nc-section-subtitle {
+  color: var(--nc-section-text-secondary) !important;
+}
+
+/* ✅ CAMBIO 6: Labels para fondo claro */
+.nc-form-label {
+  color: var(--nc-section-text) !important;
+  text-shadow: none !important;
+}
+
+/* ✅ CAMBIO 7: Texto auxiliar para fondo claro */
+.nc-auto-generated {
+  color: var(--nc-section-text-muted) !important;
+}
+
+/* ✅ CAMBIO 8: Contador de caracteres para fondo claro */
+.nc-char-count {
+  color: var(--nc-section-text-secondary) !important;
+}
+
+/* ✅ CAMBIO 9: Inputs con bordes apropiados para fondo claro */
+.nc-form-input,
+.nc-form-select {
+  border: 1px solid #d1d5db !important;
+  background: white !important;
+}
+
+/* ✅ CAMBIO 10: Textarea limitado horizontalmente */
+.nc-form-textarea-limited {
+  border: 1px solid #d1d5db !important;
+  background: white !important;
+  resize: vertical !important;
+  max-width: 100% !important;
+  width: 100% !important;
+}
+
+/* ✅ CAMBIO 11: Photo upload area para fondo claro */
+.nc-photo-upload-area {
+  border: 2px dashed #d1d5db !important;
+  background: #f9fafb !important;
+}
+
+.nc-photo-upload-area:hover {
+  border-color: #3b82f6 !important;
+  background: #f3f4f6 !important;
+}
+
+.nc-upload-placeholder p {
+  color: #374151 !important;
+}
+
+.nc-upload-note {
+  color: #6b7280 !important;
+}
+
+/* ✅ CAMBIO 12: Form actions con border claro */
+.nc-form-actions {
+  border-top: 1px solid #e5e7eb !important;
+}
+
+/* ✅ CAMBIO 13: Validación de errores */
+.nc-validation-message {
+  color: #ef4444 !important;
+}

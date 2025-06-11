@@ -533,7 +533,7 @@ const CreateNCPanel = () => {
         </div>
       </div>
 
-      {/* ✅ ESTILOS ACTUALIZADOS */}
+      {/* ✅ ESTILOS CORREGIDOS */}
       <style jsx>{`
         .nc-create-panel {
           padding: 0;
@@ -553,14 +553,14 @@ const CreateNCPanel = () => {
           box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
         }
 
-        /* ✅ TARJETA PRINCIPAL CON TRANSPARENCIA */
+        /* ✅ SOLO LA TARJETA PRINCIPAL AZULADA CON TRANSPARENCIA */
         .nc-panel-card-transparent {
-          background: rgba(0, 95, 131, 0.85);
-          backdrop-filter: blur(12px);
-          -webkit-backdrop-filter: blur(12px);
+          background: rgba(0, 95, 131, 0.75);
+          backdrop-filter: blur(15px);
+          -webkit-backdrop-filter: blur(15px);
           border-radius: 12px;
           box-shadow: 0 8px 32px rgba(0, 95, 131, 0.3);
-          border: 1px solid rgba(255, 255, 255, 0.1);
+          border: 1px solid rgba(255, 255, 255, 0.2);
           overflow: hidden;
         }
 
@@ -595,23 +595,25 @@ const CreateNCPanel = () => {
           padding: 2rem;
         }
 
+        /* ✅ SECCIONES INTERNAS - FONDO CLARO COMO ANTES */
         .nc-form-section {
-          background: rgba(255, 255, 255, 0.05);
+          background: rgba(255, 255, 255, 0.95);
           border-radius: 8px;
           padding: 1.5rem;
           margin-bottom: 1.5rem;
-          border: 1px solid rgba(255, 255, 255, 0.1);
+          border: 1px solid rgba(255, 255, 255, 0.3);
+          box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
         }
 
+        /* ✅ TÍTULOS DE SECCIONES - COLOR OSCURO PARA FONDO CLARO */
         .nc-section-title {
-          color: white;
+          color: #1f2937;
           font-size: 1.1rem;
           font-weight: 600;
           margin: 0 0 1rem 0;
           display: flex;
           align-items: center;
           gap: 0.5rem;
-          text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
         }
 
         .nc-section-subtitle {
@@ -646,16 +648,16 @@ const CreateNCPanel = () => {
         }
 
         .nc-auto-generated {
-          color: rgba(255, 255, 255, 0.6);
+          color: #9ca3af;
           font-weight: 400;
           font-size: 0.75rem;
         }
 
         .nc-form-input, .nc-form-select {
           padding: 0.75rem;
-          border: 1px solid rgba(255, 255, 255, 0.2);
+          border: 1px solid #d1d5db;
           border-radius: 6px;
-          background: rgba(255, 255, 255, 0.9);
+          background: white;
           color: #374151;
           font-size: 0.875rem;
           transition: all 0.2s ease;
@@ -663,22 +665,22 @@ const CreateNCPanel = () => {
 
         .nc-form-input:focus, .nc-form-select:focus {
           outline: none;
-          border-color: rgba(59, 130, 246, 0.5);
+          border-color: #3b82f6;
           box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
           background: white;
         }
 
         .nc-input-readonly {
-          background: rgba(255, 255, 255, 0.5);
+          background: #f9fafb;
           cursor: not-allowed;
         }
 
         /* ✅ TEXTAREA LIMITADO HORIZONTALMENTE */
         .nc-form-textarea-limited {
           padding: 0.75rem;
-          border: 1px solid rgba(255, 255, 255, 0.2);
+          border: 1px solid #d1d5db;
           border-radius: 6px;
-          background: rgba(255, 255, 255, 0.9);
+          background: white;
           color: #374151;
           font-size: 0.875rem;
           transition: all 0.2s ease;
@@ -692,13 +694,14 @@ const CreateNCPanel = () => {
 
         .nc-form-textarea-limited:focus {
           outline: none;
-          border-color: rgba(59, 130, 246, 0.5);
+          border-color: #3b82f6;
           box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
           background: white;
         }
 
+        /* ✅ CHAR COUNT - COLOR APROPIADO PARA FONDO CLARO */
         .nc-char-count {
-          color: rgba(255, 255, 255, 0.6);
+          color: #6b7280;
           font-size: 0.75rem;
           text-align: right;
         }
@@ -712,23 +715,25 @@ const CreateNCPanel = () => {
           display: flex;
           align-items: center;
           gap: 0.5rem;
-          color: #fca5a5;
+          color: #ef4444;
           font-size: 0.75rem;
           font-weight: 500;
         }
 
+        /* ✅ PHOTO UPLOAD - ADAPTADO PARA FONDO CLARO */
         .nc-photo-upload-area {
-          border: 2px dashed rgba(255, 255, 255, 0.3);
+          border: 2px dashed #d1d5db;
           border-radius: 8px;
           padding: 2rem;
           text-align: center;
           cursor: pointer;
           transition: all 0.2s ease;
+          background: #f9fafb;
         }
 
         .nc-photo-upload-area:hover {
-          border-color: rgba(255, 255, 255, 0.5);
-          background: rgba(255, 255, 255, 0.05);
+          border-color: #3b82f6;
+          background: #f3f4f6;
         }
 
         .nc-upload-icon {
@@ -738,12 +743,12 @@ const CreateNCPanel = () => {
         }
 
         .nc-upload-placeholder p {
-          color: white;
+          color: #374151;
           margin: 0.25rem 0;
         }
 
         .nc-upload-note {
-          color: rgba(255, 255, 255, 0.6);
+          color: #6b7280;
           font-size: 0.75rem;
         }
 
@@ -752,7 +757,7 @@ const CreateNCPanel = () => {
           justify-content: flex-end;
           gap: 1rem;
           padding-top: 1.5rem;
-          border-top: 1px solid rgba(255, 255, 255, 0.1);
+          border-top: 1px solid #e5e7eb;
           margin-top: 1.5rem;
         }
 

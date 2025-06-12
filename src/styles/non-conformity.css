@@ -3036,3 +3036,150 @@ body.non-conformity-active {
 .nc-form-group:has(.nc-photo-upload-area) {
   grid-column: 1 / -1 !important; /* Description y photo upload ocupan toda la fila */
 }
+/* ============================================
+   CORRECCIÓN ESPECÍFICA: TRACKING Y HISTORY
+   Agregar al final del CSS existente
+   ============================================ */
+
+/* ✅ TARJETAS PRINCIPALES DE TRACKING Y HISTORY - AZULADAS */
+.nc-tracking-panel .nc-panel-card,
+.nc-history-panel .nc-panel-card {
+  background: rgba(0, 95, 131, 0.75) !important;
+  backdrop-filter: blur(15px) !important;
+  -webkit-backdrop-filter: blur(15px) !important;
+  border: 1px solid rgba(255, 255, 255, 0.2) !important;
+  box-shadow: 0 8px 32px rgba(0, 95, 131, 0.3) !important;
+}
+
+/* ✅ HEADERS DE TRACKING Y HISTORY - TEXTO BLANCO */
+.nc-tracking-panel .nc-panel-header,
+.nc-history-panel .nc-panel-header {
+  border-bottom: 1px solid rgba(255, 255, 255, 0.2) !important;
+}
+
+.nc-tracking-panel .nc-panel-title,
+.nc-tracking-panel .nc-panel-subtitle,
+.nc-history-panel .nc-panel-title,
+.nc-history-panel .nc-panel-subtitle {
+  color: white !important;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3) !important;
+}
+
+/* ✅ SECCIONES INTERNAS DE TRACKING - FONDO CLARO */
+.nc-tracking-panel .nc-tracking-controls,
+.nc-tracking-panel .nc-tracking-details,
+.nc-tracking-panel .nc-timeline-section,
+.nc-tracking-panel .nc-add-update-form,
+.nc-tracking-panel .nc-quick-actions {
+  background: rgba(255, 255, 255, 0.95) !important;
+  border: 1px solid rgba(255, 255, 255, 0.3) !important;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1) !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+}
+
+/* ✅ SECCIONES INTERNAS DE HISTORY - FONDO CLARO */
+.nc-history-panel .nc-history-stats,
+.nc-history-panel .nc-history-filters,
+.nc-history-panel .nc-history-controls,
+.nc-history-panel .nc-history-results,
+.nc-history-panel .nc-history-timeline,
+.nc-history-panel .nc-timeline-group {
+  background: rgba(255, 255, 255, 0.95) !important;
+  border: 1px solid rgba(255, 255, 255, 0.3) !important;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1) !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+}
+
+/* ✅ TEXTO EN SECCIONES CLARAS DE TRACKING */
+.nc-tracking-panel .nc-form-label,
+.nc-tracking-panel .nc-detail-label,
+.nc-tracking-panel .nc-detail-value,
+.nc-tracking-panel .nc-subsection-title,
+.nc-tracking-panel .nc-timeline-title {
+  color: #374151 !important;
+  text-shadow: none !important;
+}
+
+/* ✅ TEXTO EN SECCIONES CLARAS DE HISTORY */
+.nc-history-panel .nc-form-label,
+.nc-history-panel .nc-stat-label,
+.nc-history-panel .nc-timeline-group-title,
+.nc-history-panel .nc-timeline-title,
+.nc-history-panel .nc-timeline-description {
+  color: #374151 !important;
+  text-shadow: none !important;
+}
+
+/* ✅ TEXTO SECUNDARIO EN SECCIONES CLARAS */
+.nc-tracking-panel .nc-description-text,
+.nc-tracking-panel .nc-timeline-date,
+.nc-history-panel .nc-timeline-date,
+.nc-history-panel .nc-timeline-details {
+  color: #6b7280 !important;
+}
+
+/* ✅ INPUTS Y SELECTS EN TRACKING Y HISTORY */
+.nc-tracking-panel .nc-form-input,
+.nc-tracking-panel .nc-form-select,
+.nc-tracking-panel .nc-form-textarea,
+.nc-history-panel .nc-form-input,
+.nc-history-panel .nc-form-select,
+.nc-history-panel .nc-form-textarea {
+  background: white !important;
+  border: 1px solid #d1d5db !important;
+  color: #374151 !important;
+}
+
+/* ✅ ESTADOS VACÍOS CON FONDO CLARO */
+.nc-tracking-panel .nc-empty-state,
+.nc-history-panel .nc-empty-state {
+  background: rgba(255, 255, 255, 0.95) !important;
+  color: #6b7280 !important;
+}
+
+/* ✅ TIMELINE ITEMS Y MARCADORES */
+.nc-tracking-panel .nc-timeline-item,
+.nc-history-panel .nc-timeline-item {
+  background: rgba(255, 255, 255, 0.95) !important;
+  border: 1px solid rgba(255, 255, 255, 0.3) !important;
+}
+
+/* ✅ ASEGURAR QUE BOTONES SE VEAN BIEN */
+.nc-tracking-panel .nc-btn,
+.nc-history-panel .nc-btn {
+  /* Los botones ya tienen sus estilos definidos, solo asegurar contraste */
+}
+
+/* ✅ STATS CARDS EN HISTORY */
+.nc-history-panel .nc-stat-card {
+  background: rgba(255, 255, 255, 0.95) !important;
+  border: 1px solid rgba(255, 255, 255, 0.3) !important;
+  color: #374151 !important;
+}
+
+.nc-history-panel .nc-stat-number {
+  color: #1f2937 !important;
+}
+
+/* ✅ TABLAS EN HISTORY */
+.nc-history-panel .nc-history-table-container,
+.nc-history-panel .nc-history-table {
+  background: rgba(255, 255, 255, 0.95) !important;
+}
+
+.nc-history-panel .nc-history-table th {
+  background: rgba(243, 244, 246, 0.95) !important;
+  color: #374151 !important;
+}
+
+.nc-history-panel .nc-history-table td {
+  color: #374151 !important;
+}
+
+/* ✅ CORREGIR CUALQUIER FONDO HEREDADO */
+.nc-tracking-panel .nc-panel-card > *:not(.nc-panel-header),
+.nc-history-panel .nc-panel-card > *:not(.nc-panel-header) {
+  background: rgba(255, 255, 255, 0.95) !important;
+}

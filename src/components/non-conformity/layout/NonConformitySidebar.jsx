@@ -43,7 +43,7 @@ const NonConformitySidebar = () => {
       <div className="nc-sidebar-header">
         <div className="nc-company-logo-container">
           <img 
-            src="/images/logo.png" 
+            src="/images/logo2.png" 
             alt="Valmont Solar Logo" 
             className="nc-company-logo"
           />

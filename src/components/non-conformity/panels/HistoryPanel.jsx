@@ -1,6 +1,8 @@
 // src/components/non-conformity/panels/HistoryPanel.jsx
 import React, { useState, useMemo } from 'react';
 import { useNonConformity } from '../../../context/NonConformityContext';
+// ✅ AGREGAR IMPORT DE UTILIDADES DE FECHA SEGURAS
+import { safeParseDate, safeDateCompare } from '../../../utils/dateUtils';
 
 const HistoryPanel = () => {
   const { state, dispatch } = useNonConformity();
@@ -92,7 +94,7 @@ const HistoryPanel = () => {
     return allEntries;
   }, [ncList]);
 
-  // Filter and sort timeline entries
+  // Filter and sort timeline entries - ✅ CON CORRECCIONES DE FECHAS SEGURAS
   const filteredEntries = useMemo(() => {
     let filtered = [...getAllTimelineEntries];
     
@@ -116,25 +118,28 @@ const HistoryPanel = () => {
           break;
       }
       
+      // ✅ CAMBIO: USAR FUNCIÓN SEGURA PARA FECHAS
       filtered = filtered.filter(entry => {
-        const entryDate = new Date(entry.date.split('/').reverse().join('-'));
+        const entryDate = safeParseDate(entry.date);
         return entryDate >= cutoffDate;
       });
     }
     
-    // Apply custom date range
+    // Apply custom date range - ✅ CON FECHAS SEGURAS
     if (historyFilters.dateFrom) {
       const fromDate = new Date(historyFilters.dateFrom);
+      // ✅ CAMBIO: USAR FUNCIÓN SEGURA PARA FECHAS
       filtered = filtered.filter(entry => {
-        const entryDate = new Date(entry.date.split('/').reverse().join('-'));
+        const entryDate = safeParseDate(entry.date);
         return entryDate >= fromDate;
       });
     }
     
     if (historyFilters.dateTo) {
       const toDate = new Date(historyFilters.dateTo);
+      // ✅ CAMBIO: USAR FUNCIÓN SEGURA PARA FECHAS
       filtered = filtered.filter(entry => {
-        const entryDate = new Date(entry.date.split('/').reverse().join('-'));
+        const entryDate = safeParseDate(entry.date);
         return entryDate <= toDate;
       });
     }
@@ -167,15 +172,14 @@ const HistoryPanel = () => {
       );
     }
     
-    // Sort by date (newest first)
+    // Sort by date (newest first) - ✅ CON ORDENAMIENTO SEGURO
     filtered.sort((a, b) => {
-      const dateA = new Date(a.date.split('/').reverse().join('-'));
-      const dateB = new Date(b.date.split('/').reverse().join('-'));
-      if (dateA.getTime() === dateB.getTime() && a.time && b.time) {
+      const result = safeDateCompare(a.date, b.date, 'desc');
+      if (result === 0 && a.time && b.time) {
         // If same date, sort by time
         return b.time.localeCompare(a.time);
       }
-      return dateB - dateA;
+      return result;
     });
     
     return filtered;
@@ -250,14 +254,15 @@ const HistoryPanel = () => {
     return classes[priority] || 'nc-priority-minor';
   };
 
-  // Calculate summary statistics
+  // Calculate summary statistics - ✅ CON FECHAS SEGURAS
   const summaryStats = useMemo(() => {
     return {
       totalEntries: filteredEntries.length,
       totalNCs: new Set(filteredEntries.map(entry => entry.ncId)).size,
       criticalEntries: filteredEntries.filter(entry => entry.priority === 'critical').length,
       recentEntries: filteredEntries.filter(entry => {
-        const entryDate = new Date(entry.date.split('/').reverse().join('-'));
+        // ✅ CAMBIO: USAR FUNCIÓN SEGURA PARA FECHAS
+        const entryDate = safeParseDate(entry.date);
         const weekAgo = new Date();
         weekAgo.setDate(weekAgo.getDate() - 7);
         return entryDate >= weekAgo;
@@ -292,7 +297,7 @@ const HistoryPanel = () => {
           </div>
           <div className="nc-stat-card">
             <span className="nc-stat-number">{summaryStats.totalNCs}</span>
-            <span className="nc-stat-label">NCs Involved</span>
+            <span className="nc-stat-label">Active NCs</span>
           </div>
           <div className="nc-stat-card">
             <span className="nc-stat-number">{summaryStats.criticalEntries}</span>
@@ -300,24 +305,23 @@ const HistoryPanel = () => {
           </div>
           <div className="nc-stat-card">
             <span className="nc-stat-number">{summaryStats.recentEntries}</span>
-            <span className="nc-stat-label">This Week</span>
+            <span className="nc-stat-label">Last 7 Days</span>
           </div>
         </div>
 
         {/* Filters Section */}
         <div className="nc-history-filters">
-          <div className="nc-filters-row">
-            {/* Search */}
-            <div className="nc-form-group nc-search-group">
-              <input
-                type="text"
-                className="nc-form-input nc-search-input"
-                placeholder="🔍 Search activities, NC numbers, projects..."
-                value={localSearchTerm}
-                onChange={(e) => setLocalSearchTerm(e.target.value)}
-              />
-            </div>
+          <div className="nc-search-section">
+            <input
+              type="text"
+              className="nc-form-input nc-search-input"
+              placeholder="Search activities by title, description, NC number..."
+              value={localSearchTerm}
+              onChange={(e) => setLocalSearchTerm(e.target.value)}
+            />
+          </div>
 
+          <div className="nc-filters-row">
             {/* Period Filter */}
             <div className="nc-form-group">
               <select
@@ -326,10 +330,10 @@ const HistoryPanel = () => {
                 onChange={(e) => handleFilterChange('period', e.target.value)}
               >
                 <option value="all">All time</option>
-                <option value="week">This week</option>
-                <option value="month">This month</option>
-                <option value="quarter">This quarter</option>
-                <option value="year">This year</option>
+                <option value="week">Last week</option>
+                <option value="month">Last month</option>
+                <option value="quarter">Last quarter</option>
+                <option value="year">Last year</option>
                 <option value="custom">Custom range</option>
               </select>
             </div>

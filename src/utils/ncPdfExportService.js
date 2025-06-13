@@ -1,4 +1,4 @@
-// src/utils/ncPdfExportService.js
+// src/utils/ncPdfExportService.js - ✅ CÓDIGO COMPLETO CORREGIDO
 import jsPDF from 'jspdf';
 
 /**
@@ -49,7 +49,7 @@ export const exportNCToPDF = async (ncData, options = {}) => {
     // Información básica
     currentY = addBasicInformation(pdf, ncData, margin, currentY, contentWidth);
 
-    // ===== PÁGINA 3: DETALLES Y DESCRIPCIÓN =====
+    // ===== PÁGINA 3: DETALLES, DESCRIPCIÓN Y FOTOS ===== ✅ REORDENADO
     pdf.addPage();
     currentPage++;
     currentY = margin;
@@ -58,6 +58,11 @@ export const exportNCToPDF = async (ncData, options = {}) => {
     currentY += 20;
 
     currentY = addNCDetails(pdf, ncData, margin, currentY, contentWidth);
+
+    // ✅ AGREGAR FOTOS AQUÍ DESPUÉS DE LA DESCRIPCIÓN
+    if (config.includePhotos && ncData.photos && ncData.photos.length > 0) {
+      currentY = await addPhotosInline(pdf, ncData, margin, currentY, contentWidth, pageHeight);
+    }
 
     // ===== PÁGINA 4: TRATAMIENTO Y ACCIONES CORRECTIVAS =====
     pdf.addPage();
@@ -68,12 +73,6 @@ export const exportNCToPDF = async (ncData, options = {}) => {
     currentY += 20;
 
     currentY = addTreatmentAndActions(pdf, ncData, margin, currentY, contentWidth);
-
-    // ===== PÁGINAS ADICIONALES: FOTOS =====
-    if (config.includePhotos && ncData.photos && ncData.photos.length > 0) {
-      const photoPages = await addPhotosPages(pdf, ncData, currentPage);
-      currentPage += photoPages;
-    }
 
     // ===== PÁGINA FINAL: TIMELINE Y FIRMAS =====
     pdf.addPage();
@@ -214,7 +213,8 @@ const addBasicInformation = (pdf, ncData, margin, startY, contentWidth) => {
     ['Date:', ncData.date || 'N/A'],
     ['Inspector:', ncData.createdBy || 'N/A'],
     ['Sector:', ncData.sector || 'N/A'],
-    ['Supplier:', ncData.supplier || 'N/A']
+    ['Supplier:', ncData.supplier || 'N/A'],
+    ['Detection Source:', ncData.detectionSource || 'N/A'] // ✅ NUEVO CAMPO
   ];
 
   pdf.setTextColor(0, 0, 0);
@@ -309,6 +309,125 @@ const addNCDetails = (pdf, ncData, margin, startY, contentWidth) => {
 };
 
 /**
+ * ✅ NUEVA FUNCIÓN: Añadir fotos inline después de la descripción
+ */
+const addPhotosInline = async (pdf, ncData, margin, startY, contentWidth, pageHeight) => {
+  let currentY = startY;
+  const photos = ncData.photos || [];
+  const imagePhotos = photos.filter(photo => photo.type === 'image');
+  const pdfDocuments = photos.filter(photo => photo.type === 'pdf');
+
+  if (photos.length === 0) return currentY;
+
+  // Título de sección de fotos
+  pdf.setTextColor(0, 95, 131);
+  pdf.setFontSize(16);
+  pdf.setFont('helvetica', 'bold');
+  pdf.text('Photo Documentation', margin, currentY);
+  currentY += 15;
+
+  pdf.setTextColor(0, 0, 0);
+  pdf.setFontSize(10);
+
+  // ✅ MANEJAR IMÁGENES CORRECTAMENTE
+  if (imagePhotos.length > 0) {
+    pdf.setFont('helvetica', 'bold');
+    pdf.text(`Images (${imagePhotos.length}):`, margin, currentY);
+    currentY += 10;
+
+    // Mostrar imágenes en grid 2x2
+    const imagesPerRow = 2;
+    const imageWidth = (contentWidth - 10) / imagesPerRow;
+    const imageHeight = imageWidth * 0.75; // Mantener proporción
+
+    for (let i = 0; i < imagePhotos.length; i++) {
+      const photo = imagePhotos[i];
+      const row = Math.floor(i / imagesPerRow);
+      const col = i % imagesPerRow;
+      
+      const x = margin + (col * (imageWidth + 5));
+      const y = currentY + (row * (imageHeight + 20));
+
+      // Verificar si necesitamos nueva página
+      if (y + imageHeight > pageHeight - 20) {
+        pdf.addPage();
+        addPageHeader(pdf, `NC ${ncData.number} - Photo Documentation (continued)`, pdf.getNumberOfPages());
+        currentY = 40;
+        const newRow = Math.floor(i / imagesPerRow) - Math.floor(i / imagesPerRow);
+        const newY = currentY + (newRow * (imageHeight + 20));
+        
+        try {
+          // ✅ ARREGLAR VISUALIZACIÓN DE IMÁGENES
+          if (photo.url && photo.url.startsWith('data:image')) {
+            pdf.addImage(photo.url, 'JPEG', x, newY, imageWidth, imageHeight);
+            
+            // Añadir nombre de archivo debajo
+            pdf.setFontSize(8);
+            pdf.text(photo.name || 'Image', x, newY + imageHeight + 5);
+            
+            // Información de compresión si existe
+            if (photo.compressionRatio) {
+              pdf.text(`Compressed: -${photo.compressionRatio}%`, x, newY + imageHeight + 10);
+            }
+          }
+        } catch (error) {
+          console.error('Error añadiendo imagen al PDF:', error);
+          // Mostrar placeholder si falla la imagen
+          pdf.setDrawColor(200, 200, 200);
+          pdf.rect(x, newY, imageWidth, imageHeight);
+          pdf.setFontSize(10);
+          pdf.text('Image not available', x + imageWidth/2, newY + imageHeight/2, { align: 'center' });
+        }
+      } else {
+        try {
+          // ✅ ARREGLAR VISUALIZACIÓN DE IMÁGENES
+          if (photo.url && photo.url.startsWith('data:image')) {
+            pdf.addImage(photo.url, 'JPEG', x, y, imageWidth, imageHeight);
+            
+            // Añadir nombre de archivo debajo
+            pdf.setFontSize(8);
+            pdf.text(photo.name || 'Image', x, y + imageHeight + 5);
+            
+            // Información de compresión si existe
+            if (photo.compressionRatio) {
+              pdf.text(`Compressed: -${photo.compressionRatio}%`, x, y + imageHeight + 10);
+            }
+          }
+        } catch (error) {
+          console.error('Error añadiendo imagen al PDF:', error);
+          // Mostrar placeholder si falla la imagen
+          pdf.setDrawColor(200, 200, 200);
+          pdf.rect(x, y, imageWidth, imageHeight);
+          pdf.setFontSize(10);
+          pdf.text('Image not available', x + imageWidth/2, y + imageHeight/2, { align: 'center' });
+        }
+      }
+    }
+
+    // Actualizar currentY basado en las imágenes añadidas
+    const totalRows = Math.ceil(imagePhotos.length / imagesPerRow);
+    currentY += (totalRows * (imageHeight + 20)) + 10;
+  }
+
+  // ✅ MANEJAR DOCUMENTOS PDF
+  if (pdfDocuments.length > 0) {
+    pdf.setFont('helvetica', 'bold');
+    pdf.text(`PDF Documents (${pdfDocuments.length}):`, margin, currentY);
+    currentY += 10;
+
+    pdfDocuments.forEach(doc => {
+      pdf.setFont('helvetica', 'normal');
+      pdf.text(`📄 ${doc.name} (${formatFileSize(doc.size)})`, margin + 10, currentY);
+      currentY += 8;
+    });
+
+    currentY += 10;
+  }
+
+  return currentY;
+};
+
+/**
  * Añade tratamiento y acciones correctivas
  */
 const addTreatmentAndActions = (pdf, ncData, margin, startY, contentWidth) => {
@@ -364,12 +483,13 @@ const addTreatmentAndActions = (pdf, ncData, margin, startY, contentWidth) => {
   }
 
   // Corrective Action Plan
-  if (ncData.correctiveActionPlan) {
+  if (ncData.correctiveAction || ncData.correctiveActionPlan) {
     pdf.setFont('helvetica', 'bold');
     pdf.text('Corrective Action Plan:', margin, currentY);
     currentY += 8;
     pdf.setFont('helvetica', 'normal');
-    const actionLines = pdf.splitTextToSize(ncData.correctiveActionPlan, contentWidth);
+    const actionText = ncData.correctiveAction || ncData.correctiveActionPlan;
+    const actionLines = pdf.splitTextToSize(actionText, contentWidth);
     pdf.text(actionLines, margin, currentY);
     currentY += (actionLines.length * 6) + 10;
   }
@@ -378,99 +498,7 @@ const addTreatmentAndActions = (pdf, ncData, margin, startY, contentWidth) => {
 };
 
 /**
- * Añade páginas de fotos
- */
-const addPhotosPages = async (pdf, ncData, startingPage) => {
-  let pagesAdded = 0;
-  const photos = ncData.photos || [];
-  const photosPerPage = 4; // 2x2 grid
-
-  for (let i = 0; i < photos.length; i += photosPerPage) {
-    pdf.addPage();
-    pagesAdded++;
-    
-    const currentPage = startingPage + pagesAdded;
-    addPageHeader(pdf, `NC ${ncData.number} - Photo Documentation`, currentPage);
-
-    const pagePhotos = photos.slice(i, i + photosPerPage);
-    await addPhotosToPage(pdf, pagePhotos, i);
-  }
-
-  return pagesAdded;
-};
-
-/**
- * Añade fotos a una página en grid 2x2
- */
-const addPhotosToPage = async (pdf, photos, startIndex) => {
-  const pageWidth = pdf.internal.pageSize.getWidth();
-  const margin = 20;
-  const photoWidth = (pageWidth - margin * 3) / 2; // 2 columnas
-  const photoHeight = 80;
-  
-  let row = 0;
-  let col = 0;
-
-  for (let i = 0; i < photos.length; i++) {
-    const photo = photos[i];
-    const x = margin + (col * (photoWidth + margin));
-    const y = 50 + (row * (photoHeight + 30));
-
-    try {
-      if (photo.type && photo.type.startsWith('image/')) {
-        // Añadir imagen
-        pdf.addImage(photo.url, 'JPEG', x, y, photoWidth, photoHeight);
-      } else {
-        // Placeholder para PDFs
-        pdf.setFillColor(240, 240, 240);
-        pdf.rect(x, y, photoWidth, photoHeight, 'F');
-        pdf.setTextColor(100, 100, 100);
-        pdf.setFontSize(12);
-        pdf.text('PDF Document', x + photoWidth/2, y + photoHeight/2, { align: 'center' });
-      }
-
-      // Información de la foto
-      pdf.setTextColor(0, 0, 0);
-      pdf.setFontSize(9);
-      pdf.setFont('helvetica', 'normal');
-      
-      const photoInfo = [
-        `Photo ${startIndex + i + 1}: ${photo.name}`,
-        `Size: ${formatFileSize(photo.size)}`
-      ];
-      
-      if (photo.compressionRatio) {
-        photoInfo.push(`Compressed: ${photo.compressionRatio}%`);
-      }
-
-      let infoY = y + photoHeight + 5;
-      photoInfo.forEach(info => {
-        const infoLines = pdf.splitTextToSize(info, photoWidth);
-        pdf.text(infoLines, x, infoY);
-        infoY += 4;
-      });
-
-    } catch (photoError) {
-      console.error('Error añadiendo foto:', photoError);
-      
-      // Fallback: mostrar placeholder
-      pdf.setFillColor(240, 240, 240);
-      pdf.rect(x, y, photoWidth, photoHeight, 'F');
-      pdf.setTextColor(100, 100, 100);
-      pdf.setFontSize(10);
-      pdf.text('Error loading image', x + photoWidth/2, y + photoHeight/2, { align: 'center' });
-    }
-
-    col++;
-    if (col >= 2) {
-      col = 0;
-      row++;
-    }
-  }
-};
-
-/**
- * Añade timeline y sección de firmas
+ * Añade timeline y firmas
  */
 const addTimelineAndSignatures = (pdf, ncData, margin, startY, contentWidth) => {
   let currentY = startY;

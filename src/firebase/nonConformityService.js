@@ -1,590 +1,532 @@
-// src/utils/ncPdfExportService.js - ✅ CÓDIGO COMPLETO CORREGIDO
-import jsPDF from 'jspdf';
+// src/firebase/nonConformityService.js - ✅ ACTUALIZADO CON DETECTION SOURCE
+import { 
+  collection, 
+  doc, 
+  addDoc, 
+  updateDoc, 
+  deleteDoc, 
+  getDoc, 
+  getDocs, 
+  query, 
+  where, 
+  orderBy, 
+  limit,
+  Timestamp 
+} from 'firebase/firestore';
+import { db } from './config';
+
+// Nombre de la colección en Firestore
+const NC_COLLECTION = 'nonConformities';
 
 /**
- * Exporta una Non-Conformity completa a PDF
- * @param {Object} ncData - Datos de la NC
- * @param {Object} options - Opciones de exportación
+ * Convierte datos de la aplicación al formato de Firestore
+ * ✅ ACTUALIZADO CON DETECTION SOURCE
  */
-export const exportNCToPDF = async (ncData, options = {}) => {
-  try {
-    console.log('Iniciando exportación de NC a PDF...', ncData.number);
+const createNCDocument = (ncData) => {
+  return {
+    // Basic Information
+    number: ncData.number || '',
+    priority: ncData.priority || '',
+    project: ncData.project || '',
+    projectCode: ncData.projectCode || '',
+    date: ncData.date || '',
+    supplier: ncData.supplier || '',
+    createdBy: ncData.createdBy || '',
+    sector: ncData.sector || '',
     
-    // Configuración por defecto
-    const config = {
-      filename: `NC_${ncData.number}_${ncData.project}_${new Date().toISOString().split('T')[0]}`,
-      showProgress: options.showProgress !== false,
-      includePhotos: options.includePhotos !== false,
-      ...options
-    };
-
-    // Crear instancia PDF
-    const pdf = new jsPDF({
-      orientation: 'portrait',
-      unit: 'mm',
-      format: 'a4'
-    });
-
-    // Dimensiones de página
-    const pageWidth = pdf.internal.pageSize.getWidth();
-    const pageHeight = pdf.internal.pageSize.getHeight();
-    const margin = 20;
-    const contentWidth = pageWidth - (margin * 2);
-
-    let currentY = margin;
-    let currentPage = 1;
-
-    // ===== PÁGINA 1: PORTADA =====
-    await createCoverPage(pdf, ncData, currentPage);
-
-    // ===== PÁGINA 2: INFORMACIÓN BÁSICA =====
-    pdf.addPage();
-    currentPage++;
-    currentY = margin;
+    // NC Details - ✅ DETECTION SOURCE AGREGADO
+    ncType: ncData.ncType || '',
+    detectionSource: ncData.detectionSource || '', // ✅ NUEVO CAMPO
+    description: ncData.description || '',
+    purchaseOrder: ncData.purchaseOrder || '',
+    componentCode: ncData.componentCode || '',
+    quantity: parseInt(ncData.quantity) || 0,
+    component: ncData.component || '',
     
-    // Header de página
-    addPageHeader(pdf, `NC ${ncData.number} - Basic Information`, currentPage);
-    currentY += 20;
-
-    // Información básica
-    currentY = addBasicInformation(pdf, ncData, margin, currentY, contentWidth);
-
-    // ===== PÁGINA 3: DETALLES, DESCRIPCIÓN Y FOTOS ===== ✅ REORDENADO
-    pdf.addPage();
-    currentPage++;
-    currentY = margin;
+    // Treatment/Resolution
+    materialDisposition: ncData.materialDisposition || '',
+    containmentAction: ncData.containmentAction || '',
     
-    addPageHeader(pdf, `NC ${ncData.number} - Details & Description`, currentPage);
-    currentY += 20;
-
-    currentY = addNCDetails(pdf, ncData, margin, currentY, contentWidth);
-
-    // ✅ AGREGAR FOTOS AQUÍ DESPUÉS DE LA DESCRIPCIÓN
-    if (config.includePhotos && ncData.photos && ncData.photos.length > 0) {
-      currentY = await addPhotosInline(pdf, ncData, margin, currentY, contentWidth, pageHeight);
-    }
-
-    // ===== PÁGINA 4: TRATAMIENTO Y ACCIONES CORRECTIVAS =====
-    pdf.addPage();
-    currentPage++;
-    currentY = margin;
+    // Corrective Action
+    rootCauseAnalysis: ncData.rootCauseAnalysis || '',
+    correctiveAction: ncData.correctiveAction || '',
+    correctiveActionPlan: ncData.correctiveActionPlan || '', // Legacy field
     
-    addPageHeader(pdf, `NC ${ncData.number} - Treatment & Corrective Actions`, currentPage);
-    currentY += 20;
-
-    currentY = addTreatmentAndActions(pdf, ncData, margin, currentY, contentWidth);
-
-    // ===== PÁGINA FINAL: TIMELINE Y FIRMAS =====
-    pdf.addPage();
-    currentPage++;
-    currentY = margin;
+    // Status and Timeline
+    status: ncData.status || 'open',
+    assignedTo: ncData.assignedTo || '',
+    plannedClosureDate: ncData.plannedClosureDate || '',
+    actualClosureDate: ncData.actualClosureDate || '',
     
-    addPageHeader(pdf, `NC ${ncData.number} - Timeline & Signatures`, currentPage);
-    currentY += 20;
-
-    currentY = addTimelineAndSignatures(pdf, ncData, margin, currentY, contentWidth);
-
-    // Guardar PDF
-    pdf.save(`${config.filename}.pdf`);
+    // Photos (compressed)
+    photos: ncData.photos || [],
     
-    console.log('✅ PDF exportado exitosamente');
-    return true;
-
-  } catch (error) {
-    console.error('Error exportando NC a PDF:', error);
-    throw error;
-  }
+    // Timestamps
+    createdAt: Timestamp.now(),
+    updatedAt: Timestamp.now(),
+    createdDate: ncData.createdDate || new Date().toLocaleDateString('en-GB'),
+    
+    // Calculated fields
+    daysOpen: ncData.daysOpen || 0,
+    
+    // Timeline
+    timeline: ncData.timeline || [{
+      date: `${new Date().toLocaleDateString('en-GB')} - ${new Date().toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' })}`,
+      title: '🚨 NC Created',
+      description: `Non-conformity ${ncData.number} has been created and assigned.`,
+      type: 'creation'
+    }]
+  };
 };
 
 /**
- * Crea la página de portada
+ * Convierte datos de Firestore al formato de la aplicación
+ * ✅ ACTUALIZADO CON DETECTION SOURCE
  */
-const createCoverPage = async (pdf, ncData, pageNumber) => {
-  const pageWidth = pdf.internal.pageSize.getWidth();
-  const pageHeight = pdf.internal.pageSize.getHeight();
-
-  try {
-    // Fondo azul gradiente
-    pdf.setFillColor(0, 95, 131);
-    pdf.rect(0, 0, pageWidth, pageHeight, 'F');
-
-    // Logo (si existe)
-    try {
-      const logoResponse = await fetch('/images/logo2.png');
-      if (logoResponse.ok) {
-        const logoBlob = await logoResponse.blob();
-        const logoDataUrl = await blobToDataURL(logoBlob);
-        pdf.addImage(logoDataUrl, 'PNG', pageWidth/2 - 25, 30, 50, 25);
-      }
-    } catch (logoError) {
-      console.log('Logo no disponible, continuando sin logo');
-    }
-
-    // Título principal
-    pdf.setTextColor(255, 255, 255);
-    pdf.setFontSize(28);
-    pdf.setFont('helvetica', 'bold');
-    pdf.text('NON-CONFORMITY REPORT', pageWidth/2, 80, { align: 'center' });
-
-    // Número de NC
-    pdf.setFontSize(24);
-    pdf.text(ncData.number || 'NC-XXX', pageWidth/2, 100, { align: 'center' });
-
-    // Información principal
-    pdf.setFontSize(16);
-    pdf.setFont('helvetica', 'normal');
-    
-    const mainInfo = [
-      `Project: ${ncData.project || 'N/A'}`,
-      `Priority: ${(ncData.priority || 'N/A').toUpperCase()}`,
-      `Date: ${ncData.date || 'N/A'}`,
-      `Status: ${(ncData.status || 'Open').toUpperCase()}`
-    ];
-
-    let infoY = 130;
-    mainInfo.forEach(info => {
-      pdf.text(info, pageWidth/2, infoY, { align: 'center' });
-      infoY += 12;
-    });
-
-    // Descripción resumida
-    if (ncData.description) {
-      pdf.setFontSize(12);
-      const shortDesc = ncData.description.length > 200 
-        ? ncData.description.substring(0, 200) + '...'
-        : ncData.description;
-      
-      const descLines = pdf.splitTextToSize(shortDesc, pageWidth - 80);
-      pdf.text(descLines, pageWidth/2, 190, { align: 'center' });
-    }
-
-    // Footer de portada
-    pdf.setFontSize(10);
-    pdf.text('Valmont Solar - Quality Control Department', pageWidth/2, pageHeight - 30, { align: 'center' });
-    pdf.text(`Generated on ${new Date().toLocaleDateString('en-GB')}`, pageWidth/2, pageHeight - 20, { align: 'center' });
-
-  } catch (error) {
-    console.error('Error creando portada:', error);
-  }
-};
-
-/**
- * Añade header a cada página
- */
-const addPageHeader = (pdf, title, pageNumber) => {
-  const pageWidth = pdf.internal.pageSize.getWidth();
+const convertFirestoreToAppData = (firestoreDoc) => {
+  const data = firestoreDoc.data();
   
-  // Línea superior
-  pdf.setDrawColor(0, 95, 131);
-  pdf.setLineWidth(2);
-  pdf.line(20, 15, pageWidth - 20, 15);
-
-  // Título
-  pdf.setTextColor(0, 95, 131);
-  pdf.setFontSize(14);
-  pdf.setFont('helvetica', 'bold');
-  pdf.text(title, 20, 25);
-
-  // Número de página
-  pdf.setFontSize(10);
-  pdf.setFont('helvetica', 'normal');
-  pdf.text(`Page ${pageNumber}`, pageWidth - 20, 25, { align: 'right' });
-};
-
-/**
- * Añade información básica
- */
-const addBasicInformation = (pdf, ncData, margin, startY, contentWidth) => {
-  let currentY = startY;
-
-  // Título de sección
-  pdf.setTextColor(0, 95, 131);
-  pdf.setFontSize(16);
-  pdf.setFont('helvetica', 'bold');
-  pdf.text('Basic Information', margin, currentY);
-  currentY += 15;
-
-  // Datos básicos en dos columnas
-  const basicData = [
-    ['NC Number:', ncData.number || 'N/A'],
-    ['Priority:', (ncData.priority || 'N/A').toUpperCase()],
-    ['Project:', ncData.project || 'N/A'],
-    ['Project Code CM:', ncData.projectCode || 'N/A'],
-    ['Date:', ncData.date || 'N/A'],
-    ['Inspector:', ncData.createdBy || 'N/A'],
-    ['Sector:', ncData.sector || 'N/A'],
-    ['Supplier:', ncData.supplier || 'N/A'],
-    ['Detection Source:', ncData.detectionSource || 'N/A'] // ✅ NUEVO CAMPO
-  ];
-
-  pdf.setTextColor(0, 0, 0);
-  pdf.setFontSize(11);
-
-  for (let i = 0; i < basicData.length; i += 2) {
-    // Columna izquierda
-    const leftItem = basicData[i];
-    if (leftItem) {
-      pdf.setFont('helvetica', 'bold');
-      pdf.text(leftItem[0], margin, currentY);
-      pdf.setFont('helvetica', 'normal');
-      pdf.text(leftItem[1], margin + 40, currentY);
-    }
-
-    // Columna derecha
-    const rightItem = basicData[i + 1];
-    if (rightItem) {
-      pdf.setFont('helvetica', 'bold');
-      pdf.text(rightItem[0], margin + contentWidth/2, currentY);
-      pdf.setFont('helvetica', 'normal');
-      pdf.text(rightItem[1], margin + contentWidth/2 + 40, currentY);
-    }
-
-    currentY += 8;
-  }
-
-  return currentY + 10;
-};
-
-/**
- * Añade detalles de la NC
- */
-const addNCDetails = (pdf, ncData, margin, startY, contentWidth) => {
-  let currentY = startY;
-
-  // Título de sección
-  pdf.setTextColor(0, 95, 131);
-  pdf.setFontSize(16);
-  pdf.setFont('helvetica', 'bold');
-  pdf.text('Non-Conformity Details', margin, currentY);
-  currentY += 15;
-
-  pdf.setTextColor(0, 0, 0);
-  pdf.setFontSize(11);
-
-  // Tipo de NC
-  pdf.setFont('helvetica', 'bold');
-  pdf.text('NC Type:', margin, currentY);
-  pdf.setFont('helvetica', 'normal');
-  pdf.text(ncData.ncType || 'N/A', margin + 30, currentY);
-  currentY += 12;
-
-  // Detalles del componente
-  const componentData = [
-    ['Component Code:', ncData.componentCode || 'N/A'],
-    ['Quantity:', ncData.quantity || 'N/A'],
-    ['Component Description:', ncData.component || 'N/A'],
-    ['Purchase Order:', ncData.purchaseOrder || 'N/A']
-  ];
-
-  componentData.forEach(item => {
-    pdf.setFont('helvetica', 'bold');
-    pdf.text(item[0], margin, currentY);
-    pdf.setFont('helvetica', 'normal');
+  return {
+    id: firestoreDoc.id,
     
-    if (item[1].length > 50) {
-      const lines = pdf.splitTextToSize(item[1], contentWidth - 50);
-      pdf.text(lines, margin + 50, currentY);
-      currentY += (lines.length * 6);
+    // Basic Information
+    number: data.number || '',
+    priority: data.priority || '',
+    project: data.project || '',
+    projectCode: data.projectCode || '',
+    date: data.date || '',
+    supplier: data.supplier || '',
+    createdBy: data.createdBy || '',
+    sector: data.sector || '',
+    
+    // NC Details - ✅ DETECTION SOURCE AGREGADO
+    ncType: data.ncType || '',
+    detectionSource: data.detectionSource || '', // ✅ NUEVO CAMPO
+    description: data.description || '',
+    purchaseOrder: data.purchaseOrder || '',
+    componentCode: data.componentCode || '',
+    quantity: data.quantity?.toString() || '',
+    component: data.component || '',
+    
+    // Treatment/Resolution
+    materialDisposition: data.materialDisposition || '',
+    containmentAction: data.containmentAction || '',
+    
+    // Corrective Action
+    rootCauseAnalysis: data.rootCauseAnalysis || '',
+    correctiveAction: data.correctiveAction || '',
+    correctiveActionPlan: data.correctiveActionPlan || '', // Legacy field
+    
+    // Status and Timeline
+    status: data.status || 'open',
+    assignedTo: data.assignedTo || '',
+    plannedClosureDate: data.plannedClosureDate || '',
+    actualClosureDate: data.actualClosureDate || '',
+    
+    // Photos
+    photos: data.photos || [],
+    
+    // Dates
+    createdDate: data.createdDate || '',
+    daysOpen: data.daysOpen || 0,
+    
+    // Timeline
+    timeline: data.timeline || []
+  };
+};
+
+/**
+ * Guardar una nueva NC en Firestore
+ * @param {Object} ncData - Datos de la NC desde el contexto
+ * @returns {Promise<string>} - ID del documento creado
+ */
+export const saveNonConformity = async (ncData) => {
+  try {
+    console.log('Guardando NC en Firestore...', ncData);
+    
+    // Convertir los datos al formato de Firestore
+    const firestoreData = createNCDocument(ncData);
+    
+    // Agregar a la colección
+    const docRef = await addDoc(collection(db, NC_COLLECTION), firestoreData);
+    
+    console.log('NC guardada con ID:', docRef.id);
+    return docRef.id;
+  } catch (error) {
+    console.error('Error guardando NC:', error);
+    throw new Error(`Error saving non-conformity: ${error.message}`);
+  }
+};
+
+/**
+ * Actualizar una NC existente
+ * @param {string} ncId - ID del documento a actualizar
+ * @param {Object} ncData - Nuevos datos de la NC
+ * @returns {Promise<void>}
+ */
+export const updateNonConformity = async (ncId, ncData) => {
+  try {
+    console.log('Actualizando NC:', ncId);
+    
+    // Convertir los datos al formato de Firestore
+    const firestoreData = createNCDocument(ncData);
+    
+    // Actualizar timestamp
+    firestoreData.updatedAt = Timestamp.now();
+    
+    // Obtener referencia al documento
+    const docRef = doc(db, NC_COLLECTION, ncId);
+    
+    // Actualizar documento
+    await updateDoc(docRef, firestoreData);
+    
+    console.log('NC actualizada exitosamente');
+  } catch (error) {
+    console.error('Error actualizando NC:', error);
+    throw new Error(`Error updating non-conformity: ${error.message}`);
+  }
+};
+
+/**
+ * Obtener una NC por ID
+ * @param {string} ncId - ID del documento
+ * @returns {Promise<Object|null>} - Datos de la NC o null si no existe
+ */
+export const getNonConformity = async (ncId) => {
+  try {
+    const docRef = doc(db, NC_COLLECTION, ncId);
+    const docSnap = await getDoc(docRef);
+    
+    if (docSnap.exists()) {
+      return convertFirestoreToAppData(docSnap);
     } else {
-      pdf.text(item[1], margin + 50, currentY);
-      currentY += 8;
+      console.log('No se encontró la NC con ID:', ncId);
+      return null;
     }
-  });
-
-  currentY += 10;
-
-  // Descripción del problema
-  pdf.setFont('helvetica', 'bold');
-  pdf.text('Problem Description:', margin, currentY);
-  currentY += 8;
-
-  if (ncData.description) {
-    pdf.setFont('helvetica', 'normal');
-    const descLines = pdf.splitTextToSize(ncData.description, contentWidth);
-    pdf.text(descLines, margin, currentY);
-    currentY += (descLines.length * 6) + 10;
+  } catch (error) {
+    console.error('Error obteniendo NC:', error);
+    throw new Error(`Error getting non-conformity: ${error.message}`);
   }
-
-  return currentY;
 };
 
 /**
- * ✅ NUEVA FUNCIÓN: Añadir fotos inline después de la descripción
+ * Obtener todas las NCs con filtros opcionales
+ * ✅ ACTUALIZADO PARA SOPORTAR FILTROS POR DETECTION SOURCE
+ * @param {Object} filters - Filtros opcionales
+ * @returns {Promise<Array>} - Array de NCs
  */
-const addPhotosInline = async (pdf, ncData, margin, startY, contentWidth, pageHeight) => {
-  let currentY = startY;
-  const photos = ncData.photos || [];
-  const imagePhotos = photos.filter(photo => photo.type === 'image');
-  const pdfDocuments = photos.filter(photo => photo.type === 'pdf');
-
-  if (photos.length === 0) return currentY;
-
-  // Título de sección de fotos
-  pdf.setTextColor(0, 95, 131);
-  pdf.setFontSize(16);
-  pdf.setFont('helvetica', 'bold');
-  pdf.text('Photo Documentation', margin, currentY);
-  currentY += 15;
-
-  pdf.setTextColor(0, 0, 0);
-  pdf.setFontSize(10);
-
-  // ✅ MANEJAR IMÁGENES CORRECTAMENTE
-  if (imagePhotos.length > 0) {
-    pdf.setFont('helvetica', 'bold');
-    pdf.text(`Images (${imagePhotos.length}):`, margin, currentY);
-    currentY += 10;
-
-    // Mostrar imágenes en grid 2x2
-    const imagesPerRow = 2;
-    const imageWidth = (contentWidth - 10) / imagesPerRow;
-    const imageHeight = imageWidth * 0.75; // Mantener proporción
-
-    for (let i = 0; i < imagePhotos.length; i++) {
-      const photo = imagePhotos[i];
-      const row = Math.floor(i / imagesPerRow);
-      const col = i % imagesPerRow;
-      
-      const x = margin + (col * (imageWidth + 5));
-      const y = currentY + (row * (imageHeight + 20));
-
-      // Verificar si necesitamos nueva página
-      if (y + imageHeight > pageHeight - 20) {
-        pdf.addPage();
-        addPageHeader(pdf, `NC ${ncData.number} - Photo Documentation (continued)`, pdf.getNumberOfPages());
-        currentY = 40;
-        const newRow = Math.floor(i / imagesPerRow) - Math.floor(i / imagesPerRow);
-        const newY = currentY + (newRow * (imageHeight + 20));
-        
-        try {
-          // ✅ ARREGLAR VISUALIZACIÓN DE IMÁGENES
-          if (photo.url && photo.url.startsWith('data:image')) {
-            pdf.addImage(photo.url, 'JPEG', x, newY, imageWidth, imageHeight);
-            
-            // Añadir nombre de archivo debajo
-            pdf.setFontSize(8);
-            pdf.text(photo.name || 'Image', x, newY + imageHeight + 5);
-            
-            // Información de compresión si existe
-            if (photo.compressionRatio) {
-              pdf.text(`Compressed: -${photo.compressionRatio}%`, x, newY + imageHeight + 10);
-            }
-          }
-        } catch (error) {
-          console.error('Error añadiendo imagen al PDF:', error);
-          // Mostrar placeholder si falla la imagen
-          pdf.setDrawColor(200, 200, 200);
-          pdf.rect(x, newY, imageWidth, imageHeight);
-          pdf.setFontSize(10);
-          pdf.text('Image not available', x + imageWidth/2, newY + imageHeight/2, { align: 'center' });
-        }
-      } else {
-        try {
-          // ✅ ARREGLAR VISUALIZACIÓN DE IMÁGENES
-          if (photo.url && photo.url.startsWith('data:image')) {
-            pdf.addImage(photo.url, 'JPEG', x, y, imageWidth, imageHeight);
-            
-            // Añadir nombre de archivo debajo
-            pdf.setFontSize(8);
-            pdf.text(photo.name || 'Image', x, y + imageHeight + 5);
-            
-            // Información de compresión si existe
-            if (photo.compressionRatio) {
-              pdf.text(`Compressed: -${photo.compressionRatio}%`, x, y + imageHeight + 10);
-            }
-          }
-        } catch (error) {
-          console.error('Error añadiendo imagen al PDF:', error);
-          // Mostrar placeholder si falla la imagen
-          pdf.setDrawColor(200, 200, 200);
-          pdf.rect(x, y, imageWidth, imageHeight);
-          pdf.setFontSize(10);
-          pdf.text('Image not available', x + imageWidth/2, y + imageHeight/2, { align: 'center' });
-        }
-      }
+export const getNonConformities = async (filters = {}) => {
+  try {
+    console.log('Obteniendo NCs con filtros:', filters);
+    
+    // Crear query base
+    let q = query(collection(db, NC_COLLECTION), orderBy('createdAt', 'desc'));
+    
+    // Aplicar filtros si existen
+    if (filters.status && filters.status !== 'all') {
+      q = query(q, where('status', '==', filters.status));
+    }
+    
+    if (filters.priority && filters.priority !== 'all') {
+      q = query(q, where('priority', '==', filters.priority));
+    }
+    
+    if (filters.project && filters.project !== 'all') {
+      q = query(q, where('project', '==', filters.project));
     }
 
-    // Actualizar currentY basado en las imágenes añadidas
-    const totalRows = Math.ceil(imagePhotos.length / imagesPerRow);
-    currentY += (totalRows * (imageHeight + 20)) + 10;
-  }
-
-  // ✅ MANEJAR DOCUMENTOS PDF
-  if (pdfDocuments.length > 0) {
-    pdf.setFont('helvetica', 'bold');
-    pdf.text(`PDF Documents (${pdfDocuments.length}):`, margin, currentY);
-    currentY += 10;
-
-    pdfDocuments.forEach(doc => {
-      pdf.setFont('helvetica', 'normal');
-      pdf.text(`📄 ${doc.name} (${formatFileSize(doc.size)})`, margin + 10, currentY);
-      currentY += 8;
+    // ✅ NUEVO: Filtro por detection source
+    if (filters.detectionSource && filters.detectionSource !== 'all') {
+      q = query(q, where('detectionSource', '==', filters.detectionSource));
+    }
+    
+    if (filters.limit) {
+      q = query(q, limit(filters.limit));
+    }
+    
+    // Ejecutar query
+    const querySnapshot = await getDocs(q);
+    
+    // Convertir resultados
+    let nonConformities = [];
+    querySnapshot.forEach((doc) => {
+      nonConformities.push(convertFirestoreToAppData(doc));
     });
-
-    currentY += 10;
+    
+    // Filtrar por búsqueda en el cliente (Firestore no soporta búsqueda full-text)
+    if (filters.search) {
+      const searchLower = filters.search.toLowerCase();
+      nonConformities = nonConformities.filter(nc => 
+        nc.number.toLowerCase().includes(searchLower) ||
+        nc.project.toLowerCase().includes(searchLower) ||
+        nc.supplier.toLowerCase().includes(searchLower) ||
+        nc.description.toLowerCase().includes(searchLower) ||
+        nc.componentCode.toLowerCase().includes(searchLower) ||
+        nc.detectionSource.toLowerCase().includes(searchLower) // ✅ INCLUIR EN BÚSQUEDA
+      );
+    }
+    
+    // Filtrar por fechas en el cliente
+    if (filters.dateStart) {
+      nonConformities = nonConformities.filter(nc => 
+        nc.date >= filters.dateStart
+      );
+    }
+    
+    if (filters.dateEnd) {
+      nonConformities = nonConformities.filter(nc => 
+        nc.date <= filters.dateEnd
+      );
+    }
+    
+    console.log(`Se encontraron ${nonConformities.length} NCs`);
+    return nonConformities;
+  } catch (error) {
+    console.error('Error obteniendo NCs:', error);
+    throw new Error(`Error getting non-conformities: ${error.message}`);
   }
-
-  return currentY;
 };
 
 /**
- * Añade tratamiento y acciones correctivas
+ * Eliminar una NC
+ * @param {string} ncId - ID del documento a eliminar
+ * @returns {Promise<void>}
  */
-const addTreatmentAndActions = (pdf, ncData, margin, startY, contentWidth) => {
-  let currentY = startY;
-
-  // Treatment/Resolution
-  pdf.setTextColor(0, 95, 131);
-  pdf.setFontSize(16);
-  pdf.setFont('helvetica', 'bold');
-  pdf.text('Treatment / Resolution', margin, currentY);
-  currentY += 15;
-
-  pdf.setTextColor(0, 0, 0);
-  pdf.setFontSize(11);
-
-  // Material Disposition
-  pdf.setFont('helvetica', 'bold');
-  pdf.text('Material Disposition:', margin, currentY);
-  pdf.setFont('helvetica', 'normal');
-  pdf.text(ncData.materialDisposition || 'Not specified', margin + 50, currentY);
-  currentY += 12;
-
-  // Containment Action
-  if (ncData.containmentAction) {
-    pdf.setFont('helvetica', 'bold');
-    pdf.text('Containment Action:', margin, currentY);
-    currentY += 8;
-    pdf.setFont('helvetica', 'normal');
-    const containmentLines = pdf.splitTextToSize(ncData.containmentAction, contentWidth);
-    pdf.text(containmentLines, margin, currentY);
-    currentY += (containmentLines.length * 6) + 15;
+export const deleteNonConformity = async (ncId) => {
+  try {
+    const docRef = doc(db, NC_COLLECTION, ncId);
+    await deleteDoc(docRef);
+    console.log('NC eliminada:', ncId);
+  } catch (error) {
+    console.error('Error eliminando NC:', error);
+    throw new Error(`Error deleting non-conformity: ${error.message}`);
   }
-
-  // Corrective Action Request
-  pdf.setTextColor(0, 95, 131);
-  pdf.setFontSize(16);
-  pdf.setFont('helvetica', 'bold');
-  pdf.text('Corrective Action Request', margin, currentY);
-  currentY += 15;
-
-  pdf.setTextColor(0, 0, 0);
-  pdf.setFontSize(11);
-
-  // Root Cause Analysis
-  if (ncData.rootCauseAnalysis) {
-    pdf.setFont('helvetica', 'bold');
-    pdf.text('Root Cause Analysis:', margin, currentY);
-    currentY += 8;
-    pdf.setFont('helvetica', 'normal');
-    const rootCauseLines = pdf.splitTextToSize(ncData.rootCauseAnalysis, contentWidth);
-    pdf.text(rootCauseLines, margin, currentY);
-    currentY += (rootCauseLines.length * 6) + 10;
-  }
-
-  // Corrective Action Plan
-  if (ncData.correctiveAction || ncData.correctiveActionPlan) {
-    pdf.setFont('helvetica', 'bold');
-    pdf.text('Corrective Action Plan:', margin, currentY);
-    currentY += 8;
-    pdf.setFont('helvetica', 'normal');
-    const actionText = ncData.correctiveAction || ncData.correctiveActionPlan;
-    const actionLines = pdf.splitTextToSize(actionText, contentWidth);
-    pdf.text(actionLines, margin, currentY);
-    currentY += (actionLines.length * 6) + 10;
-  }
-
-  return currentY;
 };
 
 /**
- * Añade timeline y firmas
+ * Actualizar estado de una NC
+ * @param {string} ncId - ID de la NC
+ * @param {string} newStatus - Nuevo estado
+ * @param {Object} additionalData - Datos adicionales (opcional)
+ * @returns {Promise<void>}
  */
-const addTimelineAndSignatures = (pdf, ncData, margin, startY, contentWidth) => {
-  let currentY = startY;
+export const updateNCStatus = async (ncId, newStatus, additionalData = {}) => {
+  try {
+    const docRef = doc(db, NC_COLLECTION, ncId);
+    
+    const updateData = {
+      status: newStatus,
+      updatedAt: Timestamp.now(),
+      ...additionalData
+    };
+    
+    // Si se está cerrando, agregar fecha de cierre
+    if (newStatus === 'resolved' || newStatus === 'closed') {
+      updateData.actualClosureDate = new Date().toLocaleDateString('en-GB');
+    }
+    
+    await updateDoc(docRef, updateData);
+    console.log('Estado de NC actualizado:', ncId, newStatus);
+  } catch (error) {
+    console.error('Error actualizando estado de NC:', error);
+    throw new Error(`Error updating NC status: ${error.message}`);
+  }
+};
 
-  // Timeline
-  if (ncData.timeline && ncData.timeline.length > 0) {
-    pdf.setTextColor(0, 95, 131);
-    pdf.setFontSize(16);
-    pdf.setFont('helvetica', 'bold');
-    pdf.text('Timeline', margin, currentY);
-    currentY += 15;
+/**
+ * Agregar entrada al timeline de una NC
+ * @param {string} ncId - ID de la NC
+ * @param {Object} timelineEntry - Nueva entrada del timeline
+ * @returns {Promise<void>}
+ */
+export const addTimelineEntry = async (ncId, timelineEntry) => {
+  try {
+    const nc = await getNonConformity(ncId);
+    if (!nc) throw new Error('NC not found');
+    
+    const newTimeline = [timelineEntry, ...nc.timeline];
+    
+    const docRef = doc(db, NC_COLLECTION, ncId);
+    await updateDoc(docRef, {
+      timeline: newTimeline,
+      updatedAt: Timestamp.now()
+    });
+    
+    console.log('Timeline entry added to NC:', ncId);
+  } catch (error) {
+    console.error('Error adding timeline entry:', error);
+    throw new Error(`Error adding timeline entry: ${error.message}`);
+  }
+};
 
-    pdf.setTextColor(0, 0, 0);
-    pdf.setFontSize(10);
-
-    ncData.timeline.forEach(entry => {
-      pdf.setFont('helvetica', 'bold');
-      pdf.text(`${entry.date || 'N/A'}`, margin, currentY);
-      pdf.setFont('helvetica', 'normal');
-      pdf.text(entry.title || 'N/A', margin + 50, currentY);
-      currentY += 6;
+/**
+ * Obtener estadísticas generales de NCs
+ * ✅ ACTUALIZADO CON STATISTICS POR DETECTION SOURCE
+ * @returns {Promise<Object>} - Estadísticas de NCs
+ */
+export const getNCStats = async () => {
+  try {
+    const q = query(collection(db, NC_COLLECTION));
+    const querySnapshot = await getDocs(q);
+    
+    const stats = {
+      total: 0,
+      open: 0,
+      progress: 0,
+      resolved: 0,
+      closed: 0,
+      critical: 0,
+      major: 0,
+      minor: 0,
+      low: 0,
+      byProject: {},
+      bySupplier: {},
+      byCreator: {},
+      byDetectionSource: {} // ✅ NUEVA ESTADÍSTICA
+    };
+    
+    querySnapshot.forEach((doc) => {
+      const data = doc.data();
+      stats.total++;
       
-      if (entry.description) {
-        const descLines = pdf.splitTextToSize(entry.description, contentWidth - 20);
-        pdf.text(descLines, margin + 10, currentY);
-        currentY += (descLines.length * 4) + 5;
-      }
+      // Contar por estado
+      const status = data.status || 'open';
+      if (stats[status] !== undefined) stats[status]++;
+      
+      // Contar por prioridad
+      const priority = data.priority || 'minor';
+      if (stats[priority] !== undefined) stats[priority]++;
+      
+      // Contar por proyecto
+      const project = data.project || 'Unknown';
+      stats.byProject[project] = (stats.byProject[project] || 0) + 1;
+      
+      // Contar por supplier
+      const supplier = data.supplier || 'Unknown';
+      stats.bySupplier[supplier] = (stats.bySupplier[supplier] || 0) + 1;
+      
+      // Contar por creador
+      const creator = data.createdBy || 'Unknown';
+      stats.byCreator[creator] = (stats.byCreator[creator] || 0) + 1;
+
+      // ✅ NUEVO: Contar por detection source
+      const detectionSource = data.detectionSource || 'not_specified';
+      stats.byDetectionSource[detectionSource] = (stats.byDetectionSource[detectionSource] || 0) + 1;
     });
-
-    currentY += 20;
+    
+    return stats;
+  } catch (error) {
+    console.error('Error obteniendo estadísticas de NC:', error);
+    throw new Error(`Error getting NC stats: ${error.message}`);
   }
-
-  // Sección de firmas
-  pdf.setTextColor(0, 95, 131);
-  pdf.setFontSize(16);
-  pdf.setFont('helvetica', 'bold');
-  pdf.text('Signatures', margin, currentY);
-  currentY += 20;
-
-  // Campos de firma
-  const signatures = [
-    'Inspector:',
-    'Quality Manager:',
-    'Project Manager:'
-  ];
-
-  signatures.forEach(sig => {
-    pdf.setTextColor(0, 0, 0);
-    pdf.setFontSize(11);
-    pdf.setFont('helvetica', 'normal');
-    pdf.text(sig, margin, currentY);
-    
-    // Línea para firma
-    pdf.setDrawColor(0, 0, 0);
-    pdf.setLineWidth(0.5);
-    pdf.line(margin + 40, currentY, margin + 120, currentY);
-    
-    // Fecha
-    pdf.text('Date:', margin + 140, currentY);
-    pdf.line(margin + 160, currentY, margin + 200, currentY);
-    
-    currentY += 20;
-  });
-
-  return currentY;
 };
 
 /**
- * Convierte Blob a DataURL
+ * Buscar NCs por texto
+ * ✅ ACTUALIZADO PARA INCLUIR DETECTION SOURCE EN BÚSQUEDA
+ * @param {string} searchTerm - Término de búsqueda
+ * @returns {Promise<Array>} - Array de NCs que coinciden
  */
-const blobToDataURL = (blob) => {
-  return new Promise((resolve, reject) => {
-    const reader = new FileReader();
-    reader.onload = () => resolve(reader.result);
-    reader.onerror = reject;
-    reader.readAsDataURL(blob);
-  });
+export const searchNonConformities = async (searchTerm) => {
+  try {
+    // Obtener todas las NCs y filtrar en el cliente
+    // (Firestore no tiene búsqueda full-text nativa)
+    const allNCs = await getNonConformities();
+    
+    const searchLower = searchTerm.toLowerCase();
+    
+    return allNCs.filter(nc => 
+      nc.number.toLowerCase().includes(searchLower) ||
+      nc.project.toLowerCase().includes(searchLower) ||
+      nc.supplier.toLowerCase().includes(searchLower) ||
+      nc.description.toLowerCase().includes(searchLower) ||
+      nc.componentCode.toLowerCase().includes(searchLower) ||
+      nc.component.toLowerCase().includes(searchLower) ||
+      nc.ncType.toLowerCase().includes(searchLower) ||
+      nc.detectionSource.toLowerCase().includes(searchLower) || // ✅ INCLUIR EN BÚSQUEDA
+      nc.createdBy.toLowerCase().includes(searchLower)
+    );
+  } catch (error) {
+    console.error('Error buscando NCs:', error);
+    throw new Error(`Error searching non-conformities: ${error.message}`);
+  }
 };
 
 /**
- * Formatea el tamaño de archivo
+ * ✅ NUEVA FUNCIÓN: Obtener estadísticas específicas por detection source
+ * @returns {Promise<Object>} - Estadísticas detalladas por detection source
  */
-const formatFileSize = (bytes) => {
-  if (!bytes) return '0 B';
-  const k = 1024;
-  const sizes = ['B', 'KB', 'MB', 'GB'];
-  const i = Math.floor(Math.log(bytes) / Math.log(k));
-  return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+export const getDetectionSourceStats = async () => {
+  try {
+    const q = query(collection(db, NC_COLLECTION));
+    const querySnapshot = await getDocs(q);
+    
+    const detectionSourceStats = {};
+    
+    querySnapshot.forEach((doc) => {
+      const data = doc.data();
+      const detectionSource = data.detectionSource || 'not_specified';
+      
+      if (!detectionSourceStats[detectionSource]) {
+        detectionSourceStats[detectionSource] = {
+          total: 0,
+          open: 0,
+          resolved: 0,
+          critical: 0,
+          major: 0,
+          minor: 0,
+          low: 0
+        };
+      }
+      
+      detectionSourceStats[detectionSource].total++;
+      detectionSourceStats[detectionSource][data.status || 'open']++;
+      detectionSourceStats[detectionSource][data.priority || 'minor']++;
+    });
+    
+    return detectionSourceStats;
+  } catch (error) {
+    console.error('Error obteniendo estadísticas por detection source:', error);
+    throw new Error(`Error getting detection source stats: ${error.message}`);
+  }
+};
+
+/**
+ * ✅ NUEVA FUNCIÓN: Obtener estadísticas específicas por supplier
+ * @returns {Promise<Object>} - Estadísticas detalladas por supplier
+ */
+export const getSupplierStats = async () => {
+  try {
+    const q = query(collection(db, NC_COLLECTION));
+    const querySnapshot = await getDocs(q);
+    
+    const supplierStats = {};
+    
+    querySnapshot.forEach((doc) => {
+      const data = doc.data();
+      const supplier = data.supplier || 'not_specified';
+      
+      if (!supplierStats[supplier]) {
+        supplierStats[supplier] = {
+          total: 0,
+          open: 0,
+          resolved: 0,
+          critical: 0,
+          major: 0,
+          minor: 0,
+          low: 0,
+          avgResolutionTime: 0
+        };
+      }
+      
+      supplierStats[supplier].total++;
+      supplierStats[supplier][data.status || 'open']++;
+      supplierStats[supplier][data.priority || 'minor']++;
+    });
+    
+    return supplierStats;
+  } catch (error) {
+    console.error('Error obteniendo estadísticas por supplier:', error);
+    throw new Error(`Error getting supplier stats: ${error.message}`);
+  }
 };

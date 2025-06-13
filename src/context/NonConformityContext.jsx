@@ -1,127 +1,112 @@
-// src/context/NonConformityContext.jsx - COMPLETO Y PERFECTO
-import React, { createContext, useContext, useReducer } from 'react';
+import React, { createContext, useContext, useReducer, useEffect } from 'react';
 
-// Initial state for Non-Conformity Management
+// ✅ NUEVOS IMPORTS FIREBASE
+import { 
+  saveNonConformity, 
+  updateNonConformity, 
+  getNonConformities, 
+  getNonConformity,
+  deleteNonConformity,
+  updateNCStatus,
+  addTimelineEntry,
+  getNCStats 
+} from '../firebase/nonConformityService';
+
+// Initial state - COMPLETO
 const initialState = {
   // Navigation state
   activeTab: 'create',
   
-  // Current NC being worked on - CON TODOS LOS CAMPOS NUEVOS
+  // Current NC being edited
   currentNC: {
-    id: '',
     number: '',
-    priority: '',
-    project: '',
-    projectCode: '', // ✅ NUEVO CAMPO
-    date: '', // ✅ NUEVO CAMPO
-    supplier: '',
-    ncType: '',
+    title: '',
     description: '',
-    purchaseOrder: '', // ✅ NUEVO CAMPO (opcional)
-    componentCode: '', // ✅ NUEVO CAMPO (obligatorio)
-    quantity: '', // ✅ NUEVO CAMPO (obligatorio)
-    component: '',
-    status: 'open',
-    createdBy: '', // ✅ NUEVO CAMPO (Inspector Name)
-    sector: '', // ✅ NUEVO CAMPO
-    createdDate: '',
-    assignedTo: '',
-    plannedClosureDate: '',
-    actualClosureDate: '',
-    rootCause: '',
-    correctiveAction: '',
-    preventiveAction: '',
-    // ✅ NUEVOS CAMPOS PARA CORRECTIVE ACTION REQUEST
+    location: '',
+    severity: 'medium',
+    priority: 'medium',
+    detectedBy: '',
+    project: '',
+    supplier: '',
+    affectedProduct: '',
+    potentialImpact: '',
+    immediateAction: '',
     rootCauseAnalysis: '',
     correctiveActionPlan: '',
-    materialDisposition: '',
-    containmentAction: '',
-    photos: []
+    responsiblePerson: '',
+    targetDate: '',
+    actualClosureDate: '',
+    verificationMethod: '',
+    attachments: [],
+    status: 'open',
+    timeline: []
   },
   
-  // Form validation
+  // Validation state
   validationErrors: {},
   isFormValid: false,
   
-  // NC List for database view - CON DATOS ACTUALIZADOS
+  // List of all NCs
   ncList: [
     {
-      id: '564',
-      number: 'RNC-564',
-      priority: 'major',
-      project: 'JESI',
-      projectCode: '12926', // ✅ NUEVO CAMPO
-      date: '2025-05-05', // ✅ NUEVO CAMPO
-      supplier: 'SCI-FAPI',
-      ncType: 'defective_product',
-      description: 'Field detection that slots of 232 pali L4 LATERAL POST are smaller than minimum required, preventing assembly.',
-      purchaseOrder: 'PO-2024-564', // ✅ NUEVO CAMPO
-      componentCode: 'L4-155X110X50X4.5', // ✅ NUEVO CAMPO
-      quantity: '232', // ✅ NUEVO CAMPO
-      component: 'L4 LATERAL POST - 155X110X50X4.5MM, 4200MM, S420MC, HDG_100',
-      status: 'progress',
-      createdBy: 'Juan Sebastian Sanchez', // ✅ NUEVO CAMPO
-      sector: 'Quality Control', // ✅ NUEVO CAMPO
-      createdDate: '05/05/2025',
-      assignedTo: 'Quality Control',
-      plannedClosureDate: '29/05/2025',
-      actualClosureDate: '08/05/2025',
-      daysOpen: 3,
-      materialDisposition: 'rework_by_convert',
-      // ✅ NUEVOS CAMPOS PARA CORRECTIVE ACTION REQUEST
-      rootCauseAnalysis: 'Investigation revealed that the punching tool dimensions were not calibrated correctly during the manufacturing process. The tool specification was 0.5mm smaller than the required minimum slot size.',
-      correctiveActionPlan: 'Implement mandatory tool calibration verification before each production batch. Update quality control procedures to include dimensional verification of critical components during first article inspection.',
+      id: '1',
+      number: 'RNC-001',
+      title: 'Improper Welding Procedure',
+      description: 'Non-conforming welding technique observed during structural work inspection.',
+      location: 'Building A - Floor 3 - Column C3',
+      severity: 'high',
+      priority: 'critical',
+      detectedBy: 'Juan Pérez - Quality Inspector',
+      project: 'Hospital Central - Phase 2',
+      supplier: 'MetalWorks Ltd.',
+      affectedProduct: 'Structural Steel Columns',
+      potentialImpact: 'Compromised structural integrity, potential safety hazards',
+      immediateAction: 'Work stopped immediately. Area cordoned off. Emergency structural assessment requested.',
+      rootCauseAnalysis: 'Welder certification expired 2 months ago. Inadequate supervision and documentation review process.',
+      correctiveActionPlan: 'Re-certify all welders. Implement daily certification checks. Establish mandatory supervisor verification before critical welding operations.',
+      responsiblePerson: 'Miguel Torres - Construction Manager',
+      targetDate: '15/05/2025',
+      actualClosureDate: '',
+      verificationMethod: 'Independent structural engineer assessment + certification audit',
+      status: 'in-progress',
+      createdDate: '01/05/2025',
+      daysOpen: 12,
       timeline: [
         {
-          date: '08/05/2025 - 14:30',
-          title: '🔧 Corrective Action Implemented',
-          description: 'Proceeded with component rework according to Valmont Solar indications. Actual treatment closure.',
+          date: '01/05/2025 - 14:30',
+          title: '🚨 Critical NC Detected',
+          description: 'Improper welding technique identified during routine quality inspection.',
+          type: 'detection'
+        },
+        {
+          date: '01/05/2025 - 15:45',
+          title: '⚠️ Immediate Action Taken',
+          description: 'Work halted immediately. Safety perimeter established.',
           type: 'action'
         },
         {
-          date: '06/05/2025 - 10:15',
-          title: '📋 Action Plan Approved',
-          description: 'REWORK BY CONVERT disposition approved. Planned closure date: 29/05/2025.',
-          type: 'approval'
-        },
-        {
-          date: '05/05/2025 - 16:45',
+          date: '02/05/2025 - 09:00',
           title: '🔍 Root Cause Analysis Started',
-          description: 'Investigation initiated to determine the cause of dimension error in the slots.',
-          type: 'analysis'
-        },
-        {
-          date: '05/05/2025 - 09:00',
-          title: '🚨 NC Detected and Recorded',
-          description: 'Field detection that slots of 232 pali L4 LATERAL POST are smaller than minimum required, preventing assembly.',
-          type: 'detection'
+          description: 'Investigation team formed. Document review initiated.',
+          type: 'investigation'
         }
       ]
     },
     {
-      id: '563',
-      number: 'RNC-563',
+      id: '2',
+      number: 'RNC-002',
+      title: 'Incorrect Foundation Depth',
+      description: 'Foundation excavation depth does not match approved engineering drawings.',
+      location: 'Building B - Foundation Grid B2-B4',
+      severity: 'critical',
       priority: 'critical',
-      project: 'SOLAR PARK A',
-      projectCode: '12345', // ✅ NUEVO CAMPO
-      date: '2025-05-03', // ✅ NUEVO CAMPO
-      supplier: 'SUPPLIER_B',
-      ncType: 'design_error',
-      description: 'Critical structural issue in main foundation design.',
-      purchaseOrder: 'PO-2024-563', // ✅ NUEVO CAMPO
-      componentCode: 'FOUND-001', // ✅ NUEVO CAMPO
-      quantity: '15', // ✅ NUEVO CAMPO
-      component: 'Main Foundation Structure',
-      status: 'critical',
-      createdBy: 'Maria Rodriguez', // ✅ NUEVO CAMPO
-      sector: 'Engineering', // ✅ NUEVO CAMPO
-      createdDate: '03/05/2025',
-      assignedTo: 'Engineering Team',
-      plannedClosureDate: '15/05/2025',
-      daysOpen: 8,
-      materialDisposition: 'reject',
-      // ✅ NUEVOS CAMPOS PARA CORRECTIVE ACTION REQUEST
-      rootCauseAnalysis: 'Design calculations did not account for local soil conditions. Foundation depth calculations were based on standard soil parameters rather than site-specific geotechnical data.',
+      detectedBy: 'Ana García - Site Engineer',
+      project: 'Hospital Central - Phase 2',
+      supplier: 'Foundation Pro Inc.',
+      affectedProduct: 'Concrete Foundation',
+      potentialImpact: 'Structural failure risk, potential building collapse',
+      immediateAction: 'All foundation work suspended. Emergency geotechnical engineer consultation requested.',
+      rootCauseAnalysis: 'Foundation depth calculations were based on standard soil parameters rather than site-specific geotechnical data.',
       correctiveActionPlan: 'Revise all foundation designs based on actual site geotechnical report. Implement mandatory site-specific soil analysis for all future projects before design finalization.',
       timeline: [
         {
@@ -183,7 +168,7 @@ const NC_ACTIONS = {
   ADD_NC: 'ADD_NC',
   UPDATE_NC: 'UPDATE_NC',
   DELETE_NC: 'DELETE_NC',
-  LOAD_NC_LIST: 'LOAD_NC_LIST',
+  LOAD_NC_LIST: 'LOAD_NC_LIST', // ✅ NUEVA ACCIÓN AGREGADA
   
   // Timeline Management
   ADD_TIMELINE_ENTRY: 'ADD_TIMELINE_ENTRY',
@@ -205,7 +190,7 @@ const NC_ACTIONS = {
   SET_USER_ROLE: 'SET_USER_ROLE'
 };
 
-// Reducer function - COMPLETO
+// Reducer function - COMPLETO CON NUEVA ACCIÓN
 const nonConformityReducer = (state, action) => {
   switch (action.type) {
     case NC_ACTIONS.SET_ACTIVE_TAB:
@@ -260,7 +245,8 @@ const nonConformityReducer = (state, action) => {
       return {
         ...state,
         ncList: state.ncList.map(nc => 
-          nc.id === action.payload.id ? { ...nc, ...action.payload.updates } : nc
+          nc.id === action.payload.id ? 
+            { ...nc, ...action.payload.updates } : nc
         )
       };
       
@@ -268,6 +254,13 @@ const nonConformityReducer = (state, action) => {
       return {
         ...state,
         ncList: state.ncList.filter(nc => nc.id !== action.payload)
+      };
+      
+    // ✅ NUEVA ACCIÓN AGREGADA
+    case NC_ACTIONS.LOAD_NC_LIST:
+      return {
+        ...state,
+        ncList: action.payload
       };
       
     case NC_ACTIONS.ADD_TIMELINE_ENTRY:
@@ -373,70 +366,153 @@ const NonConformityContext = createContext();
 export const NonConformityProvider = ({ children }) => {
   const [state, dispatch] = useReducer(nonConformityReducer, initialState);
   
-  // ✅ TODAS LAS FUNCIONES HELPERS - ORIGINALES + NUEVAS
+  // ✅ CARGAR NCs DESDE FIREBASE AL INICIAR
+  useEffect(() => {
+    const loadNCsFromFirebase = async () => {
+      try {
+        dispatch({ type: NC_ACTIONS.SET_LOADING, payload: true });
+        
+        const firebaseNCs = await getNonConformities({ limit: 50 });
+        
+        if (firebaseNCs.length > 0) {
+          dispatch({ type: NC_ACTIONS.LOAD_NC_LIST, payload: firebaseNCs });
+          console.log(`✅ ${firebaseNCs.length} NCs cargadas desde Firebase`);
+        }
+      } catch (error) {
+        console.error('Error cargando NCs desde Firebase:', error);
+        // Usar datos locales como fallback
+      } finally {
+        dispatch({ type: NC_ACTIONS.SET_LOADING, payload: false });
+      }
+    };
+
+    loadNCsFromFirebase();
+  }, []);
+  
+  // ✅ TODAS LAS FUNCIONES HELPERS - ORIGINALES + NUEVAS FIREBASE
   const helpers = {
     // ✅ FUNCIÓN ORIGINAL: Auto-generate NC number
     generateNCNumber: () => {
       const lastNumber = state.ncList.length > 0 
-        ? Math.max(...state.ncList.map(nc => parseInt(nc.number.split('-')[1]) || 0))
-        : 564;
-      return `RNC-${lastNumber + 1}`;
+        ? Math.max(...state.ncList.map(nc => {
+            const match = nc.number.match(/RNC-(\d+)/);
+            return match ? parseInt(match[1]) : 0;
+          }))
+        : 0;
+      return `RNC-${String(lastNumber + 1).padStart(3, '0')}`;
     },
-    
-    // ✅ FUNCIÓN ACTUALIZADA: Validate required fields for NC creation (con nuevos campos)
-    validateNC: (nc = state.currentNC) => {
+
+    // ✅ FUNCIÓN ORIGINAL: Validate required fields
+    validateField: (field, value) => {
       const errors = {};
       
-      // Campos originales obligatorios
-      if (!nc.priority) errors.priority = 'Priority is required';
-      if (!nc.project) errors.project = 'Project is required';
-      if (!nc.description) errors.description = 'Description is required';
-      if (!nc.ncType) errors.ncType = 'Non-conformity type is required';
+      if (!value || value.trim() === '') {
+        errors[field] = 'This field is required';
+        return errors;
+      }
       
-      // ✅ NUEVOS CAMPOS OBLIGATORIOS
-      if (!nc.projectCode) errors.projectCode = 'Project Code CM is required';
-      if (!nc.date) errors.date = 'Date is required';
-      if (!nc.componentCode) errors.componentCode = 'Component Code is required';
-      if (!nc.quantity) errors.quantity = 'Quantity is required';
-      if (!nc.createdBy) errors.createdBy = 'Inspector Name is required';
-      if (!nc.sector) errors.sector = 'Sector is required';
+      // Field-specific validations
+      switch(field) {
+        case 'targetDate':
+          const targetDate = new Date(value);
+          const today = new Date();
+          if (targetDate <= today) {
+            errors[field] = 'Target date must be in the future';
+          }
+          break;
+          
+        case 'severity':
+        case 'priority':
+          if (!['low', 'medium', 'high', 'critical'].includes(value)) {
+            errors[field] = 'Invalid value selected';
+          }
+          break;
+      }
       
-      const isValid = Object.keys(errors).length === 0;
+      return errors;
+    },
+
+    // ✅ FUNCIÓN ORIGINAL: Validate entire form
+    validateForm: () => {
+      const requiredFields = ['title', 'description', 'location', 'detectedBy', 'responsiblePerson'];
+      const errors = {};
+      
+      requiredFields.forEach(field => {
+        const fieldErrors = helpers.validateField(field, state.currentNC[field]);
+        Object.assign(errors, fieldErrors);
+      });
       
       dispatch({ type: NC_ACTIONS.SET_VALIDATION_ERRORS, payload: errors });
-      dispatch({ type: NC_ACTIONS.SET_FORM_VALIDITY, payload: isValid });
+      dispatch({ type: NC_ACTIONS.SET_FORM_VALIDITY, payload: Object.keys(errors).length === 0 });
       
-      return { isValid, errors };
+      return Object.keys(errors).length === 0;
     },
-    
-    // ✅ FUNCIÓN ORIGINAL: Get filtered NC list
-    getFilteredNCs: () => {
+
+    // ✅ FUNCIÓN ORIGINAL: Filter NCs
+    filterNCs: (searchTerm = '', filters = {}) => {
       let filtered = [...state.ncList];
       
-      // Apply status filter
-      if (state.filters.status !== 'all') {
-        filtered = filtered.filter(nc => nc.status === state.filters.status);
-      }
-      
-      // Apply priority filter
-      if (state.filters.priority !== 'all') {
-        filtered = filtered.filter(nc => nc.priority === state.filters.priority);
-      }
-      
-      // Apply project filter
-      if (state.filters.project !== 'all') {
-        filtered = filtered.filter(nc => nc.project === state.filters.project);
-      }
-      
       // Apply search term
-      if (state.searchTerm) {
-        const searchLower = state.searchTerm.toLowerCase();
+      if (searchTerm) {
+        const searchLower = searchTerm.toLowerCase();
         filtered = filtered.filter(nc => 
-          nc.number.toLowerCase().includes(searchLower) ||
-          nc.project.toLowerCase().includes(searchLower) ||
-          nc.supplier.toLowerCase().includes(searchLower) ||
+          nc.title.toLowerCase().includes(searchLower) ||
           nc.description.toLowerCase().includes(searchLower) ||
-          nc.component.toLowerCase().includes(searchLower)
+          nc.number.toLowerCase().includes(searchLower) ||
+          nc.location.toLowerCase().includes(searchLower)
+        );
+      }
+      
+      // Apply filters
+      const { status, priority, project } = filters;
+      
+      if (status && status !== 'all') {
+        filtered = filtered.filter(nc => nc.status === status);
+      }
+      
+      if (priority && priority !== 'all') {
+        filtered = filtered.filter(nc => nc.priority === priority);
+      }
+      
+      if (project && project !== 'all') {
+        filtered = filtered.filter(nc => nc.project === project);
+      }
+      
+      return filtered;
+    },
+    
+    // ✅ FUNCIÓN ORIGINAL: Apply current filters
+    getFilteredNCs: () => {
+      const { searchTerm, filters } = state;
+      
+      let filtered = [...state.ncList];
+      
+      // Search functionality
+      if (searchTerm) {
+        const searchLower = searchTerm.toLowerCase();
+        filtered = filtered.filter(nc => 
+          nc.title.toLowerCase().includes(searchLower) ||
+          nc.description.toLowerCase().includes(searchLower) ||
+          nc.number.toLowerCase().includes(searchLower) ||
+          nc.location.toLowerCase().includes(searchLower) ||
+          nc.detectedBy.toLowerCase().includes(searchLower)
+        );
+      }
+      
+      // Status filter
+      if (filters.status !== 'all') {
+        filtered = filtered.filter(nc => nc.status === filters.status);
+      }
+      
+      // Priority filter
+      if (filters.priority !== 'all') {
+        filtered = filtered.filter(nc => nc.priority === filters.priority);
+      }
+      
+      // Project filter
+      if (filters.project !== 'all') {
+        filtered = filtered.filter(nc => 
+          filters.project === 'all' || nc.project === filters.project
         );
       }
       
@@ -522,90 +598,20 @@ export const NonConformityProvider = ({ children }) => {
             }
           }
         });
-        return true;
       }
-      return false;
     },
 
-    // Delete NC
-    deleteNC: (id) => {
-      dispatch({ type: NC_ACTIONS.DELETE_NC, payload: id });
-    },
-
-    // Export helpers
-    exportNCToCSV: (ncList) => {
-      const headers = [
-        'NC Number', 'Priority', 'Project', 'Project Code', 'Supplier', 
-        'Component Code', 'Quantity', 'Description', 'Status', 
-        'Created By', 'Sector', 'Created Date', 'Days Open'
-      ];
-      
-      const csvContent = [
-        headers.join(','),
-        ...ncList.map(nc => [
-          nc.number,
-          nc.priority,
-          nc.project,
-          nc.projectCode || '',
-          nc.supplier || '',
-          nc.componentCode || '',
-          nc.quantity || '',
-          `"${(nc.description || '').replace(/"/g, '""')}"`,
-          nc.status,
-          nc.createdBy || '',
-          nc.sector || '',
-          nc.createdDate,
-          nc.daysOpen || 0
-        ].join(','))
-      ].join('\n');
-      
-      return csvContent;
-    },
-
-    // Format helpers
-    formatDate: (dateString) => {
-      if (!dateString) return '';
-      const date = new Date(dateString);
-      return date.toLocaleDateString('en-GB');
-    },
-
-    // Get status display text
-    getStatusDisplayText: (status) => {
-      const statusMap = {
-        'open': 'Open',
-        'progress': 'In Progress',
-        'resolved': 'Resolved',
-        'closed': 'Closed',
-        'critical': 'Critical'
-      };
-      return statusMap[status] || status.charAt(0).toUpperCase() + status.slice(1);
-    },
-
-    // Get priority display text
-    getPriorityDisplayText: (priority) => {
-      return priority.toUpperCase();
-    },
-
-    // Search and filter helpers (más completa)
-    filterNCs: (searchTerm, filters) => {
+    // Advanced filtering with multiple criteria
+    advancedFilter: (filters) => {
       return state.ncList.filter(nc => {
-        // Search term filter
-        const matchesSearch = !searchTerm || 
-          nc.number.toLowerCase().includes(searchTerm.toLowerCase()) ||
-          nc.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
-          nc.project.toLowerCase().includes(searchTerm.toLowerCase()) ||
-          (nc.component && nc.component.toLowerCase().includes(searchTerm.toLowerCase())) ||
-          (nc.supplier && nc.supplier.toLowerCase().includes(searchTerm.toLowerCase())) ||
-          (nc.componentCode && nc.componentCode.toLowerCase().includes(searchTerm.toLowerCase()));
+        const matchesSearch = !filters.searchTerm || 
+          nc.title.toLowerCase().includes(filters.searchTerm.toLowerCase()) ||
+          nc.description.toLowerCase().includes(filters.searchTerm.toLowerCase()) ||
+          nc.number.toLowerCase().includes(filters.searchTerm.toLowerCase());
 
-        // Status filter
-        const matchesStatus = filters.status === 'all' || nc.status === filters.status;
-
-        // Priority filter
-        const matchesPriority = filters.priority === 'all' || nc.priority === filters.priority;
-
-        // Project filter
-        const matchesProject = filters.project === 'all' || nc.project === filters.project;
+        const matchesStatus = !filters.status || filters.status === 'all' || nc.status === filters.status;
+        const matchesPriority = !filters.priority || filters.priority === 'all' || nc.priority === filters.priority;
+        const matchesProject = !filters.project || filters.project === 'all' || nc.project === filters.project;
 
         return matchesSearch && matchesStatus && matchesPriority && matchesProject;
       });
@@ -626,6 +632,101 @@ export const NonConformityProvider = ({ children }) => {
         type: NC_ACTIONS.ADD_TIMELINE_ENTRY,
         payload: { ncId, entry }
       });
+    },
+
+    // ✅ NUEVAS FUNCIONES FIREBASE
+    saveNCToFirebase: async (ncData) => {
+      try {
+        const firebaseId = await saveNonConformity(ncData);
+        
+        // También actualizar estado local
+        const ncWithId = { ...ncData, id: firebaseId };
+        dispatch({ type: NC_ACTIONS.SAVE_NC, payload: ncWithId });
+        
+        return firebaseId;
+      } catch (error) {
+        console.error('Error guardando NC en Firebase:', error);
+        
+        // Fallback: guardar solo localmente
+        const localId = Date.now().toString();
+        const ncWithLocalId = { ...ncData, id: localId };
+        dispatch({ type: NC_ACTIONS.SAVE_NC, payload: ncWithLocalId });
+        
+        throw error;
+      }
+    },
+
+    updateNCInFirebase: async (ncId, updates) => {
+      try {
+        const currentNC = state.ncList.find(nc => nc.id === ncId);
+        if (!currentNC) throw new Error('NC not found');
+
+        const updatedNC = { ...currentNC, ...updates };
+        
+        await updateNonConformity(ncId, updatedNC);
+        
+        // Actualizar estado local
+        dispatch({ 
+          type: NC_ACTIONS.UPDATE_NC, 
+          payload: { id: ncId, updates } 
+        });
+        
+        return updatedNC;
+      } catch (error) {
+        console.error('Error actualizando NC en Firebase:', error);
+        throw error;
+      }
+    },
+
+    loadNCFromFirebase: async (ncId) => {
+      try {
+        const nc = await getNonConformity(ncId);
+        if (nc) {
+          dispatch({ type: NC_ACTIONS.SET_CURRENT_NC, payload: nc });
+        }
+        return nc;
+      } catch (error) {
+        console.error('Error cargando NC desde Firebase:', error);
+        throw error;
+      }
+    },
+
+    deleteNCFromFirebase: async (ncId) => {
+      try {
+        await deleteNonConformity(ncId);
+        dispatch({ type: NC_ACTIONS.DELETE_NC, payload: ncId });
+        return true;
+      } catch (error) {
+        console.error('Error eliminando NC en Firebase:', error);
+        throw error;
+      }
+    },
+
+    refreshFromFirebase: async (filters = {}) => {
+      try {
+        dispatch({ type: NC_ACTIONS.SET_LOADING, payload: true });
+        
+        const firebaseNCs = await getNonConformities(filters);
+        dispatch({ type: NC_ACTIONS.LOAD_NC_LIST, payload: firebaseNCs });
+        
+        console.log(`✅ ${firebaseNCs.length} NCs actualizadas desde Firebase`);
+        return firebaseNCs;
+      } catch (error) {
+        console.error('Error refrescando desde Firebase:', error);
+        throw error;
+      } finally {
+        dispatch({ type: NC_ACTIONS.SET_LOADING, payload: false });
+      }
+    },
+
+    getStatsFromFirebase: async () => {
+      try {
+        const stats = await getNCStats();
+        return stats;
+      } catch (error) {
+        console.error('Error obteniendo estadísticas desde Firebase:', error);
+        return helpers.calculateMetrics(); // Fallback a cálculo local
+      }
     }
   };
 

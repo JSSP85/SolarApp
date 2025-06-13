@@ -1,4 +1,4 @@
-// src/firebase/nonConformityService.js
+// src/firebase/nonConformityService.js - ✅ ACTUALIZADO CON DETECTION SOURCE
 import { 
   collection, 
   doc, 
@@ -20,6 +20,7 @@ const NC_COLLECTION = 'nonConformities';
 
 /**
  * Convierte datos de la aplicación al formato de Firestore
+ * ✅ ACTUALIZADO CON DETECTION SOURCE
  */
 const createNCDocument = (ncData) => {
   return {
@@ -33,8 +34,9 @@ const createNCDocument = (ncData) => {
     createdBy: ncData.createdBy || '',
     sector: ncData.sector || '',
     
-    // NC Details
+    // NC Details - ✅ DETECTION SOURCE AGREGADO
     ncType: ncData.ncType || '',
+    detectionSource: ncData.detectionSource || '', // ✅ NUEVO CAMPO
     description: ncData.description || '',
     purchaseOrder: ncData.purchaseOrder || '',
     componentCode: ncData.componentCode || '',
@@ -47,7 +49,8 @@ const createNCDocument = (ncData) => {
     
     // Corrective Action
     rootCauseAnalysis: ncData.rootCauseAnalysis || '',
-    correctiveActionPlan: ncData.correctiveActionPlan || '',
+    correctiveAction: ncData.correctiveAction || '',
+    correctiveActionPlan: ncData.correctiveActionPlan || '', // Legacy field
     
     // Status and Timeline
     status: ncData.status || 'open',
@@ -78,6 +81,7 @@ const createNCDocument = (ncData) => {
 
 /**
  * Convierte datos de Firestore al formato de la aplicación
+ * ✅ ACTUALIZADO CON DETECTION SOURCE
  */
 const convertFirestoreToAppData = (firestoreDoc) => {
   const data = firestoreDoc.data();
@@ -95,8 +99,9 @@ const convertFirestoreToAppData = (firestoreDoc) => {
     createdBy: data.createdBy || '',
     sector: data.sector || '',
     
-    // NC Details
+    // NC Details - ✅ DETECTION SOURCE AGREGADO
     ncType: data.ncType || '',
+    detectionSource: data.detectionSource || '', // ✅ NUEVO CAMPO
     description: data.description || '',
     purchaseOrder: data.purchaseOrder || '',
     componentCode: data.componentCode || '',
@@ -109,7 +114,8 @@ const convertFirestoreToAppData = (firestoreDoc) => {
     
     // Corrective Action
     rootCauseAnalysis: data.rootCauseAnalysis || '',
-    correctiveActionPlan: data.correctiveActionPlan || '',
+    correctiveAction: data.correctiveAction || '',
+    correctiveActionPlan: data.correctiveActionPlan || '', // Legacy field
     
     // Status and Timeline
     status: data.status || 'open',
@@ -205,6 +211,7 @@ export const getNonConformity = async (ncId) => {
 
 /**
  * Obtener todas las NCs con filtros opcionales
+ * ✅ ACTUALIZADO PARA SOPORTAR FILTROS POR DETECTION SOURCE
  * @param {Object} filters - Filtros opcionales
  * @returns {Promise<Array>} - Array de NCs
  */
@@ -226,6 +233,11 @@ export const getNonConformities = async (filters = {}) => {
     
     if (filters.project && filters.project !== 'all') {
       q = query(q, where('project', '==', filters.project));
+    }
+
+    // ✅ NUEVO: Filtro por detection source
+    if (filters.detectionSource && filters.detectionSource !== 'all') {
+      q = query(q, where('detectionSource', '==', filters.detectionSource));
     }
     
     if (filters.limit) {
@@ -249,7 +261,8 @@ export const getNonConformities = async (filters = {}) => {
         nc.project.toLowerCase().includes(searchLower) ||
         nc.supplier.toLowerCase().includes(searchLower) ||
         nc.description.toLowerCase().includes(searchLower) ||
-        nc.componentCode.toLowerCase().includes(searchLower)
+        nc.componentCode.toLowerCase().includes(searchLower) ||
+        nc.detectionSource.toLowerCase().includes(searchLower) // ✅ INCLUIR EN BÚSQUEDA
       );
     }
     
@@ -348,6 +361,7 @@ export const addTimelineEntry = async (ncId, timelineEntry) => {
 
 /**
  * Obtener estadísticas generales de NCs
+ * ✅ ACTUALIZADO CON STATISTICS POR DETECTION SOURCE
  * @returns {Promise<Object>} - Estadísticas de NCs
  */
 export const getNCStats = async () => {
@@ -364,9 +378,11 @@ export const getNCStats = async () => {
       critical: 0,
       major: 0,
       minor: 0,
+      low: 0,
       byProject: {},
       bySupplier: {},
-      byCreator: {}
+      byCreator: {},
+      byDetectionSource: {} // ✅ NUEVA ESTADÍSTICA
     };
     
     querySnapshot.forEach((doc) => {
@@ -392,6 +408,10 @@ export const getNCStats = async () => {
       // Contar por creador
       const creator = data.createdBy || 'Unknown';
       stats.byCreator[creator] = (stats.byCreator[creator] || 0) + 1;
+
+      // ✅ NUEVO: Contar por detection source
+      const detectionSource = data.detectionSource || 'not_specified';
+      stats.byDetectionSource[detectionSource] = (stats.byDetectionSource[detectionSource] || 0) + 1;
     });
     
     return stats;
@@ -403,6 +423,7 @@ export const getNCStats = async () => {
 
 /**
  * Buscar NCs por texto
+ * ✅ ACTUALIZADO PARA INCLUIR DETECTION SOURCE EN BÚSQUEDA
  * @param {string} searchTerm - Término de búsqueda
  * @returns {Promise<Array>} - Array de NCs que coinciden
  */
@@ -422,10 +443,90 @@ export const searchNonConformities = async (searchTerm) => {
       nc.componentCode.toLowerCase().includes(searchLower) ||
       nc.component.toLowerCase().includes(searchLower) ||
       nc.ncType.toLowerCase().includes(searchLower) ||
+      nc.detectionSource.toLowerCase().includes(searchLower) || // ✅ INCLUIR EN BÚSQUEDA
       nc.createdBy.toLowerCase().includes(searchLower)
     );
   } catch (error) {
     console.error('Error buscando NCs:', error);
     throw new Error(`Error searching non-conformities: ${error.message}`);
+  }
+};
+
+/**
+ * ✅ NUEVA FUNCIÓN: Obtener estadísticas específicas por detection source
+ * @returns {Promise<Object>} - Estadísticas detalladas por detection source
+ */
+export const getDetectionSourceStats = async () => {
+  try {
+    const q = query(collection(db, NC_COLLECTION));
+    const querySnapshot = await getDocs(q);
+    
+    const detectionSourceStats = {};
+    
+    querySnapshot.forEach((doc) => {
+      const data = doc.data();
+      const detectionSource = data.detectionSource || 'not_specified';
+      
+      if (!detectionSourceStats[detectionSource]) {
+        detectionSourceStats[detectionSource] = {
+          total: 0,
+          open: 0,
+          resolved: 0,
+          critical: 0,
+          major: 0,
+          minor: 0,
+          low: 0
+        };
+      }
+      
+      detectionSourceStats[detectionSource].total++;
+      detectionSourceStats[detectionSource][data.status || 'open']++;
+      detectionSourceStats[detectionSource][data.priority || 'minor']++;
+    });
+    
+    return detectionSourceStats;
+  } catch (error) {
+    console.error('Error obteniendo estadísticas por detection source:', error);
+    throw new Error(`Error getting detection source stats: ${error.message}`);
+  }
+};
+
+/**
+ * ✅ NUEVA FUNCIÓN: Obtener estadísticas específicas por supplier
+ * @returns {Promise<Object>} - Estadísticas detalladas por supplier
+ */
+export const getSupplierStats = async () => {
+  try {
+    const q = query(collection(db, NC_COLLECTION));
+    const querySnapshot = await getDocs(q);
+    
+    const supplierStats = {};
+    
+    querySnapshot.forEach((doc) => {
+      const data = doc.data();
+      const supplier = data.supplier || 'not_specified';
+      
+      if (!supplierStats[supplier]) {
+        supplierStats[supplier] = {
+          total: 0,
+          open: 0,
+          resolved: 0,
+          critical: 0,
+          major: 0,
+          minor: 0,
+          low: 0,
+          avgResolutionTime: 0
+        };
+      }
+      
+      supplierStats[supplier].total++;
+      supplierStats[supplier][data.status || 'open']++;
+      supplierStats[supplier][data.priority || 'minor']++;
+    });
+    
+    return supplierStats;
+  } catch (error) {
+    console.error('Error obteniendo estadísticas por supplier:', error);
+    throw new Error(`Error getting supplier stats: ${error.message}`);
   }
 };

@@ -1,99 +1,32 @@
-// src/components/non-conformity/panels/CreateNCPanel.jsx - WIZARD STEPPER VERSION CON FIREBASE
+// src/components/non-conformity/panels/CreateNCPanel.jsx
+// ✅ MODIFICADO PARA INCLUIR CAMPO "DETECTION SOURCE"
+
 import React, { useState, useEffect } from 'react';
 import { useNonConformity } from '../../../context/NonConformityContext';
-import { saveNonConformity } from '../../../firebase/nonConformityService';
-import { exportNCToPDF } from '../../../utils/ncPdfExportService';
+import { saveNonConformity } from '../../../services/firebaseService';
+import { exportNCToPDF } from '../../../utils/pdfExporter';
 
-// Validation message component
+// Validation Message Component
 const ValidationMessage = ({ message }) => (
-  <div className="nc-validation-message">
+  <div className="nc-validation-error">
     <span className="nc-validation-icon">⚠️</span>
-    <span>{message}</span>
+    {message}
   </div>
 );
 
-// ✅ CONFIGURACIÓN PARA COMPRESIÓN DE IMÁGENES
-const MAX_IMAGE_WIDTH = 1200;
-const MAX_IMAGE_HEIGHT = 800;
-const IMAGE_QUALITY = 0.7; // 70% calidad para reducir tamaño
-
-// ✅ FUNCIÓN DE COMPRESIÓN DE IMÁGENES
-const compressImage = (imageDataUrl) => {
-  return new Promise((resolve, reject) => {
-    try {
-      const img = new Image();
-      img.onload = () => {
-        // Calcular nuevas dimensiones manteniendo la proporción
-        let newWidth = img.width;
-        let newHeight = img.height;
-        
-        if (newWidth > MAX_IMAGE_WIDTH) {
-          newHeight = Math.round((MAX_IMAGE_WIDTH / newWidth) * newHeight);
-          newWidth = MAX_IMAGE_WIDTH;
-        }
-        
-        if (newHeight > MAX_IMAGE_HEIGHT) {
-          newWidth = Math.round((MAX_IMAGE_HEIGHT / newHeight) * newWidth);
-          newHeight = MAX_IMAGE_HEIGHT;
-        }
-        
-        // Crear canvas para redimensionar
-        const canvas = document.createElement('canvas');
-        canvas.width = newWidth;
-        canvas.height = newHeight;
-        
-        const ctx = canvas.getContext('2d');
-        ctx.fillStyle = 'white';
-        ctx.fillRect(0, 0, newWidth, newHeight);
-        ctx.drawImage(img, 0, 0, newWidth, newHeight);
-        
-        // Convertir a JPEG con calidad reducida
-        const compressedDataUrl = canvas.toDataURL('image/jpeg', IMAGE_QUALITY);
-        
-        // Calcular estadísticas de compresión
-        const originalSize = Math.round(imageDataUrl.length / 1024);
-        const newSize = Math.round(compressedDataUrl.length / 1024);
-        const compressionRatio = Math.round(((originalSize - newSize) / originalSize) * 100);
-        
-        console.log(`Imagen comprimida: ${originalSize}KB → ${newSize}KB (${compressionRatio}% reducción)`);
-        
-        resolve({
-          compressedImage: compressedDataUrl,
-          originalSize,
-          newSize,
-          compressionRatio,
-          newDimensions: `${newWidth}x${newHeight}`
-        });
-      };
-      
-      img.onerror = () => reject(new Error('Error loading image for compression'));
-      img.src = imageDataUrl;
-    } catch (error) {
-      reject(error);
-    }
-  });
-};
-
-// Step Progress Bar Component
+// Step Progress Component
 const StepProgressBar = ({ steps, currentStep, completedSteps }) => {
   return (
     <div className="nc-step-progress-container">
-      <div className="nc-step-progress-bar">
+      <div className="nc-step-progress">
         {steps.map((step, index) => (
-          <div key={index} className="nc-step-wrapper">
-            {/* Step Circle */}
+          <div key={step.id} className="nc-step-item">
             <div className={`nc-step-circle ${
               completedSteps.includes(index) ? 'completed' : 
               currentStep === index ? 'current' : 'pending'
             }`}>
-              {completedSteps.includes(index) ? (
-                <span className="nc-step-check">✓</span>
-              ) : (
-                <span className="nc-step-number">{index + 1}</span>
-              )}
+              {completedSteps.includes(index) ? '✓' : index + 1}
             </div>
-            
-            {/* Step Label */}
             <div className={`nc-step-label ${
               completedSteps.includes(index) ? 'completed' : 
               currentStep === index ? 'current' : 'pending'
@@ -141,7 +74,7 @@ const CreateNCPanel = () => {
       id: 'details',
       title: 'Non-Conformity Details',
       subtitle: 'Problem description and component information',
-      requiredFields: ['ncType', 'description', 'componentCode', 'quantity']
+      requiredFields: ['ncType', 'detectionSource', 'description', 'componentCode', 'quantity']
     },
     {
       id: 'treatment',
@@ -168,7 +101,8 @@ const CreateNCPanel = () => {
     { value: '', label: 'Select priority' },
     { value: 'critical', label: 'Critical' },
     { value: 'major', label: 'Major' },
-    { value: 'minor', label: 'Minor' }
+    { value: 'minor', label: 'Minor' },
+    { value: 'low', label: 'Low' }
   ];
 
   const ncTypeOptions = [
@@ -199,6 +133,21 @@ const CreateNCPanel = () => {
     { value: 'time_constraint', label: 'Time Constraint Issue' },
     { value: 'defective_product', label: 'Defective Product' },
     { value: 'other', label: 'Other' }
+  ];
+
+  // ✅ NUEVO: Options para Detection Source
+  const detectionSourceOptions = [
+    { value: '', label: 'Select where NC was found' },
+    { value: 'production', label: '🏭 Production' },
+    { value: 'logistics', label: '🚛 Logistics' },
+    { value: 'on_site', label: '🏗️ On Site' },
+    { value: 'inspections', label: '🔍 Inspections' },
+    { value: 'client_nc', label: '👥 Client NC' },
+    { value: 'incoming_inspection', label: '📥 Incoming Inspection' },
+    { value: 'final_inspection', label: '✅ Final Inspection' },
+    { value: 'customer_complaint', label: '📞 Customer Complaint' },
+    { value: 'internal_audit', label: '📋 Internal Audit' },
+    { value: 'supplier_audit', label: '🏢 Supplier Audit' }
   ];
 
   const materialDispositionOptions = [
@@ -240,53 +189,93 @@ const CreateNCPanel = () => {
   // ✅ FUNCIONES PARA MANEJO DE FOTOS
   const handleFileSelect = (event) => {
     const files = Array.from(event.target.files);
-    handleFilesUpload(files);
+    handleFileUpload(files);
   };
 
-  const handleDrop = (event) => {
+  const handleFileDrop = (event) => {
     event.preventDefault();
     const files = Array.from(event.dataTransfer.files);
-    handleFilesUpload(files);
+    handleFileUpload(files);
   };
 
-  const handleDragOver = (event) => {
-    event.preventDefault();
-  };
+  const handleFileUpload = async (files) => {
+    if (files.length === 0) return;
 
-  const handleFilesUpload = async (files) => {
+    const maxFileSize = 10 * 1024 * 1024; // 10MB
+    const acceptedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'application/pdf'];
+    
     const validFiles = files.filter(file => {
-      const isValidType = file.type.startsWith('image/') || file.type === 'application/pdf';
-      const isValidSize = file.size <= 10 * 1024 * 1024; // 10MB max
-      return isValidType && isValidSize;
+      return file.size <= maxFileSize && acceptedTypes.includes(file.type);
     });
 
-    if (validFiles.length > 0) {
-      setUploadingFiles(true);
+    if (validFiles.length === 0) {
+      alert('No valid files selected. Please ensure files are images or PDFs under 10MB.');
+      return;
     }
 
+    setUploadingFiles(true);
     let processedFiles = 0;
     const totalFiles = validFiles.length;
 
     for (const file of validFiles) {
       try {
-        if (file.type.startsWith('image/')) {
-          // ✅ COMPRIMIR IMÁGENES
+        if (file.type === 'application/pdf') {
+          // Handle PDF files
+          const newPhoto = {
+            id: `pdf_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+            name: file.name,
+            size: file.size,
+            type: 'pdf',
+            uploadDate: new Date().toISOString(),
+            url: URL.createObjectURL(file)
+          };
+
+          const currentPhotos = Array.isArray(currentNC.photos) ? currentNC.photos : [];
+          handleFieldChange('photos', [...currentPhotos, newPhoto]);
+          
+          processedFiles++;
+          if (processedFiles === totalFiles) {
+            setUploadingFiles(false);
+          }
+        } else {
+          // Handle image files with compression
+          const canvas = document.createElement('canvas');
+          const ctx = canvas.getContext('2d');
+          const img = new Image();
+          
           const reader = new FileReader();
-          reader.onload = async (e) => {
-            try {
-              const compressionResult = await compressImage(e.target.result);
+          reader.onload = (e) => {
+            img.onload = () => {
+              // Calculate new dimensions (max 1920x1080)
+              const maxWidth = 1920;
+              const maxHeight = 1080;
+              let { width, height } = img;
+              
+              if (width > maxWidth || height > maxHeight) {
+                const ratio = Math.min(maxWidth / width, maxHeight / height);
+                width *= ratio;
+                height *= ratio;
+              }
+              
+              canvas.width = width;
+              canvas.height = height;
+              
+              // Draw and compress
+              ctx.drawImage(img, 0, 0, width, height);
+              const compressedDataUrl = canvas.toDataURL('image/jpeg', 0.8);
               
               const newPhoto = {
-                id: Date.now() + Math.random(),
+                id: `img_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
                 name: file.name,
-                url: compressionResult.compressedImage,
-                type: file.type,
-                size: compressionResult.newSize * 1024, // Convertir KB a bytes
-                originalSize: compressionResult.originalSize * 1024,
-                compressionRatio: compressionResult.compressionRatio,
-                dimensions: compressionResult.newDimensions
+                size: file.size,
+                type: 'image',
+                uploadDate: new Date().toISOString(),
+                url: compressedDataUrl,
+                originalSize: file.size,
+                compressedSize: Math.round(compressedDataUrl.length * 0.75),
+                compressionRatio: Math.round((1 - (compressedDataUrl.length * 0.75) / file.size) * 100)
               };
-              
+
               const currentPhotos = Array.isArray(currentNC.photos) ? currentNC.photos : [];
               handleFieldChange('photos', [...currentPhotos, newPhoto]);
               
@@ -294,34 +283,8 @@ const CreateNCPanel = () => {
               if (processedFiles === totalFiles) {
                 setUploadingFiles(false);
               }
-            } catch (error) {
-              console.error('Error compressing image:', error);
-              processedFiles++;
-              if (processedFiles === totalFiles) {
-                setUploadingFiles(false);
-              }
-            }
-          };
-          reader.readAsDataURL(file);
-        } else {
-          // ✅ ARCHIVOS PDF SIN COMPRIMIR
-          const reader = new FileReader();
-          reader.onload = (e) => {
-            const newPhoto = {
-              id: Date.now() + Math.random(),
-              name: file.name,
-              url: e.target.result,
-              type: file.type,
-              size: file.size
             };
-            
-            const currentPhotos = Array.isArray(currentNC.photos) ? currentNC.photos : [];
-            handleFieldChange('photos', [...currentPhotos, newPhoto]);
-            
-            processedFiles++;
-            if (processedFiles === totalFiles) {
-              setUploadingFiles(false);
-            }
+            img.src = e.target.result;
           };
           reader.readAsDataURL(file);
         }
@@ -394,6 +357,7 @@ const CreateNCPanel = () => {
           createdBy: 'Inspector Name',
           sector: 'Sector',
           ncType: 'Non-Conformity Type',
+          detectionSource: 'Detection Source', // ✅ NUEVO CAMPO
           description: 'Problem Description',
           componentCode: 'Component Code',
           quantity: 'Quantity'
@@ -483,184 +447,157 @@ const CreateNCPanel = () => {
         
         const successMessage = `
 ✅ Non-Conformity ${newNCData.number} saved successfully!
-
-📊 Summary:
-• Saved to Firebase database
-• ${totalPhotos} photos uploaded
-• ${compressedPhotos} images compressed
-• Data synchronized across all devices
-
-🎯 Next steps:
-• Check Database section to verify
-• Track progress in Tracking panel
-• Export PDF when ready
+📊 ${totalPhotos} photo(s) uploaded
+🗜️ ${compressedPhotos} image(s) compressed automatically
+💾 Data saved to Firebase with ID: ${firebaseId}
         `;
         
         alert(successMessage);
-        
-        // Reset form after 3 seconds y generar nuevo número
+
+        // Reset form for new NC after 3 seconds
         setTimeout(() => {
-          dispatch({ type: 'CLEAR_CURRENT_NC' });
-          const newNumber = helpers.generateNCNumber();
-          dispatch({
-            type: 'UPDATE_NC_FIELD',
-            payload: { field: 'number', value: newNumber }
-          });
+          dispatch({ type: 'RESET_CURRENT_NC' });
           setCurrentStep(0);
           setCompletedSteps([]);
           setSavedSuccessfully(false);
-          setIsDirty(false);
+          setShowValidation(false);
         }, 3000);
 
       } catch (error) {
-        console.error('Error saving NC to Firebase:', error);
+        console.error('Error saving NC:', error);
+        alert(`❌ Error saving NC: ${error.message}`);
         setUploadingFiles(false);
-        
-        // Fallback: guardar solo en contexto local
-        const newNCData = {
-          ...currentNC,
-          id: Date.now().toString(),
-          number: currentNC.number || helpers.generateNCNumber(),
-          createdDate: currentNC.date || new Date().toLocaleDateString('en-GB'),
-          status: 'open',
-          daysOpen: 0
-        };
-
-        dispatch({
-          type: 'SAVE_NC',
-          payload: newNCData
-        });
-
-        alert(`⚠️ Warning: NC saved locally but not synced to cloud.\n\nError: ${error.message}\n\nYour data is safe locally. Please check your internet connection and try exporting later.`);
       }
     } else {
-      setShowValidation(true);
+      alert('❌ Please complete all required fields before submitting.');
     }
   };
 
-  // Render step content
+  // Render step content based on current step
   const renderStepContent = () => {
     switch (steps[currentStep].id) {
       case 'basic':
         return (
           <div className="nc-step-content">
-            <div className="nc-form-grid">
-              {/* NC Number */}
-              <div className="nc-form-group">
-                <label className="nc-form-label">
-                  NC Number <span className="nc-auto-generated">(Auto-generated)</span>
-                </label>
-                <input
-                  type="text"
-                  className="nc-form-input nc-input-readonly"
-                  value={currentNC.number}
-                  readOnly
-                />
-              </div>
+            <div className="nc-form-section">
+              <h4 className="nc-section-title">🆔 NC Identification</h4>
+              
+              <div className="nc-form-grid">
+                {/* NC Number (Auto-generated) */}
+                <div className="nc-form-group">
+                  <label className="nc-form-label">NC Number</label>
+                  <input
+                    type="text"
+                    className="nc-form-input readonly"
+                    value={currentNC.number || 'Auto-generated'}
+                    readOnly
+                  />
+                </div>
 
-              {/* Priority */}
-              <div className="nc-form-group">
-                <label className="nc-form-label required">Priority *</label>
-                <select
-                  className={`nc-form-select ${validationErrors.priority ? 'error' : ''}`}
-                  value={currentNC.priority}
-                  onChange={(e) => handleFieldChange('priority', e.target.value)}
-                >
-                  {priorityOptions.map(option => (
-                    <option key={option.value} value={option.value}>
-                      {option.label}
-                    </option>
-                  ))}
-                </select>
-                {showValidation && validationErrors.priority && (
-                  <ValidationMessage message={validationErrors.priority} />
-                )}
-              </div>
+                {/* Priority */}
+                <div className="nc-form-group">
+                  <label className="nc-form-label required">Priority *</label>
+                  <select
+                    className={`nc-form-select ${validationErrors.priority ? 'error' : ''}`}
+                    value={currentNC.priority}
+                    onChange={(e) => handleFieldChange('priority', e.target.value)}
+                  >
+                    {priorityOptions.map(option => (
+                      <option key={option.value} value={option.value}>
+                        {option.label}
+                      </option>
+                    ))}
+                  </select>
+                  {showValidation && validationErrors.priority && (
+                    <ValidationMessage message={validationErrors.priority} />
+                  )}
+                </div>
 
-              {/* Project */}
-              <div className="nc-form-group">
-                <label className="nc-form-label required">Project *</label>
-                <input
-                  type="text"
-                  className={`nc-form-input ${validationErrors.project ? 'error' : ''}`}
-                  value={currentNC.project}
-                  onChange={(e) => handleFieldChange('project', e.target.value)}
-                  placeholder="e.g., JESI, SOLAR PARK A"
-                />
-                {showValidation && validationErrors.project && (
-                  <ValidationMessage message={validationErrors.project} />
-                )}
-              </div>
+                {/* Project */}
+                <div className="nc-form-group">
+                  <label className="nc-form-label required">Project *</label>
+                  <input
+                    type="text"
+                    className={`nc-form-input ${validationErrors.project ? 'error' : ''}`}
+                    value={currentNC.project}
+                    onChange={(e) => handleFieldChange('project', e.target.value)}
+                    placeholder="e.g., JESI, SOLAR PARK A"
+                  />
+                  {showValidation && validationErrors.project && (
+                    <ValidationMessage message={validationErrors.project} />
+                  )}
+                </div>
 
-              {/* Project Code CM */}
-              <div className="nc-form-group">
-                <label className="nc-form-label required">Project Code CM *</label>
-                <input
-                  type="text"
-                  className={`nc-form-input ${validationErrors.projectCode ? 'error' : ''}`}
-                  value={currentNC.projectCode}
-                  onChange={(e) => handleFieldChange('projectCode', e.target.value)}
-                  placeholder="e.g., 12926"
-                />
-                {showValidation && validationErrors.projectCode && (
-                  <ValidationMessage message={validationErrors.projectCode} />
-                )}
-              </div>
+                {/* Project Code CM */}
+                <div className="nc-form-group">
+                  <label className="nc-form-label required">Project Code CM *</label>
+                  <input
+                    type="text"
+                    className={`nc-form-input ${validationErrors.projectCode ? 'error' : ''}`}
+                    value={currentNC.projectCode}
+                    onChange={(e) => handleFieldChange('projectCode', e.target.value)}
+                    placeholder="e.g., 12926"
+                  />
+                  {showValidation && validationErrors.projectCode && (
+                    <ValidationMessage message={validationErrors.projectCode} />
+                  )}
+                </div>
 
-              {/* Date */}
-              <div className="nc-form-group">
-                <label className="nc-form-label required">Date *</label>
-                <input
-                  type="date"
-                  className={`nc-form-input ${validationErrors.date ? 'error' : ''}`}
-                  value={currentNC.date}
-                  onChange={(e) => handleFieldChange('date', e.target.value)}
-                />
-                {showValidation && validationErrors.date && (
-                  <ValidationMessage message={validationErrors.date} />
-                )}
-              </div>
+                {/* Date */}
+                <div className="nc-form-group">
+                  <label className="nc-form-label required">Date *</label>
+                  <input
+                    type="date"
+                    className={`nc-form-input ${validationErrors.date ? 'error' : ''}`}
+                    value={currentNC.date}
+                    onChange={(e) => handleFieldChange('date', e.target.value)}
+                  />
+                  {showValidation && validationErrors.date && (
+                    <ValidationMessage message={validationErrors.date} />
+                  )}
+                </div>
 
-              {/* Inspector Name */}
-              <div className="nc-form-group">
-                <label className="nc-form-label required">Inspector Name *</label>
-                <input
-                  type="text"
-                  className={`nc-form-input ${validationErrors.createdBy ? 'error' : ''}`}
-                  value={currentNC.createdBy}
-                  onChange={(e) => handleFieldChange('createdBy', e.target.value)}
-                  placeholder="e.g., Juan Sebastian Sanchez"
-                />
-                {showValidation && validationErrors.createdBy && (
-                  <ValidationMessage message={validationErrors.createdBy} />
-                )}
-              </div>
+                {/* Inspector Name */}
+                <div className="nc-form-group">
+                  <label className="nc-form-label required">Inspector Name *</label>
+                  <input
+                    type="text"
+                    className={`nc-form-input ${validationErrors.createdBy ? 'error' : ''}`}
+                    value={currentNC.createdBy}
+                    onChange={(e) => handleFieldChange('createdBy', e.target.value)}
+                    placeholder="e.g., Juan Sebastian Sanchez"
+                  />
+                  {showValidation && validationErrors.createdBy && (
+                    <ValidationMessage message={validationErrors.createdBy} />
+                  )}
+                </div>
 
-              {/* Sector */}
-              <div className="nc-form-group">
-                <label className="nc-form-label required">Sector *</label>
-                <input
-                  type="text"
-                  className={`nc-form-input ${validationErrors.sector ? 'error' : ''}`}
-                  value={currentNC.sector}
-                  onChange={(e) => handleFieldChange('sector', e.target.value)}
-                  placeholder="e.g., Quality Control, Production, Installation"
-                />
-                {showValidation && validationErrors.sector && (
-                  <ValidationMessage message={validationErrors.sector} />
-                )}
-              </div>
+                {/* Sector */}
+                <div className="nc-form-group">
+                  <label className="nc-form-label required">Sector *</label>
+                  <input
+                    type="text"
+                    className={`nc-form-input ${validationErrors.sector ? 'error' : ''}`}
+                    value={currentNC.sector}
+                    onChange={(e) => handleFieldChange('sector', e.target.value)}
+                    placeholder="e.g., Quality Control, Production, Installation"
+                  />
+                  {showValidation && validationErrors.sector && (
+                    <ValidationMessage message={validationErrors.sector} />
+                  )}
+                </div>
 
-              {/* Supplier */}
-              <div className="nc-form-group">
-                <label className="nc-form-label">Supplier</label>
-                <input
-                  type="text"
-                  className="nc-form-input"
-                  value={currentNC.supplier}
-                  onChange={(e) => handleFieldChange('supplier', e.target.value)}
-                  placeholder="e.g., SCI-FAPI"
-                />
+                {/* Supplier */}
+                <div className="nc-form-group">
+                  <label className="nc-form-label">Supplier</label>
+                  <input
+                    type="text"
+                    className="nc-form-input"
+                    value={currentNC.supplier}
+                    onChange={(e) => handleFieldChange('supplier', e.target.value)}
+                    placeholder="e.g., SCI-FAPI"
+                  />
+                </div>
               </div>
             </div>
           </div>
@@ -688,6 +625,28 @@ const CreateNCPanel = () => {
               )}
             </div>
 
+            {/* ✅ NUEVO: Detection Source */}
+            <div className="nc-form-group">
+              <label className="nc-form-label required">Detection Source *</label>
+              <select
+                className={`nc-form-select ${validationErrors.detectionSource ? 'error' : ''}`}
+                value={currentNC.detectionSource}
+                onChange={(e) => handleFieldChange('detectionSource', e.target.value)}
+              >
+                {detectionSourceOptions.map(option => (
+                  <option key={option.value} value={option.value}>
+                    {option.label}
+                  </option>
+                ))}
+              </select>
+              <div className="nc-field-help">
+                Indicate where this non-conformity was discovered
+              </div>
+              {showValidation && validationErrors.detectionSource && (
+                <ValidationMessage message={validationErrors.detectionSource} />
+              )}
+            </div>
+
             {/* Description */}
             <div className="nc-form-group">
               <label className="nc-form-label required">Problem Description *</label>
@@ -699,7 +658,7 @@ const CreateNCPanel = () => {
                 placeholder="Describe the problem found in detail. Include specific measurements, quantities, and impact on assembly/installation..."
               />
               <div className="nc-char-count">
-                {currentNC.description.length}/1000 characters
+                {currentNC.description?.length || 0}/1000 characters
               </div>
               {showValidation && validationErrors.description && (
                 <ValidationMessage message={validationErrors.description} />
@@ -815,10 +774,33 @@ const CreateNCPanel = () => {
               <textarea
                 className="nc-form-textarea-limited"
                 rows="3"
-                value={currentNC.correctiveActionPlan}
-                onChange={(e) => handleFieldChange('correctiveActionPlan', e.target.value)}
-                placeholder="Detail the corrective actions to prevent recurrence..."
+                value={currentNC.correctiveAction}
+                onChange={(e) => handleFieldChange('correctiveAction', e.target.value)}
+                placeholder="Define specific corrective actions to prevent recurrence..."
               />
+            </div>
+
+            <div className="nc-form-grid">
+              <div className="nc-form-group">
+                <label className="nc-form-label">Planned Closure Date</label>
+                <input
+                  type="date"
+                  className="nc-form-input"
+                  value={currentNC.plannedClosureDate}
+                  onChange={(e) => handleFieldChange('plannedClosureDate', e.target.value)}
+                />
+              </div>
+
+              <div className="nc-form-group">
+                <label className="nc-form-label">Assigned To</label>
+                <input
+                  type="text"
+                  className="nc-form-input"
+                  value={currentNC.assignedTo}
+                  onChange={(e) => handleFieldChange('assignedTo', e.target.value)}
+                  placeholder="Person responsible for resolution"
+                />
+              </div>
             </div>
           </div>
         );
@@ -826,69 +808,72 @@ const CreateNCPanel = () => {
       case 'photos':
         return (
           <div className="nc-step-content">
-            {/* ✅ ZONA DE UPLOAD CON DRAG & DROP */}
-            <div 
-              className="nc-photo-upload-area"
-              onDrop={handleDrop}
-              onDragOver={handleDragOver}
+            <div className="nc-photo-upload-area"
+              onDrop={handleFileDrop}
+              onDragOver={(e) => e.preventDefault()}
+              onDragEnter={(e) => e.preventDefault()}
             >
-              <input
-                id="file-input"
-                type="file"
-                multiple
-                accept="image/*,.pdf"
-                style={{ display: 'none' }}
-                onChange={handleFileSelect}
-              />
-              <div 
-                className="nc-upload-placeholder"
-                onClick={() => document.getElementById('file-input').click()}
-              >
+              <div className="nc-upload-content">
                 <div className="nc-upload-icon">📸</div>
-                {uploadingFiles ? (
-                  <>
-                    <p><strong>Uploading files...</strong></p>
-                    <div className="nc-upload-spinner">⏳</div>
-                  </>
-                ) : (
-                  <>
-                    <p><strong>Click to upload photos</strong> or drag and drop</p>
-                    <p className="nc-upload-note">
-                      Supported formats: JPG, PNG, PDF (Max 10MB each)
-                    </p>
-                  </>
-                )}
+                <h4>Upload Photos & Documents</h4>
+                <p>Drag and drop files here, or click to select</p>
+                <div className="nc-upload-specs">
+                  <span>📁 Supports: JPG, PNG, GIF, PDF</span>
+                  <span>💾 Max size: 10MB per file</span>
+                  <span>🗜️ Images auto-compressed to optimize storage</span>
+                </div>
+                <input
+                  type="file"
+                  multiple
+                  accept="image/*,.pdf"
+                  onChange={handleFileSelect}
+                  className="nc-file-input"
+                />
+                <button 
+                  type="button" 
+                  className="nc-upload-btn"
+                  onClick={() => document.querySelector('.nc-file-input').click()}
+                  disabled={uploadingFiles}
+                >
+                  {uploadingFiles ? '📤 Uploading...' : '📎 Select Files'}
+                </button>
               </div>
             </div>
-            
-            {/* ✅ PREVIEW DE FOTOS EN GRILLA 2x2 */}
-            {currentNC.photos && Array.isArray(currentNC.photos) && currentNC.photos.length > 0 && (
+
+            {/* Photo Preview Grid */}
+            {Array.isArray(currentNC.photos) && currentNC.photos.length > 0 && (
               <div className="nc-photo-preview-section">
-                <h4 className="nc-photos-title">Uploaded Photos ({currentNC.photos.length})</h4>
+                <h4>📷 Uploaded Files ({currentNC.photos.length})</h4>
                 <div className="nc-photo-preview-grid">
                   {currentNC.photos.map((photo) => (
-                    <div key={photo.id} className="nc-photo-preview-item">
-                      {photo.type && photo.type.startsWith('image/') ? (
-                        <img src={photo.url} alt={photo.name} />
-                      ) : (
+                    <div key={photo.id} className="nc-photo-preview-card">
+                      {photo.type === 'pdf' ? (
                         <div className="nc-pdf-preview">
                           <div className="nc-pdf-icon">📄</div>
-                          <span className="nc-pdf-name">{photo.name}</span>
+                          <div className="nc-pdf-info">
+                            <span className="nc-pdf-name">{photo.name}</span>
+                            <span className="nc-pdf-size">{(photo.size / 1024 / 1024).toFixed(2)} MB</span>
+                          </div>
+                        </div>
+                      ) : (
+                        <div className="nc-image-preview">
+                          <img src={photo.url} alt={photo.name} />
+                          <div className="nc-image-overlay">
+                            <span className="nc-image-name">{photo.name}</span>
+                            {photo.compressionRatio && (
+                              <span className="nc-compression-badge">
+                                🗜️ -{photo.compressionRatio}%
+                              </span>
+                            )}
+                          </div>
                         </div>
                       )}
-                      <div className="nc-photo-info">
-                        <span className="nc-photo-name">{photo.name}</span>
-                        <span className="nc-photo-size">{(photo.size / 1024 / 1024).toFixed(2)} MB</span>
-                      </div>
                       <button 
-                        className="nc-photo-remove"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          removePhoto(photo.id);
-                        }}
-                        title="Remove photo"
+                        className="nc-photo-remove-btn"
+                        onClick={() => removePhoto(photo.id)}
+                        title="Remove file"
                       >
-                        ×
+                        ❌
                       </button>
                     </div>
                   ))}
@@ -904,48 +889,41 @@ const CreateNCPanel = () => {
   };
 
   return (
-    <div className="nc-create-panel-wizard">
-      {/* CSS Styles */}
-      <style jsx>{`
-        .nc-create-panel-wizard {
-          background: rgba(0, 95, 131, 0.75);
-          backdrop-filter: blur(15px);
-          -webkit-backdrop-filter: blur(15px);
-          border: 1px solid rgba(255, 255, 255, 0.2);
-          box-shadow: 0 8px 32px rgba(0, 95, 131, 0.3);
-          border-radius: 16px;
+    <div className="nc-panel-card nc-create-panel">
+      <style>{`
+        /* ✅ ESTILOS ESPECÍFICOS PARA CREATE NC PANEL */
+        .nc-create-panel {
+          max-width: 1200px;
+          margin: 0 auto;
+          background: rgba(255, 255, 255, 0.98);
+          backdrop-filter: blur(10px);
+          border-radius: 20px;
           overflow: hidden;
+          box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
         }
 
-        /* Step Progress Bar Styles */
+        /* Step Progress Bar */
         .nc-step-progress-container {
-          background: rgba(255, 255, 255, 0.1);
+          background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
           padding: 2rem;
-          border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+          color: white;
         }
 
-        .nc-step-progress-bar {
+        .nc-step-progress {
           display: flex;
           justify-content: space-between;
           align-items: center;
+          position: relative;
           max-width: 800px;
           margin: 0 auto;
-          position: relative;
         }
 
-        .nc-step-wrapper {
+        .nc-step-item {
           display: flex;
           flex-direction: column;
           align-items: center;
           position: relative;
           flex: 1;
-          cursor: pointer;
-          transition: all 0.3s ease;
-        }
-
-        .nc-step-wrapper:hover .nc-step-circle.completed,
-        .nc-step-wrapper:hover .nc-step-circle.current {
-          transform: scale(1.1);
         }
 
         .nc-step-circle {
@@ -956,131 +934,95 @@ const CreateNCPanel = () => {
           align-items: center;
           justify-content: center;
           font-weight: bold;
-          font-size: 1.1rem;
+          font-size: 1rem;
           margin-bottom: 0.75rem;
           transition: all 0.3s ease;
-          position: relative;
           z-index: 2;
-        }
-
-        .nc-step-circle.pending {
-          background: rgba(255, 255, 255, 0.2);
-          color: rgba(255, 255, 255, 0.6);
-          border: 2px solid rgba(255, 255, 255, 0.3);
-        }
-
-        .nc-step-circle.current {
-          background: linear-gradient(135deg, #3b82f6, #1d4ed8);
-          color: white;
-          border: 2px solid #3b82f6;
-          box-shadow: 0 0 20px rgba(59, 130, 246, 0.4);
-          animation: pulse 2s infinite;
+          position: relative;
         }
 
         .nc-step-circle.completed {
-          background: linear-gradient(135deg, #10b981, #059669);
+          background: #10b981;
           color: white;
-          border: 2px solid #10b981;
-          box-shadow: 0 0 15px rgba(16, 185, 129, 0.3);
+          box-shadow: 0 4px 15px rgba(16, 185, 129, 0.4);
         }
 
-        @keyframes pulse {
-          0%, 100% { box-shadow: 0 0 20px rgba(59, 130, 246, 0.4); }
-          50% { box-shadow: 0 0 30px rgba(59, 130, 246, 0.6); }
+        .nc-step-circle.current {
+          background: white;
+          color: #667eea;
+          box-shadow: 0 4px 15px rgba(255, 255, 255, 0.3);
+          transform: scale(1.1);
         }
 
-        .nc-step-check {
-          font-size: 1.3rem;
-        }
-
-        .nc-step-number {
-          font-size: 1.1rem;
+        .nc-step-circle.pending {
+          background: rgba(255, 255, 255, 0.3);
+          color: rgba(255, 255, 255, 0.8);
+          border: 2px solid rgba(255, 255, 255, 0.5);
         }
 
         .nc-step-label {
           text-align: center;
-          font-size: 0.85rem;
+          font-size: 0.875rem;
           font-weight: 600;
-          line-height: 1.2;
-          max-width: 120px;
+          max-width: 100px;
           transition: all 0.3s ease;
         }
 
-        .nc-step-label.pending {
-          color: rgba(255, 255, 255, 0.6);
-        }
-
+        .nc-step-label.completed,
         .nc-step-label.current {
-          color: #93c5fd;
+          color: white;
+          text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
         }
 
-        .nc-step-label.completed {
-          color: #6ee7b7;
+        .nc-step-label.pending {
+          color: rgba(255, 255, 255, 0.7);
         }
 
         .nc-step-connector {
           position: absolute;
           top: 25px;
-          left: 50%;
-          right: -50%;
+          left: calc(50% + 25px);
+          right: calc(-50% + 25px);
           height: 3px;
           z-index: 1;
           transition: all 0.3s ease;
         }
 
-        .nc-step-connector.pending {
-          background: rgba(255, 255, 255, 0.2);
-        }
-
         .nc-step-connector.completed {
-          background: linear-gradient(90deg, #10b981, #059669);
+          background: #10b981;
+          box-shadow: 0 2px 8px rgba(16, 185, 129, 0.3);
         }
 
-        /* Panel Header */
-        .nc-panel-header {
-          background: rgba(255, 255, 255, 0.1);
-          padding: 2rem;
-          border-bottom: 1px solid rgba(255, 255, 255, 0.2);
-          text-align: center;
-        }
-
-        .nc-panel-title {
-          color: white;
-          font-size: 1.5rem;
-          font-weight: 700;
-          margin: 0 0 0.5rem 0;
-          text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          gap: 0.75rem;
-        }
-
-        .nc-panel-subtitle {
-          color: rgba(255, 255, 255, 0.8);
-          font-size: 1rem;
-          margin: 0;
-        }
-
-        .nc-step-info {
-          color: rgba(255, 255, 255, 0.9);
-          font-size: 0.9rem;
-          margin-top: 0.5rem;
+        .nc-step-connector.pending {
+          background: rgba(255, 255, 255, 0.3);
         }
 
         /* Form Content */
         .nc-form-container {
-          background: rgba(255, 255, 255, 0.95);
-          padding: 2rem;
+          padding: 2.5rem;
         }
 
         .nc-step-content {
-          min-height: 300px;
+          max-width: 800px;
+          margin: 0 auto;
+        }
+
+        .nc-form-section {
+          margin-bottom: 2rem;
+        }
+
+        .nc-section-title {
+          color: #374151;
+          font-size: 1.125rem;
+          font-weight: 600;
+          margin-bottom: 1.5rem;
+          padding-bottom: 0.75rem;
+          border-bottom: 2px solid #e5e7eb;
         }
 
         .nc-form-grid {
           display: grid;
-          grid-template-columns: 1fr 1fr;
+          grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
           gap: 1.5rem;
           margin-bottom: 1.5rem;
         }
@@ -1088,16 +1030,13 @@ const CreateNCPanel = () => {
         .nc-form-group {
           display: flex;
           flex-direction: column;
-          gap: 0.5rem;
         }
 
         .nc-form-label {
-          color: #1e40af;
-          font-weight: 700;
-          font-size: 0.875rem;
-          text-align: left;
+          color: #374151;
+          font-weight: 600;
           margin-bottom: 0.5rem;
-          display: block;
+          font-size: 0.875rem;
         }
 
         .nc-form-label.required::after {
@@ -1105,250 +1044,240 @@ const CreateNCPanel = () => {
           color: #ef4444;
         }
 
-        .nc-auto-generated {
-          color: #9ca3af;
-          font-weight: 400;
-          font-size: 0.75rem;
-        }
-
-        .nc-form-input, .nc-form-select {
+        .nc-form-input,
+        .nc-form-select,
+        .nc-form-textarea-limited {
           padding: 0.75rem;
-          border: 1px solid #d1d5db;
-          border-radius: 6px;
-          background: white;
-          color: #374151;
+          border: 2px solid #e5e7eb;
+          border-radius: 8px;
           font-size: 0.875rem;
-          transition: all 0.2s ease;
+          transition: all 0.3s ease;
+          background: white;
         }
 
-        .nc-form-input:focus, .nc-form-select:focus {
+        .nc-form-input:focus,
+        .nc-form-select:focus,
+        .nc-form-textarea-limited:focus {
           outline: none;
-          border-color: #3b82f6;
-          box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+          border-color: #667eea;
+          box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
         }
 
-        .nc-form-input.error, .nc-form-select.error {
+        .nc-form-input.error,
+        .nc-form-select.error,
+        .nc-form-textarea-limited.error {
           border-color: #ef4444;
           box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.1);
         }
 
-        .nc-input-readonly {
-          background-color: #f9fafb;
+        .nc-form-input.readonly {
+          background: #f9fafb;
           color: #6b7280;
           cursor: not-allowed;
         }
 
-        .nc-form-textarea-limited {
-          padding: 0.75rem;
-          border: 1px solid #d1d5db;
-          border-radius: 6px;
-          background: white;
-          color: #374151;
-          font-size: 0.875rem;
-          resize: vertical;
-          font-family: inherit;
-          transition: all 0.2s ease;
-          grid-column: 1 / -1;
-        }
-
-        .nc-form-textarea-limited:focus {
-          outline: none;
-          border-color: #3b82f6;
-          box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+        .nc-field-help {
+          font-size: 0.75rem;
+          color: #6b7280;
+          margin-top: 0.25rem;
         }
 
         .nc-char-count {
+          font-size: 0.75rem;
+          color: #6b7280;
           text-align: right;
+          margin-top: 0.25rem;
+        }
+
+        /* Photo Upload */
+        .nc-photo-upload-area {
+          border: 3px dashed #d1d5db;
+          border-radius: 12px;
+          padding: 3rem 2rem;
+          text-align: center;
+          transition: all 0.3s ease;
+          background: #fafbfc;
+          margin-bottom: 2rem;
+        }
+
+        .nc-photo-upload-area:hover {
+          border-color: #667eea;
+          background: #f8faff;
+        }
+
+        .nc-upload-content {
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          gap: 1rem;
+        }
+
+        .nc-upload-icon {
+          font-size: 3rem;
+          margin-bottom: 0.5rem;
+        }
+
+        .nc-upload-specs {
+          display: flex;
+          flex-wrap: wrap;
+          gap: 1rem;
+          justify-content: center;
           font-size: 0.75rem;
           color: #6b7280;
         }
 
-        .nc-validation-message {
+        .nc-file-input {
+          display: none;
+        }
+
+        .nc-upload-btn {
+          background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+          color: white;
+          border: none;
+          padding: 0.75rem 1.5rem;
+          border-radius: 8px;
+          font-weight: 600;
+          cursor: pointer;
+          transition: all 0.3s ease;
+        }
+
+        .nc-upload-btn:hover:not(:disabled) {
+          transform: translateY(-2px);
+          box-shadow: 0 8px 25px rgba(102, 126, 234, 0.3);
+        }
+
+        .nc-upload-btn:disabled {
+          opacity: 0.6;
+          cursor: not-allowed;
+          transform: none;
+        }
+
+        /* Photo Preview */
+        .nc-photo-preview-section {
+          margin-top: 2rem;
+        }
+
+        .nc-photo-preview-grid {
+          display: grid;
+          grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+          gap: 1rem;
+          margin-top: 1rem;
+        }
+
+        .nc-photo-preview-card {
+          position: relative;
+          border-radius: 8px;
+          overflow: hidden;
+          box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+          transition: transform 0.3s ease;
+        }
+
+        .nc-photo-preview-card:hover {
+          transform: translateY(-2px);
+        }
+
+        .nc-image-preview {
+          position: relative;
+          height: 150px;
+          overflow: hidden;
+        }
+
+        .nc-image-preview img {
+          width: 100%;
+          height: 100%;
+          object-fit: cover;
+        }
+
+        .nc-image-overlay {
+          position: absolute;
+          bottom: 0;
+          left: 0;
+          right: 0;
+          background: linear-gradient(transparent, rgba(0, 0, 0, 0.8));
+          color: white;
+          padding: 1rem 0.75rem 0.5rem;
+          font-size: 0.75rem;
+        }
+
+        .nc-pdf-preview {
+          display: flex;
+          align-items: center;
+          padding: 1rem;
+          background: #f3f4f6;
+          gap: 0.75rem;
+        }
+
+        .nc-pdf-icon {
+          font-size: 2rem;
+        }
+
+        .nc-pdf-info {
+          display: flex;
+          flex-direction: column;
+          flex: 1;
+        }
+
+        .nc-pdf-name {
+          font-weight: 600;
+          font-size: 0.875rem;
+          color: #374151;
+        }
+
+        .nc-pdf-size {
+          font-size: 0.75rem;
+          color: #6b7280;
+        }
+
+        .nc-compression-badge {
+          background: #10b981;
+          color: white;
+          padding: 0.125rem 0.375rem;
+          border-radius: 4px;
+          font-size: 0.625rem;
+          font-weight: 600;
+          margin-top: 0.25rem;
+          align-self: flex-start;
+        }
+
+        .nc-photo-remove-btn {
+          position: absolute;
+          top: 0.5rem;
+          right: 0.5rem;
+          background: rgba(239, 68, 68, 0.9);
+          color: white;
+          border: none;
+          border-radius: 50%;
+          width: 24px;
+          height: 24px;
+          cursor: pointer;
+          font-size: 0.75rem;
+          transition: all 0.3s ease;
+        }
+
+        .nc-photo-remove-btn:hover {
+          background: #ef4444;
+          transform: scale(1.1);
+        }
+
+        /* Validation */
+        .nc-validation-error {
           display: flex;
           align-items: center;
           gap: 0.5rem;
           color: #ef4444;
           font-size: 0.75rem;
-          margin-top: 0.25rem;
+          margin-top: 0.5rem;
         }
 
         .nc-validation-icon {
           font-size: 0.875rem;
         }
 
-        /* Photo Upload - MEJORADO */
-        .nc-photo-upload-area {
-          border: 2px dashed #3b82f6;
-          border-radius: 12px;
-          padding: 3rem;
-          text-align: center;
-          background: linear-gradient(135deg, #f8faff 0%, #f1f5ff 100%);
-          transition: all 0.3s ease;
-          margin-bottom: 2rem;
-        }
-
-        .nc-photo-upload-area:hover {
-          border-color: #1d4ed8;
-          background: linear-gradient(135deg, #f3f4f6 0%, #e5e7eb 100%);
-          transform: translateY(-2px);
-          box-shadow: 0 8px 25px rgba(59, 130, 246, 0.15);
-        }
-
-        .nc-upload-placeholder {
-          cursor: pointer;
-        }
-
-        .nc-upload-icon {
-          font-size: 3.5rem;
-          margin-bottom: 1rem;
-          opacity: 0.8;
-        }
-
-        .nc-upload-placeholder p {
-          color: #374151;
-          margin: 0.5rem 0;
-          font-size: 1rem;
-        }
-
-        .nc-upload-note {
-          color: #6b7280;
-          font-size: 0.875rem;
-          margin-top: 1rem;
-        }
-
-        .nc-upload-spinner {
-          font-size: 1.5rem;
-          animation: spin 1s linear infinite;
-          margin-top: 0.5rem;
-        }
-
-        @keyframes spin {
-          from { transform: rotate(0deg); }
-          to { transform: rotate(360deg); }
-        }
-
-        /* ✅ SECCIÓN DE FOTOS SUBIDAS */
-        .nc-photo-preview-section {
-          margin-top: 1.5rem;
-        }
-
-        .nc-photos-title {
-          color: #1e40af;
-          font-weight: 700;
-          font-size: 1rem;
-          margin-bottom: 1rem;
-          text-align: left;
-        }
-
-        /* ✅ GRILLA 2x2 PARA FOTOS */
-        .nc-photo-preview-grid {
-          display: grid;
-          grid-template-columns: 1fr 1fr;
-          gap: 1.5rem;
-          margin-top: 1rem;
-        }
-
-        .nc-photo-preview-item {
-          position: relative;
-          border-radius: 12px;
-          overflow: hidden;
-          background: white;
-          border: 2px solid #e5e7eb;
-          transition: all 0.3s ease;
-          box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-        }
-
-        .nc-photo-preview-item:hover {
-          border-color: #3b82f6;
-          transform: translateY(-2px);
-          box-shadow: 0 8px 25px rgba(59, 130, 246, 0.15);
-        }
-
-        .nc-photo-preview-item img {
-          width: 100%;
-          height: 200px;
-          object-fit: cover;
-          display: block;
-        }
-
-        /* ✅ PREVIEW PARA PDFs */
-        .nc-pdf-preview {
-          width: 100%;
-          height: 200px;
-          display: flex;
-          flex-direction: column;
-          align-items: center;
-          justify-content: center;
-          background: linear-gradient(135deg, #f8faff 0%, #f1f5ff 100%);
-          border: 2px dashed #3b82f6;
-        }
-
-        .nc-pdf-icon {
-          font-size: 3rem;
-          color: #3b82f6;
-          margin-bottom: 0.5rem;
-        }
-
-        .nc-pdf-name {
-          color: #374151;
-          font-size: 0.875rem;
-          text-align: center;
-          padding: 0 1rem;
-          font-weight: 600;
-        }
-
-        /* ✅ INFO DE LA FOTO */
-        .nc-photo-info {
-          padding: 0.75rem;
-          background: white;
-          border-top: 1px solid #e5e7eb;
-        }
-
-        .nc-photo-name {
-          display: block;
-          color: #374151;
-          font-weight: 600;
-          font-size: 0.875rem;
-          margin-bottom: 0.25rem;
-          word-break: break-word;
-        }
-
-        .nc-photo-size {
-          color: #6b7280;
-          font-size: 0.75rem;
-        }
-
-        /* ✅ BOTÓN REMOVER MEJORADO */
-        .nc-photo-remove {
-          position: absolute;
-          top: 0.5rem;
-          right: 0.5rem;
-          width: 32px;
-          height: 32px;
-          border-radius: 50%;
-          background: rgba(239, 68, 68, 0.9);
-          color: white;
-          border: 2px solid white;
-          cursor: pointer;
-          font-size: 1.2rem;
-          font-weight: bold;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          transition: all 0.2s ease;
-          box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
-        }
-
-        .nc-photo-remove:hover {
-          background: rgba(220, 38, 38, 1);
-          transform: scale(1.1);
-        }
-
-        /* Navigation Buttons */
+        /* Navigation */
         .nc-wizard-navigation {
-          background: rgba(255, 255, 255, 0.95);
-          padding: 1.5rem 2rem;
-          border-top: 1px solid rgba(255, 255, 255, 0.2);
+          background: #f9fafb;
+          padding: 1.5rem 2.5rem;
+          border-top: 1px solid #e5e7eb;
           display: flex;
           justify-content: space-between;
           align-items: center;
@@ -1357,82 +1286,20 @@ const CreateNCPanel = () => {
         .nc-nav-buttons {
           display: flex;
           gap: 1rem;
+          align-items: center;
         }
 
         .nc-btn {
           padding: 0.75rem 1.5rem;
           border-radius: 8px;
           font-weight: 600;
-          font-size: 0.875rem;
           cursor: pointer;
-          transition: all 0.2s ease;
-          border: none;
+          transition: all 0.3s ease;
           display: flex;
           align-items: center;
           gap: 0.5rem;
-        }
-
-        .nc-btn-secondary {
-          background: #f3f4f6;
-          color: #374151;
-          border: 1px solid #d1d5db;
-        }
-
-        .nc-btn-secondary:hover:not(:disabled) {
-          background: #e5e7eb;
-        }
-
-        .nc-btn-primary {
-          background: linear-gradient(135deg, #3b82f6, #1d4ed8);
-          color: white;
-        }
-
-        .nc-btn-primary:hover:not(:disabled) {
-          background: linear-gradient(135deg, #2563eb, #1e40af);
-          transform: translateY(-1px);
-          box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
-        }
-
-        .nc-btn-success {
-          background: linear-gradient(135deg, #10b981, #059669);
-          color: white;
-        }
-
-        .nc-btn-success:hover:not(:disabled) {
-          background: linear-gradient(135deg, #059669, #047857);
-          transform: translateY(-1px);
-          box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
-        }
-
-        .nc-btn-export {
-          background: linear-gradient(135deg, #7c3aed, #5b21b6);
-          color: white;
-        }
-
-        .nc-btn-export:hover:not(:disabled) {
-          background: linear-gradient(135deg, #6d28d9, #4c1d95);
-          transform: translateY(-1px);
-          box-shadow: 0 4px 12px rgba(124, 58, 237, 0.3);
-        }
-
-        .nc-btn-combo {
-          background: linear-gradient(135deg, #f59e0b, #d97706);
-          color: white;
-        }
-
-        .nc-btn-combo:hover:not(:disabled) {
-          background: linear-gradient(135deg, #d97706, #b45309);
-          transform: translateY(-1px);
-          box-shadow: 0 4px 12px rgba(245, 158, 11, 0.3);
-        }
-
-        .nc-btn-spinner {
-          width: 16px;
-          height: 16px;
-          border: 2px solid rgba(255, 255, 255, 0.3);
-          border-radius: 50%;
-          border-top-color: white;
-          animation: spin 1s ease-in-out infinite;
+          border: none;
+          font-size: 0.875rem;
         }
 
         .nc-btn:disabled {
@@ -1440,6 +1307,70 @@ const CreateNCPanel = () => {
           cursor: not-allowed;
           transform: none !important;
           box-shadow: none !important;
+        }
+
+        .nc-btn-secondary {
+          background: #6b7280;
+          color: white;
+        }
+
+        .nc-btn-secondary:hover:not(:disabled) {
+          background: #4b5563;
+          transform: translateY(-1px);
+        }
+
+        .nc-btn-primary {
+          background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+          color: white;
+        }
+
+        .nc-btn-primary:hover:not(:disabled) {
+          transform: translateY(-1px);
+          box-shadow: 0 8px 25px rgba(102, 126, 234, 0.3);
+        }
+
+        .nc-btn-success {
+          background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+          color: white;
+        }
+
+        .nc-btn-success:hover:not(:disabled) {
+          transform: translateY(-1px);
+          box-shadow: 0 8px 25px rgba(16, 185, 129, 0.3);
+        }
+
+        .nc-btn-export {
+          background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+          color: white;
+        }
+
+        .nc-btn-export:hover:not(:disabled) {
+          transform: translateY(-1px);
+          box-shadow: 0 8px 25px rgba(245, 158, 11, 0.3);
+        }
+
+        .nc-btn-combo {
+          background: linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%);
+          color: white;
+        }
+
+        .nc-btn-combo:hover:not(:disabled) {
+          transform: translateY(-1px);
+          box-shadow: 0 8px 25px rgba(139, 92, 246, 0.3);
+        }
+
+        .nc-btn-spinner {
+          width: 16px;
+          height: 16px;
+          border: 2px solid transparent;
+          border-top: 2px solid currentColor;
+          border-radius: 50%;
+          animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+          0% { transform: rotate(0deg); }
+          100% { transform: rotate(360deg); }
         }
 
         .nc-step-counter {
@@ -1489,7 +1420,6 @@ const CreateNCPanel = () => {
             gap: 1rem;
           }
 
-          /* ✅ FOTOS RESPONSIVE - 1 COLUMNA EN MÓVIL */
           .nc-photo-preview-grid {
             grid-template-columns: 1fr;
             gap: 1rem;

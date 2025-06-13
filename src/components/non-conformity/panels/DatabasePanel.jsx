@@ -1,6 +1,8 @@
 // src/components/non-conformity/panels/DatabasePanel.jsx
 import React, { useState, useMemo } from 'react';
 import { useNonConformity } from '../../../context/NonConformityContext';
+// ✅ AGREGAR IMPORT DE UTILIDADES DE FECHA SEGURAS
+import { safeParseDate, safeDateCompare } from '../../../utils/dateUtils';
 
 const DatabasePanel = () => {
   const { state, dispatch, helpers } = useNonConformity();
@@ -65,7 +67,7 @@ const DatabasePanel = () => {
     }
   };
 
-  // Filter and sort NCs
+  // Filter and sort NCs - ✅ CON CORRECCIONES DE FECHAS SEGURAS
   const filteredAndSortedNCs = useMemo(() => {
     let filtered = [...ncList];
     
@@ -102,7 +104,7 @@ const DatabasePanel = () => {
       filtered = filtered.filter(nc => nc.supplier === filters.supplier);
     }
     
-    // Apply date range filter
+    // Apply date range filter - ✅ CON FECHAS SEGURAS
     if (filters.dateRange !== 'all') {
       const now = new Date();
       let cutoffDate = new Date();
@@ -122,40 +124,40 @@ const DatabasePanel = () => {
           break;
       }
       
+      // ✅ CAMBIO: USAR FUNCIÓN SEGURA PARA FECHAS
       filtered = filtered.filter(nc => {
-        const createdDate = new Date(nc.createdDate.split('/').reverse().join('-'));
+        const createdDate = safeParseDate(nc.createdDate);
         return createdDate >= cutoffDate;
       });
     }
     
-    // Apply custom date range
+    // Apply custom date range - ✅ CON FECHAS SEGURAS
     if (filters.dateFrom) {
       const fromDate = new Date(filters.dateFrom);
+      // ✅ CAMBIO: USAR FUNCIÓN SEGURA PARA FECHAS
       filtered = filtered.filter(nc => {
-        const createdDate = new Date(nc.createdDate.split('/').reverse().join('-'));
+        const createdDate = safeParseDate(nc.createdDate);
         return createdDate >= fromDate;
       });
     }
     
     if (filters.dateTo) {
       const toDate = new Date(filters.dateTo);
+      // ✅ CAMBIO: USAR FUNCIÓN SEGURA PARA FECHAS
       filtered = filtered.filter(nc => {
-        const createdDate = new Date(nc.createdDate.split('/').reverse().join('-'));
+        const createdDate = safeParseDate(nc.createdDate);
         return createdDate <= toDate;
       });
     }
     
-    // Apply sorting
+    // Apply sorting - ✅ CON ORDENAMIENTO SEGURO
     filtered.sort((a, b) => {
       let aVal = a[sortConfig.key];
       let bVal = b[sortConfig.key];
       
-      // Handle date sorting
+      // ✅ CAMBIO: MANEJO SEGURO DE FECHAS
       if (sortConfig.key === 'createdDate' || sortConfig.key === 'actualClosureDate') {
-        if (!aVal) aVal = '01/01/1900';
-        if (!bVal) bVal = '01/01/1900';
-        aVal = new Date(aVal.split('/').reverse().join('-'));
-        bVal = new Date(bVal.split('/').reverse().join('-'));
+        return safeDateCompare(aVal || '', bVal || '', sortConfig.direction);
       }
       
       // Handle numeric sorting
@@ -312,7 +314,7 @@ const DatabasePanel = () => {
               <input
                 type="text"
                 className="nc-form-input nc-search-input"
-                placeholder="🔍 Search NCs by number, project, supplier, description..."
+                placeholder="Search NCs by number, project, supplier, description..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
               />
@@ -325,7 +327,7 @@ const DatabasePanel = () => {
                 value={filters.status}
                 onChange={(e) => handleFilterChange('status', e.target.value)}
               >
-                <option value="all">All Statuses</option>
+                <option value="all">All Status</option>
                 <option value="open">Open</option>
                 <option value="progress">In Progress</option>
                 <option value="resolved">Resolved</option>
@@ -340,7 +342,7 @@ const DatabasePanel = () => {
                 value={filters.priority}
                 onChange={(e) => handleFilterChange('priority', e.target.value)}
               >
-                <option value="all">All Priorities</option>
+                <option value="all">All Priority</option>
                 <option value="critical">Critical</option>
                 <option value="major">Major</option>
                 <option value="minor">Minor</option>
@@ -361,22 +363,6 @@ const DatabasePanel = () => {
               </select>
             </div>
 
-            {/* Supplier Filter */}
-            <div className="nc-form-group">
-              <select
-                className="nc-form-select"
-                value={filters.supplier}
-                onChange={(e) => handleFilterChange('supplier', e.target.value)}
-              >
-                <option value="all">All Suppliers</option>
-                {uniqueSuppliers.map(supplier => (
-                  <option key={supplier} value={supplier}>{supplier}</option>
-                ))}
-              </select>
-            </div>
-          </div>
-
-          <div className="nc-filters-row">
             {/* Date Range Filter */}
             <div className="nc-form-group">
               <select
@@ -389,33 +375,30 @@ const DatabasePanel = () => {
                 <option value="month">Last Month</option>
                 <option value="quarter">Last Quarter</option>
                 <option value="year">Last Year</option>
-                <option value="custom">Custom Range</option>
               </select>
             </div>
+          </div>
 
-            {/* Custom Date Range */}
-            {filters.dateRange === 'custom' && (
-              <>
-                <div className="nc-form-group">
-                  <input
-                    type="date"
-                    className="nc-form-input"
-                    value={filters.dateFrom}
-                    onChange={(e) => handleFilterChange('dateFrom', e.target.value)}
-                    placeholder="From Date"
-                  />
-                </div>
-                <div className="nc-form-group">
-                  <input
-                    type="date"
-                    className="nc-form-input"
-                    value={filters.dateTo}
-                    onChange={(e) => handleFilterChange('dateTo', e.target.value)}
-                    placeholder="To Date"
-                  />
-                </div>
-              </>
-            )}
+          {/* Custom Date Range */}
+          <div className="nc-filters-row">
+            <div className="nc-form-group">
+              <label className="nc-form-label">From Date:</label>
+              <input
+                type="date"
+                className="nc-form-input"
+                value={filters.dateFrom}
+                onChange={(e) => handleFilterChange('dateFrom', e.target.value)}
+              />
+            </div>
+            <div className="nc-form-group">
+              <label className="nc-form-label">To Date:</label>
+              <input
+                type="date"
+                className="nc-form-input"
+                value={filters.dateTo}
+                onChange={(e) => handleFilterChange('dateTo', e.target.value)}
+              />
+            </div>
 
             {/* View Mode Toggle */}
             <div className="nc-view-toggle">
@@ -599,37 +582,35 @@ const DatabasePanel = () => {
                           </span>
                         </td>
                         <td>
-                          <div className="nc-action-buttons">
+                          <div className="nc-table-actions">
                             <button
-                              className="nc-btn nc-btn-ghost nc-btn-tiny"
+                              className="nc-btn nc-btn-ghost nc-btn-small"
                               onClick={() => handleNCAction(nc, 'view')}
                               title="View Details"
                             >
                               👁️
                             </button>
                             <button
-                              className="nc-btn nc-btn-ghost nc-btn-tiny"
+                              className="nc-btn nc-btn-ghost nc-btn-small"
                               onClick={() => handleNCAction(nc, 'edit')}
-                              title="Edit"
+                              title="Edit NC"
                             >
                               ✏️
                             </button>
                             <button
-                              className="nc-btn nc-btn-ghost nc-btn-tiny"
+                              className="nc-btn nc-btn-ghost nc-btn-small"
                               onClick={() => handleNCAction(nc, 'pdf')}
                               title="Generate PDF"
                             >
                               📄
                             </button>
-                            {helpers.canAccess('delete') && (
-                              <button
-                                className="nc-btn nc-btn-ghost nc-btn-tiny nc-btn-danger-tiny"
-                                onClick={() => handleNCAction(nc, 'delete')}
-                                title="Delete"
-                              >
-                                🗑️
-                              </button>
-                            )}
+                            <button
+                              className="nc-btn nc-btn-ghost nc-btn-small nc-btn-danger"
+                              onClick={() => handleNCAction(nc, 'delete')}
+                              title="Delete NC"
+                            >
+                              🗑️
+                            </button>
                           </div>
                         </td>
                       </tr>
@@ -643,53 +624,39 @@ const DatabasePanel = () => {
             {viewMode === 'cards' && (
               <div className="nc-cards-container">
                 {currentNCs.map(nc => (
-                  <div 
-                    key={nc.id} 
-                    className={`nc-card ${selectedNCs.includes(nc.id) ? 'nc-card-selected' : ''}`}
-                  >
+                  <div key={nc.id} className="nc-card">
                     <div className="nc-card-header">
-                      <div className="nc-card-title">
+                      <div className="nc-card-checkbox">
                         <input
                           type="checkbox"
                           checked={selectedNCs.includes(nc.id)}
                           onChange={() => handleRowSelect(nc.id)}
                         />
-                        <strong>{nc.number}</strong>
                       </div>
+                      <div className="nc-card-number">{nc.number}</div>
                       <div className="nc-card-badges">
                         <span className={`nc-status-badge ${getPriorityBadgeClass(nc.priority)}`}>
                           {nc.priority.toUpperCase()}
                         </span>
                         <span className={`nc-status-badge ${getStatusBadgeClass(nc.status)}`}>
-                          {nc.status.replace('_', ' ').toUpperCase()}
+                          {nc.status.toUpperCase()}
                         </span>
                       </div>
                     </div>
-                    
                     <div className="nc-card-content">
-                      <div className="nc-card-field">
-                        <strong>Project:</strong> {nc.project}
-                      </div>
-                      {nc.supplier && (
-                        <div className="nc-card-field">
-                          <strong>Supplier:</strong> {nc.supplier}
-                        </div>
-                      )}
-                      <div className="nc-card-field">
-                        <strong>Description:</strong>
-                        <p className="nc-card-description">
-                          {nc.description.length > 100 
-                            ? `${nc.description.substring(0, 100)}...`
-                            : nc.description
-                          }
-                        </p>
-                      </div>
-                      <div className="nc-card-meta">
-                        <span>Created: {nc.createdDate}</span>
-                        <span>Days Open: {nc.daysOpen || 0}</span>
+                      <h4 className="nc-card-title">{nc.project}</h4>
+                      <p className="nc-card-description">
+                        {nc.description.length > 100 
+                          ? `${nc.description.substring(0, 100)}...`
+                          : nc.description
+                        }
+                      </p>
+                      <div className="nc-card-details">
+                        <span><strong>Supplier:</strong> {nc.supplier || 'N/A'}</span>
+                        <span><strong>Created:</strong> {nc.createdDate}</span>
+                        <span><strong>Days Open:</strong> {nc.daysOpen || 0}</span>
                       </div>
                     </div>
-
                     <div className="nc-card-actions">
                       <button
                         className="nc-btn nc-btn-primary nc-btn-small"

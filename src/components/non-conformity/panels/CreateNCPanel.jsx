@@ -816,15 +816,16 @@ const CreateNCPanel = () => {
               <div className="nc-upload-content">
                 <div className="nc-upload-icon">📸</div>
                 <h4>Upload Photos & Documents</h4>
-                <p>Drag and drop files here, or click to select</p>
+                <p>Drag and drop multiple files here, or click to select</p>
                 <div className="nc-upload-specs">
                   <span>📁 Supports: JPG, PNG, GIF, PDF</span>
                   <span>💾 Max size: 10MB per file</span>
                   <span>🗜️ Images auto-compressed to optimize storage</span>
+                  <span>📷 Multiple files supported</span>
                 </div>
                 <input
                   type="file"
-                  multiple
+                  multiple /* ✅ PERMITIR MÚLTIPLES ARCHIVOS */
                   accept="image/*,.pdf"
                   onChange={handleFileSelect}
                   className="nc-file-input"
@@ -835,7 +836,7 @@ const CreateNCPanel = () => {
                   onClick={() => document.querySelector('.nc-file-input').click()}
                   disabled={uploadingFiles}
                 >
-                  {uploadingFiles ? '📤 Uploading...' : '📎 Select Files'}
+                  {uploadingFiles ? '📤 Uploading...' : '📎 Select Multiple Files'}
                 </button>
               </div>
             </div>
@@ -999,7 +1000,11 @@ const CreateNCPanel = () => {
 
         /* Form Content */
         .nc-form-container {
-          padding: 2.5rem;
+          padding: 3rem; /* ✅ MÁS PADDING */
+          background: rgba(255, 255, 255, 0.95); /* ✅ FONDO BLANCO SEMI-TRANSPARENTE */
+          margin: 1rem;
+          borderRadius: 16px;
+          backdropFilter: blur(5px);
         }
 
         .nc-step-content {
@@ -1339,16 +1344,6 @@ const CreateNCPanel = () => {
           box-shadow: 0 8px 25px rgba(16, 185, 129, 0.3);
         }
 
-        .nc-btn-export {
-          background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
-          color: white;
-        }
-
-        .nc-btn-export:hover:not(:disabled) {
-          transform: translateY(-1px);
-          box-shadow: 0 8px 25px rgba(245, 158, 11, 0.3);
-        }
-
         .nc-btn-combo {
           background: linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%);
           color: white;
@@ -1396,6 +1391,11 @@ const CreateNCPanel = () => {
 
         /* Responsive Design */
         @media (max-width: 768px) {
+          .nc-create-panel {
+            max-width: 95%;
+            margin: 1rem auto;
+          }
+
           .nc-step-progress-container {
             padding: 1rem;
           }
@@ -1413,6 +1413,7 @@ const CreateNCPanel = () => {
 
           .nc-form-container {
             padding: 1.5rem;
+            margin: 0.5rem;
           }
 
           .nc-form-grid {
@@ -1510,25 +1511,6 @@ const CreateNCPanel = () => {
             ← Previous
           </button>
           
-          {/* ✅ BOTÓN EXPORT PDF */}
-          <button 
-            className="nc-btn nc-btn-export"
-            onClick={handleExportPDF}
-            disabled={exportingPDF || !currentNC.number}
-            title="Export current NC to PDF"
-          >
-            {exportingPDF ? (
-              <>
-                <div className="nc-btn-spinner"></div>
-                <span>Exporting...</span>
-              </>
-            ) : (
-              <>
-                📄 Export PDF
-              </>
-            )}
-          </button>
-          
           {currentStep < steps.length - 1 ? (
             <button 
               className="nc-btn nc-btn-primary"
@@ -1555,7 +1537,7 @@ const CreateNCPanel = () => {
                 )}
               </button>
               
-              {/* ✅ BOTÓN SAVE & EXPORT */}
+              {/* ✅ BOTÓN SAVE & EXPORT - SOLO EN ÚLTIMO PASO */}
               <button 
                 className="nc-btn nc-btn-combo"
                 onClick={async () => {

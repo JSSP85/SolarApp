@@ -448,8 +448,170 @@ const LoginPage = () => {
           }
         }
 
+        /* ALTURA LIMITADA - PORTÁTILES 15" Y PANTALLAS CORTAS */
+        @media (max-height: 900px) {
+          .header-section {
+            margin-bottom: 2rem;
+          }
+          
+          .logo {
+            height: 50px;
+          }
+          
+          .main-title {
+            font-size: 2rem;
+          }
+          
+          .subtitle {
+            font-size: 1rem;
+          }
+          
+          .login-card {
+            padding: 2rem;
+          }
+          
+          .shield-icon {
+            width: 50px;
+            height: 50px;
+          }
+          
+          .form-header {
+            margin-bottom: 1.5rem;
+          }
+        }
+
+        /* PORTÁTILES ESTÁNDAR 15" - ALTURA MUY LIMITADA */
+        @media (max-height: 800px) {
+          .login-container {
+            padding: 0.5rem;
+            align-items: flex-start;
+            padding-top: 1rem;
+          }
+          
+          .header-section {
+            margin-bottom: 1.5rem;
+          }
+          
+          .logo-container {
+            margin-bottom: 1rem;
+          }
+          
+          .logo {
+            height: 40px;
+          }
+          
+          .main-title {
+            font-size: 1.75rem;
+            margin-bottom: 0.25rem;
+          }
+          
+          .subtitle {
+            font-size: 0.9rem;
+          }
+          
+          .login-card {
+            padding: 1.5rem;
+          }
+          
+          .shield-icon-container {
+            margin-bottom: 1rem;
+          }
+          
+          .shield-icon {
+            width: 40px;
+            height: 40px;
+          }
+          
+          .form-header {
+            margin-bottom: 1rem;
+          }
+          
+          .form-title {
+            font-size: 1.3rem;
+          }
+          
+          .form-subtitle {
+            font-size: 0.8rem;
+          }
+          
+          .form {
+            gap: 1rem;
+          }
+          
+          .form-label {
+            margin-bottom: 0.5rem;
+            font-size: 0.85rem;
+          }
+          
+          .form-input {
+            padding: 0.75rem 0.75rem 0.75rem 2.5rem;
+          }
+          
+          .input-icon {
+            left: 0.75rem;
+          }
+        }
+
+        /* PANTALLAS MUY CORTAS - NETBOOKS Y SIMILARES */
+        @media (max-height: 700px) {
+          .login-container {
+            padding: 0.25rem;
+            padding-top: 0.5rem;
+          }
+          
+          .header-section {
+            margin-bottom: 1rem;
+          }
+          
+          .logo-container {
+            margin-bottom: 0.5rem;
+          }
+          
+          .logo {
+            height: 35px;
+          }
+          
+          .main-title {
+            font-size: 1.5rem;
+            margin-bottom: 0;
+          }
+          
+          .subtitle {
+            font-size: 0.8rem;
+          }
+          
+          .login-card {
+            padding: 1rem;
+          }
+          
+          .shield-icon-container {
+            margin-bottom: 0.5rem;
+          }
+          
+          .shield-icon {
+            width: 35px;
+            height: 35px;
+          }
+          
+          .form-header {
+            margin-bottom: 0.5rem;
+          }
+          
+          .form-title {
+            font-size: 1.2rem;
+          }
+          
+          .form-subtitle {
+            font-size: 0.75rem;
+          }
+          
+          .form {
+            gap: 0.75rem;
+          }
+        }
+
         /* Pantallas grandes */
-        @media (min-width: 1200px) {
+        @media (min-width: 1200px) and (min-height: 900px) {
           .main-wrapper {
             max-width: 500px;
           }

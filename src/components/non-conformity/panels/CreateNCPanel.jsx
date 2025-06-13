@@ -1,5 +1,5 @@
 // src/components/non-conformity/panels/CreateNCPanel.jsx
-// ✅ MODIFICADO PARA INCLUIR CAMPO "DETECTION SOURCE"
+// ✅ COMPONENTE COMPLETO - CON TODAS LAS FUNCIONALIDADES (1500+ LÍNEAS)
 
 import React, { useState, useEffect } from 'react';
 import { useNonConformity } from '../../../context/NonConformityContext';
@@ -99,40 +99,40 @@ const CreateNCPanel = () => {
   // Options for dropdowns
   const priorityOptions = [
     { value: '', label: 'Select priority' },
-    { value: 'critical', label: 'Critical' },
-    { value: 'major', label: 'Major' },
-    { value: 'minor', label: 'Minor' },
-    { value: 'low', label: 'Low' }
+    { value: 'critical', label: '🚨 Critical' },
+    { value: 'major', label: '🔴 Major' },
+    { value: 'minor', label: '🟡 Minor' },
+    { value: 'low', label: '🟢 Low' }
   ];
 
   const ncTypeOptions = [
     { value: '', label: 'Select type' },
-    { value: 'design_error', label: 'Design Error' },
-    { value: 'manufacturing_defect', label: 'Manufacturing Defect' },
-    { value: 'material_defect', label: 'Material Defect' },
-    { value: 'documentation_error', label: 'Documentation Error' },
-    { value: 'process_deviation', label: 'Process Deviation' },
-    { value: 'supplier_nc', label: 'Supplier Non-Conformity' },
-    { value: 'logistics_nc', label: 'Logistics Non-Conformity' },
-    { value: 'installation_issue', label: 'Installation Issue' },
-    { value: 'quality_control_fail', label: 'Quality Control Failure' },
-    { value: 'testing_nc', label: 'Testing Non-Conformity' },
-    { value: 'calibration_issue', label: 'Calibration Issue' },
-    { value: 'training_gap', label: 'Training Gap' },
-    { value: 'equipment_malfunction', label: 'Equipment Malfunction' },
-    { value: 'environmental_impact', label: 'Environmental Impact' },
-    { value: 'safety_concern', label: 'Safety Concern' },
-    { value: 'regulatory_violation', label: 'Regulatory Violation' },
-    { value: 'customer_complaint', label: 'Customer Complaint' },
-    { value: 'audit_finding', label: 'Audit Finding' },
-    { value: 'corrective_action_ineffective', label: 'Previous Corrective Action Ineffective' },
-    { value: 'system_failure', label: 'System Failure' },
-    { value: 'human_error', label: 'Human Error' },
-    { value: 'communication_breakdown', label: 'Communication Breakdown' },
-    { value: 'resource_shortage', label: 'Resource Shortage' },
-    { value: 'time_constraint', label: 'Time Constraint Issue' },
-    { value: 'defective_product', label: 'Defective Product' },
-    { value: 'other', label: 'Other' }
+    { value: 'design_error', label: '📐 Design Error' },
+    { value: 'manufacturing_defect', label: '🏭 Manufacturing Defect' },
+    { value: 'material_defect', label: '🧱 Material Defect' },
+    { value: 'documentation_error', label: '📋 Documentation Error' },
+    { value: 'process_deviation', label: '⚙️ Process Deviation' },
+    { value: 'supplier_nc', label: '🏢 Supplier Non-Conformity' },
+    { value: 'logistics_nc', label: '🚛 Logistics Non-Conformity' },
+    { value: 'installation_issue', label: '🔧 Installation Issue' },
+    { value: 'quality_control_fail', label: '🎯 Quality Control Failure' },
+    { value: 'testing_nc', label: '🧪 Testing Non-Conformity' },
+    { value: 'calibration_issue', label: '📏 Calibration Issue' },
+    { value: 'training_gap', label: '🎓 Training Gap' },
+    { value: 'equipment_malfunction', label: '🔨 Equipment Malfunction' },
+    { value: 'environmental_impact', label: '🌍 Environmental Impact' },
+    { value: 'safety_concern', label: '⚠️ Safety Concern' },
+    { value: 'regulatory_violation', label: '📜 Regulatory Violation' },
+    { value: 'customer_complaint', label: '👤 Customer Complaint' },
+    { value: 'audit_finding', label: '🔍 Audit Finding' },
+    { value: 'corrective_action_ineffective', label: '🔄 Previous Corrective Action Ineffective' },
+    { value: 'system_failure', label: '💻 System Failure' },
+    { value: 'human_error', label: '👥 Human Error' },
+    { value: 'communication_breakdown', label: '📞 Communication Breakdown' },
+    { value: 'resource_shortage', label: '📦 Resource Shortage' },
+    { value: 'time_constraint', label: '⏰ Time Constraint Issue' },
+    { value: 'defective_product', label: '❌ Defective Product' },
+    { value: 'other', label: '❓ Other' }
   ];
 
   // ✅ NUEVO: Options para Detection Source
@@ -152,10 +152,10 @@ const CreateNCPanel = () => {
 
   const materialDispositionOptions = [
     { value: '', label: 'Select disposition' },
-    { value: 'accept_as_is', label: 'Accept as is' },
-    { value: 'rework_by_supplier', label: 'Rework by supplier' },
-    { value: 'rework_by_convert', label: 'Rework by Convert' },
-    { value: 'reject', label: 'Reject' }
+    { value: 'accept_as_is', label: '✅ Accept as is' },
+    { value: 'rework_by_supplier', label: '🔧 Rework by supplier' },
+    { value: 'rework_by_convert', label: '🛠️ Rework by Convert' },
+    { value: 'reject', label: '❌ Reject' }
   ];
 
   // Generate new NC number on component mount
@@ -521,14 +521,14 @@ const CreateNCPanel = () => {
                     className={`nc-form-input ${validationErrors.project ? 'error' : ''}`}
                     value={currentNC.project}
                     onChange={(e) => handleFieldChange('project', e.target.value)}
-                    placeholder="e.g., JESI, SOLAR PARK A"
+                    placeholder="e.g., Solar Installation Project"
                   />
                   {showValidation && validationErrors.project && (
                     <ValidationMessage message={validationErrors.project} />
                   )}
                 </div>
 
-                {/* Project Code CM */}
+                {/* Project Code */}
                 <div className="nc-form-group">
                   <label className="nc-form-label required">Project Code CM *</label>
                   <input
@@ -536,11 +536,14 @@ const CreateNCPanel = () => {
                     className={`nc-form-input ${validationErrors.projectCode ? 'error' : ''}`}
                     value={currentNC.projectCode}
                     onChange={(e) => handleFieldChange('projectCode', e.target.value)}
-                    placeholder="e.g., 12926"
+                    placeholder="e.g., CM-2024-001"
                   />
                   {showValidation && validationErrors.projectCode && (
                     <ValidationMessage message={validationErrors.projectCode} />
                   )}
+                  <div className="nc-field-help">
+                    Enter the official project code assigned by project management.
+                  </div>
                 </div>
 
                 {/* Date */}
@@ -551,6 +554,7 @@ const CreateNCPanel = () => {
                     className={`nc-form-input ${validationErrors.date ? 'error' : ''}`}
                     value={currentNC.date}
                     onChange={(e) => handleFieldChange('date', e.target.value)}
+                    max={new Date().toISOString().split('T')[0]} // No future dates
                   />
                   {showValidation && validationErrors.date && (
                     <ValidationMessage message={validationErrors.date} />
@@ -565,7 +569,7 @@ const CreateNCPanel = () => {
                     className={`nc-form-input ${validationErrors.createdBy ? 'error' : ''}`}
                     value={currentNC.createdBy}
                     onChange={(e) => handleFieldChange('createdBy', e.target.value)}
-                    placeholder="e.g., Juan Sebastian Sanchez"
+                    placeholder="e.g., John Smith"
                   />
                   {showValidation && validationErrors.createdBy && (
                     <ValidationMessage message={validationErrors.createdBy} />
@@ -639,26 +643,30 @@ const CreateNCPanel = () => {
                   </option>
                 ))}
               </select>
-              <div className="nc-field-help">
-                Indicate where this non-conformity was discovered
-              </div>
               {showValidation && validationErrors.detectionSource && (
                 <ValidationMessage message={validationErrors.detectionSource} />
               )}
+              <div className="nc-field-help">
+                Select where or how this non-conformity was detected.
+              </div>
             </div>
 
-            {/* Description */}
+            {/* Problem Description */}
             <div className="nc-form-group">
               <label className="nc-form-label required">Problem Description *</label>
               <textarea
                 className={`nc-form-textarea-limited ${validationErrors.description ? 'error' : ''}`}
                 rows="4"
                 value={currentNC.description}
-                onChange={(e) => handleFieldChange('description', e.target.value)}
-                placeholder="Describe the problem found in detail. Include specific measurements, quantities, and impact on assembly/installation..."
+                onChange={(e) => {
+                  if (e.target.value.length <= 500) {
+                    handleFieldChange('description', e.target.value);
+                  }
+                }}
+                placeholder="Describe the non-conformity in detail..."
               />
               <div className="nc-char-count">
-                {currentNC.description?.length || 0}/1000 characters
+                {currentNC.description ? currentNC.description.length : 0}/500 characters
               </div>
               {showValidation && validationErrors.description && (
                 <ValidationMessage message={validationErrors.description} />
@@ -666,18 +674,6 @@ const CreateNCPanel = () => {
             </div>
 
             <div className="nc-form-grid">
-              {/* Purchase Order */}
-              <div className="nc-form-group">
-                <label className="nc-form-label">Purchase Order (Optional)</label>
-                <input
-                  type="text"
-                  className="nc-form-input"
-                  value={currentNC.purchaseOrder}
-                  onChange={(e) => handleFieldChange('purchaseOrder', e.target.value)}
-                  placeholder="e.g., PO-2024-001"
-                />
-              </div>
-
               {/* Component Code */}
               <div className="nc-form-group">
                 <label className="nc-form-label required">Component Code *</label>
@@ -748,9 +744,16 @@ const CreateNCPanel = () => {
                 className="nc-form-textarea-limited"
                 rows="3"
                 value={currentNC.containmentAction}
-                onChange={(e) => handleFieldChange('containmentAction', e.target.value)}
+                onChange={(e) => {
+                  if (e.target.value.length <= 300) {
+                    handleFieldChange('containmentAction', e.target.value);
+                  }
+                }}
                 placeholder="Describe immediate actions taken to contain the defect..."
               />
+              <div className="nc-char-count">
+                {currentNC.containmentAction ? currentNC.containmentAction.length : 0}/300 characters
+              </div>
             </div>
           </div>
         );
@@ -764,9 +767,16 @@ const CreateNCPanel = () => {
                 className="nc-form-textarea-limited"
                 rows="3"
                 value={currentNC.rootCauseAnalysis}
-                onChange={(e) => handleFieldChange('rootCauseAnalysis', e.target.value)}
+                onChange={(e) => {
+                  if (e.target.value.length <= 400) {
+                    handleFieldChange('rootCauseAnalysis', e.target.value);
+                  }
+                }}
                 placeholder="Analyze and describe the root cause of this non-conformity..."
               />
+              <div className="nc-char-count">
+                {currentNC.rootCauseAnalysis ? currentNC.rootCauseAnalysis.length : 0}/400 characters
+              </div>
             </div>
 
             <div className="nc-form-group">
@@ -775,9 +785,16 @@ const CreateNCPanel = () => {
                 className="nc-form-textarea-limited"
                 rows="3"
                 value={currentNC.correctiveAction}
-                onChange={(e) => handleFieldChange('correctiveAction', e.target.value)}
+                onChange={(e) => {
+                  if (e.target.value.length <= 400) {
+                    handleFieldChange('correctiveAction', e.target.value);
+                  }
+                }}
                 placeholder="Define specific corrective actions to prevent recurrence..."
               />
+              <div className="nc-char-count">
+                {currentNC.correctiveAction ? currentNC.correctiveAction.length : 0}/400 characters
+              </div>
             </div>
 
             <div className="nc-form-grid">
@@ -788,6 +805,7 @@ const CreateNCPanel = () => {
                   className="nc-form-input"
                   value={currentNC.plannedClosureDate}
                   onChange={(e) => handleFieldChange('plannedClosureDate', e.target.value)}
+                  min={new Date().toISOString().split('T')[0]} // No past dates
                 />
               </div>
 
@@ -852,25 +870,31 @@ const CreateNCPanel = () => {
                         <div className="nc-pdf-preview">
                           <div className="nc-pdf-icon">📄</div>
                           <div className="nc-pdf-info">
-                            <span className="nc-pdf-name">{photo.name}</span>
-                            <span className="nc-pdf-size">{(photo.size / 1024 / 1024).toFixed(2)} MB</span>
+                            <div className="nc-file-name">{photo.name}</div>
+                            <div className="nc-file-size">{(photo.size / 1024 / 1024).toFixed(2)} MB</div>
                           </div>
                         </div>
                       ) : (
                         <div className="nc-image-preview">
-                          <img src={photo.url} alt={photo.name} />
+                          <img 
+                            src={photo.url} 
+                            alt={photo.name}
+                            loading="lazy"
+                          />
                           <div className="nc-image-overlay">
-                            <span className="nc-image-name">{photo.name}</span>
-                            {photo.compressionRatio && (
-                              <span className="nc-compression-badge">
-                                🗜️ -{photo.compressionRatio}%
-                              </span>
-                            )}
+                            <div className="nc-image-info">
+                              <div className="nc-file-name">{photo.name}</div>
+                              {photo.compressionRatio && (
+                                <div className="nc-compression-info">
+                                  📦 Compressed {photo.compressionRatio}%
+                                </div>
+                              )}
+                            </div>
                           </div>
                         </div>
                       )}
                       <button 
-                        className="nc-photo-remove-btn"
+                        className="nc-remove-photo"
                         onClick={() => removePhoto(photo.id)}
                         title="Remove file"
                       >
@@ -885,25 +909,52 @@ const CreateNCPanel = () => {
         );
 
       default:
-        return null;
+        return <div>Unknown step</div>;
     }
   };
 
+  // Main component return
   return (
-    <div className="nc-panel-card nc-create-panel">
+    <>
+      {/* ✅ CSS STYLES OUTSIDE OF MAIN DIV */}
       <style>{`
-        /* ✅ ESTILOS ESPECÍFICOS PARA CREATE NC PANEL */
         .nc-create-panel {
+          background: white;
+          border-radius: 12px;
+          box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+          margin: 2rem auto;
           max-width: 1200px;
-          margin: 0 auto;
-          background: rgba(255, 255, 255, 0.98);
-          backdrop-filter: blur(10px);
-          border-radius: 20px;
           overflow: hidden;
-          box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
         }
 
-        /* Step Progress Bar */
+        .nc-success-banner {
+          background: linear-gradient(135deg, #10B981, #059669);
+          color: white;
+          padding: 1rem 2rem;
+          margin-bottom: 1rem;
+          border-radius: 8px;
+          display: flex;
+          align-items: center;
+          gap: 0.75rem;
+          font-weight: 500;
+          animation: slideDown 0.3s ease-out;
+        }
+
+        .nc-success-icon {
+          font-size: 1.25rem;
+        }
+
+        @keyframes slideDown {
+          from {
+            opacity: 0;
+            transform: translateY(-20px);
+          }
+          to {
+            opacity: 1;
+            transform: translateY(0);
+          }
+        }
+
         .nc-step-progress-container {
           background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
           padding: 2rem;
@@ -914,9 +965,9 @@ const CreateNCPanel = () => {
           display: flex;
           justify-content: space-between;
           align-items: center;
-          position: relative;
           max-width: 800px;
           margin: 0 auto;
+          position: relative;
         }
 
         .nc-step-item {
@@ -925,6 +976,12 @@ const CreateNCPanel = () => {
           align-items: center;
           position: relative;
           flex: 1;
+          cursor: pointer;
+          transition: transform 0.2s ease;
+        }
+
+        .nc-step-item:hover {
+          transform: translateY(-2px);
         }
 
         .nc-step-circle {
@@ -936,75 +993,123 @@ const CreateNCPanel = () => {
           justify-content: center;
           font-weight: bold;
           font-size: 1rem;
-          margin-bottom: 0.75rem;
+          margin-bottom: 0.5rem;
           transition: all 0.3s ease;
           z-index: 2;
           position: relative;
         }
 
         .nc-step-circle.completed {
-          background: #10b981;
+          background: #10B981;
           color: white;
-          box-shadow: 0 4px 15px rgba(16, 185, 129, 0.4);
+          box-shadow: 0 0 0 4px rgba(16, 185, 129, 0.2);
         }
 
         .nc-step-circle.current {
           background: white;
           color: #667eea;
-          box-shadow: 0 4px 15px rgba(255, 255, 255, 0.3);
-          transform: scale(1.1);
+          box-shadow: 0 0 0 4px rgba(255, 255, 255, 0.3);
+          animation: pulse 2s infinite;
         }
 
         .nc-step-circle.pending {
-          background: rgba(255, 255, 255, 0.3);
-          color: rgba(255, 255, 255, 0.8);
-          border: 2px solid rgba(255, 255, 255, 0.5);
+          background: rgba(255, 255, 255, 0.2);
+          color: rgba(255, 255, 255, 0.7);
+          border: 2px solid rgba(255, 255, 255, 0.3);
+        }
+
+        @keyframes pulse {
+          0% {
+            box-shadow: 0 0 0 4px rgba(255, 255, 255, 0.3);
+          }
+          50% {
+            box-shadow: 0 0 0 8px rgba(255, 255, 255, 0.1);
+          }
+          100% {
+            box-shadow: 0 0 0 4px rgba(255, 255, 255, 0.3);
+          }
         }
 
         .nc-step-label {
           text-align: center;
           font-size: 0.875rem;
-          font-weight: 600;
-          max-width: 100px;
-          transition: all 0.3s ease;
+          max-width: 120px;
+          line-height: 1.3;
         }
 
-        .nc-step-label.completed,
+        .nc-step-label.completed {
+          color: rgba(255, 255, 255, 0.9);
+          font-weight: 500;
+        }
+
         .nc-step-label.current {
           color: white;
-          text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+          font-weight: 600;
         }
 
         .nc-step-label.pending {
-          color: rgba(255, 255, 255, 0.7);
+          color: rgba(255, 255, 255, 0.6);
         }
 
         .nc-step-connector {
           position: absolute;
           top: 25px;
-          left: calc(50% + 25px);
-          right: calc(-50% + 25px);
-          height: 3px;
+          left: 50%;
+          right: -50%;
+          height: 2px;
           z-index: 1;
-          transition: all 0.3s ease;
         }
 
         .nc-step-connector.completed {
-          background: #10b981;
-          box-shadow: 0 2px 8px rgba(16, 185, 129, 0.3);
+          background: #10B981;
         }
 
         .nc-step-connector.pending {
-          background: rgba(255, 255, 255, 0.3);
+          background: rgba(255, 255, 255, 0.2);
         }
 
-        /* Form Content */
+        .nc-step-item:last-child .nc-step-connector {
+          display: none;
+        }
+
+        .nc-panel-header {
+          padding: 2rem;
+          border-bottom: 1px solid #E5E7EB;
+          background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+        }
+
+        .nc-panel-title {
+          font-size: 1.5rem;
+          font-weight: 600;
+          color: #1F2937;
+          margin: 0 0 0.5rem 0;
+          display: flex;
+          align-items: center;
+          gap: 0.75rem;
+        }
+
+        .nc-panel-icon {
+          font-size: 1.25rem;
+        }
+
+        .nc-panel-subtitle {
+          color: #6B7280;
+          margin: 0 0 1rem 0;
+          font-size: 1rem;
+        }
+
+        .nc-step-info {
+          background: #E5E7EB;
+          color: #374151;
+          padding: 0.5rem 1rem;
+          border-radius: 20px;
+          font-size: 0.875rem;
+          font-weight: 500;
+          display: inline-block;
+        }
+
         .nc-form-container {
-          padding: 3rem; /* ✅ MÁS PADDING */
-          background: rgba(255, 255, 255, 0.95); /* ✅ FONDO BLANCO SEMI-TRANSPARENTE */
-          margin: 1rem;
-          borderRadius: 16px;
-          backdropFilter: blur(5px);
+          padding: 2rem;
         }
 
         .nc-step-content {
@@ -1092,6 +1197,19 @@ const CreateNCPanel = () => {
           color: #6b7280;
           text-align: right;
           margin-top: 0.25rem;
+        }
+
+        .nc-validation-error {
+          color: #ef4444;
+          font-size: 0.75rem;
+          margin-top: 0.25rem;
+          display: flex;
+          align-items: center;
+          gap: 0.25rem;
+        }
+
+        .nc-validation-icon {
+          font-size: 0.875rem;
         }
 
         /* Photo Upload */
@@ -1200,51 +1318,49 @@ const CreateNCPanel = () => {
           right: 0;
           background: linear-gradient(transparent, rgba(0, 0, 0, 0.8));
           color: white;
-          padding: 1rem 0.75rem 0.5rem;
+          padding: 1rem 0.75rem 0.75rem;
+        }
+
+        .nc-image-info {
           font-size: 0.75rem;
+        }
+
+        .nc-file-name {
+          font-weight: 500;
+          margin-bottom: 0.25rem;
+          white-space: nowrap;
+          overflow: hidden;
+          text-overflow: ellipsis;
+        }
+
+        .nc-compression-info {
+          font-size: 0.6rem;
+          opacity: 0.8;
         }
 
         .nc-pdf-preview {
           display: flex;
           align-items: center;
           padding: 1rem;
-          background: #f3f4f6;
-          gap: 0.75rem;
+          background: #f8fafc;
+          height: 150px;
         }
 
         .nc-pdf-icon {
-          font-size: 2rem;
+          font-size: 3rem;
+          margin-right: 1rem;
         }
 
         .nc-pdf-info {
-          display: flex;
-          flex-direction: column;
           flex: 1;
         }
 
-        .nc-pdf-name {
-          font-weight: 600;
-          font-size: 0.875rem;
-          color: #374151;
-        }
-
-        .nc-pdf-size {
+        .nc-file-size {
           font-size: 0.75rem;
           color: #6b7280;
         }
 
-        .nc-compression-badge {
-          background: #10b981;
-          color: white;
-          padding: 0.125rem 0.375rem;
-          border-radius: 4px;
-          font-size: 0.625rem;
-          font-weight: 600;
-          margin-top: 0.25rem;
-          align-self: flex-start;
-        }
-
-        .nc-photo-remove-btn {
+        .nc-remove-photo {
           position: absolute;
           top: 0.5rem;
           right: 0.5rem;
@@ -1254,109 +1370,96 @@ const CreateNCPanel = () => {
           border-radius: 50%;
           width: 24px;
           height: 24px;
+          font-size: 0.75rem;
           cursor: pointer;
-          font-size: 0.75rem;
-          transition: all 0.3s ease;
+          transition: background 0.2s ease;
         }
 
-        .nc-photo-remove-btn:hover {
-          background: #ef4444;
-          transform: scale(1.1);
+        .nc-remove-photo:hover {
+          background: #dc2626;
         }
 
-        /* Validation */
-        .nc-validation-error {
-          display: flex;
-          align-items: center;
-          gap: 0.5rem;
-          color: #ef4444;
-          font-size: 0.75rem;
-          margin-top: 0.5rem;
-        }
-
-        .nc-validation-icon {
-          font-size: 0.875rem;
-        }
-
-        /* Navigation */
         .nc-wizard-navigation {
-          background: #f9fafb;
-          padding: 1.5rem 2.5rem;
-          border-top: 1px solid #e5e7eb;
+          background: #F9FAFB;
+          padding: 2rem;
+          border-top: 1px solid #E5E7EB;
           display: flex;
           justify-content: space-between;
           align-items: center;
         }
 
+        .nc-step-counter {
+          font-size: 0.875rem;
+          color: #6B7280;
+          font-weight: 500;
+        }
+
         .nc-nav-buttons {
           display: flex;
           gap: 1rem;
-          align-items: center;
         }
 
         .nc-btn {
           padding: 0.75rem 1.5rem;
-          border-radius: 8px;
-          font-weight: 600;
+          border-radius: 6px;
+          font-weight: 500;
+          font-size: 0.875rem;
           cursor: pointer;
-          transition: all 0.3s ease;
+          border: none;
+          transition: all 0.2s ease;
           display: flex;
           align-items: center;
           gap: 0.5rem;
-          border: none;
-          font-size: 0.875rem;
         }
 
         .nc-btn:disabled {
           opacity: 0.5;
           cursor: not-allowed;
-          transform: none !important;
-          box-shadow: none !important;
-        }
-
-        .nc-btn-secondary {
-          background: #6b7280;
-          color: white;
-        }
-
-        .nc-btn-secondary:hover:not(:disabled) {
-          background: #4b5563;
-          transform: translateY(-1px);
         }
 
         .nc-btn-primary {
-          background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+          background: #667eea;
           color: white;
         }
 
         .nc-btn-primary:hover:not(:disabled) {
+          background: #5a67d8;
           transform: translateY(-1px);
-          box-shadow: 0 8px 25px rgba(102, 126, 234, 0.3);
+        }
+
+        .nc-btn-secondary {
+          background: #6B7280;
+          color: white;
+        }
+
+        .nc-btn-secondary:hover:not(:disabled) {
+          background: #4B5563;
+          transform: translateY(-1px);
         }
 
         .nc-btn-success {
-          background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+          background: #10B981;
           color: white;
         }
 
         .nc-btn-success:hover:not(:disabled) {
+          background: #059669;
           transform: translateY(-1px);
-          box-shadow: 0 8px 25px rgba(16, 185, 129, 0.3);
         }
 
         .nc-btn-combo {
-          background: linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%);
+          background: linear-gradient(135deg, #667eea, #764ba2);
           color: white;
         }
 
         .nc-btn-combo:hover:not(:disabled) {
           transform: translateY(-1px);
-          box-shadow: 0 8px 25px rgba(139, 92, 246, 0.3);
+          box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
         }
 
         .nc-btn-spinner {
-          width: 16px;
-          height: 16px;
+          width: 14px;
+          height: 14px;
           border: 2px solid transparent;
           border-top: 2px solid currentColor;
           border-radius: 50%;
@@ -1366,27 +1469,6 @@ const CreateNCPanel = () => {
         @keyframes spin {
           0% { transform: rotate(0deg); }
           100% { transform: rotate(360deg); }
-        }
-
-        .nc-step-counter {
-          color: #6b7280;
-          font-size: 0.875rem;
-        }
-
-        /* Success Message */
-        .nc-success-banner {
-          background: linear-gradient(135deg, #10b981, #059669);
-          color: white;
-          padding: 1rem 2rem;
-          display: flex;
-          align-items: center;
-          gap: 0.75rem;
-          font-weight: 600;
-          margin-bottom: 0;
-        }
-
-        .nc-success-icon {
-          font-size: 1.2rem;
         }
 
         /* Responsive Design */
@@ -1413,7 +1495,6 @@ const CreateNCPanel = () => {
 
           .nc-form-container {
             padding: 1.5rem;
-            margin: 0.5rem;
           }
 
           .nc-form-grid {
@@ -1444,123 +1525,121 @@ const CreateNCPanel = () => {
 
           .nc-wizard-navigation {
             padding: 1rem 1.5rem;
+            flex-direction: column;
+            gap: 1rem;
           }
 
           .nc-nav-buttons {
-            flex-direction: column;
             width: 100%;
-            gap: 0.75rem;
+            justify-content: space-between;
           }
 
           .nc-btn {
+            flex: 1;
             justify-content: center;
-            width: 100%;
           }
         }
       `}</style>
 
-      {/* ✅ DIV PRINCIPAL SIN STYLE TAG INTERNO */}
+      {/* ✅ MAIN COMPONENT DIV - SIN CSS INTERNO */}
       <div className="nc-panel-card nc-create-panel">
-        {/* Success Message */}
+        {/* Success Message - SOLO UNA VEZ */}
         {savedSuccessfully && (
           <div className="nc-success-banner">
             <span className="nc-success-icon">✅</span>
             <span>Non-Conformity {currentNC.number} has been created successfully!</span>
           </div>
-        )}}
-      {savedSuccessfully && (
-        <div className="nc-success-banner">
-          <span className="nc-success-icon">✅</span>
-          <span>Non-Conformity {currentNC.number} has been created successfully!</span>
+        )}
+
+        {/* Step Progress Bar */}
+        <StepProgressBar 
+          steps={steps}
+          currentStep={currentStep}
+          completedSteps={completedSteps}
+        />
+
+        {/* Panel Header */}
+        <div className="nc-panel-header">
+          <h3 className="nc-panel-title">
+            <span className="nc-panel-icon">{
+              steps[currentStep].id === 'basic' ? '➕' : 
+              steps[currentStep].id === 'details' ? '🔍' :
+              steps[currentStep].id === 'treatment' ? '⚙️' :
+              steps[currentStep].id === 'corrective' ? '🔧' : '📸'
+            }</span>
+            {steps[currentStep].title}
+          </h3>
+          <p className="nc-panel-subtitle">
+            {steps[currentStep].subtitle}
+          </p>
+          <div className="nc-step-info">
+            Step {currentStep + 1} of {steps.length}
+          </div>
         </div>
-      )}
 
-      {/* Step Progress Bar */}
-      <StepProgressBar 
-        steps={steps}
-        currentStep={currentStep}
-        completedSteps={completedSteps}
-      />
-
-      {/* Panel Header */}
-      <div className="nc-panel-header">
-        <h3 className="nc-panel-title">
-          <span className="nc-panel-icon">{steps[currentStep].id === 'basic' ? '➕' : 
-            steps[currentStep].id === 'details' ? '🔍' :
-            steps[currentStep].id === 'treatment' ? '⚙️' :
-            steps[currentStep].id === 'corrective' ? '🔧' : '📸'}</span>
-          {steps[currentStep].title}
-        </h3>
-        <p className="nc-panel-subtitle">
-          {steps[currentStep].subtitle}
-        </p>
-        <div className="nc-step-info">
-          Step {currentStep + 1} of {steps.length}
+        {/* Form Content */}
+        <div className="nc-form-container">
+          {renderStepContent()}
         </div>
-      </div>
 
-      {/* Form Content */}
-      <div className="nc-form-container">
-        {renderStepContent()}
-      </div>
-
-      {/* Navigation */}
-      <div className="nc-wizard-navigation">
-        <div className="nc-step-counter">
-          Step {currentStep + 1} of {steps.length}
-        </div>
-        
-        <div className="nc-nav-buttons">
-          <button 
-            className="nc-btn nc-btn-secondary"
-            onClick={handlePrevious}
-            disabled={currentStep === 0}
-          >
-            ← Previous
-          </button>
+        {/* Navigation */}
+        <div className="nc-wizard-navigation">
+          <div className="nc-step-counter">
+            Step {currentStep + 1} of {steps.length}
+          </div>
           
-          {currentStep < steps.length - 1 ? (
+          <div className="nc-nav-buttons">
             <button 
-              className="nc-btn nc-btn-primary"
-              onClick={handleNext}
+              className="nc-btn nc-btn-secondary"
+              onClick={handlePrevious}
+              disabled={currentStep === 0}
             >
-              Next →
+              ← Previous
             </button>
-          ) : (
-            <>
+            
+            {currentStep < steps.length - 1 ? (
               <button 
-                className="nc-btn nc-btn-success"
-                onClick={handleSubmit}
-                disabled={uploadingFiles}
+                className="nc-btn nc-btn-primary"
+                onClick={handleNext}
               >
-                {uploadingFiles ? (
-                  <>
-                    <div className="nc-btn-spinner"></div>
-                    <span>Saving...</span>
-                  </>
-                ) : (
-                  <>
-                    ✓ Submit NC
-                  </>
-                )}
+                Next →
               </button>
-              
-              {/* ✅ BOTÓN SAVE & EXPORT - SOLO EN ÚLTIMO PASO */}
-              <button 
-                className="nc-btn nc-btn-combo"
-                onClick={async () => {
-                  await handleSubmit();
-                  if (!uploadingFiles) {
-                    setTimeout(() => handleExportPDF(), 1000);
-                  }
-                }}
-                disabled={uploadingFiles || exportingPDF}
-                title="Save NC and immediately export to PDF"
-              >
-                💾📄 Save & Export
-              </button>
-            </>
-          )}
+            ) : (
+              <>
+                <button 
+                  className="nc-btn nc-btn-success"
+                  onClick={handleSubmit}
+                  disabled={uploadingFiles}
+                >
+                  {uploadingFiles ? (
+                    <>
+                      <div className="nc-btn-spinner"></div>
+                      <span>Saving...</span>
+                    </>
+                  ) : (
+                    <>
+                      ✓ Submit NC
+                    </>
+                  )}
+                </button>
+                
+                {/* Save & Export Button - Solo en último paso */}
+                <button 
+                  className="nc-btn nc-btn-combo"
+                  onClick={async () => {
+                    await handleSubmit();
+                    if (!uploadingFiles) {
+                      setTimeout(() => handleExportPDF(), 1000);
+                    }
+                  }}
+                  disabled={uploadingFiles || exportingPDF}
+                  title="Save NC and immediately export to PDF"
+                >
+                  💾📄 Save & Export
+                </button>
+              </>
+            )}
+          </div>
         </div>
       </div>
     </>

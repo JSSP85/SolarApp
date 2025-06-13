@@ -1459,7 +1459,15 @@ const CreateNCPanel = () => {
         }
       `}</style>
 
-      {/* Success Message */}
+      {/* ✅ DIV PRINCIPAL SIN STYLE TAG INTERNO */}
+      <div className="nc-panel-card nc-create-panel">
+        {/* Success Message */}
+        {savedSuccessfully && (
+          <div className="nc-success-banner">
+            <span className="nc-success-icon">✅</span>
+            <span>Non-Conformity {currentNC.number} has been created successfully!</span>
+          </div>
+        )}}
       {savedSuccessfully && (
         <div className="nc-success-banner">
           <span className="nc-success-icon">✅</span>
@@ -1549,13 +1557,13 @@ const CreateNCPanel = () => {
                 disabled={uploadingFiles || exportingPDF}
                 title="Save NC and immediately export to PDF"
               >
-                💾📄 Save & Export PDF
+                💾📄 Save & Export
               </button>
             </>
           )}
         </div>
       </div>
-    </div>
+    </>
   );
 };
 

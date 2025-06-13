@@ -3,8 +3,8 @@
 
 import React, { useState, useEffect } from 'react';
 import { useNonConformity } from '../../../context/NonConformityContext';
-import { saveNonConformity } from '../../../services/firebaseService';
-import { exportNCToPDF } from '../../../utils/pdfExporter';
+import { saveNonConformity } from '../../../firebase/nonConformityService';
+import { exportNCToPDF } from '../../../utils/ncPdfExportService';
 
 // Validation Message Component
 const ValidationMessage = ({ message }) => (
@@ -48,7 +48,7 @@ const StepProgressBar = ({ steps, currentStep, completedSteps }) => {
 };
 
 const CreateNCPanel = () => {
-  const { state, dispatch, helpers } = useNonConformity();
+  const { state, dispatch, helpers, actions } = useNonConformity();
   const { currentNC, validationErrors, loading } = state;
   
   // Wizard State
@@ -163,16 +163,16 @@ const CreateNCPanel = () => {
     if (!currentNC.number) {
       const newNumber = helpers.generateNCNumber();
       dispatch({
-        type: 'UPDATE_NC_FIELD',
+        type: actions.UPDATE_NC_FIELD,
         payload: { field: 'number', value: newNumber }
       });
     }
-  }, [currentNC.number, dispatch, helpers]);
+  }, [currentNC.number, dispatch, helpers, actions]);
 
   // Handle field changes
   const handleFieldChange = (field, value) => {
     dispatch({
-      type: 'UPDATE_NC_FIELD',
+      type: actions.UPDATE_NC_FIELD,
       payload: { field, value }
     });
     setIsDirty(true);
@@ -181,7 +181,7 @@ const CreateNCPanel = () => {
     // Clear validation error for this field
     if (validationErrors[field]) {
       dispatch({
-        type: 'CLEAR_VALIDATION_ERRORS'
+        type: actions.CLEAR_VALIDATION_ERRORS
       });
     }
   };
@@ -367,7 +367,7 @@ const CreateNCPanel = () => {
     });
 
     dispatch({
-      type: 'SET_VALIDATION_ERRORS',
+      type: actions.SET_VALIDATION_ERRORS,
       payload: errors
     });
 
@@ -432,7 +432,7 @@ const CreateNCPanel = () => {
 
         // También guardar en contexto local para mantener sincronización
         dispatch({
-          type: 'SAVE_NC',
+          type: actions.SAVE_NC,
           payload: { ...newNCData, id: firebaseId }
         });
 

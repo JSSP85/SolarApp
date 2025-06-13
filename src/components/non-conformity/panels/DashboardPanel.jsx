@@ -1,6 +1,43 @@
 // src/components/non-conformity/panels/DashboardPanel.jsx
 import React, { useState, useMemo } from 'react';
 import { useNonConformity } from '../../../context/NonConformityContext';
+// ✅ IMPORT DE UTILIDADES DE FECHA SEGURAS
+import { safeParseDate, safeDateCompare } from '../../../utils/dateUtils';
+// ✅ IMPORT DE RECHARTS PARA GRÁFICOS MODERNOS
+import {
+  AreaChart,
+  Area,
+  BarChart,
+  Bar,
+  LineChart,
+  Line,
+  PieChart,
+  Pie,
+  Cell,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  Legend,
+  ResponsiveContainer,
+  ComposedChart
+} from 'recharts';
+// ✅ IMPORT DE ICONOS LUCIDE
+import {
+  TrendingUp,
+  TrendingDown,
+  AlertTriangle,
+  CheckCircle,
+  Clock,
+  BarChart3,
+  Activity,
+  Users,
+  Target,
+  Calendar,
+  RefreshCw,
+  Download,
+  Filter
+} from 'lucide-react';
 
 const DashboardPanel = () => {
   const { state, helpers } = useNonConformity();
@@ -9,18 +46,33 @@ const DashboardPanel = () => {
   // Local state for dashboard controls
   const [selectedPeriod, setSelectedPeriod] = useState('month');
   const [selectedMetric, setSelectedMetric] = useState('count');
-  const [refreshInterval, setRefreshInterval] = useState('manual');
+  const [isRefreshing, setIsRefreshing] = useState(false);
+  const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
 
-  // Calculate comprehensive metrics
+  // ✅ PALETA DE COLORES MODERNA (IGUAL AL DASHBOARD DE INSPECTIONS)
+  const colors = {
+    primary: '#3b82f6',
+    secondary: '#8b5cf6',
+    success: '#10b981',
+    warning: '#f59e0b',
+    danger: '#ef4444',
+    accent: '#ec4899',
+    gradient: ['#3b82f6', '#8b5cf6', '#ec4899', '#10b981', '#f59e0b', '#ef4444'],
+    background: 'rgba(15, 23, 42, 0.9)',
+    cardBackground: 'rgba(30, 41, 59, 0.8)',
+    border: 'rgba(255, 255, 255, 0.1)'
+  };
+
+  // Calculate comprehensive metrics - ✅ CON FECHAS SEGURAS
   const dashboardMetrics = useMemo(() => {
     const now = new Date();
     const currentMonth = now.getMonth();
     const currentYear = now.getFullYear();
     
-    // Filter NCs by period
+    // Filter NCs by period - ✅ USANDO FECHAS SEGURAS
     const getFilteredNCs = (period) => {
       return ncList.filter(nc => {
-        const createdDate = new Date(nc.createdDate.split('/').reverse().join('-'));
+        const createdDate = safeParseDate(nc.createdDate); // ✅ FUNCIÓN SEGURA
         switch (period) {
           case 'week':
             const weekAgo = new Date();
@@ -58,7 +110,7 @@ const DashboardPanel = () => {
         critical: periodNCs.filter(nc => nc.priority === 'critical').length,
         overdue: periodNCs.filter(nc => {
           if (!nc.plannedClosureDate) return false;
-          const planned = new Date(nc.plannedClosureDate.split('/').reverse().join('-'));
+          const planned = safeParseDate(nc.plannedClosureDate); // ✅ FUNCIÓN SEGURA
           return now > planned && (nc.status !== 'resolved' && nc.status !== 'closed');
         }).length
       },
@@ -100,15 +152,15 @@ const DashboardPanel = () => {
         closed: ncList.filter(nc => nc.status === 'closed').length
       },
       
-      // Trend data (last 6 months)
+      // ✅ TREND DATA MEJORADO - CON FECHAS SEGURAS
       trendData: generateTrendData(ncList),
       
-      // Alerts
+      // ✅ ALERTS MEJORADOS - CON FECHAS SEGURAS  
       alerts: generateAlerts(ncList, now)
     };
   }, [ncList, selectedPeriod]);
 
-  // Generate trend data for charts
+  // ✅ FUNCIÓN MEJORADA: Generate trend data for charts - CON FECHAS SEGURAS
   function generateTrendData(ncList) {
     const months = [];
     const now = new Date();
@@ -117,15 +169,17 @@ const DashboardPanel = () => {
       const date = new Date(now.getFullYear(), now.getMonth() - i, 1);
       const monthName = date.toLocaleDateString('en-US', { month: 'short', year: '2-digit' });
       
+      // ✅ USAR FECHAS SEGURAS
       const monthNCs = ncList.filter(nc => {
-        const createdDate = new Date(nc.createdDate.split('/').reverse().join('-'));
+        const createdDate = safeParseDate(nc.createdDate);
         return createdDate.getMonth() === date.getMonth() && 
                createdDate.getFullYear() === date.getFullYear();
       });
       
+      // ✅ USAR FECHAS SEGURAS
       const resolvedNCs = ncList.filter(nc => {
         if (!nc.actualClosureDate) return false;
-        const closureDate = new Date(nc.actualClosureDate.split('/').reverse().join('-'));
+        const closureDate = safeParseDate(nc.actualClosureDate);
         return closureDate.getMonth() === date.getMonth() && 
                closureDate.getFullYear() === date.getFullYear();
       });
@@ -134,21 +188,23 @@ const DashboardPanel = () => {
         month: monthName,
         created: monthNCs.length,
         resolved: resolvedNCs.length,
-        critical: monthNCs.filter(nc => nc.priority === 'critical').length
+        critical: monthNCs.filter(nc => nc.priority === 'critical').length,
+        pending: monthNCs.length - resolvedNCs.length,
+        resolutionRate: monthNCs.length > 0 ? Math.round((resolvedNCs.length / monthNCs.length) * 100) : 0
       });
     }
     
     return months;
   }
 
-  // Generate alerts and notifications
+  // ✅ FUNCIÓN MEJORADA: Generate alerts - CON FECHAS SEGURAS
   function generateAlerts(ncList, now) {
     const alerts = [];
     
-    // Overdue NCs
+    // Overdue NCs - ✅ USAR FECHAS SEGURAS
     const overdueNCs = ncList.filter(nc => {
       if (!nc.plannedClosureDate || nc.status === 'resolved' || nc.status === 'closed') return false;
-      const planned = new Date(nc.plannedClosureDate.split('/').reverse().join('-'));
+      const planned = safeParseDate(nc.plannedClosureDate);
       return now > planned;
     });
     
@@ -179,9 +235,9 @@ const DashboardPanel = () => {
       });
     }
     
-    // High volume of NCs this month
+    // High volume of NCs this month - ✅ USAR FECHAS SEGURAS
     const thisMonthNCs = ncList.filter(nc => {
-      const createdDate = new Date(nc.createdDate.split('/').reverse().join('-'));
+      const createdDate = safeParseDate(nc.createdDate);
       return createdDate.getMonth() === now.getMonth() && 
              createdDate.getFullYear() === now.getFullYear();
     });
@@ -199,295 +255,420 @@ const DashboardPanel = () => {
     return alerts;
   }
 
-  // Get top performers/issues
+  // ✅ PROCESAR DATOS PARA GRÁFICOS MODERNOS
+  const priorityChartData = Object.entries(dashboardMetrics.priorityDistribution).map(([key, value]) => ({
+    name: key.charAt(0).toUpperCase() + key.slice(1),
+    value: value,
+    color: key === 'critical' ? colors.danger : key === 'major' ? colors.warning : colors.success
+  }));
+
+  const statusChartData = Object.entries(dashboardMetrics.statusDistribution).map(([key, value]) => ({
+    name: key.charAt(0).toUpperCase() + key.slice(1),
+    value: value,
+    color: colors.gradient[Object.keys(dashboardMetrics.statusDistribution).indexOf(key)]
+  }));
+
   const topProjects = Object.entries(dashboardMetrics.projectDistribution)
     .sort(([,a], [,b]) => b - a)
-    .slice(0, 5);
-    
-  const topSuppliers = Object.entries(dashboardMetrics.supplierDistribution)
-    .sort(([,a], [,b]) => b - a)
-    .slice(0, 5);
+    .slice(0, 5)
+    .map(([name, value]) => ({ name, value }));
 
-  // Format percentage
-  const formatPercentage = (value, total) => {
-    return total > 0 ? Math.round((value / total) * 100) : 0;
+  // ✅ COMPONENTE PARA TARJETAS MODERNAS
+  const ModernKPICard = ({ icon: Icon, title, value, subtitle, trend, color = 'primary' }) => (
+    <div 
+      style={{
+        background: colors.cardBackground,
+        backdropFilter: 'blur(10px)',
+        border: `1px solid ${colors.border}`,
+        borderRadius: '16px',
+        padding: '1.5rem',
+        boxShadow: '0 8px 32px rgba(0, 0, 0, 0.12)',
+        transition: 'all 0.3s ease',
+        position: 'relative',
+        overflow: 'hidden'
+      }}
+      className="kpi-card-hover"
+    >
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1rem' }}>
+        <div style={{
+          background: `${colors[color]}20`,
+          borderRadius: '12px',
+          padding: '0.75rem',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center'
+        }}>
+          <Icon size={24} color={colors[color]} />
+        </div>
+        {trend && (
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
+            {trend > 0 ? <TrendingUp size={16} color={colors.success} /> : <TrendingDown size={16} color={colors.danger} />}
+            <span style={{ color: trend > 0 ? colors.success : colors.danger, fontSize: '0.875rem', fontWeight: '600' }}>
+              {Math.abs(trend)}%
+            </span>
+          </div>
+        )}
+      </div>
+      <div style={{ color: 'white', fontSize: '2rem', fontWeight: '700', marginBottom: '0.5rem' }}>
+        {value}
+      </div>
+      <div style={{ color: 'rgba(255, 255, 255, 0.7)', fontSize: '0.875rem', fontWeight: '500' }}>
+        {title}
+      </div>
+      {subtitle && (
+        <div style={{ color: 'rgba(255, 255, 255, 0.5)', fontSize: '0.75rem', marginTop: '0.25rem' }}>
+          {subtitle}
+        </div>
+      )}
+    </div>
+  );
+
+  // ✅ COMPONENTE PARA TARJETAS DE GRÁFICOS MODERNOS
+  const ModernChartCard = ({ title, subtitle, children, className = '' }) => (
+    <div 
+      style={{
+        background: colors.cardBackground,
+        backdropFilter: 'blur(10px)',
+        border: `1px solid ${colors.border}`,
+        borderRadius: '16px',
+        padding: '1.5rem',
+        boxShadow: '0 8px 32px rgba(0, 0, 0, 0.12)',
+      }}
+      className={className}
+    >
+      <div style={{ marginBottom: '1.5rem' }}>
+        <h3 style={{ color: 'white', fontSize: '1.125rem', fontWeight: '600', margin: 0 }}>
+          {title}
+        </h3>
+        {subtitle && (
+          <p style={{ color: 'rgba(255, 255, 255, 0.6)', fontSize: '0.875rem', margin: '0.25rem 0 0 0' }}>
+            {subtitle}
+          </p>
+        )}
+      </div>
+      {children}
+    </div>
+  );
+
+  const handleRefresh = async () => {
+    setIsRefreshing(true);
+    // Simulate API call
+    setTimeout(() => {
+      setIsRefreshing(false);
+    }, 1000);
   };
 
   return (
-    <div className="nc-dashboard-panel">
-      <div className="nc-panel-card">
-        <div className="nc-panel-header">
-          <h3 className="nc-panel-title">
-            <span className="nc-panel-icon">📊</span>
-            Non-Conformity Management Dashboard
-          </h3>
-          <div className="nc-dashboard-controls">
-            <select
-              className="nc-form-select nc-select-small"
-              value={selectedPeriod}
-              onChange={(e) => setSelectedPeriod(e.target.value)}
-            >
-              <option value="week">This Week</option>
-              <option value="month">This Month</option>
-              <option value="quarter">This Quarter</option>
-              <option value="year">This Year</option>
-              <option value="all">All Time</option>
-            </select>
-            <button className="nc-btn nc-btn-ghost nc-btn-small">
-              🔄 Refresh
-            </button>
-          </div>
+    <div style={{
+      background: colors.background,
+      backdropFilter: 'blur(20px)',
+      borderRadius: '20px',
+      padding: '2rem',
+      border: `1px solid ${colors.border}`,
+      boxShadow: '0 8px 32px rgba(0, 0, 0, 0.12)',
+      color: 'white'
+    }}>
+      {/* ✅ HEADER MODERNO */}
+      <div style={{ 
+        display: 'flex', 
+        alignItems: 'center', 
+        justifyContent: 'space-between', 
+        marginBottom: '2rem',
+        paddingBottom: '1.5rem',
+        borderBottom: `1px solid ${colors.border}`
+      }}>
+        <div>
+          <h2 style={{ 
+            color: 'white', 
+            fontSize: '1.75rem', 
+            fontWeight: '700', 
+            margin: '0 0 0.5rem 0',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '0.75rem'
+          }}>
+            <BarChart3 size={28} color={colors.primary} />
+            NC Dashboard Analytics
+          </h2>
+          <p style={{ color: 'rgba(255, 255, 255, 0.6)', margin: 0 }}>
+            Real-time insights and performance metrics
+          </p>
         </div>
-
-        {/* Alert Banner */}
-        {dashboardMetrics.alerts.length > 0 && (
-          <div className="nc-alerts-section">
-            {dashboardMetrics.alerts.map((alert, index) => (
-              <div key={index} className={`nc-alert nc-alert-${alert.type}`}>
-                <span className="nc-alert-icon">{alert.icon}</span>
-                <div className="nc-alert-content">
-                  <div className="nc-alert-title">{alert.title}</div>
-                  <div className="nc-alert-message">{alert.message}</div>
-                </div>
-                <button className="nc-alert-action">{alert.action}</button>
-              </div>
-            ))}
-          </div>
-        )}
-
-        {/* Main KPI Cards */}
-        <div className="nc-dashboard-grid">
-          <div className="nc-metric-card nc-metric-primary">
-            <div className="nc-metric-icon">📋</div>
-            <div className="nc-metric-content">
-              <div className="nc-metric-number">{dashboardMetrics.totalNCs}</div>
-              <div className="nc-metric-label">Total NCs</div>
-              <div className="nc-metric-change">
-                +{dashboardMetrics.periodMetrics.created} this {selectedPeriod}
-              </div>
-            </div>
-          </div>
-
-          <div className="nc-metric-card nc-metric-warning">
-            <div className="nc-metric-icon">🔴</div>
-            <div className="nc-metric-content">
-              <div className="nc-metric-number">{dashboardMetrics.criticalNCs}</div>
-              <div className="nc-metric-label">Critical Active</div>
-              <div className="nc-metric-change">
-                {dashboardMetrics.periodMetrics.critical} new critical
-              </div>
-            </div>
-          </div>
-
-          <div className="nc-metric-card nc-metric-info">
-            <div className="nc-metric-icon">⏱️</div>
-            <div className="nc-metric-content">
-              <div className="nc-metric-number">{dashboardMetrics.avgResolutionTime}</div>
-              <div className="nc-metric-label">Avg Resolution (days)</div>
-              <div className="nc-metric-change">
-                Target: 10 days
-              </div>
-            </div>
-          </div>
-
-          <div className="nc-metric-card nc-metric-success">
-            <div className="nc-metric-icon">✅</div>
-            <div className="nc-metric-content">
-              <div className="nc-metric-number">{dashboardMetrics.resolutionRate}%</div>
-              <div className="nc-metric-label">Resolution Rate</div>
-              <div className="nc-metric-change">
-                {dashboardMetrics.periodMetrics.resolved} resolved this {selectedPeriod}
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* Charts Section */}
-        <div className="nc-charts-section">
-          <div className="nc-chart-card">
-            <h4 className="nc-chart-title">📈 Trend Analysis (Last 6 Months)</h4>
-            <div className="nc-chart-placeholder">
-              <div className="nc-chart-content">
-                {dashboardMetrics.trendData.map((month, index) => (
-                  <div key={index} className="nc-trend-bar">
-                    <div className="nc-trend-month">{month.month}</div>
-                    <div className="nc-trend-bars">
-                      <div 
-                        className="nc-trend-created" 
-                        style={{ height: `${Math.max(month.created * 10, 5)}px` }}
-                        title={`Created: ${month.created}`}
-                      ></div>
-                      <div 
-                        className="nc-trend-resolved" 
-                        style={{ height: `${Math.max(month.resolved * 10, 5)}px` }}
-                        title={`Resolved: ${month.resolved}`}
-                      ></div>
-                    </div>
-                    <div className="nc-trend-values">
-                      <span className="nc-trend-created-val">↑{month.created}</span>
-                      <span className="nc-trend-resolved-val">↓{month.resolved}</span>
-                    </div>
-                  </div>
-                ))}
-              </div>
-              <div className="nc-chart-legend">
-                <span className="nc-legend-item">
-                  <span className="nc-legend-color nc-legend-created"></span>
-                  Created
-                </span>
-                <span className="nc-legend-item">
-                  <span className="nc-legend-color nc-legend-resolved"></span>
-                  Resolved
-                </span>
-              </div>
-            </div>
-          </div>
-
-          <div className="nc-chart-card">
-            <h4 className="nc-chart-title">🎯 Priority Distribution</h4>
-            <div className="nc-priority-chart">
-              <div className="nc-priority-item">
-                <div className="nc-priority-bar">
-                  <div 
-                    className="nc-priority-fill nc-priority-critical-fill"
-                    style={{ width: `${formatPercentage(dashboardMetrics.priorityDistribution.critical, dashboardMetrics.totalNCs)}%` }}
-                  ></div>
-                </div>
-                <div className="nc-priority-label">
-                  <span className="nc-priority-name">Critical</span>
-                  <span className="nc-priority-count">{dashboardMetrics.priorityDistribution.critical}</span>
-                </div>
-              </div>
-              
-              <div className="nc-priority-item">
-                <div className="nc-priority-bar">
-                  <div 
-                    className="nc-priority-fill nc-priority-major-fill"
-                    style={{ width: `${formatPercentage(dashboardMetrics.priorityDistribution.major, dashboardMetrics.totalNCs)}%` }}
-                  ></div>
-                </div>
-                <div className="nc-priority-label">
-                  <span className="nc-priority-name">Major</span>
-                  <span className="nc-priority-count">{dashboardMetrics.priorityDistribution.major}</span>
-                </div>
-              </div>
-              
-              <div className="nc-priority-item">
-                <div className="nc-priority-bar">
-                  <div 
-                    className="nc-priority-fill nc-priority-minor-fill"
-                    style={{ width: `${formatPercentage(dashboardMetrics.priorityDistribution.minor, dashboardMetrics.totalNCs)}%` }}
-                  ></div>
-                </div>
-                <div className="nc-priority-label">
-                  <span className="nc-priority-name">Minor</span>
-                  <span className="nc-priority-count">{dashboardMetrics.priorityDistribution.minor}</span>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* Analysis Section */}
-        <div className="nc-analysis-section">
-          <div className="nc-analysis-card">
-            <h4 className="nc-analysis-title">🏭 Top Projects by NC Count</h4>
-            <div className="nc-ranking-list">
-              {topProjects.map(([project, count], index) => (
-                <div key={project} className="nc-ranking-item">
-                  <span className="nc-ranking-position">#{index + 1}</span>
-                  <span className="nc-ranking-name">{project}</span>
-                  <span className="nc-ranking-value">{count} NCs</span>
-                  <div className="nc-ranking-bar">
-                    <div 
-                      className="nc-ranking-fill"
-                      style={{ width: `${formatPercentage(count, Math.max(...Object.values(dashboardMetrics.projectDistribution)))}%` }}
-                    ></div>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-
-          <div className="nc-analysis-card">
-            <h4 className="nc-analysis-title">🚛 Top Suppliers by NC Count</h4>
-            <div className="nc-ranking-list">
-              {topSuppliers.length > 0 ? topSuppliers.map(([supplier, count], index) => (
-                <div key={supplier} className="nc-ranking-item">
-                  <span className="nc-ranking-position">#{index + 1}</span>
-                  <span className="nc-ranking-name">{supplier}</span>
-                  <span className="nc-ranking-value">{count} NCs</span>
-                  <div className="nc-ranking-bar">
-                    <div 
-                      className="nc-ranking-fill nc-ranking-supplier"
-                      style={{ width: `${formatPercentage(count, Math.max(...Object.values(dashboardMetrics.supplierDistribution)))}%` }}
-                    ></div>
-                  </div>
-                </div>
-              )) : (
-                <div className="nc-no-data">
-                  <span>📊</span>
-                  <p>No supplier data available</p>
-                </div>
-              )}
-            </div>
-          </div>
-
-          <div className="nc-analysis-card">
-            <h4 className="nc-analysis-title">📊 Status Overview</h4>
-            <div className="nc-status-overview">
-              <div className="nc-status-item">
-                <span className="nc-status-dot nc-status-open-dot"></span>
-                <span className="nc-status-name">Open</span>
-                <span className="nc-status-count">{dashboardMetrics.statusDistribution.open}</span>
-              </div>
-              <div className="nc-status-item">
-                <span className="nc-status-dot nc-status-progress-dot"></span>
-                <span className="nc-status-name">In Progress</span>
-                <span className="nc-status-count">{dashboardMetrics.statusDistribution.progress}</span>
-              </div>
-              <div className="nc-status-item">
-                <span className="nc-status-dot nc-status-resolved-dot"></span>
-                <span className="nc-status-name">Resolved</span>
-                <span className="nc-status-count">{dashboardMetrics.statusDistribution.resolved}</span>
-              </div>
-              <div className="nc-status-item">
-                <span className="nc-status-dot nc-status-closed-dot"></span>
-                <span className="nc-status-name">Closed</span>
-                <span className="nc-status-count">{dashboardMetrics.statusDistribution.closed}</span>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* Performance Summary */}
-        <div className="nc-performance-summary">
-          <h4 className="nc-summary-title">📈 Performance Summary</h4>
-          <div className="nc-performance-grid">
-            <div className="nc-performance-item">
-              <span className="nc-performance-label">Resolution Rate Target</span>
-              <div className="nc-performance-progress">
-                <div 
-                  className="nc-performance-bar"
-                  style={{ width: `${Math.min(dashboardMetrics.resolutionRate, 100)}%` }}
-                ></div>
-              </div>
-              <span className="nc-performance-value">{dashboardMetrics.resolutionRate}% / 90%</span>
-            </div>
-            
-            <div className="nc-performance-item">
-              <span className="nc-performance-label">Average Resolution Time</span>
-              <div className="nc-performance-progress">
-                <div 
-                  className={`nc-performance-bar ${dashboardMetrics.avgResolutionTime > 10 ? 'nc-performance-warning' : ''}`}
-                  style={{ width: `${Math.min((dashboardMetrics.avgResolutionTime / 15) * 100, 100)}%` }}
-                ></div>
-              </div>
-              <span className="nc-performance-value">{dashboardMetrics.avgResolutionTime} days / 10 days target</span>
-            </div>
-          </div>
+        
+        <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+          <select
+            style={{
+              background: 'rgba(30, 41, 59, 0.8)',
+              border: `1px solid ${colors.border}`,
+              borderRadius: '8px',
+              padding: '0.5rem 1rem',
+              color: 'white',
+              fontSize: '0.875rem'
+            }}
+            value={selectedPeriod}
+            onChange={(e) => setSelectedPeriod(e.target.value)}
+          >
+            <option value="week">This Week</option>
+            <option value="month">This Month</option>
+            <option value="quarter">This Quarter</option>
+            <option value="year">This Year</option>
+            <option value="all">All Time</option>
+          </select>
+          
+          <button
+            onClick={handleRefresh}
+            disabled={isRefreshing}
+            style={{
+              background: `${colors.primary}20`,
+              border: `1px solid ${colors.primary}`,
+              borderRadius: '8px',
+              padding: '0.5rem',
+              color: colors.primary,
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              transition: 'all 0.2s ease'
+            }}
+          >
+            <RefreshCw size={16} className={isRefreshing ? 'animate-spin' : ''} />
+          </button>
         </div>
       </div>
+
+      {/* ✅ ALERTAS MODERNAS */}
+      {dashboardMetrics.alerts.length > 0 && (
+        <div style={{ marginBottom: '2rem' }}>
+          {dashboardMetrics.alerts.map((alert, index) => (
+            <div 
+              key={index}
+              style={{
+                background: alert.type === 'error' ? 'rgba(239, 68, 68, 0.1)' : 
+                           alert.type === 'warning' ? 'rgba(245, 158, 11, 0.1)' : 
+                           'rgba(59, 130, 246, 0.1)',
+                border: `1px solid ${alert.type === 'error' ? colors.danger : 
+                                    alert.type === 'warning' ? colors.warning : colors.primary}`,
+                borderRadius: '12px',
+                padding: '1rem 1.5rem',
+                marginBottom: '0.75rem',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between'
+              }}
+            >
+              <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+                <span style={{ fontSize: '1.5rem' }}>{alert.icon}</span>
+                <div>
+                  <div style={{ color: 'white', fontWeight: '600', marginBottom: '0.25rem' }}>
+                    {alert.title}
+                  </div>
+                  <div style={{ color: 'rgba(255, 255, 255, 0.7)', fontSize: '0.875rem' }}>
+                    {alert.message}
+                  </div>
+                </div>
+              </div>
+              <button style={{
+                background: 'transparent',
+                border: `1px solid ${colors.border}`,
+                borderRadius: '6px',
+                padding: '0.5rem 1rem',
+                color: 'rgba(255, 255, 255, 0.8)',
+                fontSize: '0.75rem',
+                cursor: 'pointer'
+              }}>
+                {alert.action}
+              </button>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {/* ✅ KPI CARDS MODERNOS */}
+      <div style={{ 
+        display: 'grid', 
+        gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', 
+        gap: '1.5rem', 
+        marginBottom: '2rem' 
+      }}>
+        <ModernKPICard
+          icon={Activity}
+          title="Total Non-Conformities"
+          value={dashboardMetrics.totalNCs}
+          subtitle={`${dashboardMetrics.periodMetrics.created} created this ${selectedPeriod}`}
+          color="primary"
+          trend={5}
+        />
+        
+        <ModernKPICard
+          icon={AlertTriangle}
+          title="Critical Active"
+          value={dashboardMetrics.criticalNCs}
+          subtitle={`${dashboardMetrics.periodMetrics.critical} new critical`}
+          color="danger"
+          trend={-12}
+        />
+        
+        <ModernKPICard
+          icon={Clock}
+          title="Avg Resolution Time"
+          value={`${dashboardMetrics.avgResolutionTime} days`}
+          subtitle="Target: 10 days"
+          color="warning"
+          trend={-8}
+        />
+        
+        <ModernKPICard
+          icon={CheckCircle}
+          title="Resolution Rate"
+          value={`${dashboardMetrics.resolutionRate}%`}
+          subtitle={`${dashboardMetrics.periodMetrics.resolved} resolved this ${selectedPeriod}`}
+          color="success"
+          trend={15}
+        />
+      </div>
+
+      {/* ✅ GRÁFICOS MODERNOS */}
+      <div style={{ 
+        display: 'grid', 
+        gridTemplateColumns: 'repeat(auto-fit, minmax(400px, 1fr))', 
+        gap: '1.5rem', 
+        marginBottom: '2rem' 
+      }}>
+        {/* ✅ TREND ANALYSIS MEJORADO */}
+        <ModernChartCard 
+          title="📈 Trend Analysis (Last 6 Months)" 
+          subtitle="Creation vs Resolution trends"
+        >
+          <ResponsiveContainer width="100%" height={300}>
+            <ComposedChart data={dashboardMetrics.trendData}>
+              <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.1)" />
+              <XAxis dataKey="month" stroke="rgba(255,255,255,0.7)" />
+              <YAxis stroke="rgba(255,255,255,0.7)" />
+              <Tooltip 
+                contentStyle={{
+                  backgroundColor: 'rgba(15, 23, 42, 0.95)',
+                  border: '1px solid rgba(255, 255, 255, 0.1)',
+                  borderRadius: '8px',
+                  color: 'white'
+                }}
+              />
+              <Legend />
+              <Bar dataKey="created" fill={colors.primary} name="Created" radius={[4, 4, 0, 0]} />
+              <Bar dataKey="resolved" fill={colors.success} name="Resolved" radius={[4, 4, 0, 0]} />
+              <Line 
+                type="monotone" 
+                dataKey="resolutionRate" 
+                stroke={colors.accent} 
+                strokeWidth={3}
+                dot={{ fill: colors.accent, strokeWidth: 2, r: 6 }}
+                name="Resolution Rate (%)"
+                yAxisId="right"
+              />
+            </ComposedChart>
+          </ResponsiveContainer>
+        </ModernChartCard>
+
+        {/* ✅ PRIORITY DISTRIBUTION */}
+        <ModernChartCard 
+          title="🎯 Priority Distribution" 
+          subtitle="Current NC breakdown by priority"
+        >
+          <ResponsiveContainer width="100%" height={300}>
+            <PieChart>
+              <Pie
+                data={priorityChartData}
+                cx="50%"
+                cy="50%"
+                innerRadius={60}
+                outerRadius={120}
+                paddingAngle={5}
+                dataKey="value"
+              >
+                {priorityChartData.map((entry, index) => (
+                  <Cell key={`cell-${index}`} fill={entry.color} />
+                ))}
+              </Pie>
+              <Tooltip 
+                contentStyle={{
+                  backgroundColor: 'rgba(15, 23, 42, 0.95)',
+                  border: '1px solid rgba(255, 255, 255, 0.1)',
+                  borderRadius: '8px',
+                  color: 'white'
+                }}
+              />
+              <Legend />
+            </PieChart>
+          </ResponsiveContainer>
+        </ModernChartCard>
+      </div>
+
+      {/* ✅ GRÁFICOS ADICIONALES */}
+      <div style={{ 
+        display: 'grid', 
+        gridTemplateColumns: 'repeat(auto-fit, minmax(400px, 1fr))', 
+        gap: '1.5rem' 
+      }}>
+        {/* ✅ STATUS OVERVIEW */}
+        <ModernChartCard 
+          title="📊 Status Overview" 
+          subtitle="Current status distribution"
+        >
+          <ResponsiveContainer width="100%" height={300}>
+            <BarChart data={statusChartData} layout="horizontal">
+              <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.1)" />
+              <XAxis type="number" stroke="rgba(255,255,255,0.7)" />
+              <YAxis dataKey="name" type="category" stroke="rgba(255,255,255,0.7)" />
+              <Tooltip 
+                contentStyle={{
+                  backgroundColor: 'rgba(15, 23, 42, 0.95)',
+                  border: '1px solid rgba(255, 255, 255, 0.1)',
+                  borderRadius: '8px',
+                  color: 'white'
+                }}
+              />
+              <Bar dataKey="value" fill={colors.secondary} radius={[0, 4, 4, 0]} />
+            </BarChart>
+          </ResponsiveContainer>
+        </ModernChartCard>
+
+        {/* ✅ TOP PROJECTS */}
+        <ModernChartCard 
+          title="🏗️ Top Projects" 
+          subtitle="Projects with most NCs"
+        >
+          <ResponsiveContainer width="100%" height={300}>
+            <BarChart data={topProjects}>
+              <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.1)" />
+              <XAxis dataKey="name" stroke="rgba(255,255,255,0.7)" />
+              <YAxis stroke="rgba(255,255,255,0.7)" />
+              <Tooltip 
+                contentStyle={{
+                  backgroundColor: 'rgba(15, 23, 42, 0.95)',
+                  border: '1px solid rgba(255, 255, 255, 0.1)',
+                  borderRadius: '8px',
+                  color: 'white'
+                }}
+              />
+              <Bar dataKey="value" fill={colors.warning} radius={[4, 4, 0, 0]} />
+            </BarChart>
+          </ResponsiveContainer>
+        </ModernChartCard>
+      </div>
+
+      {/* ✅ CSS EN LÍNEA PARA ANIMACIONES */}
+      <style jsx>{`
+        .kpi-card-hover:hover {
+          transform: translateY(-2px);
+          box-shadow: 0 12px 40px rgba(0, 0, 0, 0.2);
+        }
+        .animate-spin {
+          animation: spin 1s linear infinite;
+        }
+        @keyframes spin {
+          from { transform: rotate(0deg); }
+          to { transform: rotate(360deg); }
+        }
+      `}</style>
     </div>
   );
 };

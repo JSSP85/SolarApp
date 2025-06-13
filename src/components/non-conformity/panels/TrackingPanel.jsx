@@ -1,6 +1,8 @@
 // src/components/non-conformity/panels/TrackingPanel.jsx
 import React, { useState, useEffect } from 'react';
 import { useNonConformity } from '../../../context/NonConformityContext';
+// ✅ AGREGAR ESTA LÍNEA - IMPORT URGENTE
+import { safeDateCompare } from '../../../utils/dateUtils';
 
 const TrackingPanel = () => {
   const { state, dispatch, helpers } = useNonConformity();
@@ -44,124 +46,53 @@ const TrackingPanel = () => {
   // Handle status change
   const handleStatusChange = (newStatus) => {
     if (!selectedNC) return;
-
+    
+    helpers.updateNCStatus(selectedNC.id, newStatus);
+    
+    // Add automatic timeline entry for status change
     const statusLabels = {
-      'open': 'Open',
+      'open': 'Opened',
       'progress': 'In Progress',
       'resolved': 'Resolved',
       'closed': 'Closed'
     };
-
-    // Add timeline entry for status change
-    const timelineEntry = {
-      date: `${new Date().toLocaleDateString('en-GB')} - ${new Date().toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' })}`,
-      title: `🔄 Status Changed to ${statusLabels[newStatus]}`,
-      description: `NC status updated from ${statusLabels[selectedNC.status]} to ${statusLabels[newStatus]}`,
+    
+    helpers.addTimelineEntry(selectedNC.id, {
+      date: new Date().toLocaleDateString('en-GB'),
+      time: new Date().toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' }),
+      title: `Status Updated to ${statusLabels[newStatus]}`,
+      description: `Non-conformity status changed from ${statusLabels[selectedNC.status]} to ${statusLabels[newStatus]}`,
       type: 'status_change'
-    };
-
-    // Update NC status and add timeline entry
-    dispatch({
-      type: 'UPDATE_NC',
-      payload: {
-        id: selectedNC.id,
-        updates: { 
-          status: newStatus,
-          ...(newStatus === 'resolved' && !selectedNC.actualClosureDate && {
-            actualClosureDate: new Date().toLocaleDateString('en-GB')
-          })
-        }
-      }
     });
-
-    dispatch({
-      type: 'ADD_TIMELINE_ENTRY',
-      payload: {
-        ncId: selectedNC.id,
-        entry: timelineEntry
-      }
-    });
-
-    setStatusUpdate(newStatus);
   };
 
   // Handle adding new timeline entry
   const handleAddTimelineEntry = () => {
-    if (!newTimelineEntry.title || !newTimelineEntry.description || !selectedNC) return;
-
-    const entryIcons = {
-      'update': '📝',
-      'analysis': '🔍',
-      'action': '🔧',
-      'approval': '✅',
-      'escalation': '⚠️',
-      'resolution': '🎯'
-    };
-
-    const timelineEntry = {
-      date: `${new Date().toLocaleDateString('en-GB')} - ${new Date().toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' })}`,
-      title: `${entryIcons[newTimelineEntry.type]} ${newTimelineEntry.title}`,
+    if (!newTimelineEntry.title.trim() || !newTimelineEntry.description.trim()) {
+      alert('Please fill in both title and description');
+      return;
+    }
+    
+    helpers.addTimelineEntry(selectedNC.id, {
+      date: new Date().toLocaleDateString('en-GB'),
+      time: new Date().toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' }),
+      title: newTimelineEntry.title,
       description: newTimelineEntry.description,
       type: newTimelineEntry.type
-    };
-
-    dispatch({
-      type: 'ADD_TIMELINE_ENTRY',
-      payload: {
-        ncId: selectedNC.id,
-        entry: timelineEntry
-      }
     });
-
-    // Reset form
+    
     setNewTimelineEntry({ title: '', description: '', type: 'update' });
     setShowAddUpdate(false);
   };
 
-  // Get status badge class
-  const getStatusBadgeClass = (status) => {
-    const classes = {
-      'open': 'nc-status-open',
-      'progress': 'nc-status-progress',
-      'resolved': 'nc-status-resolved',
-      'closed': 'nc-status-closed'
-    };
-    return classes[status] || 'nc-status-open';
-  };
-
-  // Get priority badge class
-  const getPriorityBadgeClass = (priority) => {
-    const classes = {
-      'critical': 'nc-priority-critical',
-      'major': 'nc-priority-major',
-      'minor': 'nc-priority-minor'
-    };
-    return classes[priority] || 'nc-priority-minor';
-  };
-
-  // Get timeline icon for entry type
-  const getTimelineIcon = (type) => {
-    const icons = {
-      'detection': '🚨',
-      'analysis': '🔍',
-      'approval': '📋',
-      'action': '🔧',
-      'status_change': '🔄',
-      'update': '📝',
-      'escalation': '⚠️',
-      'resolution': '🎯',
-      'creation': '🆕'
-    };
-    return icons[type] || '📝';
-  };
-
-  // Filter NCs for dropdown (active ones first)
+  // ✅ CAMBIO CRÍTICO - REEMPLAZAR ESTA FUNCIÓN COMPLETAMENTE:
   const sortedNCs = [...ncList].sort((a, b) => {
     const statusPriority = { 'open': 0, 'progress': 1, 'resolved': 2, 'closed': 3 };
     if (statusPriority[a.status] !== statusPriority[b.status]) {
       return statusPriority[a.status] - statusPriority[b.status];
     }
-    return new Date(b.createdDate.split('/').reverse().join('-')) - new Date(a.createdDate.split('/').reverse().join('-'));
+    // ✅ USAR FUNCIÓN SEGURA PARA FECHAS - ESTO RESUELVE EL ERROR
+    return safeDateCompare(a.createdDate || '', b.createdDate || '', 'desc');
   });
 
   return (
@@ -190,49 +121,33 @@ const TrackingPanel = () => {
               {sortedNCs.map(nc => (
                 <option key={nc.id} value={nc.id}>
                   {nc.number} - {nc.project} - {nc.description.substring(0, 50)}
-                  {nc.description.length > 50 ? '...' : ''}
-                  {' '}({nc.status.toUpperCase()})
+                  {nc.description.length > 50 ? '...' : ''} 
+                  ({nc.status})
                 </option>
               ))}
             </select>
           </div>
-
-          {selectedNC && (
-            <div className="nc-form-group">
-              <label className="nc-form-label">Update Status</label>
-              <select
-                className="nc-form-select"
-                value={statusUpdate}
-                onChange={(e) => handleStatusChange(e.target.value)}
-              >
-                <option value="open">Open</option>
-                <option value="progress">In Progress</option>
-                <option value="resolved">Resolved</option>
-                <option value="closed">Closed</option>
-              </select>
-            </div>
-          )}
         </div>
 
         {/* NC Details Section */}
         {selectedNC && (
           <>
             <div className="nc-tracking-details">
-              <div className="nc-details-grid">
+              <div className="nc-detail-grid">
                 <div className="nc-detail-item">
                   <span className="nc-detail-label">NC Number:</span>
                   <span className="nc-detail-value nc-detail-number">{selectedNC.number}</span>
                 </div>
                 <div className="nc-detail-item">
                   <span className="nc-detail-label">Priority:</span>
-                  <span className={`nc-status-badge ${getPriorityBadgeClass(selectedNC.priority)}`}>
-                    {selectedNC.priority.toUpperCase()}
+                  <span className={`nc-detail-value nc-priority-${selectedNC.priority}`}>
+                    {selectedNC.priority?.toUpperCase()}
                   </span>
                 </div>
                 <div className="nc-detail-item">
                   <span className="nc-detail-label">Status:</span>
-                  <span className={`nc-status-badge ${getStatusBadgeClass(selectedNC.status)}`}>
-                    {selectedNC.status.replace('_', ' ').toUpperCase()}
+                  <span className={`nc-detail-value nc-status-${selectedNC.status}`}>
+                    {selectedNC.status?.toUpperCase()}
                   </span>
                 </div>
                 <div className="nc-detail-item">
@@ -245,7 +160,7 @@ const TrackingPanel = () => {
                 </div>
                 <div className="nc-detail-item">
                   <span className="nc-detail-label">Created:</span>
-                  <span className="nc-detail-value">{selectedNC.createdDate}</span>
+                  <span className="nc-detail-value">{selectedNC.createdDate || 'N/A'}</span>
                 </div>
                 <div className="nc-detail-item">
                   <span className="nc-detail-label">Days Open:</span>
@@ -271,12 +186,9 @@ const TrackingPanel = () => {
             {/* Timeline Section */}
             <div className="nc-timeline-section">
               <div className="nc-timeline-header">
-                <h4 className="nc-subsection-title">
-                  <span className="nc-timeline-icon">⏱️</span>
-                  Progress Timeline
-                </h4>
+                <h4 className="nc-subsection-title">Timeline & Progress Updates</h4>
                 <button
-                  className="nc-btn nc-btn-secondary nc-btn-small"
+                  className="nc-btn nc-btn-primary nc-btn-small"
                   onClick={() => setShowAddUpdate(!showAddUpdate)}
                 >
                   <span className="nc-btn-icon">➕</span>
@@ -287,54 +199,58 @@ const TrackingPanel = () => {
               {/* Add Update Form */}
               {showAddUpdate && (
                 <div className="nc-add-update-form">
-                  <div className="nc-form-grid">
-                    <div className="nc-form-group">
-                      <label className="nc-form-label">Update Type</label>
-                      <select
-                        className="nc-form-select"
-                        value={newTimelineEntry.type}
-                        onChange={(e) => setNewTimelineEntry(prev => ({ ...prev, type: e.target.value }))}
-                      >
-                        <option value="update">General Update</option>
-                        <option value="analysis">Root Cause Analysis</option>
-                        <option value="action">Corrective Action</option>
-                        <option value="approval">Approval/Review</option>
-                        <option value="escalation">Escalation</option>
-                        <option value="resolution">Resolution</option>
-                      </select>
-                    </div>
-                    <div className="nc-form-group">
-                      <label className="nc-form-label">Update Title</label>
-                      <input
-                        type="text"
-                        className="nc-form-input"
-                        value={newTimelineEntry.title}
-                        onChange={(e) => setNewTimelineEntry(prev => ({ ...prev, title: e.target.value }))}
-                        placeholder="Brief description of the update..."
-                      />
-                    </div>
+                  <div className="nc-form-group">
+                    <label className="nc-form-label">Update Title</label>
+                    <input
+                      type="text"
+                      className="nc-form-input"
+                      value={newTimelineEntry.title}
+                      onChange={(e) => setNewTimelineEntry({
+                        ...newTimelineEntry,
+                        title: e.target.value
+                      })}
+                      placeholder="Brief title for this update..."
+                    />
                   </div>
                   <div className="nc-form-group">
-                    <label className="nc-form-label">Detailed Description</label>
+                    <label className="nc-form-label">Description</label>
                     <textarea
                       className="nc-form-textarea"
                       rows="3"
                       value={newTimelineEntry.description}
-                      onChange={(e) => setNewTimelineEntry(prev => ({ ...prev, description: e.target.value }))}
-                      placeholder="Provide detailed information about this update..."
+                      onChange={(e) => setNewTimelineEntry({
+                        ...newTimelineEntry,
+                        description: e.target.value
+                      })}
+                      placeholder="Detailed description of the update..."
                     />
                   </div>
-                  <div className="nc-form-actions nc-form-actions-inline">
-                    <button
-                      className="nc-btn nc-btn-primary nc-btn-small"
-                      onClick={handleAddTimelineEntry}
-                      disabled={!newTimelineEntry.title || !newTimelineEntry.description}
+                  <div className="nc-form-group">
+                    <label className="nc-form-label">Update Type</label>
+                    <select
+                      className="nc-form-select"
+                      value={newTimelineEntry.type}
+                      onChange={(e) => setNewTimelineEntry({
+                        ...newTimelineEntry,
+                        type: e.target.value
+                      })}
                     >
-                      <span className="nc-btn-icon">💾</span>
+                      <option value="update">General Update</option>
+                      <option value="investigation">Investigation</option>
+                      <option value="action">Corrective Action</option>
+                      <option value="verification">Verification</option>
+                      <option value="escalation">Escalation</option>
+                    </select>
+                  </div>
+                  <div className="nc-form-actions">
+                    <button
+                      className="nc-btn nc-btn-success"
+                      onClick={handleAddTimelineEntry}
+                    >
                       Add Update
                     </button>
                     <button
-                      className="nc-btn nc-btn-ghost nc-btn-small"
+                      className="nc-btn nc-btn-ghost"
                       onClick={() => setShowAddUpdate(false)}
                     >
                       Cancel
@@ -347,22 +263,31 @@ const TrackingPanel = () => {
               <div className="nc-timeline">
                 {selectedNC.timeline && selectedNC.timeline.length > 0 ? (
                   selectedNC.timeline.map((entry, index) => (
-                    <div key={index} className="nc-timeline-item">
+                    <div key={index} className={`nc-timeline-entry nc-entry-${entry.type}`}>
                       <div className="nc-timeline-marker">
-                        <span className="nc-timeline-icon-display">
-                          {getTimelineIcon(entry.type)}
+                        <span className="nc-timeline-icon">
+                          {entry.type === 'creation' ? '🚨' :
+                           entry.type === 'action' ? '⚡' :
+                           entry.type === 'investigation' ? '🔍' :
+                           entry.type === 'status_change' ? '📈' :
+                           entry.type === 'verification' ? '✅' :
+                           entry.type === 'escalation' ? '⚠️' : '📝'}
                         </span>
                       </div>
                       <div className="nc-timeline-content">
-                        <div className="nc-timeline-date">{entry.date}</div>
-                        <div className="nc-timeline-title">{entry.title}</div>
-                        <div className="nc-timeline-description">{entry.description}</div>
+                        <div className="nc-timeline-header">
+                          <h5 className="nc-timeline-title">{entry.title}</h5>
+                          <span className="nc-timeline-date">
+                            {entry.date} {entry.time && `- ${entry.time}`}
+                          </span>
+                        </div>
+                        <p className="nc-timeline-description">{entry.description}</p>
                       </div>
                     </div>
                   ))
                 ) : (
                   <div className="nc-timeline-empty">
-                    <span className="nc-empty-icon">📝</span>
+                    <span className="nc-empty-icon">📅</span>
                     <p>No timeline entries yet. Add the first update to start tracking progress.</p>
                   </div>
                 )}
@@ -392,7 +317,6 @@ const TrackingPanel = () => {
                 <button
                   className="nc-btn nc-btn-secondary"
                   onClick={() => {
-                    // TODO: Implement PDF generation for specific NC
                     console.log('Generating PDF for NC:', selectedNC.number);
                   }}
                 >

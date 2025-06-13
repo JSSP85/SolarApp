@@ -1549,7 +1549,7 @@ const CreateNCPanel = () => {
                 disabled={uploadingFiles || exportingPDF}
                 title="Save NC and immediately export to PDF"
               >
-                💾📄 Save & Export
+                💾📄 Save & Export PDF
               </button>
             </>
           )}

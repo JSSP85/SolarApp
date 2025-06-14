@@ -1133,43 +1133,9 @@ const CreateNCPanel = () => {
         .nc-step-connector.pending { background: rgba(255, 255, 255, 0.2); }
         .nc-step-item:last-child .nc-step-connector { display: none; }
 
-        /* Panel Header estilo KPI Card */
+        /* Panel Header - OCULTO para ahorrar espacio */
         .nc-panel-header {
-          padding: 2rem;
-          background: rgba(15, 23, 42, 0.5);
-          backdrop-filter: blur(10px);
-          border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-          color: white;
-        }
-
-        .nc-panel-title {
-          font-size: 1.5rem;
-          font-weight: 600;
-          margin: 0 0 0.5rem 0;
-          display: flex;
-          align-items: center;
-          gap: 0.75rem;
-        }
-
-        .nc-panel-icon {
-          font-size: 1.25rem;
-        }
-
-        .nc-panel-subtitle {
-          color: rgba(255, 255, 255, 0.8);
-          margin: 0 0 1rem 0;
-          font-size: 1rem;
-        }
-
-        .nc-step-info {
-          background: rgba(255, 255, 255, 0.1);
-          color: white;
-          padding: 0.5rem 1rem;
-          border-radius: 20px;
-          font-size: 0.875rem;
-          font-weight: 500;
-          display: inline-block;
-          border: 1px solid rgba(255, 255, 255, 0.2);
+          display: none !important;
         }
 
         /* Form Container - LAYOUT PROFESIONAL */

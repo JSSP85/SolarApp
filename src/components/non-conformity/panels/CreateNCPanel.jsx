@@ -1,5 +1,5 @@
 // src/components/non-conformity/panels/CreateNCPanel.jsx
-// ✅ COMPONENTE COMPLETO - CON TODAS LAS FUNCIONALIDADES (1500+ LÍNEAS)
+// ✅ COMPONENTE COMPLETAMENTE REDISEÑADO - ESTILO DASHBOARD MODERNO
 
 import React, { useState, useEffect } from 'react';
 import { useNonConformity } from '../../../context/NonConformityContext';
@@ -62,36 +62,44 @@ const CreateNCPanel = () => {
   const [uploadingFiles, setUploadingFiles] = useState(false);
   const [exportingPDF, setExportingPDF] = useState(false);
 
+  // ✅ NUEVO: Estado para edición manual de número
+  const [manualNumberEdit, setManualNumberEdit] = useState(false);
+
   // Define wizard steps
   const steps = [
     {
       id: 'basic',
       title: 'Basic Information',
       subtitle: 'General NC details and identification',
+      icon: '🆔',
       requiredFields: ['priority', 'project', 'projectCode', 'date', 'createdBy', 'sector']
     },
     {
       id: 'details',
       title: 'Non-Conformity Details',
       subtitle: 'Problem description and component information',
+      icon: '🔍',
       requiredFields: ['ncType', 'detectionSource', 'description', 'componentCode', 'quantity']
     },
     {
       id: 'treatment',
       title: 'Treatment / Resolution',
       subtitle: 'Material disposition and containment actions',
+      icon: '⚙️',
       requiredFields: [] // Optional fields
     },
     {
       id: 'corrective',
       title: 'Corrective Action Request',
       subtitle: 'Root cause analysis and corrective measures',
+      icon: '🔧',
       requiredFields: [] // Optional fields
     },
     {
       id: 'photos',
       title: 'Photo Documentation',
       subtitle: 'Upload supporting images and evidence',
+      icon: '📸',
       requiredFields: [] // Optional fields
     }
   ];
@@ -135,7 +143,6 @@ const CreateNCPanel = () => {
     { value: 'other', label: '❓ Other' }
   ];
 
-  // ✅ NUEVO: Options para Detection Source
   const detectionSourceOptions = [
     { value: '', label: 'Select where NC was found' },
     { value: 'production', label: '🏭 Production' },
@@ -158,28 +165,27 @@ const CreateNCPanel = () => {
     { value: 'reject', label: '❌ Reject' }
   ];
 
-  // ✅ MODIFICADO: Generate new NC number starting from 565 (formato simplificado)
+  // ✅ MODIFICADO: Auto-generar número al iniciar (formato RNC-565)
   useEffect(() => {
-    if (!currentNC.number) {
-      // Custom NC number generation starting from 565 (sin año)
-      const existingNumbers = state.ncList
-        .map(nc => nc.number)
-        .filter(num => num && num.startsWith('RNC-'))
-        .map(num => parseInt(num.split('-')[1]) || 0)
-        .filter(num => !isNaN(num));
-      
-      // ✅ CAMBIO: Formato simplificado RNC-565 (sin año)
-      const nextNumber = existingNumbers.length > 0 ? 
-        Math.max(...existingNumbers) + 1 : 565;
-      
-      const newNumber = `RNC-${nextNumber}`;
-      
-      dispatch({
-        type: actions.UPDATE_NC_FIELD,
-        payload: { field: 'number', value: newNumber }
-      });
+    if (!currentNC.number && !manualNumberEdit) {
+      generateNewNumber();
     }
-  }, [currentNC.number, dispatch, state.ncList, actions]);
+  }, [currentNC.number, manualNumberEdit, state.ncList]);
+
+  // ✅ NUEVA FUNCIÓN: Generar número automáticamente
+  const generateNewNumber = () => {
+    const existingNumbers = state.ncList
+      .map(nc => nc.number)
+      .filter(num => num && num.startsWith('RNC-'))
+      .map(num => parseInt(num.split('-')[1]) || 0)
+      .filter(num => !isNaN(num));
+    
+    const nextNumber = existingNumbers.length > 0 ? 
+      Math.max(...existingNumbers) + 1 : 565;
+    
+    const newNumber = `RNC-${nextNumber}`;
+    handleFieldChange('number', newNumber);
+  };
 
   // Handle field changes
   const handleFieldChange = (field, value) => {
@@ -196,21 +202,6 @@ const CreateNCPanel = () => {
         type: actions.CLEAR_VALIDATION_ERRORS
       });
     }
-  };
-
-  // ✅ NUEVA FUNCIÓN: Generar número automáticamente
-  const generateNewNumber = () => {
-    const existingNumbers = state.ncList
-      .map(nc => nc.number)
-      .filter(num => num && num.startsWith('RNC-'))
-      .map(num => parseInt(num.split('-')[1]) || 0)
-      .filter(num => !isNaN(num));
-    
-    const nextNumber = existingNumbers.length > 0 ? 
-      Math.max(...existingNumbers) + 1 : 565;
-    
-    const newNumber = `RNC-${nextNumber}`;
-    handleFieldChange('number', newNumber);
   };
 
   // ✅ FUNCIONES PARA MANEJO DE FOTOS
@@ -384,7 +375,7 @@ const CreateNCPanel = () => {
           createdBy: 'Inspector Name',
           sector: 'Sector',
           ncType: 'Non-Conformity Type',
-          detectionSource: 'Detection Source', // ✅ NUEVO CAMPO
+          detectionSource: 'Detection Source',
           description: 'Problem Description',
           componentCode: 'Component Code',
           quantity: 'Quantity'
@@ -447,7 +438,7 @@ const CreateNCPanel = () => {
         // ✅ GUARDAR EN FIREBASE
         const newNCData = {
           ...currentNC,
-          number: currentNC.number || helpers.generateNCNumber(),
+          number: currentNC.number || `RNC-565`,
           createdDate: currentNC.date || new Date().toLocaleDateString('en-GB'),
           status: 'open',
           daysOpen: 0
@@ -488,6 +479,7 @@ const CreateNCPanel = () => {
           setCompletedSteps([]);
           setSavedSuccessfully(false);
           setShowValidation(false);
+          setManualNumberEdit(false);
         }, 3000);
 
       } catch (error) {
@@ -507,31 +499,40 @@ const CreateNCPanel = () => {
         return (
           <div className="nc-step-content">
             <div className="nc-form-section">
-              <h4 className="nc-section-title">🆔 NC Identification</h4>
-              
               <div className="nc-form-grid">
-                {/* NC Number (Editable para migración) */}
+                {/* NC Number (Auto-generated con opción manual) */}
                 <div className="nc-form-group">
                   <label className="nc-form-label">NC Number</label>
                   <div className="nc-input-with-button">
                     <input
                       type="text"
-                      className="nc-form-input"
+                      className={`nc-form-input ${manualNumberEdit ? '' : 'readonly'}`}
                       value={currentNC.number || ''}
-                      onChange={(e) => handleFieldChange('number', e.target.value)}
+                      onChange={(e) => manualNumberEdit && handleFieldChange('number', e.target.value)}
                       placeholder="e.g., RNC-565"
+                      readOnly={!manualNumberEdit}
                     />
                     <button
                       type="button"
-                      className="nc-generate-btn"
-                      onClick={generateNewNumber}
-                      title="Generate next available number"
+                      className={`nc-edit-btn ${manualNumberEdit ? 'active' : ''}`}
+                      onClick={() => setManualNumberEdit(!manualNumberEdit)}
+                      title={manualNumberEdit ? 'Lock automatic numbering' : 'Enable manual editing'}
                     >
-                      🔄
+                      {manualNumberEdit ? '🔒' : '✏️'}
                     </button>
+                    {!manualNumberEdit && (
+                      <button
+                        type="button"
+                        className="nc-generate-btn"
+                        onClick={generateNewNumber}
+                        title="Generate next available number"
+                      >
+                        🔄
+                      </button>
+                    )}
                   </div>
                   <div className="nc-field-help">
-                    Auto-generated or editable for migrating existing NCs
+                    {manualNumberEdit ? 'Manual editing enabled for migration' : 'Auto-generated number'}
                   </div>
                 </div>
 
@@ -651,70 +652,48 @@ const CreateNCPanel = () => {
       case 'details':
         return (
           <div className="nc-step-content">
-            {/* NC Type */}
-            <div className="nc-form-group">
-              <label className="nc-form-label required">Non-Conformity Type *</label>
-              <select
-                className={`nc-form-select ${validationErrors.ncType ? 'error' : ''}`}
-                value={currentNC.ncType}
-                onChange={(e) => handleFieldChange('ncType', e.target.value)}
-              >
-                {ncTypeOptions.map(option => (
-                  <option key={option.value} value={option.value}>
-                    {option.label}
-                  </option>
-                ))}
-              </select>
-              {showValidation && validationErrors.ncType && (
-                <ValidationMessage message={validationErrors.ncType} />
-              )}
-            </div>
-
-            {/* ✅ NUEVO: Detection Source */}
-            <div className="nc-form-group">
-              <label className="nc-form-label required">Detection Source *</label>
-              <select
-                className={`nc-form-select ${validationErrors.detectionSource ? 'error' : ''}`}
-                value={currentNC.detectionSource}
-                onChange={(e) => handleFieldChange('detectionSource', e.target.value)}
-              >
-                {detectionSourceOptions.map(option => (
-                  <option key={option.value} value={option.value}>
-                    {option.label}
-                  </option>
-                ))}
-              </select>
-              {showValidation && validationErrors.detectionSource && (
-                <ValidationMessage message={validationErrors.detectionSource} />
-              )}
-              <div className="nc-field-help">
-                Select where or how this non-conformity was detected.
-              </div>
-            </div>
-
-            {/* Problem Description */}
-            <div className="nc-form-group">
-              <label className="nc-form-label required">Problem Description *</label>
-              <textarea
-                className={`nc-form-textarea-limited ${validationErrors.description ? 'error' : ''}`}
-                rows="4"
-                value={currentNC.description}
-                onChange={(e) => {
-                  if (e.target.value.length <= 500) {
-                    handleFieldChange('description', e.target.value);
-                  }
-                }}
-                placeholder="Describe the non-conformity in detail..."
-              />
-              <div className="nc-char-count">
-                {currentNC.description ? currentNC.description.length : 0}/500 characters
-              </div>
-              {showValidation && validationErrors.description && (
-                <ValidationMessage message={validationErrors.description} />
-              )}
-            </div>
-
             <div className="nc-form-grid">
+              {/* NC Type */}
+              <div className="nc-form-group">
+                <label className="nc-form-label required">Non-Conformity Type *</label>
+                <select
+                  className={`nc-form-select ${validationErrors.ncType ? 'error' : ''}`}
+                  value={currentNC.ncType}
+                  onChange={(e) => handleFieldChange('ncType', e.target.value)}
+                >
+                  {ncTypeOptions.map(option => (
+                    <option key={option.value} value={option.value}>
+                      {option.label}
+                    </option>
+                  ))}
+                </select>
+                {showValidation && validationErrors.ncType && (
+                  <ValidationMessage message={validationErrors.ncType} />
+                )}
+              </div>
+
+              {/* Detection Source */}
+              <div className="nc-form-group">
+                <label className="nc-form-label required">Detection Source *</label>
+                <select
+                  className={`nc-form-select ${validationErrors.detectionSource ? 'error' : ''}`}
+                  value={currentNC.detectionSource}
+                  onChange={(e) => handleFieldChange('detectionSource', e.target.value)}
+                >
+                  {detectionSourceOptions.map(option => (
+                    <option key={option.value} value={option.value}>
+                      {option.label}
+                    </option>
+                  ))}
+                </select>
+                {showValidation && validationErrors.detectionSource && (
+                  <ValidationMessage message={validationErrors.detectionSource} />
+                )}
+                <div className="nc-field-help">
+                  Select where or how this non-conformity was detected.
+                </div>
+              </div>
+
               {/* Component Code */}
               <div className="nc-form-group">
                 <label className="nc-form-label required">Component Code *</label>
@@ -746,8 +725,8 @@ const CreateNCPanel = () => {
                 )}
               </div>
 
-              {/* Component */}
-              <div className="nc-form-group">
+              {/* Component Description */}
+              <div className="nc-form-group nc-form-group-full">
                 <label className="nc-form-label">Component Description</label>
                 <input
                   type="text"
@@ -757,6 +736,28 @@ const CreateNCPanel = () => {
                   placeholder="e.g., L4 LATERAL POST - 155X110X50X4.5MM, 4200MM, S420MC, HDG_100"
                 />
               </div>
+
+              {/* Problem Description */}
+              <div className="nc-form-group nc-form-group-full">
+                <label className="nc-form-label required">Problem Description *</label>
+                <textarea
+                  className={`nc-form-textarea ${validationErrors.description ? 'error' : ''}`}
+                  rows="4"
+                  value={currentNC.description}
+                  onChange={(e) => {
+                    if (e.target.value.length <= 500) {
+                      handleFieldChange('description', e.target.value);
+                    }
+                  }}
+                  placeholder="Describe the non-conformity in detail..."
+                />
+                <div className="nc-char-count">
+                  {currentNC.description ? currentNC.description.length : 0}/500 characters
+                </div>
+                {showValidation && validationErrors.description && (
+                  <ValidationMessage message={validationErrors.description} />
+                )}
+              </div>
             </div>
           </div>
         );
@@ -764,36 +765,38 @@ const CreateNCPanel = () => {
       case 'treatment':
         return (
           <div className="nc-step-content">
-            <div className="nc-form-group">
-              <label className="nc-form-label">Proposed Disposition</label>
-              <select
-                className="nc-form-select"
-                value={currentNC.materialDisposition}
-                onChange={(e) => handleFieldChange('materialDisposition', e.target.value)}
-              >
-                {materialDispositionOptions.map(option => (
-                  <option key={option.value} value={option.value}>
-                    {option.label}
-                  </option>
-                ))}
-              </select>
-            </div>
+            <div className="nc-form-grid">
+              <div className="nc-form-group">
+                <label className="nc-form-label">Proposed Disposition</label>
+                <select
+                  className="nc-form-select"
+                  value={currentNC.materialDisposition}
+                  onChange={(e) => handleFieldChange('materialDisposition', e.target.value)}
+                >
+                  {materialDispositionOptions.map(option => (
+                    <option key={option.value} value={option.value}>
+                      {option.label}
+                    </option>
+                  ))}
+                </select>
+              </div>
 
-            <div className="nc-form-group">
-              <label className="nc-form-label">Containment Action</label>
-              <textarea
-                className="nc-form-textarea-limited"
-                rows="3"
-                value={currentNC.containmentAction}
-                onChange={(e) => {
-                  if (e.target.value.length <= 300) {
-                    handleFieldChange('containmentAction', e.target.value);
-                  }
-                }}
-                placeholder="Describe immediate actions taken to contain the defect..."
-              />
-              <div className="nc-char-count">
-                {currentNC.containmentAction ? currentNC.containmentAction.length : 0}/300 characters
+              <div className="nc-form-group nc-form-group-full">
+                <label className="nc-form-label">Containment Action</label>
+                <textarea
+                  className="nc-form-textarea"
+                  rows="3"
+                  value={currentNC.containmentAction}
+                  onChange={(e) => {
+                    if (e.target.value.length <= 300) {
+                      handleFieldChange('containmentAction', e.target.value);
+                    }
+                  }}
+                  placeholder="Describe immediate actions taken to contain the defect..."
+                />
+                <div className="nc-char-count">
+                  {currentNC.containmentAction ? currentNC.containmentAction.length : 0}/300 characters
+                </div>
               </div>
             </div>
           </div>
@@ -802,43 +805,43 @@ const CreateNCPanel = () => {
       case 'corrective':
         return (
           <div className="nc-step-content">
-            <div className="nc-form-group">
-              <label className="nc-form-label">Root Cause Analysis Description</label>
-              <textarea
-                className="nc-form-textarea-limited"
-                rows="3"
-                value={currentNC.rootCauseAnalysis}
-                onChange={(e) => {
-                  if (e.target.value.length <= 400) {
-                    handleFieldChange('rootCauseAnalysis', e.target.value);
-                  }
-                }}
-                placeholder="Analyze and describe the root cause of this non-conformity..."
-              />
-              <div className="nc-char-count">
-                {currentNC.rootCauseAnalysis ? currentNC.rootCauseAnalysis.length : 0}/400 characters
-              </div>
-            </div>
-
-            <div className="nc-form-group">
-              <label className="nc-form-label">Corrective Action Plan</label>
-              <textarea
-                className="nc-form-textarea-limited"
-                rows="3"
-                value={currentNC.correctiveAction}
-                onChange={(e) => {
-                  if (e.target.value.length <= 400) {
-                    handleFieldChange('correctiveAction', e.target.value);
-                  }
-                }}
-                placeholder="Define specific corrective actions to prevent recurrence..."
-              />
-              <div className="nc-char-count">
-                {currentNC.correctiveAction ? currentNC.correctiveAction.length : 0}/400 characters
-              </div>
-            </div>
-
             <div className="nc-form-grid">
+              <div className="nc-form-group nc-form-group-full">
+                <label className="nc-form-label">Root Cause Analysis Description</label>
+                <textarea
+                  className="nc-form-textarea"
+                  rows="3"
+                  value={currentNC.rootCauseAnalysis}
+                  onChange={(e) => {
+                    if (e.target.value.length <= 400) {
+                      handleFieldChange('rootCauseAnalysis', e.target.value);
+                    }
+                  }}
+                  placeholder="Analyze and describe the root cause of this non-conformity..."
+                />
+                <div className="nc-char-count">
+                  {currentNC.rootCauseAnalysis ? currentNC.rootCauseAnalysis.length : 0}/400 characters
+                </div>
+              </div>
+
+              <div className="nc-form-group nc-form-group-full">
+                <label className="nc-form-label">Corrective Action Plan</label>
+                <textarea
+                  className="nc-form-textarea"
+                  rows="3"
+                  value={currentNC.correctiveAction}
+                  onChange={(e) => {
+                    if (e.target.value.length <= 400) {
+                      handleFieldChange('correctiveAction', e.target.value);
+                    }
+                  }}
+                  placeholder="Define specific corrective actions to prevent recurrence..."
+                />
+                <div className="nc-char-count">
+                  {currentNC.correctiveAction ? currentNC.correctiveAction.length : 0}/400 characters
+                </div>
+              </div>
+
               <div className="nc-form-group">
                 <label className="nc-form-label">Planned Closure Date</label>
                 <input
@@ -884,7 +887,7 @@ const CreateNCPanel = () => {
                 </div>
                 <input
                   type="file"
-                  multiple /* ✅ PERMITIR MÚLTIPLES ARCHIVOS */
+                  multiple
                   accept="image/*,.pdf"
                   onChange={handleFileSelect}
                   className="nc-file-input"
@@ -957,51 +960,35 @@ const CreateNCPanel = () => {
   // Main component return
   return (
     <>
-      {/* ✅ CSS STYLES OUTSIDE OF MAIN DIV - CON OVERRIDE DE FONDOS */}
+      {/* ✅ NUEVO DISEÑO - ESTILO DASHBOARD MODERNO */}
       <style>{`
-        /* ✅ IMPORTANTE: Override de fondos conflictivos */
-        html, body {
-          background: transparent !important;
-          background-color: transparent !important;
-        }
-        
-        .non-conformity-wrapper {
-          background: transparent !important;
-          background-color: transparent !important;
-        }
-        
-        .nc-app-container {
-          background: transparent !important;
-          background-color: transparent !important;
-        }
-        
-        .nc-main-content {
-          background: transparent !important;
-          background-color: transparent !important;
-        }
-
+        /* Contenedor principal estilo Dashboard */
         .nc-create-panel {
-          background: rgba(242, 245, 250, 0.7);
-          backdrop-filter: blur(10px);
-          border-radius: 12px;
-          box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
-          border: 1px solid rgba(255, 255, 255, 0.3);
+          background: rgba(15, 23, 42, 0.7);
+          backdrop-filter: blur(20px);
+          border-radius: 20px;
+          border: 1px solid rgba(255, 255, 255, 0.1);
           margin: 2rem auto;
           max-width: 900px;
           overflow: hidden;
+          box-shadow: 
+            0 8px 32px rgba(0, 0, 0, 0.3),
+            inset 0 1px 0 rgba(255, 255, 255, 0.1);
         }
 
+        /* Success Banner */
         .nc-success-banner {
           background: linear-gradient(135deg, #10B981, #059669);
           color: white;
           padding: 1rem 2rem;
-          margin-bottom: 1rem;
-          border-radius: 8px;
+          margin: 1rem;
+          border-radius: 12px;
           display: flex;
           align-items: center;
           gap: 0.75rem;
           font-weight: 500;
           animation: slideDown 0.3s ease-out;
+          box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
         }
 
         .nc-success-icon {
@@ -1009,20 +996,32 @@ const CreateNCPanel = () => {
         }
 
         @keyframes slideDown {
-          from {
-            opacity: 0;
-            transform: translateY(-20px);
-          }
-          to {
-            opacity: 1;
-            transform: translateY(0);
-          }
+          from { opacity: 0; transform: translateY(-20px); }
+          to { opacity: 1; transform: translateY(0); }
         }
 
+        /* Progress Bar estilo Dashboard */
         .nc-step-progress-container {
-          background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+          background: linear-gradient(135deg, #1e40af 0%, #7c3aed 50%, #be185d 100%);
           padding: 2rem;
           color: white;
+          position: relative;
+          overflow: hidden;
+        }
+
+        .nc-step-progress-container::before {
+          content: '';
+          position: absolute;
+          top: 0;
+          left: -100%;
+          width: 100%;
+          height: 100%;
+          background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.1), transparent);
+          animation: shimmer 3s infinite;
+        }
+
+        @keyframes shimmer {
+          100% { left: 100%; }
         }
 
         .nc-step-progress {
@@ -1032,6 +1031,7 @@ const CreateNCPanel = () => {
           max-width: 800px;
           margin: 0 auto;
           position: relative;
+          z-index: 1;
         }
 
         .nc-step-item {
@@ -1083,15 +1083,8 @@ const CreateNCPanel = () => {
         }
 
         @keyframes pulse {
-          0% {
-            box-shadow: 0 0 0 4px rgba(255, 255, 255, 0.3);
-          }
-          50% {
-            box-shadow: 0 0 0 8px rgba(255, 255, 255, 0.1);
-          }
-          100% {
-            box-shadow: 0 0 0 4px rgba(255, 255, 255, 0.3);
-          }
+          0%, 100% { box-shadow: 0 0 0 4px rgba(255, 255, 255, 0.3); }
+          50% { box-shadow: 0 0 0 8px rgba(255, 255, 255, 0.1); }
         }
 
         .nc-step-label {
@@ -1099,21 +1092,12 @@ const CreateNCPanel = () => {
           font-size: 0.875rem;
           max-width: 120px;
           line-height: 1.3;
-        }
-
-        .nc-step-label.completed {
-          color: rgba(255, 255, 255, 0.9);
           font-weight: 500;
         }
 
-        .nc-step-label.current {
-          color: white;
-          font-weight: 600;
-        }
-
-        .nc-step-label.pending {
-          color: rgba(255, 255, 255, 0.6);
-        }
+        .nc-step-label.completed { color: rgba(255, 255, 255, 0.9); }
+        .nc-step-label.current { color: white; font-weight: 600; }
+        .nc-step-label.pending { color: rgba(255, 255, 255, 0.6); }
 
         .nc-step-connector {
           position: absolute;
@@ -1124,29 +1108,22 @@ const CreateNCPanel = () => {
           z-index: 1;
         }
 
-        .nc-step-connector.completed {
-          background: #10B981;
-        }
+        .nc-step-connector.completed { background: #10B981; }
+        .nc-step-connector.pending { background: rgba(255, 255, 255, 0.2); }
+        .nc-step-item:last-child .nc-step-connector { display: none; }
 
-        .nc-step-connector.pending {
-          background: rgba(255, 255, 255, 0.2);
-        }
-
-        .nc-step-item:last-child .nc-step-connector {
-          display: none;
-        }
-
+        /* Panel Header estilo KPI Card */
         .nc-panel-header {
           padding: 2rem;
-          border-bottom: 1px solid rgba(229, 231, 235, 0.6);
-          background: rgba(248, 250, 252, 0.5);
-          backdrop-filter: blur(5px);
+          background: rgba(15, 23, 42, 0.5);
+          backdrop-filter: blur(10px);
+          border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+          color: white;
         }
 
         .nc-panel-title {
           font-size: 1.5rem;
           font-weight: 600;
-          color: #1F2937;
           margin: 0 0 0.5rem 0;
           display: flex;
           align-items: center;
@@ -1158,21 +1135,23 @@ const CreateNCPanel = () => {
         }
 
         .nc-panel-subtitle {
-          color: #6B7280;
+          color: rgba(255, 255, 255, 0.8);
           margin: 0 0 1rem 0;
           font-size: 1rem;
         }
 
         .nc-step-info {
-          background: #E5E7EB;
-          color: #374151;
+          background: rgba(255, 255, 255, 0.1);
+          color: white;
           padding: 0.5rem 1rem;
           border-radius: 20px;
           font-size: 0.875rem;
           font-weight: 500;
           display: inline-block;
+          border: 1px solid rgba(255, 255, 255, 0.2);
         }
 
+        /* Form Container */
         .nc-form-container {
           padding: 2rem;
         }
@@ -1186,18 +1165,9 @@ const CreateNCPanel = () => {
           margin-bottom: 2rem;
         }
 
-        .nc-section-title {
-          color: #374151;
-          font-size: 1.125rem;
-          font-weight: 600;
-          margin-bottom: 1.5rem;
-          padding-bottom: 0.75rem;
-          border-bottom: 2px solid #e5e7eb;
-        }
-
         .nc-form-grid {
           display: grid;
-          grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+          grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
           gap: 1.5rem;
           margin-bottom: 1.5rem;
         }
@@ -1207,8 +1177,12 @@ const CreateNCPanel = () => {
           flex-direction: column;
         }
 
+        .nc-form-group-full {
+          grid-column: 1 / -1;
+        }
+
         .nc-form-label {
-          color: #374151;
+          color: #f1f5f9;
           font-weight: 600;
           margin-bottom: 0.5rem;
           font-size: 0.875rem;
@@ -1219,84 +1193,56 @@ const CreateNCPanel = () => {
           color: #ef4444;
         }
 
+        /* Inputs estilo Dashboard */
         .nc-form-input,
         .nc-form-select,
-        .nc-form-textarea-limited {
+        .nc-form-textarea {
           padding: 0.75rem;
-          border: 2px solid rgba(229, 231, 235, 0.8);
+          border: 2px solid rgba(255, 255, 255, 0.1);
           border-radius: 8px;
           font-size: 0.875rem;
           transition: all 0.3s ease;
-          background: rgba(255, 255, 255, 0.9);
-          backdrop-filter: blur(5px);
+          background: rgba(255, 255, 255, 0.05);
+          backdrop-filter: blur(10px);
+          color: #f1f5f9;
+        }
+
+        .nc-form-input::placeholder,
+        .nc-form-textarea::placeholder {
+          color: rgba(241, 245, 249, 0.5);
         }
 
         .nc-form-input:focus,
         .nc-form-select:focus,
-        .nc-form-textarea-limited:focus {
+        .nc-form-textarea:focus {
           outline: none;
           border-color: #667eea;
-          box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+          box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.2);
+          background: rgba(255, 255, 255, 0.1);
         }
 
         .nc-form-input.error,
         .nc-form-select.error,
-        .nc-form-textarea-limited.error {
+        .nc-form-textarea.error {
           border-color: #ef4444;
-          box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.1);
+          box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.2);
         }
 
         .nc-form-input.readonly {
-          background: rgba(249, 250, 251, 0.7);
-          color: #6b7280;
+          background: rgba(255, 255, 255, 0.02);
+          color: rgba(241, 245, 249, 0.6);
           cursor: not-allowed;
-          backdrop-filter: blur(5px);
-        }
-
-        .nc-input-with-button {
-          display: flex;
-          gap: 0.5rem;
-          align-items: center;
-        }
-
-        .nc-input-with-button .nc-form-input {
-          flex: 1;
-        }
-
-        .nc-generate-btn {
-          background: linear-gradient(135deg, #667eea, #764ba2);
-          color: white;
-          border: none;
-          border-radius: 6px;
-          padding: 0.75rem;
-          cursor: pointer;
-          transition: all 0.2s ease;
-          font-size: 1rem;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          min-width: 44px;
-          height: 44px;
-        }
-
-        .nc-generate-btn:hover {
-          transform: translateY(-1px);
-          box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
-        }
-
-        .nc-generate-btn:active {
-          transform: translateY(0);
         }
 
         .nc-field-help {
           font-size: 0.75rem;
-          color: #6b7280;
+          color: rgba(241, 245, 249, 0.6);
           margin-top: 0.25rem;
         }
 
         .nc-char-count {
           font-size: 0.75rem;
-          color: #6b7280;
+          color: rgba(241, 245, 249, 0.6);
           text-align: right;
           margin-top: 0.25rem;
         }
@@ -1314,21 +1260,59 @@ const CreateNCPanel = () => {
           font-size: 0.875rem;
         }
 
-        /* Photo Upload */
+        /* Input with buttons */
+        .nc-input-with-button {
+          display: flex;
+          gap: 0.5rem;
+          align-items: center;
+        }
+
+        .nc-input-with-button .nc-form-input {
+          flex: 1;
+        }
+
+        .nc-edit-btn,
+        .nc-generate-btn {
+          background: linear-gradient(135deg, #667eea, #764ba2);
+          color: white;
+          border: none;
+          border-radius: 8px;
+          padding: 0.75rem;
+          cursor: pointer;
+          transition: all 0.2s ease;
+          font-size: 1rem;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          min-width: 44px;
+          height: 44px;
+        }
+
+        .nc-edit-btn.active {
+          background: linear-gradient(135deg, #10B981, #059669);
+        }
+
+        .nc-edit-btn:hover,
+        .nc-generate-btn:hover {
+          transform: translateY(-1px);
+          box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+        }
+
+        /* Upload Area */
         .nc-photo-upload-area {
-          border: 3px dashed rgba(209, 213, 219, 0.8);
+          border: 3px dashed rgba(255, 255, 255, 0.2);
           border-radius: 12px;
           padding: 3rem 2rem;
           text-align: center;
           transition: all 0.3s ease;
-          background: rgba(255, 255, 255, 0.3);
-          backdrop-filter: blur(5px);
+          background: rgba(255, 255, 255, 0.05);
+          backdrop-filter: blur(10px);
           margin-bottom: 2rem;
         }
 
         .nc-photo-upload-area:hover {
           border-color: #667eea;
-          background: rgba(248, 250, 255, 0.5);
+          background: rgba(102, 126, 234, 0.1);
         }
 
         .nc-upload-content {
@@ -1336,6 +1320,7 @@ const CreateNCPanel = () => {
           flex-direction: column;
           align-items: center;
           gap: 1rem;
+          color: #f1f5f9;
         }
 
         .nc-upload-icon {
@@ -1349,7 +1334,7 @@ const CreateNCPanel = () => {
           gap: 1rem;
           justify-content: center;
           font-size: 0.75rem;
-          color: #6b7280;
+          color: rgba(241, 245, 249, 0.6);
         }
 
         .nc-file-input {
@@ -1383,6 +1368,11 @@ const CreateNCPanel = () => {
           margin-top: 2rem;
         }
 
+        .nc-photo-preview-section h4 {
+          color: #f1f5f9;
+          margin-bottom: 1rem;
+        }
+
         .nc-photo-preview-grid {
           display: grid;
           grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
@@ -1394,8 +1384,11 @@ const CreateNCPanel = () => {
           position: relative;
           border-radius: 8px;
           overflow: hidden;
-          box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+          box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
           transition: transform 0.3s ease;
+          background: rgba(255, 255, 255, 0.05);
+          backdrop-filter: blur(10px);
+          border: 1px solid rgba(255, 255, 255, 0.1);
         }
 
         .nc-photo-preview-card:hover {
@@ -1445,9 +1438,8 @@ const CreateNCPanel = () => {
           display: flex;
           align-items: center;
           padding: 1rem;
-          background: rgba(248, 250, 252, 0.8);
-          backdrop-filter: blur(5px);
           height: 150px;
+          color: #f1f5f9;
         }
 
         .nc-pdf-icon {
@@ -1461,7 +1453,7 @@ const CreateNCPanel = () => {
 
         .nc-file-size {
           font-size: 0.75rem;
-          color: #6b7280;
+          color: rgba(241, 245, 249, 0.6);
         }
 
         .nc-remove-photo {
@@ -1483,11 +1475,12 @@ const CreateNCPanel = () => {
           background: #dc2626;
         }
 
+        /* Navigation estilo Dashboard */
         .nc-wizard-navigation {
-          background: rgba(249, 250, 251, 0.5);
-          backdrop-filter: blur(5px);
+          background: rgba(15, 23, 42, 0.5);
+          backdrop-filter: blur(10px);
           padding: 2rem;
-          border-top: 1px solid rgba(229, 231, 235, 0.6);
+          border-top: 1px solid rgba(255, 255, 255, 0.1);
           display: flex;
           justify-content: space-between;
           align-items: center;
@@ -1495,7 +1488,7 @@ const CreateNCPanel = () => {
 
         .nc-step-counter {
           font-size: 0.875rem;
-          color: #6B7280;
+          color: rgba(241, 245, 249, 0.6);
           font-weight: 500;
         }
 
@@ -1506,7 +1499,7 @@ const CreateNCPanel = () => {
 
         .nc-btn {
           padding: 0.75rem 1.5rem;
-          border-radius: 6px;
+          border-radius: 8px;
           font-weight: 500;
           font-size: 0.875rem;
           cursor: pointer;
@@ -1515,6 +1508,7 @@ const CreateNCPanel = () => {
           display: flex;
           align-items: center;
           gap: 0.5rem;
+          min-height: 44px;
         }
 
         .nc-btn:disabled {
@@ -1523,43 +1517,44 @@ const CreateNCPanel = () => {
         }
 
         .nc-btn-primary {
-          background: #667eea;
+          background: linear-gradient(135deg, #667eea, #764ba2);
           color: white;
         }
 
         .nc-btn-primary:hover:not(:disabled) {
-          background: #5a67d8;
           transform: translateY(-1px);
+          box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
         }
 
         .nc-btn-secondary {
-          background: #6B7280;
-          color: white;
+          background: rgba(107, 114, 128, 0.3);
+          color: #f1f5f9;
+          border: 1px solid rgba(255, 255, 255, 0.2);
         }
 
         .nc-btn-secondary:hover:not(:disabled) {
-          background: #4B5563;
+          background: rgba(107, 114, 128, 0.5);
           transform: translateY(-1px);
         }
 
         .nc-btn-success {
-          background: #10B981;
+          background: linear-gradient(135deg, #10B981, #059669);
           color: white;
         }
 
         .nc-btn-success:hover:not(:disabled) {
-          background: #059669;
           transform: translateY(-1px);
+          box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
         }
 
         .nc-btn-combo {
-          background: linear-gradient(135deg, #667eea, #764ba2);
+          background: linear-gradient(135deg, #f59e0b, #d97706);
           color: white;
         }
 
         .nc-btn-combo:hover:not(:disabled) {
           transform: translateY(-1px);
-          box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+          box-shadow: 0 4px 12px rgba(245, 158, 11, 0.3);
         }
 
         .nc-btn-spinner {
@@ -1581,8 +1576,6 @@ const CreateNCPanel = () => {
           .nc-create-panel {
             max-width: 95%;
             margin: 1rem auto;
-            background: rgba(242, 245, 250, 0.8);
-            backdrop-filter: blur(8px);
           }
 
           .nc-step-progress-container {
@@ -1656,6 +1649,7 @@ const CreateNCPanel = () => {
             width: 100%;
           }
 
+          .nc-edit-btn,
           .nc-generate-btn {
             width: 100%;
             min-width: auto;
@@ -1663,9 +1657,9 @@ const CreateNCPanel = () => {
         }
       `}</style>
 
-      {/* ✅ MAIN COMPONENT DIV - SIN CSS INTERNO */}
+      {/* ✅ MAIN COMPONENT DIV - DISEÑO DASHBOARD MODERNO */}
       <div className="nc-panel-card nc-create-panel">
-        {/* Success Message - SOLO UNA VEZ */}
+        {/* Success Message */}
         {savedSuccessfully && (
           <div className="nc-success-banner">
             <span className="nc-success-icon">✅</span>
@@ -1683,12 +1677,7 @@ const CreateNCPanel = () => {
         {/* Panel Header */}
         <div className="nc-panel-header">
           <h3 className="nc-panel-title">
-            <span className="nc-panel-icon">{
-              steps[currentStep].id === 'basic' ? '➕' : 
-              steps[currentStep].id === 'details' ? '🔍' :
-              steps[currentStep].id === 'treatment' ? '⚙️' :
-              steps[currentStep].id === 'corrective' ? '🔧' : '📸'
-            }</span>
+            <span className="nc-panel-icon">{steps[currentStep].icon}</span>
             {steps[currentStep].title}
           </h3>
           <p className="nc-panel-subtitle">

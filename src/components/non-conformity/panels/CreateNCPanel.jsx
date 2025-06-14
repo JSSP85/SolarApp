@@ -158,16 +158,29 @@ const CreateNCPanel = () => {
     { value: 'reject', label: '❌ Reject' }
   ];
 
-  // Generate new NC number on component mount
+  // ✅ MODIFICADO: Generate new NC number starting from 565
   useEffect(() => {
     if (!currentNC.number) {
-      const newNumber = helpers.generateNCNumber();
+      // Custom NC number generation starting from 565
+      const year = new Date().getFullYear();
+      const existingNumbers = state.ncList
+        .map(nc => nc.number)
+        .filter(num => num && num.startsWith(`RNC-${year}`))
+        .map(num => parseInt(num.split('-')[2]) || 0)
+        .filter(num => !isNaN(num));
+      
+      // ✅ CAMBIO: Comenzar desde 565 en lugar de 1
+      const nextNumber = existingNumbers.length > 0 ? 
+        Math.max(...existingNumbers) + 1 : 565;
+      
+      const newNumber = `RNC-${year}-${nextNumber.toString().padStart(3, '0')}`;
+      
       dispatch({
         type: actions.UPDATE_NC_FIELD,
         payload: { field: 'number', value: newNumber }
       });
     }
-  }, [currentNC.number, dispatch, helpers, actions]);
+  }, [currentNC.number, dispatch, state.ncList, actions]);
 
   // Handle field changes
   const handleFieldChange = (field, value) => {
@@ -919,11 +932,13 @@ const CreateNCPanel = () => {
       {/* ✅ CSS STYLES OUTSIDE OF MAIN DIV */}
       <style>{`
         .nc-create-panel {
-          background: white;
+          background: rgba(242, 245, 250, 0.7);
+          backdrop-filter: blur(10px);
           border-radius: 12px;
           box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+          border: 1px solid rgba(255, 255, 255, 0.3);
           margin: 2rem auto;
-          max-width: 1200px;
+          max-width: 900px;
           overflow: hidden;
         }
 
@@ -1074,8 +1089,9 @@ const CreateNCPanel = () => {
 
         .nc-panel-header {
           padding: 2rem;
-          border-bottom: 1px solid #E5E7EB;
-          background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+          border-bottom: 1px solid rgba(229, 231, 235, 0.6);
+          background: rgba(248, 250, 252, 0.5);
+          backdrop-filter: blur(5px);
         }
 
         .nc-panel-title {
@@ -1158,11 +1174,12 @@ const CreateNCPanel = () => {
         .nc-form-select,
         .nc-form-textarea-limited {
           padding: 0.75rem;
-          border: 2px solid #e5e7eb;
+          border: 2px solid rgba(229, 231, 235, 0.8);
           border-radius: 8px;
           font-size: 0.875rem;
           transition: all 0.3s ease;
-          background: white;
+          background: rgba(255, 255, 255, 0.9);
+          backdrop-filter: blur(5px);
         }
 
         .nc-form-input:focus,
@@ -1181,9 +1198,10 @@ const CreateNCPanel = () => {
         }
 
         .nc-form-input.readonly {
-          background: #f9fafb;
+          background: rgba(249, 250, 251, 0.7);
           color: #6b7280;
           cursor: not-allowed;
+          backdrop-filter: blur(5px);
         }
 
         .nc-field-help {
@@ -1214,18 +1232,19 @@ const CreateNCPanel = () => {
 
         /* Photo Upload */
         .nc-photo-upload-area {
-          border: 3px dashed #d1d5db;
+          border: 3px dashed rgba(209, 213, 219, 0.8);
           border-radius: 12px;
           padding: 3rem 2rem;
           text-align: center;
           transition: all 0.3s ease;
-          background: #fafbfc;
+          background: rgba(255, 255, 255, 0.3);
+          backdrop-filter: blur(5px);
           margin-bottom: 2rem;
         }
 
         .nc-photo-upload-area:hover {
           border-color: #667eea;
-          background: #f8faff;
+          background: rgba(248, 250, 255, 0.5);
         }
 
         .nc-upload-content {
@@ -1342,7 +1361,8 @@ const CreateNCPanel = () => {
           display: flex;
           align-items: center;
           padding: 1rem;
-          background: #f8fafc;
+          background: rgba(248, 250, 252, 0.8);
+          backdrop-filter: blur(5px);
           height: 150px;
         }
 
@@ -1380,9 +1400,10 @@ const CreateNCPanel = () => {
         }
 
         .nc-wizard-navigation {
-          background: #F9FAFB;
+          background: rgba(249, 250, 251, 0.5);
+          backdrop-filter: blur(5px);
           padding: 2rem;
-          border-top: 1px solid #E5E7EB;
+          border-top: 1px solid rgba(229, 231, 235, 0.6);
           display: flex;
           justify-content: space-between;
           align-items: center;
@@ -1476,6 +1497,8 @@ const CreateNCPanel = () => {
           .nc-create-panel {
             max-width: 95%;
             margin: 1rem auto;
+            background: rgba(242, 245, 250, 0.8);
+            backdrop-filter: blur(8px);
           }
 
           .nc-step-progress-container {

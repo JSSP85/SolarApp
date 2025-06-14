@@ -960,20 +960,20 @@ const CreateNCPanel = () => {
   // Main component return
   return (
     <>
-      {/* ✅ NUEVO DISEÑO - ESTILO DASHBOARD MODERNO */}
+      {/* ✅ NUEVO DISEÑO - ESTILO DASHBOARD MODERNO - CORREGIDO */}
       <style>{`
-        /* Contenedor principal estilo Dashboard */
-        .nc-create-panel {
-          background: rgba(15, 23, 42, 0.7);
-          backdrop-filter: blur(20px);
-          border-radius: 20px;
-          border: 1px solid rgba(255, 255, 255, 0.1);
-          margin: 2rem auto;
-          max-width: 900px;
-          overflow: hidden;
+        /* ✅ OVERRIDE GLOBAL: Eliminar fondo blanco de panel-card */
+        .nc-panel-card.nc-create-panel {
+          background: rgba(15, 23, 42, 0.7) !important;
+          backdrop-filter: blur(20px) !important;
+          border-radius: 20px !important;
+          border: 1px solid rgba(255, 255, 255, 0.1) !important;
+          margin: 2rem auto !important;
+          max-width: 900px !important;
+          overflow: hidden !important;
           box-shadow: 
             0 8px 32px rgba(0, 0, 0, 0.3),
-            inset 0 1px 0 rgba(255, 255, 255, 0.1);
+            inset 0 1px 0 rgba(255, 255, 255, 0.1) !important;
         }
 
         /* Success Banner */
@@ -1166,19 +1166,21 @@ const CreateNCPanel = () => {
         }
 
         .nc-form-grid {
-          display: grid;
-          grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-          gap: 1.5rem;
-          margin-bottom: 1.5rem;
+          display: grid !important;
+          grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)) !important;
+          gap: 1.5rem !important;
+          margin-bottom: 1.5rem !important;
+          align-items: start !important;
         }
 
         .nc-form-group {
-          display: flex;
-          flex-direction: column;
+          display: flex !important;
+          flex-direction: column !important;
+          align-items: stretch !important;
         }
 
         .nc-form-group-full {
-          grid-column: 1 / -1;
+          grid-column: 1 / -1 !important;
         }
 
         .nc-form-label {
@@ -1193,45 +1195,46 @@ const CreateNCPanel = () => {
           color: #ef4444;
         }
 
-        /* Inputs estilo Dashboard */
+        /* Inputs estilo Dashboard - TEXTO CORREGIDO */
         .nc-form-input,
         .nc-form-select,
         .nc-form-textarea {
-          padding: 0.75rem;
-          border: 2px solid rgba(255, 255, 255, 0.1);
-          border-radius: 8px;
-          font-size: 0.875rem;
-          transition: all 0.3s ease;
-          background: rgba(255, 255, 255, 0.05);
-          backdrop-filter: blur(10px);
-          color: #f1f5f9;
+          padding: 0.75rem !important;
+          border: 2px solid rgba(255, 255, 255, 0.1) !important;
+          border-radius: 8px !important;
+          font-size: 0.875rem !important;
+          transition: all 0.3s ease !important;
+          background: rgba(255, 255, 255, 0.95) !important;
+          backdrop-filter: blur(5px) !important;
+          color: #1f2937 !important;
+          width: 100% !important;
         }
 
         .nc-form-input::placeholder,
         .nc-form-textarea::placeholder {
-          color: rgba(241, 245, 249, 0.5);
+          color: #6b7280 !important;
         }
 
         .nc-form-input:focus,
         .nc-form-select:focus,
         .nc-form-textarea:focus {
-          outline: none;
-          border-color: #667eea;
-          box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.2);
-          background: rgba(255, 255, 255, 0.1);
+          outline: none !important;
+          border-color: #667eea !important;
+          box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.2) !important;
+          background: rgba(255, 255, 255, 1) !important;
         }
 
         .nc-form-input.error,
         .nc-form-select.error,
         .nc-form-textarea.error {
-          border-color: #ef4444;
-          box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.2);
+          border-color: #ef4444 !important;
+          box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.2) !important;
         }
 
         .nc-form-input.readonly {
-          background: rgba(255, 255, 255, 0.02);
-          color: rgba(241, 245, 249, 0.6);
-          cursor: not-allowed;
+          background: rgba(249, 250, 251, 0.9) !important;
+          color: #6b7280 !important;
+          cursor: not-allowed !important;
         }
 
         .nc-field-help {
@@ -1248,54 +1251,59 @@ const CreateNCPanel = () => {
         }
 
         .nc-validation-error {
-          color: #ef4444;
-          font-size: 0.75rem;
-          margin-top: 0.25rem;
-          display: flex;
-          align-items: center;
-          gap: 0.25rem;
+          color: #ef4444 !important;
+          font-size: 0.75rem !important;
+          margin-top: 0.25rem !important;
+          display: flex !important;
+          align-items: center !important;
+          gap: 0.25rem !important;
+          text-align: left !important;
         }
 
         .nc-validation-icon {
-          font-size: 0.875rem;
+          font-size: 0.875rem !important;
+          flex-shrink: 0 !important;
         }
 
-        /* Input with buttons */
+        /* Input with buttons - ALINEACIÓN MEJORADA */
         .nc-input-with-button {
-          display: flex;
-          gap: 0.5rem;
-          align-items: center;
+          display: flex !important;
+          gap: 0.5rem !important;
+          align-items: flex-end !important;
+          width: 100% !important;
         }
 
         .nc-input-with-button .nc-form-input {
-          flex: 1;
+          flex: 1 !important;
+          margin: 0 !important;
         }
 
         .nc-edit-btn,
         .nc-generate-btn {
-          background: linear-gradient(135deg, #667eea, #764ba2);
-          color: white;
-          border: none;
-          border-radius: 8px;
-          padding: 0.75rem;
-          cursor: pointer;
-          transition: all 0.2s ease;
-          font-size: 1rem;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          min-width: 44px;
-          height: 44px;
+          background: linear-gradient(135deg, #667eea, #764ba2) !important;
+          color: white !important;
+          border: none !important;
+          border-radius: 8px !important;
+          padding: 0.75rem !important;
+          cursor: pointer !important;
+          transition: all 0.2s ease !important;
+          font-size: 1rem !important;
+          display: flex !important;
+          align-items: center !important;
+          justify-content: center !important;
+          min-width: 44px !important;
+          height: 44px !important;
+          flex-shrink: 0 !important;
         }
 
         .nc-edit-btn.active {
-          background: linear-gradient(135deg, #10B981, #059669);
+          background: linear-gradient(135deg, #10B981, #059669) !important;
         }
 
         .nc-edit-btn:hover,
         .nc-generate-btn:hover {
-          transform: translateY(-1px);
-          box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+          transform: translateY(-1px) !important;
+          box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3) !important;
         }
 
         /* Upload Area */
@@ -1640,19 +1648,21 @@ const CreateNCPanel = () => {
           }
 
           .nc-input-with-button {
-            flex-direction: column;
-            gap: 0.75rem;
+            flex-direction: column !important;
+            gap: 0.75rem !important;
+            align-items: stretch !important;
           }
 
           .nc-input-with-button .nc-form-input {
-            flex: none;
-            width: 100%;
+            flex: none !important;
+            width: 100% !important;
           }
 
           .nc-edit-btn,
           .nc-generate-btn {
-            width: 100%;
-            min-width: auto;
+            width: 100% !important;
+            min-width: auto !important;
+            justify-content: center !important;
           }
         }
       `}</style>

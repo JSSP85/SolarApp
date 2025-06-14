@@ -498,152 +498,154 @@ const CreateNCPanel = () => {
       case 'basic':
         return (
           <div className="nc-step-content">
-            <div className="nc-form-section">
-              <div className="nc-form-grid">
-                {/* NC Number (Auto-generated con opción manual) */}
-                <div className="nc-form-group">
-                  <label className="nc-form-label">NC Number</label>
-                  <div className="nc-input-with-button">
-                    <input
-                      type="text"
-                      className={`nc-form-input ${manualNumberEdit ? '' : 'readonly'}`}
-                      value={currentNC.number || ''}
-                      onChange={(e) => manualNumberEdit && handleFieldChange('number', e.target.value)}
-                      placeholder="e.g., RNC-565"
-                      readOnly={!manualNumberEdit}
-                    />
+            {/* Header especial para NC Number y Priority */}
+            <div className="nc-form-grid-header">
+              {/* NC Number (Auto-generated con opción manual) */}
+              <div className="nc-form-group">
+                <label className="nc-form-label">NC Number</label>
+                <div className="nc-input-with-button">
+                  <input
+                    type="text"
+                    className={`nc-form-input ${manualNumberEdit ? '' : 'readonly'}`}
+                    value={currentNC.number || ''}
+                    onChange={(e) => manualNumberEdit && handleFieldChange('number', e.target.value)}
+                    placeholder="e.g., RNC-565"
+                    readOnly={!manualNumberEdit}
+                  />
+                  <button
+                    type="button"
+                    className={`nc-edit-btn ${manualNumberEdit ? 'active' : ''}`}
+                    onClick={() => setManualNumberEdit(!manualNumberEdit)}
+                    title={manualNumberEdit ? 'Lock automatic numbering' : 'Enable manual editing'}
+                  >
+                    {manualNumberEdit ? '🔒' : '✏️'}
+                  </button>
+                  {!manualNumberEdit && (
                     <button
                       type="button"
-                      className={`nc-edit-btn ${manualNumberEdit ? 'active' : ''}`}
-                      onClick={() => setManualNumberEdit(!manualNumberEdit)}
-                      title={manualNumberEdit ? 'Lock automatic numbering' : 'Enable manual editing'}
+                      className="nc-generate-btn"
+                      onClick={generateNewNumber}
+                      title="Generate next available number"
                     >
-                      {manualNumberEdit ? '🔒' : '✏️'}
+                      🔄
                     </button>
-                    {!manualNumberEdit && (
-                      <button
-                        type="button"
-                        className="nc-generate-btn"
-                        onClick={generateNewNumber}
-                        title="Generate next available number"
-                      >
-                        🔄
-                      </button>
-                    )}
-                  </div>
-                  <div className="nc-field-help">
-                    {manualNumberEdit ? 'Manual editing enabled for migration' : 'Auto-generated number'}
-                  </div>
-                </div>
-
-                {/* Priority */}
-                <div className="nc-form-group">
-                  <label className="nc-form-label required">Priority *</label>
-                  <select
-                    className={`nc-form-select ${validationErrors.priority ? 'error' : ''}`}
-                    value={currentNC.priority}
-                    onChange={(e) => handleFieldChange('priority', e.target.value)}
-                  >
-                    {priorityOptions.map(option => (
-                      <option key={option.value} value={option.value}>
-                        {option.label}
-                      </option>
-                    ))}
-                  </select>
-                  {showValidation && validationErrors.priority && (
-                    <ValidationMessage message={validationErrors.priority} />
                   )}
                 </div>
-
-                {/* Project */}
-                <div className="nc-form-group">
-                  <label className="nc-form-label required">Project *</label>
-                  <input
-                    type="text"
-                    className={`nc-form-input ${validationErrors.project ? 'error' : ''}`}
-                    value={currentNC.project}
-                    onChange={(e) => handleFieldChange('project', e.target.value)}
-                    placeholder="e.g., Solar Installation Project"
-                  />
-                  {showValidation && validationErrors.project && (
-                    <ValidationMessage message={validationErrors.project} />
-                  )}
+                <div className="nc-field-help">
+                  {manualNumberEdit ? 'Manual editing enabled for migration' : 'Auto-generated number'}
                 </div>
+              </div>
 
-                {/* Project Code */}
-                <div className="nc-form-group">
-                  <label className="nc-form-label required">Project Code CM *</label>
-                  <input
-                    type="text"
-                    className={`nc-form-input ${validationErrors.projectCode ? 'error' : ''}`}
-                    value={currentNC.projectCode}
-                    onChange={(e) => handleFieldChange('projectCode', e.target.value)}
-                    placeholder="e.g., CM-2024-001"
-                  />
-                  {showValidation && validationErrors.projectCode && (
-                    <ValidationMessage message={validationErrors.projectCode} />
-                  )}
-                  <div className="nc-field-help">
-                    Enter the official project code assigned by project management.
-                  </div>
-                </div>
+              {/* Priority */}
+              <div className="nc-form-group">
+                <label className="nc-form-label required">Priority *</label>
+                <select
+                  className={`nc-form-select ${validationErrors.priority ? 'error' : ''}`}
+                  value={currentNC.priority}
+                  onChange={(e) => handleFieldChange('priority', e.target.value)}
+                >
+                  {priorityOptions.map(option => (
+                    <option key={option.value} value={option.value}>
+                      {option.label}
+                    </option>
+                  ))}
+                </select>
+                {showValidation && validationErrors.priority && (
+                  <ValidationMessage message={validationErrors.priority} />
+                )}
+              </div>
+            </div>
 
-                {/* Date */}
-                <div className="nc-form-group">
-                  <label className="nc-form-label required">Date *</label>
-                  <input
-                    type="date"
-                    className={`nc-form-input ${validationErrors.date ? 'error' : ''}`}
-                    value={currentNC.date}
-                    onChange={(e) => handleFieldChange('date', e.target.value)}
-                    max={new Date().toISOString().split('T')[0]} // No future dates
-                  />
-                  {showValidation && validationErrors.date && (
-                    <ValidationMessage message={validationErrors.date} />
-                  )}
-                </div>
+            {/* Grid principal para el resto de campos */}
+            <div className="nc-form-grid">
+              {/* Project */}
+              <div className="nc-form-group">
+                <label className="nc-form-label required">Project *</label>
+                <input
+                  type="text"
+                  className={`nc-form-input ${validationErrors.project ? 'error' : ''}`}
+                  value={currentNC.project}
+                  onChange={(e) => handleFieldChange('project', e.target.value)}
+                  placeholder="e.g., Solar Installation Project"
+                />
+                {showValidation && validationErrors.project && (
+                  <ValidationMessage message={validationErrors.project} />
+                )}
+              </div>
 
-                {/* Inspector Name */}
-                <div className="nc-form-group">
-                  <label className="nc-form-label required">Inspector Name *</label>
-                  <input
-                    type="text"
-                    className={`nc-form-input ${validationErrors.createdBy ? 'error' : ''}`}
-                    value={currentNC.createdBy}
-                    onChange={(e) => handleFieldChange('createdBy', e.target.value)}
-                    placeholder="e.g., John Smith"
-                  />
-                  {showValidation && validationErrors.createdBy && (
-                    <ValidationMessage message={validationErrors.createdBy} />
-                  )}
+              {/* Project Code */}
+              <div className="nc-form-group">
+                <label className="nc-form-label required">Project Code CM *</label>
+                <input
+                  type="text"
+                  className={`nc-form-input ${validationErrors.projectCode ? 'error' : ''}`}
+                  value={currentNC.projectCode}
+                  onChange={(e) => handleFieldChange('projectCode', e.target.value)}
+                  placeholder="e.g., CM-2024-001"
+                />
+                {showValidation && validationErrors.projectCode && (
+                  <ValidationMessage message={validationErrors.projectCode} />
+                )}
+                <div className="nc-field-help">
+                  Enter the official project code assigned by project management.
                 </div>
+              </div>
 
-                {/* Sector */}
-                <div className="nc-form-group">
-                  <label className="nc-form-label required">Sector *</label>
-                  <input
-                    type="text"
-                    className={`nc-form-input ${validationErrors.sector ? 'error' : ''}`}
-                    value={currentNC.sector}
-                    onChange={(e) => handleFieldChange('sector', e.target.value)}
-                    placeholder="e.g., Quality Control, Production, Installation"
-                  />
-                  {showValidation && validationErrors.sector && (
-                    <ValidationMessage message={validationErrors.sector} />
-                  )}
-                </div>
+              {/* Date */}
+              <div className="nc-form-group">
+                <label className="nc-form-label required">Date *</label>
+                <input
+                  type="date"
+                  className={`nc-form-input ${validationErrors.date ? 'error' : ''}`}
+                  value={currentNC.date}
+                  onChange={(e) => handleFieldChange('date', e.target.value)}
+                  max={new Date().toISOString().split('T')[0]} // No future dates
+                />
+                {showValidation && validationErrors.date && (
+                  <ValidationMessage message={validationErrors.date} />
+                )}
+              </div>
 
-                {/* Supplier */}
-                <div className="nc-form-group">
-                  <label className="nc-form-label">Supplier</label>
-                  <input
-                    type="text"
-                    className="nc-form-input"
-                    value={currentNC.supplier}
-                    onChange={(e) => handleFieldChange('supplier', e.target.value)}
-                    placeholder="e.g., SCI-FAPI"
-                  />
-                </div>
+              {/* Inspector Name */}
+              <div className="nc-form-group">
+                <label className="nc-form-label required">Inspector Name *</label>
+                <input
+                  type="text"
+                  className={`nc-form-input ${validationErrors.createdBy ? 'error' : ''}`}
+                  value={currentNC.createdBy}
+                  onChange={(e) => handleFieldChange('createdBy', e.target.value)}
+                  placeholder="e.g., John Smith"
+                />
+                {showValidation && validationErrors.createdBy && (
+                  <ValidationMessage message={validationErrors.createdBy} />
+                )}
+              </div>
+
+              {/* Sector */}
+              <div className="nc-form-group">
+                <label className="nc-form-label required">Sector *</label>
+                <input
+                  type="text"
+                  className={`nc-form-input ${validationErrors.sector ? 'error' : ''}`}
+                  value={currentNC.sector}
+                  onChange={(e) => handleFieldChange('sector', e.target.value)}
+                  placeholder="e.g., Quality Control, Production, Installation"
+                />
+                {showValidation && validationErrors.sector && (
+                  <ValidationMessage message={validationErrors.sector} />
+                )}
+              </div>
+
+              {/* Supplier */}
+              <div className="nc-form-group">
+                <label className="nc-form-label">Supplier</label>
+                <input
+                  type="text"
+                  className="nc-form-input"
+                  value={currentNC.supplier}
+                  onChange={(e) => handleFieldChange('supplier', e.target.value)}
+                  placeholder="e.g., SCI-FAPI"
+                />
               </div>
             </div>
           </div>
@@ -725,7 +727,7 @@ const CreateNCPanel = () => {
                 )}
               </div>
 
-              {/* Component Description */}
+              {/* Component Description - Span full width */}
               <div className="nc-form-group nc-form-group-full">
                 <label className="nc-form-label">Component Description</label>
                 <input
@@ -737,7 +739,7 @@ const CreateNCPanel = () => {
                 />
               </div>
 
-              {/* Problem Description */}
+              {/* Problem Description - Span full width */}
               <div className="nc-form-group nc-form-group-full">
                 <label className="nc-form-label required">Problem Description *</label>
                 <textarea
@@ -766,6 +768,7 @@ const CreateNCPanel = () => {
         return (
           <div className="nc-step-content">
             <div className="nc-form-grid">
+              {/* Proposed Disposition */}
               <div className="nc-form-group">
                 <label className="nc-form-label">Proposed Disposition</label>
                 <select
@@ -781,11 +784,17 @@ const CreateNCPanel = () => {
                 </select>
               </div>
 
+              {/* Placeholder para balance visual */}
+              <div className="nc-form-group">
+                {/* Espacio reservado para futuras opciones */}
+              </div>
+
+              {/* Containment Action - Full width */}
               <div className="nc-form-group nc-form-group-full">
                 <label className="nc-form-label">Containment Action</label>
                 <textarea
                   className="nc-form-textarea"
-                  rows="3"
+                  rows="4"
                   value={currentNC.containmentAction}
                   onChange={(e) => {
                     if (e.target.value.length <= 300) {
@@ -806,11 +815,12 @@ const CreateNCPanel = () => {
         return (
           <div className="nc-step-content">
             <div className="nc-form-grid">
+              {/* Root Cause Analysis - Full width */}
               <div className="nc-form-group nc-form-group-full">
                 <label className="nc-form-label">Root Cause Analysis Description</label>
                 <textarea
                   className="nc-form-textarea"
-                  rows="3"
+                  rows="4"
                   value={currentNC.rootCauseAnalysis}
                   onChange={(e) => {
                     if (e.target.value.length <= 400) {
@@ -824,11 +834,12 @@ const CreateNCPanel = () => {
                 </div>
               </div>
 
+              {/* Corrective Action Plan - Full width */}
               <div className="nc-form-group nc-form-group-full">
                 <label className="nc-form-label">Corrective Action Plan</label>
                 <textarea
                   className="nc-form-textarea"
-                  rows="3"
+                  rows="4"
                   value={currentNC.correctiveAction}
                   onChange={(e) => {
                     if (e.target.value.length <= 400) {
@@ -842,6 +853,7 @@ const CreateNCPanel = () => {
                 </div>
               </div>
 
+              {/* Planned Closure Date */}
               <div className="nc-form-group">
                 <label className="nc-form-label">Planned Closure Date</label>
                 <input
@@ -853,6 +865,7 @@ const CreateNCPanel = () => {
                 />
               </div>
 
+              {/* Assigned To */}
               <div className="nc-form-group">
                 <label className="nc-form-label">Assigned To</label>
                 <input
@@ -960,16 +973,24 @@ const CreateNCPanel = () => {
   // Main component return
   return (
     <>
-      {/* ✅ NUEVO DISEÑO - ESTILO DASHBOARD MODERNO - CORREGIDO */}
+      {/* ✅ NUEVO DISEÑO - SOLUCIÓN COMPLETA + LAYOUT PROFESIONAL */}
       <style>{`
-        /* ✅ OVERRIDE GLOBAL: Eliminar fondo blanco de panel-card */
+        /* ✅ SOLUCIÓN: Eliminar fondo blanco del panel-container */
+        .nc-panel-container {
+          background: transparent !important;
+          border: none !important;
+          box-shadow: none !important;
+          border-radius: 0 !important;
+        }
+
+        /* ✅ OVERRIDE GLOBAL: Contenedor principal mejorado */
         .nc-panel-card.nc-create-panel {
           background: rgba(15, 23, 42, 0.7) !important;
           backdrop-filter: blur(20px) !important;
           border-radius: 20px !important;
           border: 1px solid rgba(255, 255, 255, 0.1) !important;
-          margin: 2rem auto !important;
-          max-width: 900px !important;
+          margin: 1rem auto !important;
+          max-width: 1100px !important;
           overflow: hidden !important;
           box-shadow: 
             0 8px 32px rgba(0, 0, 0, 0.3),
@@ -1151,36 +1172,50 @@ const CreateNCPanel = () => {
           border: 1px solid rgba(255, 255, 255, 0.2);
         }
 
-        /* Form Container */
+        /* Form Container - LAYOUT PROFESIONAL */
         .nc-form-container {
-          padding: 2rem;
+          padding: 2rem 3rem !important;
         }
 
         .nc-step-content {
-          max-width: 800px;
-          margin: 0 auto;
+          max-width: 100% !important;
+          margin: 0 auto !important;
         }
 
         .nc-form-section {
-          margin-bottom: 2rem;
+          margin-bottom: 2rem !important;
         }
 
+        /* Grid mejorado - 2 columnas balanceadas */
         .nc-form-grid {
           display: grid !important;
-          grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)) !important;
-          gap: 1.5rem !important;
-          margin-bottom: 1.5rem !important;
+          grid-template-columns: 1fr 1fr !important;
+          gap: 2rem 3rem !important;
+          margin-bottom: 2rem !important;
           align-items: start !important;
+        }
+
+        /* Campos que ocupan toda la línea */
+        .nc-form-group-full {
+          grid-column: 1 / -1 !important;
+        }
+
+        /* Grupo especial para NC Number + Priority */
+        .nc-form-grid-header {
+          display: grid !important;
+          grid-template-columns: 1fr 1fr !important;
+          gap: 2rem 3rem !important;
+          margin-bottom: 2.5rem !important;
+          padding: 1.5rem !important;
+          background: rgba(255, 255, 255, 0.05) !important;
+          border-radius: 12px !important;
+          border: 1px solid rgba(255, 255, 255, 0.1) !important;
         }
 
         .nc-form-group {
           display: flex !important;
           flex-direction: column !important;
           align-items: stretch !important;
-        }
-
-        .nc-form-group-full {
-          grid-column: 1 / -1 !important;
         }
 
         .nc-form-label {
@@ -1208,6 +1243,13 @@ const CreateNCPanel = () => {
           backdrop-filter: blur(5px) !important;
           color: #1f2937 !important;
           width: 100% !important;
+          font-family: inherit !important;
+        }
+
+        .nc-form-textarea {
+          resize: vertical !important;
+          min-height: 100px !important;
+          line-height: 1.5 !important;
         }
 
         .nc-form-input::placeholder,
@@ -1579,72 +1621,92 @@ const CreateNCPanel = () => {
           100% { transform: rotate(360deg); }
         }
 
-        /* Responsive Design */
+        /* Responsive Design - MEJORADO */
+        @media (max-width: 1200px) {
+          .nc-form-container {
+            padding: 2rem !important;
+          }
+        }
+
+        @media (max-width: 900px) {
+          .nc-form-grid,
+          .nc-form-grid-header {
+            grid-template-columns: 1fr !important;
+            gap: 1.5rem !important;
+          }
+        }
+
         @media (max-width: 768px) {
           .nc-create-panel {
-            max-width: 95%;
-            margin: 1rem auto;
-          }
-
-          .nc-step-progress-container {
-            padding: 1rem;
-          }
-
-          .nc-step-circle {
-            width: 40px;
-            height: 40px;
-            font-size: 0.9rem;
-          }
-
-          .nc-step-label {
-            font-size: 0.75rem;
-            max-width: 80px;
+            max-width: 95% !important;
+            margin: 1rem auto !important;
           }
 
           .nc-form-container {
-            padding: 1.5rem;
+            padding: 1.5rem !important;
           }
 
-          .nc-form-grid {
-            grid-template-columns: 1fr;
-            gap: 1rem;
+          /* Grid responsive - Una columna en móviles */
+          .nc-form-grid,
+          .nc-form-grid-header {
+            grid-template-columns: 1fr !important;
+            gap: 1.5rem !important;
+          }
+
+          .nc-form-grid-header {
+            padding: 1rem !important;
+          }
+
+          .nc-step-progress-container {
+            padding: 1rem !important;
+          }
+
+          .nc-step-circle {
+            width: 40px !important;
+            height: 40px !important;
+            font-size: 0.9rem !important;
+          }
+
+          .nc-step-label {
+            font-size: 0.75rem !important;
+            max-width: 80px !important;
           }
 
           .nc-photo-preview-grid {
-            grid-template-columns: 1fr;
-            gap: 1rem;
+            grid-template-columns: 1fr !important;
+            gap: 1rem !important;
           }
 
           .nc-photo-upload-area {
-            padding: 2rem 1rem;
+            padding: 2rem 1rem !important;
           }
 
           .nc-upload-icon {
-            font-size: 2.5rem;
+            font-size: 2.5rem !important;
           }
 
           .nc-panel-header {
-            padding: 1.5rem;
+            padding: 1.5rem !important;
           }
 
           .nc-panel-title {
-            font-size: 1.25rem;
+            font-size: 1.25rem !important;
           }
 
           .nc-wizard-navigation {
-            padding: 1rem 1.5rem;
-            flex-direction: column;
-            gap: 1rem;
+            padding: 1rem 1.5rem !important;
+            flex-direction: column !important;
+            gap: 1rem !important;
           }
 
           .nc-nav-buttons {
-            width: 100%;
-            justify-content: space-between;
+            width: 100% !important;
+            justify-content: space-between !important;
           }
 
           .nc-btn {
-            flex: 1;
-            justify-content: center;
+            flex: 1 !important;
+            justify-content: center !important;
           }
 
           .nc-input-with-button {
@@ -1663,6 +1725,17 @@ const CreateNCPanel = () => {
             width: 100% !important;
             min-width: auto !important;
             justify-content: center !important;
+          }
+        }
+
+        @media (max-width: 480px) {
+          .nc-form-container {
+            padding: 1rem !important;
+          }
+          
+          .nc-form-grid,
+          .nc-form-grid-header {
+            gap: 1rem !important;
           }
         }
       `}</style>

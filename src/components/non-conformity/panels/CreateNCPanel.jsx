@@ -158,22 +158,21 @@ const CreateNCPanel = () => {
     { value: 'reject', label: '❌ Reject' }
   ];
 
-  // ✅ MODIFICADO: Generate new NC number starting from 565
+  // ✅ MODIFICADO: Generate new NC number starting from 565 (formato simplificado)
   useEffect(() => {
     if (!currentNC.number) {
-      // Custom NC number generation starting from 565
-      const year = new Date().getFullYear();
+      // Custom NC number generation starting from 565 (sin año)
       const existingNumbers = state.ncList
         .map(nc => nc.number)
-        .filter(num => num && num.startsWith(`RNC-${year}`))
-        .map(num => parseInt(num.split('-')[2]) || 0)
+        .filter(num => num && num.startsWith('RNC-'))
+        .map(num => parseInt(num.split('-')[1]) || 0)
         .filter(num => !isNaN(num));
       
-      // ✅ CAMBIO: Comenzar desde 565 en lugar de 1
+      // ✅ CAMBIO: Formato simplificado RNC-565 (sin año)
       const nextNumber = existingNumbers.length > 0 ? 
         Math.max(...existingNumbers) + 1 : 565;
       
-      const newNumber = `RNC-${year}-${nextNumber.toString().padStart(3, '0')}`;
+      const newNumber = `RNC-${nextNumber}`;
       
       dispatch({
         type: actions.UPDATE_NC_FIELD,
@@ -197,6 +196,21 @@ const CreateNCPanel = () => {
         type: actions.CLEAR_VALIDATION_ERRORS
       });
     }
+  };
+
+  // ✅ NUEVA FUNCIÓN: Generar número automáticamente
+  const generateNewNumber = () => {
+    const existingNumbers = state.ncList
+      .map(nc => nc.number)
+      .filter(num => num && num.startsWith('RNC-'))
+      .map(num => parseInt(num.split('-')[1]) || 0)
+      .filter(num => !isNaN(num));
+    
+    const nextNumber = existingNumbers.length > 0 ? 
+      Math.max(...existingNumbers) + 1 : 565;
+    
+    const newNumber = `RNC-${nextNumber}`;
+    handleFieldChange('number', newNumber);
   };
 
   // ✅ FUNCIONES PARA MANEJO DE FOTOS
@@ -496,15 +510,29 @@ const CreateNCPanel = () => {
               <h4 className="nc-section-title">🆔 NC Identification</h4>
               
               <div className="nc-form-grid">
-                {/* NC Number (Auto-generated) */}
+                {/* NC Number (Editable para migración) */}
                 <div className="nc-form-group">
                   <label className="nc-form-label">NC Number</label>
-                  <input
-                    type="text"
-                    className="nc-form-input readonly"
-                    value={currentNC.number || 'Auto-generated'}
-                    readOnly
-                  />
+                  <div className="nc-input-with-button">
+                    <input
+                      type="text"
+                      className="nc-form-input"
+                      value={currentNC.number || ''}
+                      onChange={(e) => handleFieldChange('number', e.target.value)}
+                      placeholder="e.g., RNC-565"
+                    />
+                    <button
+                      type="button"
+                      className="nc-generate-btn"
+                      onClick={generateNewNumber}
+                      title="Generate next available number"
+                    >
+                      🔄
+                    </button>
+                  </div>
+                  <div className="nc-field-help">
+                    Auto-generated or editable for migrating existing NCs
+                  </div>
                 </div>
 
                 {/* Priority */}
@@ -929,8 +957,29 @@ const CreateNCPanel = () => {
   // Main component return
   return (
     <>
-      {/* ✅ CSS STYLES OUTSIDE OF MAIN DIV */}
+      {/* ✅ CSS STYLES OUTSIDE OF MAIN DIV - CON OVERRIDE DE FONDOS */}
       <style>{`
+        /* ✅ IMPORTANTE: Override de fondos conflictivos */
+        html, body {
+          background: transparent !important;
+          background-color: transparent !important;
+        }
+        
+        .non-conformity-wrapper {
+          background: transparent !important;
+          background-color: transparent !important;
+        }
+        
+        .nc-app-container {
+          background: transparent !important;
+          background-color: transparent !important;
+        }
+        
+        .nc-main-content {
+          background: transparent !important;
+          background-color: transparent !important;
+        }
+
         .nc-create-panel {
           background: rgba(242, 245, 250, 0.7);
           backdrop-filter: blur(10px);
@@ -1202,6 +1251,41 @@ const CreateNCPanel = () => {
           color: #6b7280;
           cursor: not-allowed;
           backdrop-filter: blur(5px);
+        }
+
+        .nc-input-with-button {
+          display: flex;
+          gap: 0.5rem;
+          align-items: center;
+        }
+
+        .nc-input-with-button .nc-form-input {
+          flex: 1;
+        }
+
+        .nc-generate-btn {
+          background: linear-gradient(135deg, #667eea, #764ba2);
+          color: white;
+          border: none;
+          border-radius: 6px;
+          padding: 0.75rem;
+          cursor: pointer;
+          transition: all 0.2s ease;
+          font-size: 1rem;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          min-width: 44px;
+          height: 44px;
+        }
+
+        .nc-generate-btn:hover {
+          transform: translateY(-1px);
+          box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+        }
+
+        .nc-generate-btn:active {
+          transform: translateY(0);
         }
 
         .nc-field-help {
@@ -1560,6 +1644,21 @@ const CreateNCPanel = () => {
           .nc-btn {
             flex: 1;
             justify-content: center;
+          }
+
+          .nc-input-with-button {
+            flex-direction: column;
+            gap: 0.75rem;
+          }
+
+          .nc-input-with-button .nc-form-input {
+            flex: none;
+            width: 100%;
+          }
+
+          .nc-generate-btn {
+            width: 100%;
+            min-width: auto;
           }
         }
       `}</style>

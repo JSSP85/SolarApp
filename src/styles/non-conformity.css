@@ -3183,3 +3183,111 @@ body.non-conformity-active {
 .nc-history-panel .nc-panel-card > *:not(.nc-panel-header) {
   background: rgba(255, 255, 255, 0.95) !important;
 }
+/* ============================================
+   NUEVOS ESTILOS - AGREGAR AL FINAL DE non-conformity.css
+   ============================================ */
+
+/* 🎨 CAMBIO 1: Tarjeta principal más clara */
+.nc-panel-card-transparent {
+  background: rgba(255, 255, 255, 0.95) !important;
+  backdrop-filter: blur(10px) !important;
+  -webkit-backdrop-filter: blur(10px) !important;
+  border: 1px solid rgba(200, 200, 200, 0.3) !important;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1) !important;
+}
+
+.nc-panel-card .nc-form-title,
+.nc-panel-card .nc-section-title {
+  color: #1f2937 !important;
+  text-shadow: none !important;
+  font-weight: 600 !important;
+}
+
+.nc-panel-card .nc-form-label {
+  color: #374151 !important;
+  text-shadow: none !important;
+  font-weight: 500 !important;
+}
+
+.nc-panel-card .nc-form-input,
+.nc-panel-card .nc-form-select,
+.nc-panel-card .nc-form-textarea {
+  background: white !important;
+  border: 1px solid #d1d5db !important;
+  color: #374151 !important;
+  border-radius: 6px !important;
+}
+
+/* 🔗 CAMBIO 2: Eliminar líneas conectoras del progreso */
+.nc-step-connector {
+  display: none !important;
+}
+
+.nc-step-progress {
+  display: flex;
+  justify-content: space-evenly !important;
+  align-items: center;
+  max-width: 800px;
+  margin: 0 auto;
+  position: relative;
+  z-index: 1;
+  gap: 2rem !important;
+}
+
+.nc-step-circle {
+  width: 55px !important;
+  height: 55px !important;
+  font-size: 1.1rem !important;
+  margin-bottom: 0.75rem !important;
+  border: 3px solid rgba(255, 255, 255, 0.3) !important;
+}
+
+/* 🔢 CAMBIO 3: Botón de editar número */
+.nc-form-label-container {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 0.5rem;
+}
+
+.nc-btn-edit-number {
+  padding: 0.25rem 0.75rem;
+  border-radius: 6px;
+  font-size: 0.75rem;
+  font-weight: 500;
+  border: 1px solid;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  min-width: 70px;
+}
+
+.nc-btn-edit-inactive {
+  background: #f3f4f6;
+  color: #6b7280;
+  border-color: #d1d5db;
+}
+
+.nc-btn-edit-inactive:hover {
+  background: #e5e7eb;
+  color: #374151;
+}
+
+.nc-btn-edit-active {
+  background: #dbeafe;
+  color: #1d4ed8;
+  border-color: #3b82f6;
+}
+
+.nc-auto-generated {
+  color: #6b7280 !important;
+  font-size: 0.75rem;
+  margin-top: 0.25rem;
+  display: block;
+}
+
+.nc-manual-edit-note {
+  color: #1d4ed8 !important;
+  font-size: 0.75rem;
+  margin-top: 0.25rem;
+  display: block;
+}

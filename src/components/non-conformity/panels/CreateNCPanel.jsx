@@ -21,10 +21,13 @@ const StepProgressBar = ({ steps, currentStep, completedSteps }) => {
       <div className="nc-step-progress">
         {steps.map((step, index) => (
           <div key={step.id} className="nc-step-item">
-            <div className={`nc-step-circle ${
-              completedSteps.includes(index) ? 'completed' : 
-              currentStep === index ? 'current' : 'pending'
-            }`}>
+            <div 
+              className={`nc-step-circle ${
+                completedSteps.includes(index) ? 'completed' : 
+                currentStep === index ? 'current' : 'pending'
+              }`}
+              onClick={() => handleStepClick(index)}
+            >
               {completedSteps.includes(index) ? '✓' : index + 1}
             </div>
             <div className={`nc-step-label ${
@@ -353,11 +356,30 @@ const CreateNCPanel = () => {
     }
   };
 
+  // ✅ MODIFICACIÓN 3: Nueva función para Save & Export
+  const handleSaveAndExport = async () => {
+    // Primero guardar en Firebase
+    await handleSubmit();
+    
+    // Esperar un momento para asegurar que se guardó
+    setTimeout(async () => {
+      // Luego exportar PDF
+      await handleExportPDF();
+    }, 1000);
+  };
+
   // Handle step click (only if step is completed or current)
   const handleStepClick = (stepIndex) => {
     if (stepIndex === currentStep || completedSteps.includes(stepIndex)) {
-      setCurrentStep(stepIndex);
-      setShowValidation(false);
+      // ✅ MODIFICACIÓN 2: Agregar transición suave
+      const stepElements = document.querySelectorAll('.nc-step-circle');
+      stepElements[currentStep]?.classList.add('transitioning');
+      
+      setTimeout(() => {
+        setCurrentStep(stepIndex);
+        setShowValidation(false);
+        stepElements[stepIndex]?.classList.remove('transitioning');
+      }, 200);
     }
   };
 
@@ -552,17 +574,17 @@ const CreateNCPanel = () => {
               </div>
             </div>
 
-            {/* Grid principal con el resto de campos */}
+            {/* Form Grid for remaining fields */}
             <div className="nc-form-grid">
-              {/* Project Name */}
+              {/* Project */}
               <div className="nc-form-group">
-                <label className="nc-form-label required">Project Name *</label>
+                <label className="nc-form-label required">Project *</label>
                 <input
                   type="text"
                   className={`nc-form-input ${validationErrors.project ? 'error' : ''}`}
                   value={currentNC.project}
                   onChange={(e) => handleFieldChange('project', e.target.value)}
-                  placeholder="e.g., Amazon Warehouse MAD4"
+                  placeholder="e.g., Solar Plant Phase 2"
                 />
                 {showValidation && validationErrors.project && (
                   <ValidationMessage message={validationErrors.project} />
@@ -577,7 +599,7 @@ const CreateNCPanel = () => {
                   className={`nc-form-input ${validationErrors.projectCode ? 'error' : ''}`}
                   value={currentNC.projectCode}
                   onChange={(e) => handleFieldChange('projectCode', e.target.value)}
-                  placeholder="e.g., 24AM101"
+                  placeholder="e.g., CM-2024-001"
                 />
                 {showValidation && validationErrors.projectCode && (
                   <ValidationMessage message={validationErrors.projectCode} />
@@ -749,6 +771,18 @@ const CreateNCPanel = () => {
                   <ValidationMessage message={validationErrors.description} />
                 )}
               </div>
+
+              {/* Purchase Order (optional) */}
+              <div className="nc-form-group">
+                <label className="nc-form-label">Purchase Order</label>
+                <input
+                  type="text"
+                  className="nc-form-input"
+                  value={currentNC.purchaseOrder}
+                  onChange={(e) => handleFieldChange('purchaseOrder', e.target.value)}
+                  placeholder="e.g., PO-2024-001"
+                />
+              </div>
             </div>
           </div>
         );
@@ -773,21 +807,32 @@ const CreateNCPanel = () => {
                 </select>
               </div>
 
-              {/* Responsible Person */}
+              {/* Planned Closure Date */}
               <div className="nc-form-group">
-                <label className="nc-form-label">Responsible for Treatment</label>
+                <label className="nc-form-label">Planned Closure Date</label>
+                <input
+                  type="date"
+                  className="nc-form-input"
+                  value={currentNC.plannedClosureDate}
+                  onChange={(e) => handleFieldChange('plannedClosureDate', e.target.value)}
+                />
+              </div>
+
+              {/* Assigned To */}
+              <div className="nc-form-group">
+                <label className="nc-form-label">Assigned To</label>
                 <input
                   type="text"
                   className="nc-form-input"
-                  value={currentNC.responsiblePerson}
-                  onChange={(e) => handleFieldChange('responsiblePerson', e.target.value)}
-                  placeholder="e.g., Quality Manager"
+                  value={currentNC.assignedTo}
+                  onChange={(e) => handleFieldChange('assignedTo', e.target.value)}
+                  placeholder="e.g., Quality Team Lead"
                 />
               </div>
 
               {/* Containment Action - Full width */}
               <div className="nc-form-group nc-form-group-full">
-                <label className="nc-form-label">Immediate Containment Action</label>
+                <label className="nc-form-label">Containment Action</label>
                 <textarea
                   className="nc-form-textarea"
                   rows="3"
@@ -797,7 +842,7 @@ const CreateNCPanel = () => {
                       handleFieldChange('containmentAction', e.target.value);
                     }
                   }}
-                  placeholder="Describe immediate actions taken to contain the non-conformity..."
+                  placeholder="Describe immediate containment actions taken..."
                 />
                 <div className="nc-char-count">
                   {currentNC.containmentAction ? currentNC.containmentAction.length : 0}/300 characters
@@ -908,7 +953,7 @@ const CreateNCPanel = () => {
                 </div>
               </div>
 
-              {/* Photo gallery */}
+              {/* ✅ MODIFICACIÓN 1: Photo gallery mejorada */}
               {currentNC.photos && currentNC.photos.length > 0 && (
                 <div className="nc-photo-gallery">
                   <h5 className="nc-gallery-title">Uploaded Files ({currentNC.photos.length})</h5>
@@ -1063,6 +1108,7 @@ const CreateNCPanel = () => {
           transform: translateY(-2px);
         }
 
+        /* ✅ MODIFICACIÓN 2: Efectos visuales mejorados para el step actual */
         .nc-step-circle {
           width: 50px;
           height: 50px;
@@ -1089,6 +1135,25 @@ const CreateNCPanel = () => {
           color: #667eea;
           box-shadow: 0 0 0 4px rgba(255, 255, 255, 0.3);
           animation: pulse 2s infinite;
+          transform: scale(1.1);
+        }
+
+        /* Efecto de brillo adicional */
+        .nc-step-circle.current::before {
+          content: '';
+          position: absolute;
+          top: -2px;
+          left: -2px;
+          right: -2px;
+          bottom: -2px;
+          background: linear-gradient(45deg, transparent, rgba(255, 255, 255, 0.5), transparent);
+          border-radius: 50%;
+          animation: rotate 3s linear infinite;
+        }
+
+        @keyframes rotate {
+          0% { transform: rotate(0deg); }
+          100% { transform: rotate(360deg); }
         }
 
         .nc-step-circle.pending {
@@ -1098,8 +1163,20 @@ const CreateNCPanel = () => {
         }
 
         @keyframes pulse {
-          0%, 100% { box-shadow: 0 0 0 4px rgba(255, 255, 255, 0.3); }
-          50% { box-shadow: 0 0 0 8px rgba(255, 255, 255, 0.1); }
+          0%, 100% { 
+            box-shadow: 0 0 0 4px rgba(255, 255, 255, 0.3);
+            transform: scale(1.1);
+          }
+          50% { 
+            box-shadow: 0 0 0 12px rgba(255, 255, 255, 0.1);
+            transform: scale(1.15);
+          }
+        }
+
+        /* Transición suave al cambiar de step */
+        .nc-step-circle.transitioning {
+          transform: scale(0.95) !important;
+          opacity: 0.8 !important;
         }
 
         .nc-step-label {
@@ -1111,7 +1188,12 @@ const CreateNCPanel = () => {
         }
 
         .nc-step-label.completed { color: rgba(255, 255, 255, 0.9); }
-        .nc-step-label.current { color: white; font-weight: 600; }
+        .nc-step-label.current { 
+          color: white; 
+          font-weight: 700;
+          text-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+          font-size: 0.9rem;
+        }
         .nc-step-label.pending { color: rgba(255, 255, 255, 0.6); }
 
         /* ✅ REMOVIDO: Las líneas conectoras ya no se muestran */
@@ -1343,7 +1425,7 @@ const CreateNCPanel = () => {
           margin: 0 !important;
         }
 
-        /* Photo Gallery */
+        /* ✅ MODIFICACIÓN 1: Photo Gallery mejorada */
         .nc-photo-gallery {
           margin-top: 2rem !important;
         }
@@ -1359,14 +1441,55 @@ const CreateNCPanel = () => {
           display: grid !important;
           grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)) !important;
           gap: 1rem !important;
+          max-height: 400px !important;
+          overflow-y: auto !important;
+          padding: 0.5rem !important;
+          border-radius: 8px !important;
         }
 
+        .nc-photo-grid::-webkit-scrollbar {
+          width: 8px !important;
+        }
+
+        .nc-photo-grid::-webkit-scrollbar-track {
+          background: #f1f1f1 !important;
+          border-radius: 4px !important;
+        }
+
+        .nc-photo-grid::-webkit-scrollbar-thumb {
+          background: #888 !important;
+          border-radius: 4px !important;
+        }
+
+        .nc-photo-grid::-webkit-scrollbar-thumb:hover {
+          background: #555 !important;
+        }
+
+        /* Animación de entrada para las fotos */
         .nc-photo-item {
           border: 1px solid #e5e7eb !important;
           border-radius: 8px !important;
           overflow: hidden !important;
           background: white !important;
           position: relative !important;
+          animation: fadeInScale 0.3s ease-out !important;
+          transition: transform 0.2s ease !important;
+        }
+
+        .nc-photo-item:hover {
+          transform: translateY(-2px) !important;
+          box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15) !important;
+        }
+
+        @keyframes fadeInScale {
+          from {
+            opacity: 0;
+            transform: scale(0.9);
+          }
+          to {
+            opacity: 1;
+            transform: scale(1);
+          }
         }
 
         .nc-photo-preview {
@@ -1489,68 +1612,87 @@ const CreateNCPanel = () => {
           gap: 1rem !important;
         }
 
+        /* Navigation Button Styles - DASHBOARD MODERNO */
         .nc-btn {
           padding: 0.75rem 1.5rem !important;
-          border-radius: 8px !important;
-          font-weight: 500 !important;
-          cursor: pointer !important;
-          transition: all 0.2s ease !important;
-          border: none !important;
+          border-radius: 10px !important;
+          font-weight: 600 !important;
           font-size: 0.875rem !important;
-          display: flex !important;
+          transition: all 0.2s ease !important;
+          cursor: pointer !important;
+          border: none !important;
+          display: inline-flex !important;
           align-items: center !important;
           gap: 0.5rem !important;
-        }
-
-        .nc-btn-primary {
-          background: #3b82f6 !important;
-          color: white !important;
-        }
-
-        .nc-btn-primary:hover:not(:disabled) {
-          background: #2563eb !important;
-          transform: translateY(-1px) !important;
-          box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3) !important;
-        }
-
-        .nc-btn-secondary {
-          background: #6b7280 !important;
-          color: white !important;
-        }
-
-        .nc-btn-secondary:hover:not(:disabled) {
-          background: #4b5563 !important;
-        }
-
-        .nc-btn-success {
-          background: #10b981 !important;
-          color: white !important;
-        }
-
-        .nc-btn-success:hover:not(:disabled) {
-          background: #059669 !important;
-          transform: translateY(-1px) !important;
-          box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3) !important;
+          position: relative !important;
+          overflow: hidden !important;
         }
 
         .nc-btn:disabled {
           opacity: 0.5 !important;
           cursor: not-allowed !important;
+          transform: none !important;
         }
 
-        /* Export Button */
-        .nc-export-btn {
-          background: #8b5cf6 !important;
+        .nc-btn-primary {
+          background: linear-gradient(135deg, #3b82f6, #2563eb) !important;
           color: white !important;
+          box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3) !important;
         }
 
-        .nc-export-btn:hover:not(:disabled) {
-          background: #7c3aed !important;
-          transform: translateY(-1px) !important;
+        .nc-btn-primary:hover:not(:disabled) {
+          transform: translateY(-2px) !important;
+          box-shadow: 0 6px 20px rgba(59, 130, 246, 0.4) !important;
+        }
+
+        .nc-btn-primary:active:not(:disabled) {
+          transform: translateY(0) !important;
+        }
+
+        /* ✅ MODIFICACIÓN 3: Botón Save & Export con estilo especial */
+        .nc-btn-primary.save-export {
+          background: linear-gradient(135deg, #10b981, #059669) !important;
+          padding-left: 3rem !important;
+          position: relative !important;
+          box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3) !important;
+        }
+
+        .nc-btn-primary.save-export::before {
+          content: '💾';
+          position: absolute;
+          left: 1rem;
+          font-size: 1.25rem;
+          animation: bounce 2s infinite;
+        }
+
+        @keyframes bounce {
+          0%, 100% { transform: translateY(0); }
+          50% { transform: translateY(-3px); }
+        }
+
+        .nc-btn-secondary {
+          background: linear-gradient(135deg, #6b7280, #4b5563) !important;
+          color: white !important;
+          box-shadow: 0 4px 12px rgba(107, 114, 128, 0.2) !important;
+        }
+
+        .nc-btn-secondary:hover:not(:disabled) {
+          transform: translateY(-2px) !important;
+          box-shadow: 0 6px 16px rgba(107, 114, 128, 0.3) !important;
+        }
+
+        .nc-export-btn {
+          background: linear-gradient(135deg, #8b5cf6, #7c3aed) !important;
+          color: white !important;
           box-shadow: 0 4px 12px rgba(139, 92, 246, 0.3) !important;
         }
 
-        /* Responsive Design */
+        .nc-export-btn:hover:not(:disabled) {
+          transform: translateY(-2px) !important;
+          box-shadow: 0 6px 16px rgba(139, 92, 246, 0.4) !important;
+        }
+
+        /* Ajustes responsivos */
         @media (max-width: 768px) {
           .nc-form-grid,
           .nc-form-grid-header {
@@ -1558,18 +1700,35 @@ const CreateNCPanel = () => {
             gap: 1.5rem !important;
           }
 
+          .nc-form-container {
+            padding: 1.5rem !important;
+          }
+
           .nc-wizard-navigation {
-            flex-direction: column !important;
+            padding: 1.5rem !important;
+          }
+
+          .nc-step-progress {
             gap: 1rem !important;
-            align-items: stretch !important;
+          }
+
+          .nc-step-circle {
+            width: 40px !important;
+            height: 40px !important;
+          }
+
+          .nc-step-label {
+            font-size: 0.75rem !important;
           }
 
           .nc-nav-buttons {
-            justify-content: space-between !important;
+            flex-direction: column-reverse !important;
+            width: 100% !important;
+            gap: 0.75rem !important;
           }
 
           .nc-btn {
-            flex: 1 !important;
+            width: 100% !important;
             justify-content: center !important;
           }
 
@@ -1619,6 +1778,7 @@ const CreateNCPanel = () => {
           steps={steps}
           currentStep={currentStep}
           completedSteps={completedSteps}
+          handleStepClick={handleStepClick}
         />
 
         {/* Panel Header */}
@@ -1655,6 +1815,7 @@ const CreateNCPanel = () => {
               ← Previous
             </button>
             
+            {/* ✅ MODIFICACIÓN 3: Botones de Export y Save & Export */}
             {currentStep < steps.length - 1 ? (
               <button 
                 className="nc-btn nc-btn-primary"
@@ -1667,17 +1828,16 @@ const CreateNCPanel = () => {
                 <button
                   className="nc-btn nc-export-btn"
                   onClick={handleExportPDF}
-                  disabled={exportingPDF}
+                  disabled={exportingPDF || uploadingFiles}
                 >
-                  {exportingPDF ? '📄 Exporting...' : '📄 Export PDF'}
+                  {exportingPDF ? '⏳ Exporting...' : '📄 Export PDF'}
                 </button>
-                
                 <button 
-                  className="nc-btn nc-btn-success"
-                  onClick={handleSubmit}
-                  disabled={uploadingFiles}
+                  className="nc-btn nc-btn-primary save-export"
+                  onClick={handleSaveAndExport}
+                  disabled={uploadingFiles || exportingPDF}
                 >
-                  {uploadingFiles ? '💾 Saving...' : '💾 Create NC'}
+                  {uploadingFiles ? '⏳ Saving...' : 'Save & Export PDF'}
                 </button>
               </>
             )}

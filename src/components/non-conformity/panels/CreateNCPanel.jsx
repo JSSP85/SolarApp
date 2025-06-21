@@ -333,79 +333,82 @@ const CreateNCPanel = () => {
     handleFieldChange('photos', updatedPhotos);
   };
 
-  // ✅ CORREGIDO: Nueva función para Save & Export (SIN botón Export individual)
-  const handleSaveAndExport = async () => {
-    // Validar campos requeridos
-    const allRequiredFields = steps.reduce((acc, step) => [...acc, ...step.requiredFields], []);
-    const hasAllRequired = allRequiredFields.every(field => currentNC[field] && currentNC[field] !== '');
+// ✅ FUNCIÓN ACTUALIZADA CON SINCRONIZACIÓN - REEMPLAZAR SOLO ESTA FUNCIÓN
+const handleSaveAndExport = async () => {
+  // Validar campos requeridos
+  const allRequiredFields = steps.reduce((acc, step) => [...acc, ...step.requiredFields], []);
+  const hasAllRequired = allRequiredFields.every(field => currentNC[field] && currentNC[field] !== '');
 
-    if (!hasAllRequired) {
-      alert('❌ Please complete all required fields before submitting.');
-      return;
-    }
+  if (!hasAllRequired) {
+    alert('❌ Please complete all required fields before submitting.');
+    return;
+  }
 
-    try {
-      setUploadingFiles(true);
+  try {
+    setUploadingFiles(true);
 
-      const newNCData = {
-        ...currentNC,
-        id: `nc_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
-        status: 'open',
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString()
-      };
+    const newNCData = {
+      ...currentNC,
+      id: `nc_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+      status: 'open',
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString()
+    };
 
-      // Save to Firebase
-      const firebaseId = await saveNonConformity(newNCData);
-      
-      // ✅ CORREGIDO: Usar el nombre correcto de la acción
-      dispatch({
-        type: actions.ADD_NC,
-        payload: { ...newNCData, firebaseId }
-      });
+    // Save to Firebase
+    const firebaseId = await saveNonConformity(newNCData);
+    
+    // ✅ SOLUCIÓN CLAVE: Refrescar lista desde Firebase DESPUÉS de guardar
+    console.log('🔄 Refreshing NC list from Firebase...');
+    await helpers.refreshFromFirebase();
+    
+    // Actualizar estado local
+    dispatch({
+      type: actions.ADD_NC,
+      payload: { ...newNCData, firebaseId }
+    });
 
-      setSavedSuccessfully(true);
-      
-      const totalPhotos = Array.isArray(currentNC.photos) ? currentNC.photos.length : 0;
-      const compressedPhotos = Array.isArray(currentNC.photos) ? 
-        currentNC.photos.filter(p => p.compressionRatio).length : 0;
-      
-      alert(`✅ Non-Conformity ${newNCData.number} saved successfully! 📊 ${totalPhotos} photo(s) uploaded`);
+    setSavedSuccessfully(true);
+    
+    const totalPhotos = Array.isArray(currentNC.photos) ? currentNC.photos.length : 0;
+    const compressedPhotos = Array.isArray(currentNC.photos) ? 
+      currentNC.photos.filter(p => p.compressionRatio).length : 0;
+    
+    alert(`✅ Non-Conformity ${newNCData.number} saved successfully! 📊 ${totalPhotos} photo(s) uploaded`);
 
-      // Exportar PDF después de guardar
-      setTimeout(async () => {
-        try {
-          setExportingPDF(true);
-          await exportNCToPDF(newNCData, {
-            includePhotos: true,
-            showProgress: true
-          });
-          alert('✅ PDF exported successfully!');
-        } catch (error) {
-          console.error('Error exporting PDF:', error);
-          alert(`❌ Error exporting PDF: ${error.message}`);
-        } finally {
-          setExportingPDF(false);
-        }
-      }, 1000);
+    // Exportar PDF después de guardar
+    setTimeout(async () => {
+      try {
+        setExportingPDF(true);
+        await exportNCToPDF(newNCData, {
+          includePhotos: true,
+          showProgress: true
+        });
+        alert('✅ PDF exported successfully!');
+      } catch (error) {
+        console.error('Error exporting PDF:', error);
+        alert(`❌ Error exporting PDF: ${error.message}`);
+      } finally {
+        setExportingPDF(false);
+      }
+    }, 1000);
 
-      // Reset form for new NC after 3 seconds
-      setTimeout(() => {
-        // ✅ CORREGIDO: Usar el nombre correcto de la acción
-        dispatch({ type: actions.RESET_CURRENT_NC });
-        setCurrentStep(0);
-        setCompletedSteps([]);
-        setSavedSuccessfully(false);
-        setShowValidation(false);
-        setManualNumberEdit(false);
-      }, 3000);
+    // Reset form for new NC after 3 seconds
+    setTimeout(() => {
+      dispatch({ type: actions.RESET_CURRENT_NC });
+      setCurrentStep(0);
+      setCompletedSteps([]);
+      setSavedSuccessfully(false);
+      setShowValidation(false);
+      setManualNumberEdit(false);
+    }, 3000);
 
-    } catch (error) {
-      console.error('Error saving NC:', error);
-      alert(`❌ Error saving NC: ${error.message}`);
-      setUploadingFiles(false);
-    }
-  };
+  } catch (error) {
+    console.error('Error saving NC:', error);
+    alert(`❌ Error saving NC: ${error.message}`);
+    setUploadingFiles(false);
+  }
+};
 
   // Handle step click (only if step is completed or current)
   const handleStepClick = (stepIndex) => {

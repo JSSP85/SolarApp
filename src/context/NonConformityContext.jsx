@@ -13,7 +13,7 @@ import {
   getNCStats 
 } from '../firebase/nonConformityService';
 
-// Initial state - ✅ ACTUALIZADO CON DETECTION SOURCE
+// Initial state - ✅ ACTUALIZADO SIN DATOS DE EJEMPLO
 const initialState = {
   // Navigation state
   activeTab: 'create',
@@ -77,83 +77,8 @@ const initialState = {
   validationErrors: {},
   isFormValid: false,
   
-  // List of all NCs - ✅ ACTUALIZAR NC EXISTENTE CON DETECTION SOURCE
-  ncList: [
-    {
-      id: '1',
-      number: 'RNC-001',
-      title: 'Improper Welding Procedure',
-      description: 'Non-conforming welding technique observed during structural work inspection.',
-      location: 'Building A - Floor 3 - Column C3',
-      severity: 'high',
-      priority: 'critical',
-      detectedBy: 'Juan Pérez - Quality Inspector',
-      project: 'Hospital Central - Phase 2',
-      supplier: 'MetalWorks Ltd.',
-      detectionSource: 'inspections', // ✅ NUEVO CAMPO
-      affectedProduct: 'Structural Steel Columns',
-      potentialImpact: 'Compromised structural integrity, potential safety hazards',
-      immediateAction: 'Work stopped immediately. Area cordoned off. Emergency structural assessment requested.',
-      rootCauseAnalysis: 'Welder certification expired 2 months ago. Inadequate supervision and documentation review process.',
-      correctiveActionPlan: 'Re-certify all welders. Implement daily certification checks. Establish mandatory supervisor verification before critical welding operations.',
-      responsiblePerson: 'Miguel Torres - Construction Manager',
-      targetDate: '15/05/2025',
-      actualClosureDate: '',
-      verificationMethod: 'Independent structural engineer assessment + certification audit',
-      status: 'in-progress',
-      createdDate: '01/05/2025',
-      daysOpen: 12,
-      timeline: [
-        {
-          date: '01/05/2025 - 14:30',
-          title: '🚨 Critical NC Detected',
-          description: 'Improper welding technique identified during routine quality inspection.',
-          type: 'detection'
-        },
-        {
-          date: '01/05/2025 - 15:45',
-          title: '⚠️ Immediate Action Taken',
-          description: 'Work halted immediately. Safety perimeter established.',
-          type: 'action'
-        },
-        {
-          date: '02/05/2025 - 09:00',
-          title: '🔍 Root Cause Analysis Started',
-          description: 'Investigation team formed. Document review initiated.',
-          type: 'investigation'
-        }
-      ]
-    },
-    {
-      id: '2',
-      number: 'RNC-002',
-      title: 'Incorrect Foundation Depth',
-      description: 'Foundation excavation depth does not match approved engineering drawings.',
-      location: 'Building B - Foundation Grid B2-B4',
-      severity: 'critical',
-      priority: 'critical',
-      detectedBy: 'Ana García - Site Engineer',
-      project: 'Hospital Central - Phase 2',
-      supplier: 'Foundation Pro Inc.',
-      detectionSource: 'on_site', // ✅ NUEVO CAMPO
-      affectedProduct: 'Concrete Foundation',
-      potentialImpact: 'Structural failure risk, potential building collapse',
-      immediateAction: 'All foundation work suspended. Emergency geotechnical engineer consultation requested.',
-      rootCauseAnalysis: 'Foundation depth calculations were based on standard soil parameters rather than site-specific geotechnical data.',
-      correctiveActionPlan: 'Revise all foundation designs based on actual site geotechnical report. Implement mandatory site-specific soil analysis for all future projects before design finalization.',
-      status: 'open',
-      createdDate: '03/05/2025',
-      daysOpen: 10,
-      timeline: [
-        {
-          date: '03/05/2025 - 08:30',
-          title: '🚨 Critical NC Detected',
-          description: 'Critical structural issue identified during foundation inspection.',
-          type: 'detection'
-        }
-      ]
-    }
-  ],
+  // ✅ SOLUCIÓN: Lista vacía inicialmente, se carga desde Firebase
+  ncList: [],
   
   // Search and filtering
   searchTerm: '',
@@ -291,7 +216,8 @@ const nonConformityReducer = (state, action) => {
       return {
         ...state,
         ncList: state.ncList.map(nc => 
-          nc.id === action.payload.id ? { ...nc, ...action.payload.updates } : nc
+          nc.id === action.payload.id ? 
+          { ...nc, ...action.payload.updates } : nc
         )
       };
       
@@ -421,7 +347,8 @@ export const NonConformityProvider = ({ children }) => {
         .map(num => parseInt(num.split('-')[2]) || 0)
         .filter(num => !isNaN(num));
       
-      const nextNumber = existingNumbers.length > 0 ? Math.max(...existingNumbers) + 1 : 1;
+      const nextNumber = existingNumbers.length > 0 ?
+        Math.max(...existingNumbers) + 1 : 1;
       return `RNC-${year}-${nextNumber.toString().padStart(3, '0')}`;
     },
 
@@ -481,53 +408,18 @@ export const NonConformityProvider = ({ children }) => {
       });
       
       dispatch({ type: NC_ACTIONS.SET_VALIDATION_ERRORS, payload: errors });
-      dispatch({ type: NC_ACTIONS.SET_FORM_VALIDITY, payload: Object.keys(errors).length === 0 });
       
-      return Object.keys(errors).length === 0;
+      const isValid = Object.keys(errors).length === 0;
+      dispatch({ type: NC_ACTIONS.SET_FORM_VALIDITY, payload: isValid });
+      
+      return isValid;
     },
 
-    // ✅ FUNCIÓN ORIGINAL: Filter NCs
-    filterNCs: (searchTerm = '', filters = {}) => {
+    // ✅ FUNCIÓN ORIGINAL: Formatted search and filter
+    searchAndFilter: (searchTerm, filters) => {
       let filtered = [...state.ncList];
       
-      // Apply search term
-      if (searchTerm) {
-        const searchLower = searchTerm.toLowerCase();
-        filtered = filtered.filter(nc => 
-          nc.title?.toLowerCase().includes(searchLower) ||
-          nc.description?.toLowerCase().includes(searchLower) ||
-          nc.number?.toLowerCase().includes(searchLower) ||
-          nc.location?.toLowerCase().includes(searchLower) ||
-          nc.project?.toLowerCase().includes(searchLower) ||
-          nc.supplier?.toLowerCase().includes(searchLower)
-        );
-      }
-      
-      // Apply filters
-      const { status, priority, project } = filters;
-      
-      if (status && status !== 'all') {
-        filtered = filtered.filter(nc => nc.status === status);
-      }
-      
-      if (priority && priority !== 'all') {
-        filtered = filtered.filter(nc => nc.priority === priority);
-      }
-      
-      if (project && project !== 'all') {
-        filtered = filtered.filter(nc => nc.project === project);
-      }
-      
-      return filtered;
-    },
-    
-    // ✅ FUNCIÓN ORIGINAL: Apply current filters
-    getFilteredNCs: () => {
-      const { searchTerm, filters } = state;
-      
-      let filtered = [...state.ncList];
-      
-      // Search functionality
+      // Search filter
       if (searchTerm) {
         const searchLower = searchTerm.toLowerCase();
         filtered = filtered.filter(nc => 
@@ -588,60 +480,51 @@ export const NonConformityProvider = ({ children }) => {
       const criticalNCs = state.ncList.filter(nc => nc.priority === 'critical').length;
       const resolvedNCs = state.ncList.filter(nc => nc.status === 'resolved' || nc.status === 'closed');
       const avgResolutionTime = resolvedNCs.length > 0 
-        ? Math.round(resolvedNCs.reduce((sum, nc) => sum + (nc.daysOpen || 0), 0) / resolvedNCs.length)
+        ? resolvedNCs.reduce((sum, nc) => sum + nc.daysOpen, 0) / resolvedNCs.length 
         : 0;
-      
-      const currentMonth = new Date().getMonth();
-      const closedThisMonth = state.ncList.filter(nc => {
-        if (!nc.actualClosureDate) return false;
-        const closureDate = new Date(nc.actualClosureDate.split('/').reverse().join('-'));
-        return closureDate.getMonth() === currentMonth;
-      }).length;
-      
+
       return {
         totalNCs: state.ncList.length,
         activeNCs,
         criticalNCs,
-        majorNCs: state.ncList.filter(nc => nc.priority === 'major' && nc.status !== 'closed').length,
-        minorNCs: state.ncList.filter(nc => nc.priority === 'minor' && nc.status !== 'closed').length,
+        majorNCs: state.ncList.filter(nc => nc.priority === 'major').length,
+        minorNCs: state.ncList.filter(nc => nc.priority === 'minor').length,
         resolvedNCs: resolvedNCs.length,
-        avgResolutionTime,
-        closedThisMonth,
-        targetThisMonth: 10
+        avgResolutionTime: Math.round(avgResolutionTime)
       };
     },
 
-    // ✅ FUNCIONES ADICIONALES ÚTILES
-    getNCsByStatus: (status) => {
-      return state.ncList.filter(nc => nc.status === status);
-    },
-
-    getNCsByPriority: (priority) => {
-      return state.ncList.filter(nc => nc.priority === priority);
-    },
-
-    // ✅ NUEVA FUNCIÓN: Get NCs by detection source
-    getNCsByDetectionSource: (source) => {
-      return state.ncList.filter(nc => nc.detectionSource === source);
-    },
-
-    // Update NC status
-    updateNCStatus: (id, newStatus) => {
-      const nc = state.ncList.find(nc => nc.id === id);
-      if (nc) {
-        dispatch({
-          type: NC_ACTIONS.UPDATE_NC,
-          payload: {
-            id: id,
-            updates: {
-              status: newStatus,
-              actualClosureDate: (newStatus === 'resolved' || newStatus === 'closed') 
-                ? new Date().toLocaleDateString('en-GB') 
-                : nc.actualClosureDate
-            }
-          }
-        });
+    // Status update helpers
+    updateStatus: (ncId, newStatus) => {
+      const updateData = { 
+        status: newStatus,
+        updatedAt: new Date().toISOString()
+      };
+      
+      if (newStatus === 'resolved' || newStatus === 'closed') {
+        updateData.actualClosureDate = new Date().toLocaleDateString('en-GB');
       }
+      
+      dispatch({
+        type: NC_ACTIONS.UPDATE_NC,
+        payload: {
+          id: ncId,
+          updates: updateData
+        }
+      });
+    },
+
+    // Batch operations
+    batchUpdateStatus: (ncIds, newStatus) => {
+      ncIds.forEach(ncId => {
+        helpers.updateStatus(ncId, newStatus);
+      });
+    },
+
+    // Export helpers
+    exportData: (format = 'csv') => {
+      // Implementation for data export
+      console.log(`Exporting ${state.ncList.length} NCs as ${format}`);
     },
 
     // Advanced filtering with multiple criteria
@@ -781,8 +664,18 @@ export const NonConformityProvider = ({ children }) => {
     }
   };
 
+  // ✅ SOLUCIÓN: Cargar datos reales de Firebase al inicializar
+  useEffect(() => {
+    console.log('🚀 Inicializando NonConformityProvider - Cargando datos de Firebase...');
+    helpers.refreshFromFirebase().then(data => {
+      console.log('✅ Datos cargados:', data?.length || 0, 'NCs');
+    }).catch(error => {
+      console.error('❌ Error cargando datos iniciales:', error);
+    });
+  }, []);
+
   // Update metrics when ncList changes
-  React.useEffect(() => {
+  useEffect(() => {
     const newMetrics = helpers.calculateMetrics();
     // Metrics are calculated on-demand, no need to store in state
   }, [state.ncList]);

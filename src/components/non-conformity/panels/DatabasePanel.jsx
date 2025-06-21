@@ -1,5 +1,5 @@
 // src/components/non-conformity/panels/DatabasePanel.jsx
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { useNonConformity } from '../../../context/NonConformityContext';
 // ✅ AGREGAR IMPORT DE UTILIDADES DE FECHA SEGURAS
 import { safeParseDate, safeDateCompare } from '../../../utils/dateUtils';
@@ -29,6 +29,25 @@ const DatabasePanel = () => {
   const [showBulkActions, setShowBulkActions] = useState(false);
   const [viewMode, setViewMode] = useState('table'); // 'table', 'cards'
 
+  // ✅ SOLUCIÓN: Auto-refresh cuando se activa el tab Database
+  useEffect(() => {
+    // Solo refrescar si estamos en el tab database
+    if (state.activeTab === 'database') {
+      console.log('🔄 DatabasePanel activado - Refrescando datos desde Firebase...');
+      helpers.refreshFromFirebase().catch(error => {
+        console.error('Error refreshing data:', error);
+      });
+    }
+  }, [state.activeTab, helpers]);
+
+  // ✅ TAMBIÉN AÑADIR: Auto-refresh cuando se monta el componente
+  useEffect(() => {
+    console.log('📊 DatabasePanel montado - Cargando datos iniciales...');
+    helpers.refreshFromFirebase().catch(error => {
+      console.error('Error loading initial data:', error);
+    });
+  }, [helpers]);
+
   // Handle filter changes
   const handleFilterChange = (filterType, value) => {
     setFilters(prev => ({
@@ -46,7 +65,7 @@ const DatabasePanel = () => {
     }
     setSortConfig({ key, direction });
   };
-
+  
   // Handle row selection
   const handleRowSelect = (ncId) => {
     setSelectedNCs(prev => {

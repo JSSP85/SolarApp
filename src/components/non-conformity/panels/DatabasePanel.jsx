@@ -1,8 +1,6 @@
 // src/components/non-conformity/panels/DatabasePanel.jsx
 import React, { useState, useMemo } from 'react';
 import { useNonConformity } from '../../../context/NonConformityContext';
-// ✅ AGREGAR IMPORT DE UTILIDADES DE FECHA SEGURAS
-import { safeParseDate, safeDateCompare } from '../../../utils/dateUtils';
 
 const DatabasePanel = () => {
   const { state, dispatch, helpers } = useNonConformity();
@@ -14,50 +12,44 @@ const DatabasePanel = () => {
     status: 'all',
     priority: 'all',
     project: 'all',
-    supplier: 'all',
-    dateRange: 'all',
-    dateFrom: '',
-    dateTo: ''
+    supplier: 'all'
   });
   const [sortConfig, setSortConfig] = useState({
     key: 'createdDate',
     direction: 'desc'
   });
   const [selectedNCs, setSelectedNCs] = useState([]);
+  const [viewMode, setViewMode] = useState('table'); // 'table' or 'cards'
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(10);
-  const [showBulkActions, setShowBulkActions] = useState(false);
-  const [viewMode, setViewMode] = useState('table'); // 'table', 'cards'
 
-  // ✅ SOLUCIÓN: NO useEffect - el contexto ya carga los datos automáticamente
+  // Handle search
+  const handleSearch = (value) => {
+    setSearchTerm(value);
+    setCurrentPage(1);
+  };
 
-  // Handle filter changes
+  // Handle filter change
   const handleFilterChange = (filterType, value) => {
-    setFilters(prev => ({
-      ...prev,
-      [filterType]: value
-    }));
-    setCurrentPage(1); // Reset to first page when filtering
+    setFilters(prev => ({ ...prev, [filterType]: value }));
+    setCurrentPage(1);
   };
 
   // Handle sorting
   const handleSort = (key) => {
-    let direction = 'asc';
-    if (sortConfig.key === key && sortConfig.direction === 'asc') {
-      direction = 'desc';
-    }
-    setSortConfig({ key, direction });
+    setSortConfig(prev => ({
+      key,
+      direction: prev.key === key && prev.direction === 'asc' ? 'desc' : 'asc'
+    }));
   };
 
   // Handle row selection
   const handleRowSelect = (ncId) => {
-    setSelectedNCs(prev => {
-      if (prev.includes(ncId)) {
-        return prev.filter(id => id !== ncId);
-      } else {
-        return [...prev, ncId];
-      }
-    });
+    setSelectedNCs(prev => 
+      prev.includes(ncId) 
+        ? prev.filter(id => id !== ncId)
+        : [...prev, ncId]
+    );
   };
 
   // Handle select all
@@ -69,95 +61,24 @@ const DatabasePanel = () => {
     }
   };
 
-  // Filter and sort NCs - ✅ CON CORRECCIONES DE FECHAS SEGURAS
+  // Filter and sort NCs
   const filteredAndSortedNCs = useMemo(() => {
-    let filtered = [...ncList];
-    
-    // Apply search filter
-    if (searchTerm) {
-      const searchLower = searchTerm.toLowerCase();
-      filtered = filtered.filter(nc => 
-        nc.number.toLowerCase().includes(searchLower) ||
-        nc.project.toLowerCase().includes(searchLower) ||
-        (nc.supplier && nc.supplier.toLowerCase().includes(searchLower)) ||
-        nc.description.toLowerCase().includes(searchLower) ||
-        (nc.component && nc.component.toLowerCase().includes(searchLower)) ||
-        nc.createdBy.toLowerCase().includes(searchLower)
-      );
-    }
-    
-    // Apply status filter
-    if (filters.status !== 'all') {
-      filtered = filtered.filter(nc => nc.status === filters.status);
-    }
-    
-    // Apply priority filter
-    if (filters.priority !== 'all') {
-      filtered = filtered.filter(nc => nc.priority === filters.priority);
-    }
-    
-    // Apply project filter
-    if (filters.project !== 'all') {
-      filtered = filtered.filter(nc => nc.project === filters.project);
-    }
-    
-    // Apply supplier filter
-    if (filters.supplier !== 'all') {
-      filtered = filtered.filter(nc => nc.supplier === filters.supplier);
-    }
-    
-    // Apply date range filter - ✅ CON FECHAS SEGURAS
-    if (filters.dateRange !== 'all') {
-      const now = new Date();
-      let cutoffDate = new Date();
-      
-      switch (filters.dateRange) {
-        case 'week':
-          cutoffDate.setDate(now.getDate() - 7);
-          break;
-        case 'month':
-          cutoffDate.setMonth(now.getMonth() - 1);
-          break;
-        case '3months':
-          cutoffDate.setMonth(now.getMonth() - 3);
-          break;
-        case 'year':
-          cutoffDate.setFullYear(now.getFullYear() - 1);
-          break;
-        case 'custom':
-          // Custom date range handled separately
-          break;
-      }
-      
-      if (filters.dateRange !== 'custom') {
-        filtered = filtered.filter(nc => {
-          const ncDate = safeParseDate(nc.createdDate);
-          return ncDate && safeDateCompare(ncDate, cutoffDate) >= 0;
-        });
-      }
-    }
-    
-    // Apply custom date range
-    if (filters.dateRange === 'custom' && (filters.dateFrom || filters.dateTo)) {
-      filtered = filtered.filter(nc => {
-        const ncDate = safeParseDate(nc.createdDate);
-        if (!ncDate) return false;
-        
-        if (filters.dateFrom) {
-          const fromDate = safeParseDate(filters.dateFrom);
-          if (fromDate && safeDateCompare(ncDate, fromDate) < 0) return false;
-        }
-        
-        if (filters.dateTo) {
-          const toDate = safeParseDate(filters.dateTo);
-          if (toDate && safeDateCompare(ncDate, toDate) > 0) return false;
-        }
-        
-        return true;
-      });
-    }
-    
-    // Apply sorting
+    let filtered = ncList.filter(nc => {
+      const matchesSearch = !searchTerm || 
+        nc.number?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        nc.description?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        nc.project?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        nc.supplier?.toLowerCase().includes(searchTerm.toLowerCase());
+
+      const matchesStatus = filters.status === 'all' || nc.status === filters.status;
+      const matchesPriority = filters.priority === 'all' || nc.priority === filters.priority;
+      const matchesProject = filters.project === 'all' || nc.project === filters.project;
+      const matchesSupplier = filters.supplier === 'all' || nc.supplier === filters.supplier;
+
+      return matchesSearch && matchesStatus && matchesPriority && matchesProject && matchesSupplier;
+    });
+
+    // Sort filtered results
     filtered.sort((a, b) => {
       let aVal = a[sortConfig.key];
       let bVal = b[sortConfig.key];
@@ -165,7 +86,7 @@ const DatabasePanel = () => {
       // Handle different data types
       if (typeof aVal === 'string') {
         aVal = aVal.toLowerCase();
-        bVal = bVal.toLowerCase();
+        bVal = bVal?.toLowerCase() || '';
       }
       
       if (aVal < bVal) {
@@ -190,17 +111,24 @@ const DatabasePanel = () => {
   const uniqueProjects = [...new Set(ncList.map(nc => nc.project))];
   const uniqueSuppliers = [...new Set(ncList.map(nc => nc.supplier).filter(Boolean))];
 
-  // Handle bulk actions
-  const handleBulkAction = (action) => {
+  // ✅ CAMBIO CRÍTICO: Handle bulk actions with Firebase
+  const handleBulkAction = async (action) => {
     if (selectedNCs.length === 0) return;
     
     switch (action) {
       case 'delete':
         if (window.confirm(`Are you sure you want to delete ${selectedNCs.length} selected NC(s)?`)) {
-          selectedNCs.forEach(ncId => {
-            dispatch({ type: 'DELETE_NC', payload: ncId });
-          });
-          setSelectedNCs([]);
+          try {
+            // ✅ SOLUCION: Usar deleteNCFromFirebase en lugar de dispatch local
+            for (const ncId of selectedNCs) {
+              await helpers.deleteNCFromFirebase(ncId);
+            }
+            setSelectedNCs([]);
+            alert(`Successfully deleted ${selectedNCs.length} NC(s)`);
+          } catch (error) {
+            console.error('Error deleting NCs:', error);
+            alert('Error deleting some NCs. Please try again.');
+          }
         }
         break;
       case 'export':
@@ -208,19 +136,20 @@ const DatabasePanel = () => {
         // TODO: Implement export functionality
         break;
       case 'mark_resolved':
-        selectedNCs.forEach(ncId => {
-          dispatch({
-            type: 'UPDATE_NC',
-            payload: {
-              id: ncId,
-              updates: { 
-                status: 'resolved',
-                actualClosureDate: new Date().toLocaleDateString('en-GB')
-              }
-            }
-          });
-        });
-        setSelectedNCs([]);
+        try {
+          // ✅ SOLUCION: Usar updateNCInFirebase en lugar de dispatch local
+          for (const ncId of selectedNCs) {
+            await helpers.updateNCInFirebase(ncId, { 
+              status: 'resolved',
+              actualClosureDate: new Date().toLocaleDateString('en-GB')
+            });
+          }
+          setSelectedNCs([]);
+          alert(`Successfully marked ${selectedNCs.length} NC(s) as resolved`);
+        } catch (error) {
+          console.error('Error updating NCs:', error);
+          alert('Error updating some NCs. Please try again.');
+        }
         break;
       default:
         break;
@@ -248,8 +177,8 @@ const DatabasePanel = () => {
     return classes[priority] || 'nc-priority-minor';
   };
 
-  // Handle individual NC actions
-  const handleNCAction = (nc, action) => {
+  // ✅ CAMBIO CRÍTICO: Handle individual NC actions with Firebase
+  const handleNCAction = async (nc, action) => {
     switch (action) {
       case 'view':
         dispatch({ type: 'SET_CURRENT_NC', payload: nc });
@@ -261,7 +190,14 @@ const DatabasePanel = () => {
         break;
       case 'delete':
         if (window.confirm(`Are you sure you want to delete NC ${nc.number}?`)) {
-          dispatch({ type: 'DELETE_NC', payload: nc.id });
+          try {
+            // ✅ SOLUCION: Usar deleteNCFromFirebase en lugar de dispatch local
+            await helpers.deleteNCFromFirebase(nc.id);
+            alert(`Successfully deleted NC ${nc.number}`);
+          } catch (error) {
+            console.error('Error deleting NC:', error);
+            alert('Error deleting NC. Please try again.');
+          }
         }
         break;
       case 'pdf':
@@ -279,10 +215,7 @@ const DatabasePanel = () => {
       status: 'all',
       priority: 'all',
       project: 'all',
-      supplier: 'all',
-      dateRange: 'all',
-      dateFrom: '',
-      dateTo: ''
+      supplier: 'all'
     });
     setSearchTerm('');
     setCurrentPage(1);
@@ -296,73 +229,101 @@ const DatabasePanel = () => {
             <span className="nc-panel-icon">🗄️</span>
             Non-Conformity Database
           </h3>
-          <div className="nc-database-summary">
-            <span className="nc-summary-item">
-              <strong>{filteredAndSortedNCs.length}</strong> of <strong>{ncList.length}</strong> NCs
-            </span>
-            {selectedNCs.length > 0 && (
-              <span className="nc-summary-item nc-selected">
-                <strong>{selectedNCs.length}</strong> selected
-              </span>
-            )}
-          </div>
+          <p className="nc-panel-subtitle">
+            Complete database of all non-conformities with advanced search and filtering
+          </p>
         </div>
 
-        {/* Filters and Search */}
-        <div className="nc-database-filters">
-          <div className="nc-filters-row">
-            {/* Search */}
-            <div className="nc-search-container">
+        {/* Search and Filters */}
+        <div className="nc-database-controls">
+          <div className="nc-search-section">
+            <div className="nc-search-input-group">
               <input
                 type="text"
                 className="nc-search-input"
-                placeholder="Search NCs..."
+                placeholder="Search NCs by number, description, project, or supplier..."
                 value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
+                onChange={(e) => handleSearch(e.target.value)}
               />
               <span className="nc-search-icon">🔍</span>
             </div>
+          </div>
 
-            {/* Status Filter */}
-            <select
-              className="nc-filter-select"
-              value={filters.status}
-              onChange={(e) => handleFilterChange('status', e.target.value)}
-            >
-              <option value="all">All Status</option>
-              <option value="open">Open</option>
-              <option value="progress">In Progress</option>
-              <option value="resolved">Resolved</option>
-              <option value="closed">Closed</option>
-            </select>
+          <div className="nc-filters-section">
+            <div className="nc-filter-group">
+              <label className="nc-filter-label">Status:</label>
+              <select
+                className="nc-filter-select"
+                value={filters.status}
+                onChange={(e) => handleFilterChange('status', e.target.value)}
+              >
+                <option value="all">All Status</option>
+                <option value="open">Open</option>
+                <option value="progress">In Progress</option>
+                <option value="resolved">Resolved</option>
+                <option value="closed">Closed</option>
+              </select>
+            </div>
 
-            {/* Priority Filter */}
-            <select
-              className="nc-filter-select"
-              value={filters.priority}
-              onChange={(e) => handleFilterChange('priority', e.target.value)}
-            >
-              <option value="all">All Priority</option>
-              <option value="critical">Critical</option>
-              <option value="major">Major</option>
-              <option value="minor">Minor</option>
-              <option value="low">Low</option>
-            </select>
+            <div className="nc-filter-group">
+              <label className="nc-filter-label">Priority:</label>
+              <select
+                className="nc-filter-select"
+                value={filters.priority}
+                onChange={(e) => handleFilterChange('priority', e.target.value)}
+              >
+                <option value="all">All Priorities</option>
+                <option value="critical">Critical</option>
+                <option value="major">Major</option>
+                <option value="minor">Minor</option>
+              </select>
+            </div>
 
-            {/* Project Filter */}
-            <select
-              className="nc-filter-select"
-              value={filters.project}
-              onChange={(e) => handleFilterChange('project', e.target.value)}
-            >
-              <option value="all">All Projects</option>
-              {uniqueProjects.map(project => (
-                <option key={project} value={project}>{project}</option>
-              ))}
-            </select>
+            <div className="nc-filter-group">
+              <label className="nc-filter-label">Project:</label>
+              <select
+                className="nc-filter-select"
+                value={filters.project}
+                onChange={(e) => handleFilterChange('project', e.target.value)}
+              >
+                <option value="all">All Projects</option>
+                {uniqueProjects.map(project => (
+                  <option key={project} value={project}>{project}</option>
+                ))}
+              </select>
+            </div>
 
-            {/* View Mode Toggle */}
-            <div className="nc-view-toggle">
+            <div className="nc-filter-group">
+              <label className="nc-filter-label">Supplier:</label>
+              <select
+                className="nc-filter-select"
+                value={filters.supplier}
+                onChange={(e) => handleFilterChange('supplier', e.target.value)}
+              >
+                <option value="all">All Suppliers</option>
+                {uniqueSuppliers.map(supplier => (
+                  <option key={supplier} value={supplier}>{supplier}</option>
+                ))}
+              </select>
+            </div>
+          </div>
+
+          <div className="nc-view-controls">
+            <div className="nc-items-per-page">
+              <label className="nc-filter-label">Show:</label>
+              <select
+                className="nc-filter-select nc-select-small"
+                value={itemsPerPage}
+                onChange={(e) => setItemsPerPage(Number(e.target.value))}
+              >
+                <option value={10}>10</option>
+                <option value={25}>25</option>
+                <option value={50}>50</option>
+                <option value={100}>100</option>
+              </select>
+            </div>
+
+            <div className="nc-view-mode-toggle">
               <button
                 className={`nc-btn nc-btn-small ${viewMode === 'table' ? 'nc-btn-primary' : 'nc-btn-ghost'}`}
                 onClick={() => setViewMode('table')}
@@ -437,18 +398,7 @@ const DatabasePanel = () => {
                         NC Number
                         {sortConfig.key === 'number' && (
                           <span className="nc-sort-indicator">
-                            {sortConfig.direction === 'asc' ? '↑' : '↓'}
-                          </span>
-                        )}
-                      </th>
-                      <th 
-                        className="nc-sortable"
-                        onClick={() => handleSort('priority')}
-                      >
-                        Priority
-                        {sortConfig.key === 'priority' && (
-                          <span className="nc-sort-indicator">
-                            {sortConfig.direction === 'asc' ? '↑' : '↓'}
+                            {sortConfig.direction === 'asc' ? ' ↑' : ' ↓'}
                           </span>
                         )}
                       </th>
@@ -459,12 +409,22 @@ const DatabasePanel = () => {
                         Project
                         {sortConfig.key === 'project' && (
                           <span className="nc-sort-indicator">
-                            {sortConfig.direction === 'asc' ? '↑' : '↓'}
+                            {sortConfig.direction === 'asc' ? ' ↑' : ' ↓'}
                           </span>
                         )}
                       </th>
-                      <th>Supplier</th>
-                      <th>Component</th>
+                      <th>Description</th>
+                      <th 
+                        className="nc-sortable"
+                        onClick={() => handleSort('priority')}
+                      >
+                        Priority
+                        {sortConfig.key === 'priority' && (
+                          <span className="nc-sort-indicator">
+                            {sortConfig.direction === 'asc' ? ' ↑' : ' ↓'}
+                          </span>
+                        )}
+                      </th>
                       <th 
                         className="nc-sortable"
                         onClick={() => handleSort('status')}
@@ -472,7 +432,7 @@ const DatabasePanel = () => {
                         Status
                         {sortConfig.key === 'status' && (
                           <span className="nc-sort-indicator">
-                            {sortConfig.direction === 'asc' ? '↑' : '↓'}
+                            {sortConfig.direction === 'asc' ? ' ↑' : ' ↓'}
                           </span>
                         )}
                       </th>
@@ -483,12 +443,12 @@ const DatabasePanel = () => {
                         Created
                         {sortConfig.key === 'createdDate' && (
                           <span className="nc-sort-indicator">
-                            {sortConfig.direction === 'asc' ? '↑' : '↓'}
+                            {sortConfig.direction === 'asc' ? ' ↑' : ' ↓'}
                           </span>
                         )}
                       </th>
                       <th>Days Open</th>
-                      <th>Actions</th>
+                      <th className="nc-actions-col">Actions</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -501,34 +461,24 @@ const DatabasePanel = () => {
                             onChange={() => handleRowSelect(nc.id)}
                           />
                         </td>
-                        <td className="nc-table-number">
-                          <strong>{nc.number}</strong>
+                        <td className="nc-table-nc-number">{nc.number}</td>
+                        <td>{nc.project}</td>
+                        <td className="nc-table-description">
+                          {nc.description?.substring(0, 60)}...
                         </td>
                         <td>
-                          <span className={`nc-status-badge ${getPriorityBadgeClass(nc.priority)}`}>
-                            {nc.priority.toUpperCase()}
+                          <span className={`nc-table-priority ${getPriorityBadgeClass(nc.priority)}`}>
+                            {nc.priority}
                           </span>
-                        </td>
-                        <td className="nc-table-project">{nc.project}</td>
-                        <td className="nc-table-supplier">{nc.supplier || 'N/A'}</td>
-                        <td className="nc-table-component">
-                          {nc.component ? (
-                            <span title={nc.component}>
-                              {nc.component.length > 30 
-                                ? `${nc.component.substring(0, 30)}...`
-                                : nc.component
-                              }
-                            </span>
-                          ) : 'N/A'}
                         </td>
                         <td>
-                          <span className={`nc-status-badge ${getStatusBadgeClass(nc.status)}`}>
-                            {nc.status.replace('_', ' ').toUpperCase()}
+                          <span className={`nc-table-status ${getStatusBadgeClass(nc.status)}`}>
+                            {nc.status}
                           </span>
                         </td>
-                        <td className="nc-table-date">{nc.createdDate}</td>
-                        <td className="nc-table-days">
-                          <span className={nc.daysOpen > 10 ? 'nc-days-warning' : ''}>
+                        <td>{nc.createdDate}</td>
+                        <td>
+                          <span className={`nc-days-open ${nc.daysOpen > 30 ? 'nc-days-warning' : ''}`}>
                             {nc.daysOpen} days
                           </span>
                         </td>
@@ -630,49 +580,51 @@ const DatabasePanel = () => {
             {totalPages > 1 && (
               <div className="nc-pagination">
                 <div className="nc-pagination-info">
-                  Showing {startIndex + 1} to {Math.min(endIndex, filteredAndSortedNCs.length)} of {filteredAndSortedNCs.length} entries
+                  Showing {startIndex + 1}-{Math.min(endIndex, filteredAndSortedNCs.length)} of {filteredAndSortedNCs.length} results
                 </div>
                 <div className="nc-pagination-controls">
                   <button
-                    className="nc-pagination-btn"
-                    onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
+                    className="nc-btn nc-btn-ghost nc-btn-small"
+                    onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
                     disabled={currentPage === 1}
                   >
-                    ← Previous
+                    Previous
                   </button>
                   
-                  {/* Page numbers */}
-                  {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
-                    const page = currentPage - 2 + i;
-                    if (page < 1 || page > totalPages) return null;
-                    return (
-                      <button
-                        key={page}
-                        className={`nc-pagination-btn ${page === currentPage ? 'nc-pagination-active' : ''}`}
-                        onClick={() => setCurrentPage(page)}
-                      >
-                        {page}
-                      </button>
-                    );
+                  {[...Array(totalPages)].map((_, index) => {
+                    const page = index + 1;
+                    if (page === 1 || page === totalPages || (page >= currentPage - 2 && page <= currentPage + 2)) {
+                      return (
+                        <button
+                          key={page}
+                          className={`nc-btn nc-btn-small ${page === currentPage ? 'nc-btn-primary' : 'nc-btn-ghost'}`}
+                          onClick={() => setCurrentPage(page)}
+                        >
+                          {page}
+                        </button>
+                      );
+                    } else if (page === currentPage - 3 || page === currentPage + 3) {
+                      return <span key={page} className="nc-pagination-ellipsis">...</span>;
+                    }
+                    return null;
                   })}
                   
                   <button
-                    className="nc-pagination-btn"
-                    onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
+                    className="nc-btn nc-btn-ghost nc-btn-small"
+                    onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
                     disabled={currentPage === totalPages}
                   >
-                    Next →
+                    Next
                   </button>
                 </div>
               </div>
             )}
           </>
         ) : (
-          /* Empty State */
           <div className="nc-empty-state">
-            <span className="nc-empty-icon">📋</span>
+            <span className="nc-empty-icon">🔍</span>
             <h4 className="nc-empty-title">
-              {searchTerm || Object.values(filters).some(f => f !== 'all' && f !== '') 
+              {searchTerm || Object.values(filters).some(f => f !== 'all' && f !== '')
                 ? 'No matching results found'
                 : 'No non-conformities yet'
               }

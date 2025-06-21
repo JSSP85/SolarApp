@@ -1,4 +1,4 @@
-// src/firebase/nonConformityService.js - ✅ ACTUALIZADO CON DETECTION SOURCE
+// src/firebase/nonConformityService.js - ✅ ACTUALIZADO CON DETECTION SOURCE Y SIN FOTOS
 import { 
   collection, 
   doc, 
@@ -20,7 +20,7 @@ const NC_COLLECTION = 'nonConformities';
 
 /**
  * Convierte datos de la aplicación al formato de Firestore
- * ✅ ACTUALIZADO CON DETECTION SOURCE
+ * ✅ ACTUALIZADO CON DETECTION SOURCE Y SIN FOTOS (OPCIÓN A)
  */
 const createNCDocument = (ncData) => {
   return {
@@ -58,8 +58,10 @@ const createNCDocument = (ncData) => {
     plannedClosureDate: ncData.plannedClosureDate || '',
     actualClosureDate: ncData.actualClosureDate || '',
     
-    // Photos (compressed)
-    photos: ncData.photos || [],
+    // ✅ OPCIÓN A: Photos metadata only - NO GUARDAR FOTOS PARA AHORRAR ESPACIO
+    photos: [], // Campo vacío para compatibilidad
+    photosCount: ncData.photos ? ncData.photos.length : 0, // Solo el número de fotos
+    hasPhotos: ncData.photos && ncData.photos.length > 0, // Boolean si tiene fotos
     
     // Timestamps
     createdAt: Timestamp.now(),
@@ -81,7 +83,7 @@ const createNCDocument = (ncData) => {
 
 /**
  * Convierte datos de Firestore al formato de la aplicación
- * ✅ ACTUALIZADO CON DETECTION SOURCE
+ * ✅ ACTUALIZADO CON DETECTION SOURCE Y COMPATIBLE CON SISTEMA SIN FOTOS
  */
 const convertFirestoreToAppData = (firestoreDoc) => {
   const data = firestoreDoc.data();
@@ -123,8 +125,10 @@ const convertFirestoreToAppData = (firestoreDoc) => {
     plannedClosureDate: data.plannedClosureDate || '',
     actualClosureDate: data.actualClosureDate || '',
     
-    // Photos
-    photos: data.photos || [],
+    // ✅ FOTOS: Solo metadata, no las fotos reales
+    photos: [], // Siempre vacío desde Firestore
+    photosCount: data.photosCount || 0, // Metadata del número de fotos
+    hasPhotos: data.hasPhotos || false, // Metadata si tenía fotos
     
     // Dates
     createdDate: data.createdDate || '',
@@ -143,14 +147,18 @@ const convertFirestoreToAppData = (firestoreDoc) => {
 export const saveNonConformity = async (ncData) => {
   try {
     console.log('Guardando NC en Firestore...', ncData);
+    console.log('📊 Fotos recibidas (solo para PDF):', ncData.photos?.length || 0);
     
     // Convertir los datos al formato de Firestore
     const firestoreData = createNCDocument(ncData);
     
+    console.log('💾 Guardando en Firestore SIN fotos (Opción A)');
+    
     // Agregar a la colección
     const docRef = await addDoc(collection(db, NC_COLLECTION), firestoreData);
     
-    console.log('NC guardada con ID:', docRef.id);
+    console.log('✅ NC guardada con ID:', docRef.id);
+    console.log('📈 Espacio ahorrado: ~', (ncData.photos?.length || 0) * 2, 'MB');
     return docRef.id;
   } catch (error) {
     console.error('Error guardando NC:', error);
@@ -279,7 +287,7 @@ export const getNonConformities = async (filters = {}) => {
       );
     }
     
-    console.log(`Se encontraron ${nonConformities.length} NCs`);
+    console.log(`✅ Se encontraron ${nonConformities.length} NCs`);
     return nonConformities;
   } catch (error) {
     console.error('Error obteniendo NCs:', error);
@@ -305,27 +313,18 @@ export const deleteNonConformity = async (ncId) => {
 
 /**
  * Actualizar estado de una NC
- * @param {string} ncId - ID de la NC
+ * @param {string} ncId - ID del documento
  * @param {string} newStatus - Nuevo estado
- * @param {Object} additionalData - Datos adicionales (opcional)
  * @returns {Promise<void>}
  */
-export const updateNCStatus = async (ncId, newStatus, additionalData = {}) => {
+export const updateNCStatus = async (ncId, newStatus) => {
   try {
     const docRef = doc(db, NC_COLLECTION, ncId);
-    
-    const updateData = {
+    await updateDoc(docRef, {
       status: newStatus,
       updatedAt: Timestamp.now(),
-      ...additionalData
-    };
-    
-    // Si se está cerrando, agregar fecha de cierre
-    if (newStatus === 'resolved' || newStatus === 'closed') {
-      updateData.actualClosureDate = new Date().toLocaleDateString('en-GB');
-    }
-    
-    await updateDoc(docRef, updateData);
+      ...(newStatus === 'resolved' && { actualClosureDate: new Date().toLocaleDateString('en-GB') })
+    });
     console.log('Estado de NC actualizado:', ncId, newStatus);
   } catch (error) {
     console.error('Error actualizando estado de NC:', error);
@@ -334,42 +333,14 @@ export const updateNCStatus = async (ncId, newStatus, additionalData = {}) => {
 };
 
 /**
- * Agregar entrada al timeline de una NC
- * @param {string} ncId - ID de la NC
- * @param {Object} timelineEntry - Nueva entrada del timeline
- * @returns {Promise<void>}
- */
-export const addTimelineEntry = async (ncId, timelineEntry) => {
-  try {
-    const nc = await getNonConformity(ncId);
-    if (!nc) throw new Error('NC not found');
-    
-    const newTimeline = [timelineEntry, ...nc.timeline];
-    
-    const docRef = doc(db, NC_COLLECTION, ncId);
-    await updateDoc(docRef, {
-      timeline: newTimeline,
-      updatedAt: Timestamp.now()
-    });
-    
-    console.log('Timeline entry added to NC:', ncId);
-  } catch (error) {
-    console.error('Error adding timeline entry:', error);
-    throw new Error(`Error adding timeline entry: ${error.message}`);
-  }
-};
-
-/**
- * Obtener estadísticas generales de NCs
- * ✅ ACTUALIZADO CON STATISTICS POR DETECTION SOURCE
- * @returns {Promise<Object>} - Estadísticas de NCs
+ * Obtener estadísticas de NCs
+ * @returns {Promise<Object>} - Objeto con estadísticas
  */
 export const getNCStats = async () => {
   try {
-    const q = query(collection(db, NC_COLLECTION));
-    const querySnapshot = await getDocs(q);
+    const querySnapshot = await getDocs(collection(db, NC_COLLECTION));
     
-    const stats = {
+    let stats = {
       total: 0,
       open: 0,
       progress: 0,
@@ -378,155 +349,27 @@ export const getNCStats = async () => {
       critical: 0,
       major: 0,
       minor: 0,
-      low: 0,
-      byProject: {},
-      bySupplier: {},
-      byCreator: {},
-      byDetectionSource: {} // ✅ NUEVA ESTADÍSTICA
+      low: 0
     };
     
     querySnapshot.forEach((doc) => {
       const data = doc.data();
       stats.total++;
       
-      // Contar por estado
-      const status = data.status || 'open';
-      if (stats[status] !== undefined) stats[status]++;
+      // Count by status
+      if (data.status) {
+        stats[data.status] = (stats[data.status] || 0) + 1;
+      }
       
-      // Contar por prioridad
-      const priority = data.priority || 'minor';
-      if (stats[priority] !== undefined) stats[priority]++;
-      
-      // Contar por proyecto
-      const project = data.project || 'Unknown';
-      stats.byProject[project] = (stats.byProject[project] || 0) + 1;
-      
-      // Contar por supplier
-      const supplier = data.supplier || 'Unknown';
-      stats.bySupplier[supplier] = (stats.bySupplier[supplier] || 0) + 1;
-      
-      // Contar por creador
-      const creator = data.createdBy || 'Unknown';
-      stats.byCreator[creator] = (stats.byCreator[creator] || 0) + 1;
-
-      // ✅ NUEVO: Contar por detection source
-      const detectionSource = data.detectionSource || 'not_specified';
-      stats.byDetectionSource[detectionSource] = (stats.byDetectionSource[detectionSource] || 0) + 1;
+      // Count by priority
+      if (data.priority) {
+        stats[data.priority] = (stats[data.priority] || 0) + 1;
+      }
     });
     
     return stats;
   } catch (error) {
-    console.error('Error obteniendo estadísticas de NC:', error);
+    console.error('Error obteniendo estadísticas:', error);
     throw new Error(`Error getting NC stats: ${error.message}`);
-  }
-};
-
-/**
- * Buscar NCs por texto
- * ✅ ACTUALIZADO PARA INCLUIR DETECTION SOURCE EN BÚSQUEDA
- * @param {string} searchTerm - Término de búsqueda
- * @returns {Promise<Array>} - Array de NCs que coinciden
- */
-export const searchNonConformities = async (searchTerm) => {
-  try {
-    // Obtener todas las NCs y filtrar en el cliente
-    // (Firestore no tiene búsqueda full-text nativa)
-    const allNCs = await getNonConformities();
-    
-    const searchLower = searchTerm.toLowerCase();
-    
-    return allNCs.filter(nc => 
-      nc.number.toLowerCase().includes(searchLower) ||
-      nc.project.toLowerCase().includes(searchLower) ||
-      nc.supplier.toLowerCase().includes(searchLower) ||
-      nc.description.toLowerCase().includes(searchLower) ||
-      nc.componentCode.toLowerCase().includes(searchLower) ||
-      nc.component.toLowerCase().includes(searchLower) ||
-      nc.ncType.toLowerCase().includes(searchLower) ||
-      nc.detectionSource.toLowerCase().includes(searchLower) || // ✅ INCLUIR EN BÚSQUEDA
-      nc.createdBy.toLowerCase().includes(searchLower)
-    );
-  } catch (error) {
-    console.error('Error buscando NCs:', error);
-    throw new Error(`Error searching non-conformities: ${error.message}`);
-  }
-};
-
-/**
- * ✅ NUEVA FUNCIÓN: Obtener estadísticas específicas por detection source
- * @returns {Promise<Object>} - Estadísticas detalladas por detection source
- */
-export const getDetectionSourceStats = async () => {
-  try {
-    const q = query(collection(db, NC_COLLECTION));
-    const querySnapshot = await getDocs(q);
-    
-    const detectionSourceStats = {};
-    
-    querySnapshot.forEach((doc) => {
-      const data = doc.data();
-      const detectionSource = data.detectionSource || 'not_specified';
-      
-      if (!detectionSourceStats[detectionSource]) {
-        detectionSourceStats[detectionSource] = {
-          total: 0,
-          open: 0,
-          resolved: 0,
-          critical: 0,
-          major: 0,
-          minor: 0,
-          low: 0
-        };
-      }
-      
-      detectionSourceStats[detectionSource].total++;
-      detectionSourceStats[detectionSource][data.status || 'open']++;
-      detectionSourceStats[detectionSource][data.priority || 'minor']++;
-    });
-    
-    return detectionSourceStats;
-  } catch (error) {
-    console.error('Error obteniendo estadísticas por detection source:', error);
-    throw new Error(`Error getting detection source stats: ${error.message}`);
-  }
-};
-
-/**
- * ✅ NUEVA FUNCIÓN: Obtener estadísticas específicas por supplier
- * @returns {Promise<Object>} - Estadísticas detalladas por supplier
- */
-export const getSupplierStats = async () => {
-  try {
-    const q = query(collection(db, NC_COLLECTION));
-    const querySnapshot = await getDocs(q);
-    
-    const supplierStats = {};
-    
-    querySnapshot.forEach((doc) => {
-      const data = doc.data();
-      const supplier = data.supplier || 'not_specified';
-      
-      if (!supplierStats[supplier]) {
-        supplierStats[supplier] = {
-          total: 0,
-          open: 0,
-          resolved: 0,
-          critical: 0,
-          major: 0,
-          minor: 0,
-          low: 0,
-          avgResolutionTime: 0
-        };
-      }
-      
-      supplierStats[supplier].total++;
-      supplierStats[supplier][data.status || 'open']++;
-      supplierStats[supplier][data.priority || 'minor']++;
-    });
-    
-    return supplierStats;
-  } catch (error) {
-    console.error('Error obteniendo estadísticas por supplier:', error);
-    throw new Error(`Error getting supplier stats: ${error.message}`);
   }
 };

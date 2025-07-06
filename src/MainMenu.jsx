@@ -20,7 +20,8 @@ import {
   Database,
   Book,
   LogOut,
-  User
+  User,
+  Building2
 } from 'lucide-react';
 
 // Importar el contexto de autenticación

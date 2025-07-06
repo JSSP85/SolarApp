@@ -20,7 +20,7 @@ const initialState = {
   currentUser: null
 };
 
-// Reducer function
+// Reducer functioon
 const supplierEvaluationReducer = (state, action) => {
   switch (action.type) {
     case 'SET_ACTIVE_TAB':

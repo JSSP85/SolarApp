@@ -3,7 +3,7 @@
 import React, { useState, useContext, createContext, useReducer } from 'react';
 import { ArrowLeft, Building2, Plus, BarChart3, FileSpreadsheet, CheckCircle, Users, Calendar, User, ChevronDown, ChevronUp, Factory, Shield, Truck, Package, Save, FileText, TrendingUp, Award, AlertTriangle, XCircle, AlertCircle, Eye, Edit, Search, Filter, MapPin } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
-import './SupplierEvaluation.css';
+
 
 // Supplier Evaluation Context
 const SupplierEvaluationContext = createContext();

@@ -1,5 +1,5 @@
 // src/components/supplier-evaluation/SupplierEvaluationWrapper.jsx
-// Complete Supplier Evaluation Module with Embedded Styles
+// Complete Supplier Evaluation Module with CSS Modules
 import React, { useState, useContext, createContext, useReducer } from 'react';
 import { ArrowLeft, Building2, Plus, BarChart3, FileSpreadsheet, CheckCircle, Users, Calendar, User, ChevronDown, ChevronUp, Factory, Shield, Truck, Package, Save, FileText, TrendingUp, Award, AlertTriangle, XCircle, AlertCircle, Eye, Edit, Search, Filter, MapPin } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
@@ -20,7 +20,7 @@ const initialState = {
   currentUser: null
 };
 
-// Reducer functioon
+// Reducer function
 const supplierEvaluationReducer = (state, action) => {
   switch (action.type) {
     case 'SET_ACTIVE_TAB':
@@ -573,33 +573,33 @@ const SupplierEvaluationSidebar = () => {
   ];
 
   return (
-    <div className="se-sidebar">
-      <div className="se-sidebar-header">
-        <div className="se-sidebar-title">
-          <Building2 size={24} className="se-sidebar-icon" />
+    <div className={styles.sidebar}>
+      <div className={styles.sidebarHeader}>
+        <div className={styles.sidebarTitle}>
+          <Building2 size={24} className={styles.sidebarIcon} />
           <span>Supplier Evaluation</span>
         </div>
       </div>
 
-      <div className="se-sidebar-menu">
+      <div className={styles.sidebarMenu}>
         {sidebarItems.map((item) => {
           const Icon = item.icon;
           return (
-            <button key={item.id} className={`se-sidebar-item ${activeTab === item.id ? 'se-sidebar-item-active' : ''}`} onClick={() => dispatch({ type: 'SET_ACTIVE_TAB', payload: item.id })}>
-              <div className="se-sidebar-item-icon">
+            <button key={item.id} className={`${styles.sidebarItem} ${activeTab === item.id ? styles.sidebarItemActive : ''}`} onClick={() => dispatch({ type: 'SET_ACTIVE_TAB', payload: item.id })}>
+              <div className={styles.sidebarItemIcon}>
                 <Icon size={20} />
               </div>
-              <div className="se-sidebar-item-content">
-                <div className="se-sidebar-item-label">{item.label}</div>
-                <div className="se-sidebar-item-desc">{item.description}</div>
+              <div className={styles.sidebarItemContent}>
+                <div className={styles.sidebarItemLabel}>{item.label}</div>
+                <div className={styles.sidebarItemDesc}>{item.description}</div>
               </div>
             </button>
           );
         })}
       </div>
 
-      <div className="se-sidebar-footer">
-        <div className="se-sidebar-info">
+      <div className={styles.sidebarFooter}>
+        <div className={styles.sidebarInfo}>
           <Users size={16} />
           <span>Supplier Management System</span>
         </div>
@@ -626,264 +626,36 @@ const SupplierEvaluationContent = () => {
   };
 
   return (
-    <div className="se-app-container">
+    <div className={styles.appContainer}>
       <SupplierEvaluationSidebar />
       
-      <div className="se-main-content">
-        <div className="se-content-header-blue">
-          <div className="se-header-info">
-            <h1 className="se-main-title">Supplier Evaluation Management</h1>
-            <div className="se-breadcrumb">Quality Control → Supplier Evaluation → {getBreadcrumbTitle(activeTab)}</div>
+      <div className={styles.mainContent}>
+        <div className={styles.contentHeaderBlue}>
+          <div className={styles.headerInfo}>
+            <h1 className={styles.mainTitle}>Supplier Evaluation Management</h1>
+            <div className={styles.breadcrumb}>Quality Control → Supplier Evaluation → {getBreadcrumbTitle(activeTab)}</div>
           </div>
           
-          <div className="se-header-actions">
+          <div className={styles.headerActions}>
             {activeTab !== 'checklist' && (
-              <button className="se-btn se-btn-primary" onClick={() => dispatch({ type: 'SET_ACTIVE_TAB', payload: 'checklist' })}>
-                <span className="se-btn-icon">➕</span>
+              <button className={`${styles.btn} ${styles.btnPrimary}`} onClick={() => dispatch({ type: 'SET_ACTIVE_TAB', payload: 'checklist' })}>
+                <span className={styles.btnIcon}>➕</span>
                 Quick Evaluate Supplier
               </button>
             )}
             
-            <div className="se-user-role-indicator">
-              <span className={`se-role-badge se-role-${currentUser?.role || 'unknown'}`}>
+            <div className={styles.userRoleIndicator}>
+              <span className={`${styles.roleBadge} ${styles[`role${currentUser?.role?.charAt(0).toUpperCase() + currentUser?.role?.slice(1)}`] || ''}`}>
                 {currentUser?.displayName || 'Unknown User'}
               </span>
             </div>
           </div>
         </div>
         
-        <div className="se-panel-content">
+        <div className={styles.panelContent}>
           {renderActivePanel()}
         </div>
       </div>
-
-      {/* Embedded CSS Styles */}
-      <style jsx>{`
-        .se-app-container {
-          display: flex;
-          height: 100vh;
-          background: #f8fafc;
-          font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-        }
-
-        .se-sidebar {
-          width: 320px;
-          background: linear-gradient(145deg, #1e293b 0%, #334155 100%);
-          border-right: 1px solid #e2e8f0;
-          display: flex;
-          flex-direction: column;
-          box-shadow: 4px 0 15px rgba(0, 0, 0, 0.1);
-        }
-
-        .se-sidebar-header {
-          padding: 1.5rem;
-          border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-          background: rgba(0, 0, 0, 0.2);
-        }
-
-        .se-sidebar-title {
-          display: flex;
-          align-items: center;
-          gap: 0.75rem;
-          color: white;
-          font-size: 1.125rem;
-          font-weight: 700;
-        }
-
-        .se-sidebar-icon {
-          color: #60a5fa;
-        }
-
-        .se-sidebar-menu {
-          flex: 1;
-          padding: 1.5rem 0;
-        }
-
-        .se-sidebar-item {
-          display: flex;
-          align-items: center;
-          gap: 1rem;
-          width: 100%;
-          padding: 1rem 1.5rem;
-          border: none;
-          background: transparent;
-          color: #cbd5e1;
-          text-align: left;
-          cursor: pointer;
-          transition: all 0.2s ease;
-          border-left: 3px solid transparent;
-        }
-
-        .se-sidebar-item:hover {
-          background: rgba(255, 255, 255, 0.1);
-          color: white;
-          border-left-color: #60a5fa;
-        }
-
-        .se-sidebar-item-active {
-          background: rgba(59, 130, 246, 0.2) !important;
-          color: white !important;
-          border-left-color: #3b82f6 !important;
-        }
-
-        .se-sidebar-item-icon {
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          width: 40px;
-          height: 40px;
-          background: rgba(255, 255, 255, 0.1);
-          border-radius: 8px;
-          transition: all 0.2s ease;
-        }
-
-        .se-sidebar-item-active .se-sidebar-item-icon {
-          background: rgba(59, 130, 246, 0.3);
-        }
-
-        .se-sidebar-item-content {
-          flex: 1;
-        }
-
-        .se-sidebar-item-label {
-          font-weight: 600;
-          font-size: 0.875rem;
-          margin-bottom: 0.25rem;
-        }
-
-        .se-sidebar-item-desc {
-          font-size: 0.75rem;
-          opacity: 0.7;
-        }
-
-        .se-sidebar-footer {
-          padding: 1.5rem;
-          border-top: 1px solid rgba(255, 255, 255, 0.1);
-        }
-
-        .se-sidebar-info {
-          display: flex;
-          align-items: center;
-          gap: 0.5rem;
-          color: #94a3b8;
-          font-size: 0.75rem;
-        }
-
-        .se-main-content {
-          flex: 1;
-          display: flex;
-          flex-direction: column;
-          overflow: hidden;
-        }
-
-        .se-content-header-blue {
-          background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%);
-          color: white;
-          padding: 1.5rem 2rem;
-          display: flex;
-          justify-content: space-between;
-          align-items: center;
-          box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
-        }
-
-        .se-header-info {
-          flex: 1;
-        }
-
-        .se-main-title {
-          font-size: 1.5rem;
-          font-weight: 700;
-          margin: 0 0 0.5rem 0;
-        }
-
-        .se-breadcrumb {
-          font-size: 0.875rem;
-          opacity: 0.9;
-          font-weight: 500;
-        }
-
-        .se-header-actions {
-          display: flex;
-          align-items: center;
-          gap: 1rem;
-        }
-
-        .se-btn {
-          display: inline-flex;
-          align-items: center;
-          gap: 0.5rem;
-          padding: 0.75rem 1.5rem;
-          border: none;
-          border-radius: 8px;
-          font-size: 0.875rem;
-          font-weight: 600;
-          cursor: pointer;
-          transition: all 0.2s ease;
-          text-decoration: none;
-        }
-
-        .se-btn-primary {
-          background: rgba(255, 255, 255, 0.2);
-          color: white;
-          border: 1px solid rgba(255, 255, 255, 0.3);
-        }
-
-        .se-btn-primary:hover {
-          background: rgba(255, 255, 255, 0.3);
-          transform: translateY(-1px);
-        }
-
-        .se-btn-icon {
-          font-size: 16px;
-        }
-
-        .se-user-role-indicator .se-role-badge {
-          padding: 0.5rem 1rem;
-          border-radius: 6px;
-          font-size: 0.75rem;
-          font-weight: 600;
-          background: rgba(255, 255, 255, 0.15);
-          color: white;
-          border: 1px solid rgba(255, 255, 255, 0.2);
-          backdrop-filter: blur(5px);
-        }
-
-        .se-role-admin {
-          background: rgba(236, 72, 153, 0.2) !important;
-          color: rgba(255, 182, 217, 1) !important;
-          border: 1px solid rgba(236, 72, 153, 0.3) !important;
-        }
-
-        .se-role-manager {
-          background: rgba(255, 161, 86, 0.2) !important;
-          color: rgba(255, 206, 154, 1) !important;
-          border: 1px solid rgba(255, 161, 86, 0.3) !important;
-        }
-
-        .se-panel-content {
-          flex: 1;
-          overflow: auto;
-          background: #f8fafc;
-        }
-
-        @media (max-width: 768px) {
-          .se-sidebar {
-            width: 280px;
-          }
-          
-          .se-content-header-blue {
-            padding: 1rem;
-            flex-direction: column;
-            gap: 1rem;
-            align-items: flex-start;
-          }
-          
-          .se-header-actions {
-            width: 100%;
-            justify-content: space-between;
-          }
-        }
-      `}</style>
     </div>
   );
 };
@@ -892,9 +664,9 @@ const SupplierEvaluationContent = () => {
 const SupplierEvaluationWrapper = ({ onBack }) => {
   return (
     <SupplierEvaluationProvider>
-      <div className="supplier-evaluation-wrapper">
+      <div className={styles.supplierEvaluationWrapper}>
         {onBack && (
-          <button className="se-back-to-menu" onClick={onBack} title="Back to Main Menu">
+          <button className={styles.backToMenu} onClick={onBack} title="Back to Main Menu">
             <ArrowLeft size={16} />
             <span>Back to Main Menu</span>
           </button>
@@ -902,40 +674,6 @@ const SupplierEvaluationWrapper = ({ onBack }) => {
         
         <SupplierEvaluationContent />
       </div>
-
-      <style jsx>{`
-        .supplier-evaluation-wrapper {
-          height: 100vh;
-          position: relative;
-          isolation: isolate;
-        }
-
-        .se-back-to-menu {
-          position: fixed;
-          top: 1rem;
-          left: 1rem;
-          z-index: 1000;
-          display: flex;
-          align-items: center;
-          gap: 0.5rem;
-          padding: 0.5rem 1rem;
-          background: rgba(30, 41, 59, 0.95);
-          color: white;
-          border: 1px solid rgba(255, 255, 255, 0.2);
-          border-radius: 8px;
-          font-size: 0.875rem;
-          font-weight: 500;
-          cursor: pointer;
-          transition: all 0.2s ease;
-          backdrop-filter: blur(10px);
-        }
-
-        .se-back-to-menu:hover {
-          background: rgba(30, 41, 59, 1);
-          transform: translateY(-1px);
-          box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
-        }
-      `}</style>
     </SupplierEvaluationProvider>
   );
 };

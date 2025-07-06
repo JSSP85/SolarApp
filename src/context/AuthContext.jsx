@@ -6,13 +6,13 @@ const USER_CREDENTIALS = {
   'Admin': {
     password: 'valm2025',
     role: 'admin',
-    permissions: ['steel', 'hardware', 'electrical', 'free-inspection', 'non-conformity-manager', 'inspection-dashboard', 'quality-database', 'quality-book', 'supplier-management'],
+    permissions: ['steel', 'hardware', 'electrical', 'free-inspection', 'non-conformity-manager', 'inspection-dashboard', 'quality-database', 'quality-book', 'supplier-evaluation'],
     displayName: 'Administrator'
   },
   'Manager': {
     password: 'valm2025',
     role: 'manager',
-    permissions: ['steel', 'hardware', 'electrical', 'free-inspection', 'non-conformity-manager', 'inspection-dashboard'],
+    permissions: ['steel', 'hardware', 'electrical', 'free-inspection', 'non-conformity-manager', 'inspection-dashboard', 'supplier-evaluation'],
     displayName: 'Manager'
   },
   'Inspector1': {
@@ -156,10 +156,10 @@ export const AuthProvider = ({ children }) => {
         return 'Inspector Level Access Required';
       case 'non-conformity-manager':
       case 'inspection-dashboard':
+      case 'supplier-evaluation':
         return 'Manager Level Access Required';
       case 'quality-database':
       case 'quality-book':
-      case 'supplier-management':
         return 'Administrator Access Required';
       default:
         return 'Authentication Required';

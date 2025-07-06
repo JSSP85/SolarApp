@@ -6,7 +6,7 @@ const USER_CREDENTIALS = {
   'Admin': {
     password: 'valm2025',
     role: 'admin',
-    permissions: ['steel', 'hardware', 'electrical', 'free-inspection', 'non-conformity-manager', 'inspection-dashboard', 'quality-database', 'quality-book', 'supplier-evaluation'],
+    permissions: ['steel', 'hardware', 'electrical', 'free-inspection', 'non-conformity-manager', 'inspection-dashboard','quality-book', 'supplier-evaluation'],
     displayName: 'Administrator'
   },
   'Manager': {
@@ -158,7 +158,6 @@ export const AuthProvider = ({ children }) => {
       case 'inspection-dashboard':
       case 'supplier-evaluation':
         return 'Manager Level Access Required';
-      case 'quality-database':
       case 'quality-book':
         return 'Administrator Access Required';
       default:

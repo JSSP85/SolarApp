@@ -1,0 +1,478 @@
+/* src/components/supplier-evaluation/SupplierEvaluation.css */
+/* Dedicated styles for Supplier Evaluation System */
+
+/* ============================================
+   SUPPLIER EVALUATION - ISOLATION STYLES
+   ============================================ */
+
+/* Wrapper isolation */
+.supplier-evaluation-wrapper {
+  isolation: isolate;
+  position: relative;
+  z-index: 1;
+  height: 100vh;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+}
+
+/* Prevent style inheritance issues */
+.supplier-evaluation-wrapper * {
+  box-sizing: border-box;
+}
+
+/* ============================================
+   SIDEBAR STYLES
+   ============================================ */
+
+.se-sidebar {
+  width: 320px;
+  background: linear-gradient(145deg, #1e293b 0%, #334155 100%);
+  border-right: 1px solid #e2e8f0;
+  display: flex;
+  flex-direction: column;
+  box-shadow: 4px 0 15px rgba(0, 0, 0, 0.1);
+  position: relative;
+  z-index: 10;
+}
+
+.se-sidebar-header {
+  padding: 1.5rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  background: rgba(0, 0, 0, 0.2);
+}
+
+.se-sidebar-title {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  color: white;
+  font-size: 1.125rem;
+  font-weight: 700;
+}
+
+.se-sidebar-icon {
+  color: #60a5fa;
+  flex-shrink: 0;
+}
+
+.se-sidebar-menu {
+  flex: 1;
+  padding: 1.5rem 0;
+  overflow-y: auto;
+}
+
+.se-sidebar-item {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  width: 100%;
+  padding: 1rem 1.5rem;
+  border: none;
+  background: transparent;
+  color: #cbd5e1;
+  text-align: left;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  border-left: 3px solid transparent;
+  font-family: inherit;
+}
+
+.se-sidebar-item:hover {
+  background: rgba(255, 255, 255, 0.1);
+  color: white;
+  border-left-color: #60a5fa;
+}
+
+.se-sidebar-item-active {
+  background: rgba(59, 130, 246, 0.2) !important;
+  color: white !important;
+  border-left-color: #3b82f6 !important;
+}
+
+.se-sidebar-item-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 8px;
+  transition: all 0.2s ease;
+  flex-shrink: 0;
+}
+
+.se-sidebar-item-active .se-sidebar-item-icon {
+  background: rgba(59, 130, 246, 0.3);
+}
+
+.se-sidebar-item-content {
+  flex: 1;
+  min-width: 0;
+}
+
+.se-sidebar-item-label {
+  font-weight: 600;
+  font-size: 0.875rem;
+  margin-bottom: 0.25rem;
+  line-height: 1.2;
+}
+
+.se-sidebar-item-desc {
+  font-size: 0.75rem;
+  opacity: 0.7;
+  line-height: 1.2;
+}
+
+.se-sidebar-footer {
+  padding: 1.5rem;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+  margin-top: auto;
+}
+
+.se-sidebar-info {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  color: #94a3b8;
+  font-size: 0.75rem;
+}
+
+/* ============================================
+   MAIN CONTENT STYLES
+   ============================================ */
+
+.se-main-content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  position: relative;
+}
+
+.se-content-header-blue {
+  background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%);
+  color: white;
+  padding: 1.5rem 2rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
+  position: relative;
+  z-index: 5;
+}
+
+.se-header-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.se-main-title {
+  font-size: 1.5rem;
+  font-weight: 700;
+  margin: 0 0 0.5rem 0;
+  line-height: 1.2;
+}
+
+.se-breadcrumb {
+  font-size: 0.875rem;
+  opacity: 0.9;
+  font-weight: 500;
+  line-height: 1.2;
+}
+
+.se-header-actions {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  flex-shrink: 0;
+}
+
+/* ============================================
+   BUTTON STYLES
+   ============================================ */
+
+.se-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.75rem 1.5rem;
+  border: none;
+  border-radius: 8px;
+  font-size: 0.875rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  text-decoration: none;
+  font-family: inherit;
+  white-space: nowrap;
+}
+
+.se-btn-primary {
+  background: rgba(255, 255, 255, 0.2);
+  color: white;
+  border: 1px solid rgba(255, 255, 255, 0.3);
+}
+
+.se-btn-primary:hover {
+  background: rgba(255, 255, 255, 0.3);
+  transform: translateY(-1px);
+}
+
+.se-btn-icon {
+  font-size: 16px;
+  flex-shrink: 0;
+}
+
+/* ============================================
+   USER ROLE INDICATORS
+   ============================================ */
+
+.se-user-role-indicator .se-role-badge {
+  padding: 0.5rem 1rem;
+  border-radius: 6px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  background: rgba(255, 255, 255, 0.15);
+  color: white;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  backdrop-filter: blur(5px);
+  white-space: nowrap;
+}
+
+.se-role-admin {
+  background: rgba(236, 72, 153, 0.2) !important;
+  color: rgba(255, 182, 217, 1) !important;
+  border: 1px solid rgba(236, 72, 153, 0.3) !important;
+}
+
+.se-role-manager {
+  background: rgba(255, 161, 86, 0.2) !important;
+  color: rgba(255, 206, 154, 1) !important;
+  border: 1px solid rgba(255, 161, 86, 0.3) !important;
+}
+
+/* ============================================
+   PANEL CONTENT
+   ============================================ */
+
+.se-panel-content {
+  flex: 1;
+  overflow: auto;
+  background: #f8fafc;
+  position: relative;
+}
+
+/* ============================================
+   BACK BUTTON
+   ============================================ */
+
+.se-back-to-menu {
+  position: fixed;
+  top: 1rem;
+  left: 1rem;
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 1rem;
+  background: rgba(30, 41, 59, 0.95);
+  color: white;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 8px;
+  font-size: 0.875rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  backdrop-filter: blur(10px);
+  text-decoration: none;
+  font-family: inherit;
+}
+
+.se-back-to-menu:hover {
+  background: rgba(30, 41, 59, 1);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+  color: white;
+}
+
+/* ============================================
+   RESPONSIVE DESIGN
+   ============================================ */
+
+@media (max-width: 1024px) {
+  .se-sidebar {
+    width: 280px;
+  }
+  
+  .se-content-header-blue {
+    padding: 1.25rem 1.5rem;
+  }
+}
+
+@media (max-width: 768px) {
+  .se-sidebar {
+    width: 260px;
+  }
+  
+  .se-content-header-blue {
+    padding: 1rem;
+    flex-direction: column;
+    gap: 1rem;
+    align-items: flex-start;
+  }
+  
+  .se-header-actions {
+    width: 100%;
+    justify-content: space-between;
+  }
+  
+  .se-main-title {
+    font-size: 1.25rem;
+  }
+  
+  .se-breadcrumb {
+    font-size: 0.8rem;
+  }
+}
+
+@media (max-width: 640px) {
+  .se-sidebar {
+    position: fixed;
+    left: -280px;
+    top: 0;
+    height: 100vh;
+    z-index: 50;
+    transition: left 0.3s ease;
+  }
+  
+  .se-sidebar.se-sidebar-open {
+    left: 0;
+  }
+  
+  .se-back-to-menu {
+    position: relative;
+    top: auto;
+    left: auto;
+    margin-bottom: 1rem;
+  }
+}
+
+/* ============================================
+   FORM ELEMENTS (for panels)
+   ============================================ */
+
+.se-form-input {
+  width: 100%;
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
+  padding: 0.75rem;
+  font-size: 0.875rem;
+  transition: all 0.2s ease;
+  font-family: inherit;
+}
+
+.se-form-input:focus {
+  outline: none;
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+
+.se-form-label {
+  display: block;
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: #374151;
+  margin-bottom: 0.5rem;
+}
+
+.se-form-select {
+  width: 100%;
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
+  padding: 0.75rem;
+  font-size: 0.875rem;
+  background: white;
+  cursor: pointer;
+  font-family: inherit;
+}
+
+.se-form-select:focus {
+  outline: none;
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+
+/* ============================================
+   LOADING STATES
+   ============================================ */
+
+.se-loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 2rem;
+  color: #6b7280;
+}
+
+.se-spinner {
+  width: 24px;
+  height: 24px;
+  border: 2px solid #e5e7eb;
+  border-top: 2px solid #3b82f6;
+  border-radius: 50%;
+  animation: se-spin 1s linear infinite;
+}
+
+@keyframes se-spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+/* ============================================
+   UTILITY CLASSES
+   ============================================ */
+
+.se-text-center { text-align: center; }
+.se-text-left { text-align: left; }
+.se-text-right { text-align: right; }
+
+.se-mt-4 { margin-top: 1rem; }
+.se-mb-4 { margin-bottom: 1rem; }
+.se-ml-4 { margin-left: 1rem; }
+.se-mr-4 { margin-right: 1rem; }
+
+.se-p-4 { padding: 1rem; }
+.se-px-4 { padding-left: 1rem; padding-right: 1rem; }
+.se-py-4 { padding-top: 1rem; padding-bottom: 1rem; }
+
+.se-rounded { border-radius: 6px; }
+.se-rounded-lg { border-radius: 8px; }
+
+.se-shadow { box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1); }
+.se-shadow-lg { box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1); }
+
+.se-hidden { display: none; }
+.se-block { display: block; }
+.se-flex { display: flex; }
+.se-inline-flex { display: inline-flex; }
+
+/* ============================================
+   ANIMATION KEYFRAMES
+   ============================================ */
+
+@keyframes se-fadeIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes se-slideIn {
+  from { transform: translateX(-100%); }
+  to { transform: translateX(0); }
+}
+
+.se-animate-fadeIn {
+  animation: se-fadeIn 0.3s ease-out;
+}
+
+.se-animate-slideIn {
+  animation: se-slideIn 0.3s ease-out;
+}

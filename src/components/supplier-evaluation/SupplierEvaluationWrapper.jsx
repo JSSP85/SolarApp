@@ -32,7 +32,6 @@ const SupplierEvaluationWrapper = ({ onBackToMenu }) => {
   const [activeTab, setActiveTab] = useState('dashboard');
   const [suppliers, setSuppliers] = useState([]);
   const [loading, setLoading] = useState(false);
-  const [expandedKPI, setExpandedKPI] = useState(null);
 
   // Form state for new supplier checklist
   const [formData, setFormData] = useState({
@@ -54,7 +53,11 @@ const SupplierEvaluationWrapper = ({ onBackToMenu }) => {
     },
     companyData: {
       annualRevenue: '',
-      employees: ''
+      employees: '',
+      workingDays: '',
+      shifts: '',
+      productionHours: '',
+      installedCapacity: ''
     },
     kpiScores: {
       kpi1: 0,
@@ -62,92 +65,6 @@ const SupplierEvaluationWrapper = ({ onBackToMenu }) => {
       kpi3: 0,
       kpi4: 0,
       kpi5: 0
-    },
-    kpiDetails: {
-      kpi1: {
-        // Production Lines
-        productionLines: '',
-        capacityPerLine: '',
-        profileTypes: '',
-        maxDimensions: '',
-        minDimensions: '',
-        // Main Equipment
-        laserMachines: '',
-        bendingPresses: '',
-        bendingCapacity: '',
-        weldingStations: '',
-        heatTreatment: false,
-        automatedSystems: false,
-        // Production Schedule
-        effectiveHours: '',
-        workingDays: '',
-        extraShifts: false
-      },
-      kpi2: {
-        // Quality Department
-        qualityManager: '',
-        qualityManagerTitle: '',
-        qcTeamSize: '',
-        qcCertifications: '',
-        // Laboratory and Testing Equipment
-        ownLaboratory: false,
-        iso17025: false,
-        tensileTest: false,
-        tensileCapacity: '',
-        durometer: false,
-        spectrometer: false,
-        ultrasoundEND: false,
-        cmm: false,
-        // Procedures
-        itp: false,
-        testingFrequency: '',
-        statisticalControl: false
-      },
-      kpi3: {
-        // Steel Suppliers
-        steelSupplier1: '',
-        steelSupplier2: '',
-        steelSupplier3: '',
-        millCertificates: 'always',
-        // Galvanizing/Coatings
-        ownGalvanizing: false,
-        galvanizingSupplier: '',
-        galvanizingDistance: '',
-        otherCoatings: '',
-        // Traceability
-        completeTraceability: false,
-        qrIdentification: false,
-        digitalRecords: false
-      },
-      kpi4: {
-        // Key Personnel
-        productionEngineer: '',
-        productionExperience: '',
-        weldingSupervisor: '',
-        weldingCertification: '',
-        labTechnicians: '',
-        qualifiedOperators: '',
-        // Training
-        trainingProgram: false,
-        currentCertifications: '',
-        annualTurnover: ''
-      },
-      kpi5: {
-        // Logistics Capacity
-        logisticsManager: '',
-        logisticsTeamSize: '',
-        ownFleet: false,
-        fleetVehicles: '',
-        logisticsSubcontractors: '',
-        // Delivery Times
-        standardLeadTime: '',
-        urgentLeadTime: '',
-        changeFlexibility: 'medium',
-        // Packaging and Protection
-        maritimePackaging: false,
-        corrosionProtection: false,
-        labeling: 'basic'
-      }
     },
     observations: {
       strengths: '',
@@ -194,7 +111,6 @@ const SupplierEvaluationWrapper = ({ onBackToMenu }) => {
 
   const resetForm = () => {
     setFormData({
-      // General Information
       supplierName: '',
       category: '',
       location: '',
@@ -203,12 +119,6 @@ const SupplierEvaluationWrapper = ({ onBackToMenu }) => {
       auditorName: currentUser?.displayName || '',
       activityField: '',
       auditType: '',
-      // Company Data
-      companyData: {
-        annualRevenue: '',
-        employees: ''
-      },
-      // Certifications
       certifications: {
         iso9001: false,
         iso14001: false,
@@ -217,86 +127,20 @@ const SupplierEvaluationWrapper = ({ onBackToMenu }) => {
         ceMarking: false,
         others: ''
       },
-      // KPI Scores
+      companyData: {
+        annualRevenue: '',
+        employees: '',
+        workingDays: '',
+        shifts: '',
+        productionHours: '',
+        installedCapacity: ''
+      },
       kpiScores: {
         kpi1: 0,
         kpi2: 0,
         kpi3: 0,
         kpi4: 0,
         kpi5: 0
-      },
-      // Detailed KPI information
-      kpiDetails: {
-        kpi1: {
-          productionLines: '',
-          capacityPerLine: '',
-          profileTypes: '',
-          maxDimensions: '',
-          minDimensions: '',
-          laserMachines: '',
-          bendingPresses: '',
-          bendingCapacity: '',
-          weldingStations: '',
-          heatTreatment: false,
-          automatedSystems: false,
-          effectiveHours: '',
-          workingDays: '',
-          extraShifts: false
-        },
-        kpi2: {
-          qualityManager: '',
-          qualityManagerTitle: '',
-          qcTeamSize: '',
-          qcCertifications: '',
-          ownLaboratory: false,
-          iso17025: false,
-          tensileTest: false,
-          tensileCapacity: '',
-          durometer: false,
-          spectrometer: false,
-          ultrasoundEND: false,
-          cmm: false,
-          itp: false,
-          testingFrequency: '',
-          statisticalControl: false
-        },
-        kpi3: {
-          steelSupplier1: '',
-          steelSupplier2: '',
-          steelSupplier3: '',
-          millCertificates: 'always',
-          ownGalvanizing: false,
-          galvanizingSupplier: '',
-          galvanizingDistance: '',
-          otherCoatings: '',
-          completeTraceability: false,
-          qrIdentification: false,
-          digitalRecords: false
-        },
-        kpi4: {
-          productionEngineer: '',
-          productionExperience: '',
-          weldingSupervisor: '',
-          weldingCertification: '',
-          labTechnicians: '',
-          qualifiedOperators: '',
-          trainingProgram: false,
-          currentCertifications: '',
-          annualTurnover: ''
-        },
-        kpi5: {
-          logisticsManager: '',
-          logisticsTeamSize: '',
-          ownFleet: false,
-          fleetVehicles: '',
-          logisticsSubcontractors: '',
-          standardLeadTime: '',
-          urgentLeadTime: '',
-          changeFlexibility: 'medium',
-          maritimePackaging: false,
-          corrosionProtection: false,
-          labeling: 'basic'
-        }
       },
       observations: {
         strengths: '',
@@ -305,7 +149,6 @@ const SupplierEvaluationWrapper = ({ onBackToMenu }) => {
         followUpDate: ''
       }
     });
-    setExpandedKPI(null); // Reset expanded state
   };
 
   // Form handling functions
@@ -324,23 +167,6 @@ const SupplierEvaluationWrapper = ({ onBackToMenu }) => {
       ...prev,
       [field]: value
     }));
-  };
-
-  const handleKpiDetailChange = (kpiKey, field, value) => {
-    setFormData(prev => ({
-      ...prev,
-      kpiDetails: {
-        ...prev.kpiDetails,
-        [kpiKey]: {
-          ...prev.kpiDetails[kpiKey],
-          [field]: value
-        }
-      }
-    }));
-  };
-
-  const toggleKpiExpansion = (kpiKey) => {
-    setExpandedKPI(expandedKPI === kpiKey ? null : kpiKey);
   };
 
   const handleSubmit = (e) => {
@@ -499,669 +325,6 @@ const SupplierEvaluationWrapper = ({ onBackToMenu }) => {
                   />
                 </div>
 
-              {/* KPI 3 - Raw Materials Management & Traceability */}
-              <div className={styles.kpiCard}>
-                <div className={styles.kpiHeader}>
-                  <h4 className={styles.kpiTitle}>
-                    KPI 3 - Raw Materials Management & Traceability
-                  </h4>
-                </div>
-                
-                {/* Steel Suppliers */}
-                <div className={styles.formSection}>
-                  <h5 className={styles.subSectionTitle}>Steel Suppliers</h5>
-                  <div className={styles.formGrid}>
-                    <div className={styles.formGroup}>
-                      <label className={styles.formLabel}>Main Steel Supplier 1</label>
-                      <input
-                        type="text"
-                        value={formData.kpiDetails.kpi3.steelSupplier1}
-                        onChange={(e) => handleKpiDetailChange('kpi3', 'steelSupplier1', e.target.value)}
-                        className={styles.formInput}
-                      />
-                    </div>
-                    <div className={styles.formGroup}>
-                      <label className={styles.formLabel}>Main Steel Supplier 2</label>
-                      <input
-                        type="text"
-                        value={formData.kpiDetails.kpi3.steelSupplier2}
-                        onChange={(e) => handleKpiDetailChange('kpi3', 'steelSupplier2', e.target.value)}
-                        className={styles.formInput}
-                      />
-                    </div>
-                    <div className={styles.formGroup}>
-                      <label className={styles.formLabel}>Main Steel Supplier 3</label>
-                      <input
-                        type="text"
-                        value={formData.kpiDetails.kpi3.steelSupplier3}
-                        onChange={(e) => handleKpiDetailChange('kpi3', 'steelSupplier3', e.target.value)}
-                        className={styles.formInput}
-                      />
-                    </div>
-                    <div className={styles.formGroup}>
-                      <label className={styles.formLabel}>Mill certificates received</label>
-                      <select
-                        value={formData.kpiDetails.kpi3.millCertificates}
-                        onChange={(e) => handleKpiDetailChange('kpi3', 'millCertificates', e.target.value)}
-                        className={styles.formInput}
-                      >
-                        <option value="always">Always</option>
-                        <option value="sometimes">Sometimes</option>
-                        <option value="never">Never</option>
-                      </select>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Galvanizing/Coatings */}
-                <div className={styles.formSection}>
-                  <h5 className={styles.subSectionTitle}>Galvanizing/Coatings</h5>
-                  <div className={styles.formGrid}>
-                    <div className={styles.formGroup}>
-                      <label className={styles.formLabel}>Own galvanizing facility</label>
-                      <select
-                        value={formData.kpiDetails.kpi3.ownGalvanizing}
-                        onChange={(e) => handleKpiDetailChange('kpi3', 'ownGalvanizing', e.target.value === 'true')}
-                        className={styles.formInput}
-                      >
-                        <option value="false">No</option>
-                        <option value="true">Yes</option>
-                      </select>
-                    </div>
-                    <div className={styles.formGroup}>
-                      <label className={styles.formLabel}>Galvanizing supplier</label>
-                      <input
-                        type="text"
-                        value={formData.kpiDetails.kpi3.galvanizingSupplier}
-                        onChange={(e) => handleKpiDetailChange('kpi3', 'galvanizingSupplier', e.target.value)}
-                        className={styles.formInput}
-                      />
-                    </div>
-                    <div className={styles.formGroup}>
-                      <label className={styles.formLabel}>Distance to galvanizer (km)</label>
-                      <input
-                        type="number"
-                        value={formData.kpiDetails.kpi3.galvanizingDistance}
-                        onChange={(e) => handleKpiDetailChange('kpi3', 'galvanizingDistance', e.target.value)}
-                        className={styles.formInput}
-                      />
-                    </div>
-                    <div className={styles.formGroup}>
-                      <label className={styles.formLabel}>Other coatings available</label>
-                      <input
-                        type="text"
-                        value={formData.kpiDetails.kpi3.otherCoatings}
-                        onChange={(e) => handleKpiDetailChange('kpi3', 'otherCoatings', e.target.value)}
-                        className={styles.formInput}
-                        placeholder="e.g., Powder coating, Paint"
-                      />
-                    </div>
-                  </div>
-                </div>
-
-                {/* Traceability */}
-                <div className={styles.formSection}>
-                  <h5 className={styles.subSectionTitle}>Traceability</h5>
-                  <div className={styles.formGrid}>
-                    <div className={styles.formGroup}>
-                      <label className={styles.formLabel}>Complete traceability system</label>
-                      <select
-                        value={formData.kpiDetails.kpi3.completeTraceability}
-                        onChange={(e) => handleKpiDetailChange('kpi3', 'completeTraceability', e.target.value === 'true')}
-                        className={styles.formInput}
-                      >
-                        <option value="false">No</option>
-                        <option value="true">Yes</option>
-                      </select>
-                    </div>
-                    <div className={styles.formGroup}>
-                      <label className={styles.formLabel}>QR/identification on products</label>
-                      <select
-                        value={formData.kpiDetails.kpi3.qrIdentification}
-                        onChange={(e) => handleKpiDetailChange('kpi3', 'qrIdentification', e.target.value === 'true')}
-                        className={styles.formInput}
-                      >
-                        <option value="false">No</option>
-                        <option value="true">Yes</option>
-                      </select>
-                    </div>
-                    <div className={styles.formGroup}>
-                      <label className={styles.formLabel}>Digital records</label>
-                      <select
-                        value={formData.kpiDetails.kpi3.digitalRecords}
-                        onChange={(e) => handleKpiDetailChange('kpi3', 'digitalRecords', e.target.value === 'true')}
-                        className={styles.formInput}
-                      >
-                        <option value="false">No</option>
-                        <option value="true">Yes</option>
-                      </select>
-                    </div>
-                  </div>
-                </div>
-
-                {/* KPI 3 Score */}
-                <div className={styles.kpiScoring}>
-                  <h5 className={styles.subSectionTitle}>KPI 3 - Overall Score</h5>
-                  {[1, 2, 3, 4].map(score => (
-                    <label key={score} className={styles.scoreOption}>
-                      <input
-                        type="radio"
-                        name="kpi3"
-                        value={score}
-                        checked={formData.kpiScores.kpi3 === score}
-                        onChange={(e) => handleInputChange('kpiScores', 'kpi3', parseInt(e.target.value))}
-                        className={styles.scoreRadio}
-                      />
-                      <span className={styles.scoreLabel}>
-                        <span className={styles.scoreNumber}>{score}</span>
-                        <span className={styles.scoreDescription}>{SCORE_LABELS[score]}</span>
-                      </span>
-                    </label>
-                  ))}
-                </div>
-              </div>
-
-              {/* KPI 4 - Human Resources & Competencies */}
-              <div className={styles.kpiCard}>
-                <div className={styles.kpiHeader}>
-                  <h4 className={styles.kpiTitle}>
-                    KPI 4 - Human Resources & Competencies
-                  </h4>
-                </div>
-                
-                {/* Key Personnel */}
-                <div className={styles.formSection}>
-                  <h5 className={styles.subSectionTitle}>Key Personnel</h5>
-                  <div className={styles.formGrid}>
-                    <div className={styles.formGroup}>
-                      <label className={styles.formLabel}>Production Engineer</label>
-                      <input
-                        type="text"
-                        value={formData.kpiDetails.kpi4.productionEngineer}
-                        onChange={(e) => handleKpiDetailChange('kpi4', 'productionEngineer', e.target.value)}
-                        className={styles.formInput}
-                      />
-                    </div>
-                    <div className={styles.formGroup}>
-                      <label className={styles.formLabel}>Experience (years)</label>
-                      <input
-                        type="number"
-                        value={formData.kpiDetails.kpi4.productionExperience}
-                        onChange={(e) => handleKpiDetailChange('kpi4', 'productionExperience', e.target.value)}
-                        className={styles.formInput}
-                      />
-                    </div>
-                    <div className={styles.formGroup}>
-                      <label className={styles.formLabel}>Welding Supervisor</label>
-                      <input
-                        type="text"
-                        value={formData.kpiDetails.kpi4.weldingSupervisor}
-                        onChange={(e) => handleKpiDetailChange('kpi4', 'weldingSupervisor', e.target.value)}
-                        className={styles.formInput}
-                      />
-                    </div>
-                    <div className={styles.formGroup}>
-                      <label className={styles.formLabel}>Welding certification</label>
-                      <input
-                        type="text"
-                        value={formData.kpiDetails.kpi4.weldingCertification}
-                        onChange={(e) => handleKpiDetailChange('kpi4', 'weldingCertification', e.target.value)}
-                        className={styles.formInput}
-                        placeholder="e.g., AWS D1.1, EN ISO 9606"
-                      />
-                    </div>
-                    <div className={styles.formGroup}>
-                      <label className={styles.formLabel}>Lab technicians (certified)</label>
-                      <input
-                        type="number"
-                        value={formData.kpiDetails.kpi4.labTechnicians}
-                        onChange={(e) => handleKpiDetailChange('kpi4', 'labTechnicians', e.target.value)}
-                        className={styles.formInput}
-                      />
-                    </div>
-                    <div className={styles.formGroup}>
-                      <label className={styles.formLabel}>Qualified operators</label>
-                      <input
-                        type="number"
-                        value={formData.kpiDetails.kpi4.qualifiedOperators}
-                        onChange={(e) => handleKpiDetailChange('kpi4', 'qualifiedOperators', e.target.value)}
-                        className={styles.formInput}
-                      />
-                    </div>
-                  </div>
-                </div>
-
-                {/* Training */}
-                <div className={styles.formSection}>
-                  <h5 className={styles.subSectionTitle}>Training</h5>
-                  <div className={styles.formGrid}>
-                    <div className={styles.formGroup}>
-                      <label className={styles.formLabel}>Training program</label>
-                      <select
-                        value={formData.kpiDetails.kpi4.trainingProgram}
-                        onChange={(e) => handleKpiDetailChange('kpi4', 'trainingProgram', e.target.value === 'true')}
-                        className={styles.formInput}
-                      >
-                        <option value="false">No</option>
-                        <option value="true">Yes</option>
-                      </select>
-                    </div>
-                    <div className={styles.formGroup}>
-                      <label className={styles.formLabel}>Current certifications</label>
-                      <input
-                        type="text"
-                        value={formData.kpiDetails.kpi4.currentCertifications}
-                        onChange={(e) => handleKpiDetailChange('kpi4', 'currentCertifications', e.target.value)}
-                        className={styles.formInput}
-                        placeholder="List active certifications"
-                      />
-                    </div>
-                    <div className={styles.formGroup}>
-                      <label className={styles.formLabel}>Annual staff turnover (%)</label>
-                      <input
-                        type="number"
-                        min="0"
-                        max="100"
-                        value={formData.kpiDetails.kpi4.annualTurnover}
-                        onChange={(e) => handleKpiDetailChange('kpi4', 'annualTurnover', e.target.value)}
-                        className={styles.formInput}
-                      />
-                    </div>
-                  </div>
-                </div>
-
-                {/* KPI 4 Score */}
-                <div className={styles.kpiScoring}>
-                  <h5 className={styles.subSectionTitle}>KPI 4 - Overall Score</h5>
-                  {[1, 2, 3, 4].map(score => (
-                    <label key={score} className={styles.scoreOption}>
-                      <input
-                        type="radio"
-                        name="kpi4"
-                        value={score}
-                        checked={formData.kpiScores.kpi4 === score}
-                        onChange={(e) => handleInputChange('kpiScores', 'kpi4', parseInt(e.target.value))}
-                        className={styles.scoreRadio}
-                      />
-                      <span className={styles.scoreLabel}>
-                        <span className={styles.scoreNumber}>{score}</span>
-                        <span className={styles.scoreDescription}>{SCORE_LABELS[score]}</span>
-                      </span>
-                    </label>
-                  ))}
-                </div>
-              </div>
-
-              {/* KPI 5 - Logistics Planning & Deliveries */}
-              <div className={styles.kpiCard}>
-                <div className={styles.kpiHeader}>
-                  <h4 className={styles.kpiTitle}>
-                    KPI 5 - Logistics Planning & Deliveries
-                  </h4>
-                </div>
-                
-                {/* Logistics Capacity */}
-                <div className={styles.formSection}>
-                  <h5 className={styles.subSectionTitle}>Logistics Capacity</h5>
-                  <div className={styles.formGrid}>
-                    <div className={styles.formGroup}>
-                      <label className={styles.formLabel}>Logistics Manager</label>
-                      <input
-                        type="text"
-                        value={formData.kpiDetails.kpi5.logisticsManager}
-                        onChange={(e) => handleKpiDetailChange('kpi5', 'logisticsManager', e.target.value)}
-                        className={styles.formInput}
-                      />
-                    </div>
-                    <div className={styles.formGroup}>
-                      <label className={styles.formLabel}>Logistics team size</label>
-                      <input
-                        type="number"
-                        value={formData.kpiDetails.kpi5.logisticsTeamSize}
-                        onChange={(e) => handleKpiDetailChange('kpi5', 'logisticsTeamSize', e.target.value)}
-                        className={styles.formInput}
-                      />
-                    </div>
-                    <div className={styles.formGroup}>
-                      <label className={styles.formLabel}>Own fleet</label>
-                      <select
-                        value={formData.kpiDetails.kpi5.ownFleet}
-                        onChange={(e) => handleKpiDetailChange('kpi5', 'ownFleet', e.target.value === 'true')}
-                        className={styles.formInput}
-                      >
-                        <option value="false">No</option>
-                        <option value="true">Yes</option>
-                      </select>
-                    </div>
-                    <div className={styles.formGroup}>
-                      <label className={styles.formLabel}>Number of vehicles</label>
-                      <input
-                        type="number"
-                        value={formData.kpiDetails.kpi5.fleetVehicles}
-                        onChange={(e) => handleKpiDetailChange('kpi5', 'fleetVehicles', e.target.value)}
-                        className={styles.formInput}
-                      />
-                    </div>
-                    <div className={styles.formGroup}>
-                      <label className={styles.formLabel}>Logistics subcontractors</label>
-                      <input
-                        type="text"
-                        value={formData.kpiDetails.kpi5.logisticsSubcontractors}
-                        onChange={(e) => handleKpiDetailChange('kpi5', 'logisticsSubcontractors', e.target.value)}
-                        className={styles.formInput}
-                        placeholder="List main logistics partners"
-                      />
-                    </div>
-                  </div>
-                </div>
-
-                {/* Delivery Times */}
-                <div className={styles.formSection}>
-                  <h5 className={styles.subSectionTitle}>Delivery Times</h5>
-                  <div className={styles.formGrid}>
-                    <div className={styles.formGroup}>
-                      <label className={styles.formLabel}>Standard lead time (weeks)</label>
-                      <input
-                        type="number"
-                        value={formData.kpiDetails.kpi5.standardLeadTime}
-                        onChange={(e) => handleKpiDetailChange('kpi5', 'standardLeadTime', e.target.value)}
-                        className={styles.formInput}
-                      />
-                    </div>
-                    <div className={styles.formGroup}>
-                      <label className={styles.formLabel}>Urgent lead time (days)</label>
-                      <input
-                        type="number"
-                        value={formData.kpiDetails.kpi5.urgentLeadTime}
-                        onChange={(e) => handleKpiDetailChange('kpi5', 'urgentLeadTime', e.target.value)}
-                        className={styles.formInput}
-                      />
-                    </div>
-                    <div className={styles.formGroup}>
-                      <label className={styles.formLabel}>Flexibility for changes</label>
-                      <select
-                        value={formData.kpiDetails.kpi5.changeFlexibility}
-                        onChange={(e) => handleKpiDetailChange('kpi5', 'changeFlexibility', e.target.value)}
-                        className={styles.formInput}
-                      >
-                        <option value="low">Low</option>
-                        <option value="medium">Medium</option>
-                        <option value="high">High</option>
-                      </select>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Packaging and Protection */}
-                <div className={styles.formSection}>
-                  <h5 className={styles.subSectionTitle}>Packaging and Protection</h5>
-                  <div className={styles.formGrid}>
-                    <div className={styles.formGroup}>
-                      <label className={styles.formLabel}>Maritime packaging system</label>
-                      <select
-                        value={formData.kpiDetails.kpi5.maritimePackaging}
-                        onChange={(e) => handleKpiDetailChange('kpi5', 'maritimePackaging', e.target.value === 'true')}
-                        className={styles.formInput}
-                      >
-                        <option value="false">No</option>
-                        <option value="true">Yes</option>
-                      </select>
-                    </div>
-                    <div className={styles.formGroup}>
-                      <label className={styles.formLabel}>Corrosion protection during transport</label>
-                      <select
-                        value={formData.kpiDetails.kpi5.corrosionProtection}
-                        onChange={(e) => handleKpiDetailChange('kpi5', 'corrosionProtection', e.target.value === 'true')}
-                        className={styles.formInput}
-                      >
-                        <option value="false">No</option>
-                        <option value="true">Yes</option>
-                      </select>
-                    </div>
-                    <div className={styles.formGroup}>
-                      <label className={styles.formLabel}>Identification and labeling</label>
-                      <select
-                        value={formData.kpiDetails.kpi5.labeling}
-                        onChange={(e) => handleKpiDetailChange('kpi5', 'labeling', e.target.value)}
-                        className={styles.formInput}
-                      >
-                        <option value="insufficient">Insufficient</option>
-                        <option value="basic">Basic</option>
-                        <option value="complete">Complete</option>
-                      </select>
-                    </div>
-                  </div>
-                </div>
-
-                {/* KPI 5 Score */}
-                <div className={styles.kpiScoring}>
-                  <h5 className={styles.subSectionTitle}>KPI 5 - Overall Score</h5>
-                  {[1, 2, 3, 4].map(score => (
-                    <label key={score} className={styles.scoreOption}>
-                      <input
-                        type="radio"
-                        name="kpi5"
-                        value={score}
-                        checked={formData.kpiScores.kpi5 === score}
-                        onChange={(e) => handleInputChange('kpiScores', 'kpi5', parseInt(e.target.value))}
-                        className={styles.scoreRadio}
-                      />
-                      <span className={styles.scoreLabel}>
-                        <span className={styles.scoreNumber}>{score}</span>
-                        <span className={styles.scoreDescription}>{SCORE_LABELS[score]}</span>
-                      </span>
-                    </label>
-                  ))}
-                </div>
-              </div>
-
-              {/* KPI 2 - Quality Control System */}
-              <div className={styles.kpiCard}>
-                <div className={styles.kpiHeader}>
-                  <h4 className={styles.kpiTitle}>
-                    KPI 2 - Quality Control System
-                  </h4>
-                </div>
-                
-                {/* Quality Department */}
-                <div className={styles.formSection}>
-                  <h5 className={styles.subSectionTitle}>Quality Department</h5>
-                  <div className={styles.formGrid}>
-                    <div className={styles.formGroup}>
-                      <label className={styles.formLabel}>Quality Manager</label>
-                      <input
-                        type="text"
-                        value={formData.kpiDetails.kpi2.qualityManager}
-                        onChange={(e) => handleKpiDetailChange('kpi2', 'qualityManager', e.target.value)}
-                        className={styles.formInput}
-                      />
-                    </div>
-                    <div className={styles.formGroup}>
-                      <label className={styles.formLabel}>Title/Experience</label>
-                      <input
-                        type="text"
-                        value={formData.kpiDetails.kpi2.qualityManagerTitle}
-                        onChange={(e) => handleKpiDetailChange('kpi2', 'qualityManagerTitle', e.target.value)}
-                        className={styles.formInput}
-                        placeholder="e.g., Quality Engineer, 10 years"
-                      />
-                    </div>
-                    <div className={styles.formGroup}>
-                      <label className={styles.formLabel}>QC team size (people)</label>
-                      <input
-                        type="number"
-                        value={formData.kpiDetails.kpi2.qcTeamSize}
-                        onChange={(e) => handleKpiDetailChange('kpi2', 'qcTeamSize', e.target.value)}
-                        className={styles.formInput}
-                      />
-                    </div>
-                    <div className={styles.formGroup}>
-                      <label className={styles.formLabel}>Personnel certifications</label>
-                      <input
-                        type="text"
-                        value={formData.kpiDetails.kpi2.qcCertifications}
-                        onChange={(e) => handleKpiDetailChange('kpi2', 'qcCertifications', e.target.value)}
-                        className={styles.formInput}
-                        placeholder="e.g., ASQ CQI, ISO Lead Auditor"
-                      />
-                    </div>
-                  </div>
-                </div>
-
-                {/* Laboratory and Testing Equipment */}
-                <div className={styles.formSection}>
-                  <h5 className={styles.subSectionTitle}>Laboratory and Testing Equipment</h5>
-                  <div className={styles.formGrid}>
-                    <div className={styles.formGroup}>
-                      <label className={styles.formLabel}>Own laboratory</label>
-                      <select
-                        value={formData.kpiDetails.kpi2.ownLaboratory}
-                        onChange={(e) => handleKpiDetailChange('kpi2', 'ownLaboratory', e.target.value === 'true')}
-                        className={styles.formInput}
-                      >
-                        <option value="false">No</option>
-                        <option value="true">Yes</option>
-                      </select>
-                    </div>
-                    <div className={styles.formGroup}>
-                      <label className={styles.formLabel}>ISO 17025 accreditation</label>
-                      <select
-                        value={formData.kpiDetails.kpi2.iso17025}
-                        onChange={(e) => handleKpiDetailChange('kpi2', 'iso17025', e.target.value === 'true')}
-                        className={styles.formInput}
-                      >
-                        <option value="false">No</option>
-                        <option value="true">Yes</option>
-                      </select>
-                    </div>
-                    <div className={styles.formGroup}>
-                      <label className={styles.formLabel}>Tensile testing machine</label>
-                      <select
-                        value={formData.kpiDetails.kpi2.tensileTest}
-                        onChange={(e) => handleKpiDetailChange('kpi2', 'tensileTest', e.target.value === 'true')}
-                        className={styles.formInput}
-                      >
-                        <option value="false">No</option>
-                        <option value="true">Yes</option>
-                      </select>
-                    </div>
-                    <div className={styles.formGroup}>
-                      <label className={styles.formLabel}>Tensile capacity (kN)</label>
-                      <input
-                        type="number"
-                        value={formData.kpiDetails.kpi2.tensileCapacity}
-                        onChange={(e) => handleKpiDetailChange('kpi2', 'tensileCapacity', e.target.value)}
-                        className={styles.formInput}
-                      />
-                    </div>
-                    <div className={styles.formGroup}>
-                      <label className={styles.formLabel}>Durometer</label>
-                      <select
-                        value={formData.kpiDetails.kpi2.durometer}
-                        onChange={(e) => handleKpiDetailChange('kpi2', 'durometer', e.target.value === 'true')}
-                        className={styles.formInput}
-                      >
-                        <option value="false">No</option>
-                        <option value="true">Yes</option>
-                      </select>
-                    </div>
-                    <div className={styles.formGroup}>
-                      <label className={styles.formLabel}>Spectrometer (chemical analysis)</label>
-                      <select
-                        value={formData.kpiDetails.kpi2.spectrometer}
-                        onChange={(e) => handleKpiDetailChange('kpi2', 'spectrometer', e.target.value === 'true')}
-                        className={styles.formInput}
-                      >
-                        <option value="false">No</option>
-                        <option value="true">Yes</option>
-                      </select>
-                    </div>
-                    <div className={styles.formGroup}>
-                      <label className={styles.formLabel}>Ultrasound/NDT equipment</label>
-                      <select
-                        value={formData.kpiDetails.kpi2.ultrasoundEND}
-                        onChange={(e) => handleKpiDetailChange('kpi2', 'ultrasoundEND', e.target.value === 'true')}
-                        className={styles.formInput}
-                      >
-                        <option value="false">No</option>
-                        <option value="true">Yes</option>
-                      </select>
-                    </div>
-                    <div className={styles.formGroup}>
-                      <label className={styles.formLabel}>CMM (coordinate measuring machine)</label>
-                      <select
-                        value={formData.kpiDetails.kpi2.cmm}
-                        onChange={(e) => handleKpiDetailChange('kpi2', 'cmm', e.target.value === 'true')}
-                        className={styles.formInput}
-                      >
-                        <option value="false">No</option>
-                        <option value="true">Yes</option>
-                      </select>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Procedures */}
-                <div className={styles.formSection}>
-                  <h5 className={styles.subSectionTitle}>Procedures</h5>
-                  <div className={styles.formGrid}>
-                    <div className={styles.formGroup}>
-                      <label className={styles.formLabel}>Inspection and Testing Plan (ITP)</label>
-                      <select
-                        value={formData.kpiDetails.kpi2.itp}
-                        onChange={(e) => handleKpiDetailChange('kpi2', 'itp', e.target.value === 'true')}
-                        className={styles.formInput}
-                      >
-                        <option value="false">Does not exist</option>
-                        <option value="true">Exists</option>
-                      </select>
-                    </div>
-                    <div className={styles.formGroup}>
-                      <label className={styles.formLabel}>Testing frequency</label>
-                      <input
-                        type="text"
-                        value={formData.kpiDetails.kpi2.testingFrequency}
-                        onChange={(e) => handleKpiDetailChange('kpi2', 'testingFrequency', e.target.value)}
-                        className={styles.formInput}
-                        placeholder="e.g., Every batch, Weekly"
-                      />
-                    </div>
-                    <div className={styles.formGroup}>
-                      <label className={styles.formLabel}>Statistical process control</label>
-                      <select
-                        value={formData.kpiDetails.kpi2.statisticalControl}
-                        onChange={(e) => handleKpiDetailChange('kpi2', 'statisticalControl', e.target.value === 'true')}
-                        className={styles.formInput}
-                      >
-                        <option value="false">No</option>
-                        <option value="true">Yes</option>
-                      </select>
-                    </div>
-                  </div>
-                </div>
-
-                {/* KPI 2 Score */}
-                <div className={styles.kpiScoring}>
-                  <h5 className={styles.subSectionTitle}>KPI 2 - Overall Score</h5>
-                  {[1, 2, 3, 4].map(score => (
-                    <label key={score} className={styles.scoreOption}>
-                      <input
-                        type="radio"
-                        name="kpi2"
-                        value={score}
-                        checked={formData.kpiScores.kpi2 === score}
-                        onChange={(e) => handleInputChange('kpiScores', 'kpi2', parseInt(e.target.value))}
-                        className={styles.scoreRadio}
-                      />
-                      <span className={styles.scoreLabel}>
-                        <span className={styles.scoreNumber}>{score}</span>
-                        <span className={styles.scoreDescription}>{SCORE_LABELS[score]}</span>
-                      </span>
-                    </label>
-                  ))}
-                </div>
-              </div>
-
                 <div className={styles.formGroup}>
                   <label className={styles.formLabel}>
                     Category *
@@ -1244,198 +407,82 @@ const SupplierEvaluationWrapper = ({ onBackToMenu }) => {
                     className={styles.formInput}
                   />
                 </div>
+
+                <div className={styles.formGroup}>
+                  <label className={styles.formLabel}>Working Days/Week</label>
+                  <input
+                    type="number"
+                    min="1"
+                    max="7"
+                    value={formData.companyData.workingDays}
+                    onChange={(e) => handleInputChange('companyData', 'workingDays', e.target.value)}
+                    className={styles.formInput}
+                  />
+                </div>
+
+                <div className={styles.formGroup}>
+                  <label className={styles.formLabel}>Number of Shifts</label>
+                  <input
+                    type="number"
+                    value={formData.companyData.shifts}
+                    onChange={(e) => handleInputChange('companyData', 'shifts', e.target.value)}
+                    className={styles.formInput}
+                  />
+                </div>
+
+                <div className={styles.formGroup}>
+                  <label className={styles.formLabel}>Production Hours/Day</label>
+                  <input
+                    type="number"
+                    value={formData.companyData.productionHours}
+                    onChange={(e) => handleInputChange('companyData', 'productionHours', e.target.value)}
+                    className={styles.formInput}
+                  />
+                </div>
+
+                <div className={styles.formGroup}>
+                  <label className={styles.formLabel}>Installed Capacity (ton/month)</label>
+                  <input
+                    type="number"
+                    value={formData.companyData.installedCapacity}
+                    onChange={(e) => handleInputChange('companyData', 'installedCapacity', e.target.value)}
+                    className={styles.formInput}
+                  />
+                </div>
               </div>
             </div>
 
             {/* KPI Scoring */}
             <div className={styles.formSection}>
               <h3 className={styles.sectionTitle}>Key Performance Indicators (KPI) Evaluation</h3>
-              
-              {/* KPI 1 - Production Capacity & Equipment */}
-              <div className={styles.kpiCard}>
-                <div className={styles.kpiHeader}>
-                  <h4 className={styles.kpiTitle}>
-                    KPI 1 - Production Capacity & Equipment
-                  </h4>
-                </div>
-                
-                {/* Production Lines */}
-                <div className={styles.formSection}>
-                  <h5 className={styles.subSectionTitle}>Production Lines</h5>
-                  <div className={styles.formGrid}>
-                    <div className={styles.formGroup}>
-                      <label className={styles.formLabel}>Number of rolling/forming lines</label>
-                      <input
-                        type="number"
-                        value={formData.kpiDetails.kpi1.productionLines}
-                        onChange={(e) => handleKpiDetailChange('kpi1', 'productionLines', e.target.value)}
-                        className={styles.formInput}
-                      />
+              <div className={styles.kpiContainer}>
+                {Object.entries(KPI_DESCRIPTIONS).map(([kpiKey, description]) => (
+                  <div key={kpiKey} className={styles.kpiCard}>
+                    <div className={styles.kpiHeader}>
+                      <h4 className={styles.kpiTitle}>
+                        {kpiKey.toUpperCase()} - {description}
+                      </h4>
                     </div>
-                    <div className={styles.formGroup}>
-                      <label className={styles.formLabel}>Capacity per line (ton/day)</label>
-                      <input
-                        type="number"
-                        value={formData.kpiDetails.kpi1.capacityPerLine}
-                        onChange={(e) => handleKpiDetailChange('kpi1', 'capacityPerLine', e.target.value)}
-                        className={styles.formInput}
-                      />
-                    </div>
-                    <div className={styles.formGroup}>
-                      <label className={styles.formLabel}>Type of profiles produced</label>
-                      <input
-                        type="text"
-                        value={formData.kpiDetails.kpi1.profileTypes}
-                        onChange={(e) => handleKpiDetailChange('kpi1', 'profileTypes', e.target.value)}
-                        className={styles.formInput}
-                      />
-                    </div>
-                    <div className={styles.formGroup}>
-                      <label className={styles.formLabel}>Maximum dimensions</label>
-                      <input
-                        type="text"
-                        value={formData.kpiDetails.kpi1.maxDimensions}
-                        onChange={(e) => handleKpiDetailChange('kpi1', 'maxDimensions', e.target.value)}
-                        className={styles.formInput}
-                        placeholder="e.g., 300x200mm"
-                      />
-                    </div>
-                    <div className={styles.formGroup}>
-                      <label className={styles.formLabel}>Minimum dimensions</label>
-                      <input
-                        type="text"
-                        value={formData.kpiDetails.kpi1.minDimensions}
-                        onChange={(e) => handleKpiDetailChange('kpi1', 'minDimensions', e.target.value)}
-                        className={styles.formInput}
-                        placeholder="e.g., 20x20mm"
-                      />
+                    <div className={styles.kpiScoring}>
+                      {[1, 2, 3, 4].map(score => (
+                        <label key={score} className={styles.scoreOption}>
+                          <input
+                            type="radio"
+                            name={kpiKey}
+                            value={score}
+                            checked={formData.kpiScores[kpiKey] === score}
+                            onChange={(e) => handleInputChange('kpiScores', kpiKey, parseInt(e.target.value))}
+                            className={styles.scoreRadio}
+                          />
+                          <span className={styles.scoreLabel}>
+                            <span className={styles.scoreNumber}>{score}</span>
+                            <span className={styles.scoreDescription}>{SCORE_LABELS[score]}</span>
+                          </span>
+                        </label>
+                      ))}
                     </div>
                   </div>
-                </div>
-
-                {/* Main Equipment */}
-                <div className={styles.formSection}>
-                  <h5 className={styles.subSectionTitle}>Main Equipment</h5>
-                  <div className={styles.formGrid}>
-                    <div className={styles.formGroup}>
-                      <label className={styles.formLabel}>Laser cutting machines (units)</label>
-                      <input
-                        type="number"
-                        value={formData.kpiDetails.kpi1.laserMachines}
-                        onChange={(e) => handleKpiDetailChange('kpi1', 'laserMachines', e.target.value)}
-                        className={styles.formInput}
-                      />
-                    </div>
-                    <div className={styles.formGroup}>
-                      <label className={styles.formLabel}>Bending presses (units)</label>
-                      <input
-                        type="number"
-                        value={formData.kpiDetails.kpi1.bendingPresses}
-                        onChange={(e) => handleKpiDetailChange('kpi1', 'bendingPresses', e.target.value)}
-                        className={styles.formInput}
-                      />
-                    </div>
-                    <div className={styles.formGroup}>
-                      <label className={styles.formLabel}>Bending capacity (ton)</label>
-                      <input
-                        type="number"
-                        value={formData.kpiDetails.kpi1.bendingCapacity}
-                        onChange={(e) => handleKpiDetailChange('kpi1', 'bendingCapacity', e.target.value)}
-                        className={styles.formInput}
-                      />
-                    </div>
-                    <div className={styles.formGroup}>
-                      <label className={styles.formLabel}>TIG/MIG welding stations (units)</label>
-                      <input
-                        type="number"
-                        value={formData.kpiDetails.kpi1.weldingStations}
-                        onChange={(e) => handleKpiDetailChange('kpi1', 'weldingStations', e.target.value)}
-                        className={styles.formInput}
-                      />
-                    </div>
-                    <div className={styles.formGroup}>
-                      <label className={styles.formLabel}>Heat treatment furnaces</label>
-                      <select
-                        value={formData.kpiDetails.kpi1.heatTreatment}
-                        onChange={(e) => handleKpiDetailChange('kpi1', 'heatTreatment', e.target.value === 'true')}
-                        className={styles.formInput}
-                      >
-                        <option value="false">No</option>
-                        <option value="true">Yes</option>
-                      </select>
-                    </div>
-                    <div className={styles.formGroup}>
-                      <label className={styles.formLabel}>Automated handling systems</label>
-                      <select
-                        value={formData.kpiDetails.kpi1.automatedSystems}
-                        onChange={(e) => handleKpiDetailChange('kpi1', 'automatedSystems', e.target.value === 'true')}
-                        className={styles.formInput}
-                      >
-                        <option value="false">No</option>
-                        <option value="true">Yes</option>
-                      </select>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Production Schedule */}
-                <div className={styles.formSection}>
-                  <h5 className={styles.subSectionTitle}>Production Schedule</h5>
-                  <div className={styles.formGrid}>
-                    <div className={styles.formGroup}>
-                      <label className={styles.formLabel}>Effective production hours/day</label>
-                      <input
-                        type="number"
-                        value={formData.kpiDetails.kpi1.effectiveHours}
-                        onChange={(e) => handleKpiDetailChange('kpi1', 'effectiveHours', e.target.value)}
-                        className={styles.formInput}
-                      />
-                    </div>
-                    <div className={styles.formGroup}>
-                      <label className={styles.formLabel}>Operating days/week</label>
-                      <input
-                        type="number"
-                        min="1"
-                        max="7"
-                        value={formData.kpiDetails.kpi1.workingDays}
-                        onChange={(e) => handleKpiDetailChange('kpi1', 'workingDays', e.target.value)}
-                        className={styles.formInput}
-                      />
-                    </div>
-                    <div className={styles.formGroup}>
-                      <label className={styles.formLabel}>Flexibility for additional shifts</label>
-                      <select
-                        value={formData.kpiDetails.kpi1.extraShifts}
-                        onChange={(e) => handleKpiDetailChange('kpi1', 'extraShifts', e.target.value === 'true')}
-                        className={styles.formInput}
-                      >
-                        <option value="false">No</option>
-                        <option value="true">Yes</option>
-                      </select>
-                    </div>
-                  </div>
-                </div>
-
-                {/* KPI 1 Score */}
-                <div className={styles.kpiScoring}>
-                  <h5 className={styles.subSectionTitle}>KPI 1 - Overall Score</h5>
-                  {[1, 2, 3, 4].map(score => (
-                    <label key={score} className={styles.scoreOption}>
-                      <input
-                        type="radio"
-                        name="kpi1"
-                        value={score}
-                        checked={formData.kpiScores.kpi1 === score}
-                        onChange={(e) => handleInputChange('kpiScores', 'kpi1', parseInt(e.target.value))}
-                        className={styles.scoreRadio}
-                      />
-                      <span className={styles.scoreLabel}>
-                        <span className={styles.scoreNumber}>{score}</span>
-                        <span className={styles.scoreDescription}>{SCORE_LABELS[score]}</span>
-                      </span>
-                    </label>
-                  ))}
-                </div>
+                ))}
               </div>
 
               {/* KPI Summary */}

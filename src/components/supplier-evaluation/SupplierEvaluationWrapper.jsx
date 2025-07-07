@@ -564,7 +564,7 @@ const SupplierEvaluationWrapper = ({ onBackToMenu }) => {
             <div className={styles.statNumber}>
               {suppliers.filter(s => getSupplierClass(calculateGAI(s.kpiScores)) === 'C').length}
             </div>
-            <div className={styles.statLabel}>Class C (<60%)</div>
+            <div className={styles.statLabel}>Class C (&lt;60%)</div>
           </div>
         </div>
       </div>

@@ -33,6 +33,55 @@ const SupplierEvaluationWrapper = ({ onBackToMenu }) => {
   const [suppliers, setSuppliers] = useState([]);
   const [loading, setLoading] = useState(false);
 
+  // Form state for new supplier checklist
+  const [formData, setFormData] = useState({
+    supplierName: '',
+    category: '',
+    location: '',
+    contactPerson: '',
+    auditDate: new Date().toISOString().split('T')[0],
+    auditorName: '',
+    activityField: '',
+    auditType: '',
+    certifications: {
+      iso9001: false,
+      iso14001: false,
+      iso45001: false,
+      en1090: false,
+      ceMarking: false,
+      others: ''
+    },
+    companyData: {
+      annualRevenue: '',
+      employees: '',
+      workingDays: '',
+      shifts: '',
+      productionHours: '',
+      installedCapacity: ''
+    },
+    kpiScores: {
+      kpi1: 0,
+      kpi2: 0,
+      kpi3: 0,
+      kpi4: 0,
+      kpi5: 0
+    },
+    observations: {
+      strengths: '',
+      improvements: '',
+      actions: '',
+      followUpDate: ''
+    }
+  });
+
+  // Initialize auditor name when component mounts or user changes
+  useEffect(() => {
+    setFormData(prev => ({
+      ...prev,
+      auditorName: currentUser?.displayName || ''
+    }));
+  }, [currentUser]);
+
   // Load suppliers from localStorage on mount
   useEffect(() => {
     const savedSuppliers = localStorage.getItem('supplierEvaluations');
@@ -53,11 +102,160 @@ const SupplierEvaluationWrapper = ({ onBackToMenu }) => {
       createdAt: new Date().toISOString(),
       createdBy: currentUser?.displayName || 'Unknown User'
     };
-    setSuppliers(prev => [...prev, newSupplier]);
-    setActiveTab('dashboard');
-  };
 
   const calculateGAI = (kpiScores) => {
+    const total = Object.values(kpiScores).reduce((sum, score) => sum + (score || 0), 0);
+    const maximum = 20; // 5 KPIs × 4 points max
+    return Math.round((total / maximum) * 100);
+  };
+
+  const getSupplierClass = (gai) => {
+    if (gai >= 80) return 'A';
+    if (gai >= 60) return 'B';
+    return 'C';
+  };
+
+  const getClassColor = (supplierClass) => {
+    switch (supplierClass) {
+      case 'A': return '#10b981'; // Green
+      case 'B': return '#f59e0b'; // Yellow
+      case 'C': return '#ef4444'; // Red
+      default: return '#6b7280'; // Gray
+    }
+  };
+
+  const getSuppliersByCategory = (category) => {
+    return suppliers.filter(supplier => supplier.category === category);
+  };
+
+  // Form handling functions
+  const handleInputChange = (section, field, value) => {
+    setFormData(prev => ({
+      ...prev,
+      [section]: {
+        ...prev[section],
+        [field]: value
+      }
+    }));
+  };
+
+  const handleDirectChange = (field, value) => {
+    setFormData(prev => ({
+      ...prev,
+      [field]: value
+    }));
+  };
+
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    
+    if (!formData.supplierName || !formData.category) {
+      alert('Please fill in required fields: Supplier Name and Category');
+      return;
+    }
+
+    const gai = calculateGAI(formData.kpiScores);
+    const supplierClass = getSupplierClass(gai);
+    
+    const supplierData = {
+      ...formData,
+      gai,
+      supplierClass
+    };
+
+    addSupplier(supplierData);
+  };
+    setSuppliers(prev => [...prev, newSupplier]);
+    setActiveTab('dashboard');
+    
+    // Reset form after successful submission
+    setFormData({
+      supplierName: '',
+      category: '',
+      location: '',
+      contactPerson: '',
+      auditDate: new Date().toISOString().split('T')[0],
+      auditorName: currentUser?.displayName || '',
+      activityField: '',
+      auditType: '',
+      certifications: {
+        iso9001: false,
+        iso14001: false,
+        iso45001: false,
+        en1090: false,
+        ceMarking: false,
+        others: ''
+      },
+      companyData: {
+        annualRevenue: '',
+        employees: '',
+        workingDays: '',
+        shifts: '',
+        productionHours: '',
+        installedCapacity: ''
+      },
+      kpiScores: {
+        kpi1: 0,
+        kpi2: 0,
+        kpi3: 0,
+        kpi4: 0,
+        kpi5: 0
+      },
+      observations: {
+        strengths: '',
+        improvements: '',
+        actions: '',
+        followUpDate: ''
+      }
+    });
+  };
+
+  const handleTabChange = (newTab) => {
+    setActiveTab(newTab);
+    
+    // Reset form when switching to new checklist tab
+    if (newTab === 'newChecklist') {
+      setFormData({
+        supplierName: '',
+        category: '',
+        location: '',
+        contactPerson: '',
+        auditDate: new Date().toISOString().split('T')[0],
+        auditorName: currentUser?.displayName || '',
+        activityField: '',
+        auditType: '',
+        certifications: {
+          iso9001: false,
+          iso14001: false,
+          iso45001: false,
+          en1090: false,
+          ceMarking: false,
+          others: ''
+        },
+        companyData: {
+          annualRevenue: '',
+          employees: '',
+          workingDays: '',
+          shifts: '',
+          productionHours: '',
+          installedCapacity: ''
+        },
+        kpiScores: {
+          kpi1: 0,
+          kpi2: 0,
+          kpi3: 0,
+          kpi4: 0,
+          kpi5: 0
+        },
+        observations: {
+          strengths: '',
+          improvements: '',
+          actions: '',
+          followUpDate: ''
+        }
+      });
+    }
+  };
     const total = Object.values(kpiScores).reduce((sum, score) => sum + (score || 0), 0);
     const maximum = 20; // 5 KPIs × 4 points max
     return Math.round((total / maximum) * 100);
@@ -103,7 +301,7 @@ const SupplierEvaluationWrapper = ({ onBackToMenu }) => {
       <div className={styles.sidebarNav}>
         <div 
           className={`${styles.navItem} ${activeTab === 'dashboard' ? styles.active : ''}`}
-          onClick={() => setActiveTab('dashboard')}
+          onClick={() => handleTabChange('dashboard')}
         >
           <span className={styles.navIcon}>📊</span>
           <span className={styles.navText}>Dashboard</span>
@@ -112,7 +310,7 @@ const SupplierEvaluationWrapper = ({ onBackToMenu }) => {
         
         <div 
           className={`${styles.navItem} ${activeTab === 'newChecklist' ? styles.active : ''}`}
-          onClick={() => setActiveTab('newChecklist')}
+          onClick={() => handleTabChange('newChecklist')}
         >
           <span className={styles.navIcon}>➕</span>
           <span className={styles.navText}>New Supplier Checklist</span>
@@ -153,83 +351,6 @@ const SupplierEvaluationWrapper = ({ onBackToMenu }) => {
   );
 
   const renderNewChecklistForm = () => {
-    const [formData, setFormData] = useState({
-      supplierName: '',
-      category: '',
-      location: '',
-      contactPerson: '',
-      auditDate: new Date().toISOString().split('T')[0],
-      auditorName: currentUser?.displayName || '',
-      activityField: '',
-      auditType: '',
-      certifications: {
-        iso9001: false,
-        iso14001: false,
-        iso45001: false,
-        en1090: false,
-        ceMarking: false,
-        others: ''
-      },
-      companyData: {
-        annualRevenue: '',
-        employees: '',
-        workingDays: '',
-        shifts: '',
-        productionHours: '',
-        installedCapacity: ''
-      },
-      kpiScores: {
-        kpi1: 0,
-        kpi2: 0,
-        kpi3: 0,
-        kpi4: 0,
-        kpi5: 0
-      },
-      observations: {
-        strengths: '',
-        improvements: '',
-        actions: '',
-        followUpDate: ''
-      }
-    });
-
-    const handleInputChange = (section, field, value) => {
-      setFormData(prev => ({
-        ...prev,
-        [section]: {
-          ...prev[section],
-          [field]: value
-        }
-      }));
-    };
-
-    const handleDirectChange = (field, value) => {
-      setFormData(prev => ({
-        ...prev,
-        [field]: value
-      }));
-    };
-
-    const handleSubmit = (e) => {
-      e.preventDefault();
-      
-      if (!formData.supplierName || !formData.category) {
-        alert('Please fill in required fields: Supplier Name and Category');
-        return;
-      }
-
-      const gai = calculateGAI(formData.kpiScores);
-      const supplierClass = getSupplierClass(gai);
-      
-      const supplierData = {
-        ...formData,
-        gai,
-        supplierClass
-      };
-
-      addSupplier(supplierData);
-    };
-
     return (
       <div className={styles.panelContainer}>
         <div className={styles.panelCard}>
@@ -501,7 +622,7 @@ const SupplierEvaluationWrapper = ({ onBackToMenu }) => {
             <div className={styles.formActions}>
               <button
                 type="button"
-                onClick={() => setActiveTab('dashboard')}
+                onClick={() => handleTabChange('dashboard')}
                 className={styles.btnSecondary}
               >
                 Cancel
@@ -639,7 +760,7 @@ const SupplierEvaluationWrapper = ({ onBackToMenu }) => {
             Start by creating your first supplier evaluation checklist
           </p>
           <button
-            onClick={() => setActiveTab('newChecklist')}
+            onClick={() => handleTabChange('newChecklist')}
             className={styles.btnPrimary}
           >
             Create First Evaluation
@@ -688,7 +809,7 @@ const SupplierEvaluationWrapper = ({ onBackToMenu }) => {
               {activeTab !== 'newChecklist' && (
                 <button 
                   className={styles.btnPrimary}
-                  onClick={() => setActiveTab('newChecklist')}
+                  onClick={() => handleTabChange('newChecklist')}
                 >
                   <span className={styles.btnIcon}>➕</span>
                   Quick Create Checklist

@@ -102,73 +102,14 @@ const SupplierEvaluationWrapper = ({ onBackToMenu }) => {
       createdAt: new Date().toISOString(),
       createdBy: currentUser?.displayName || 'Unknown User'
     };
-
-  const calculateGAI = (kpiScores) => {
-    const total = Object.values(kpiScores).reduce((sum, score) => sum + (score || 0), 0);
-    const maximum = 20; // 5 KPIs × 4 points max
-    return Math.round((total / maximum) * 100);
-  };
-
-  const getSupplierClass = (gai) => {
-    if (gai >= 80) return 'A';
-    if (gai >= 60) return 'B';
-    return 'C';
-  };
-
-  const getClassColor = (supplierClass) => {
-    switch (supplierClass) {
-      case 'A': return '#10b981'; // Green
-      case 'B': return '#f59e0b'; // Yellow
-      case 'C': return '#ef4444'; // Red
-      default: return '#6b7280'; // Gray
-    }
-  };
-
-  const getSuppliersByCategory = (category) => {
-    return suppliers.filter(supplier => supplier.category === category);
-  };
-
-  // Form handling functions
-  const handleInputChange = (section, field, value) => {
-    setFormData(prev => ({
-      ...prev,
-      [section]: {
-        ...prev[section],
-        [field]: value
-      }
-    }));
-  };
-
-  const handleDirectChange = (field, value) => {
-    setFormData(prev => ({
-      ...prev,
-      [field]: value
-    }));
-  };
-
-  const handleSubmit = (e) => {
-    e.preventDefault();
-    
-    if (!formData.supplierName || !formData.category) {
-      alert('Please fill in required fields: Supplier Name and Category');
-      return;
-    }
-
-    const gai = calculateGAI(formData.kpiScores);
-    const supplierClass = getSupplierClass(gai);
-    
-    const supplierData = {
-      ...formData,
-      gai,
-      supplierClass
-    };
-
-    addSupplier(supplierData);
-  };
     setSuppliers(prev => [...prev, newSupplier]);
     setActiveTab('dashboard');
     
     // Reset form after successful submission
+    resetForm();
+  };
+
+  const resetForm = () => {
     setFormData({
       supplierName: '',
       category: '',
@@ -210,52 +151,54 @@ const SupplierEvaluationWrapper = ({ onBackToMenu }) => {
     });
   };
 
+  // Form handling functions
+  const handleInputChange = (section, field, value) => {
+    setFormData(prev => ({
+      ...prev,
+      [section]: {
+        ...prev[section],
+        [field]: value
+      }
+    }));
+  };
+
+  const handleDirectChange = (field, value) => {
+    setFormData(prev => ({
+      ...prev,
+      [field]: value
+    }));
+  };
+
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    
+    if (!formData.supplierName || !formData.category) {
+      alert('Please fill in required fields: Supplier Name and Category');
+      return;
+    }
+
+    const gai = calculateGAI(formData.kpiScores);
+    const supplierClass = getSupplierClass(gai);
+    
+    const supplierData = {
+      ...formData,
+      gai,
+      supplierClass
+    };
+
+    addSupplier(supplierData);
+  };
+
   const handleTabChange = (newTab) => {
     setActiveTab(newTab);
     
     // Reset form when switching to new checklist tab
     if (newTab === 'newChecklist') {
-      setFormData({
-        supplierName: '',
-        category: '',
-        location: '',
-        contactPerson: '',
-        auditDate: new Date().toISOString().split('T')[0],
-        auditorName: currentUser?.displayName || '',
-        activityField: '',
-        auditType: '',
-        certifications: {
-          iso9001: false,
-          iso14001: false,
-          iso45001: false,
-          en1090: false,
-          ceMarking: false,
-          others: ''
-        },
-        companyData: {
-          annualRevenue: '',
-          employees: '',
-          workingDays: '',
-          shifts: '',
-          productionHours: '',
-          installedCapacity: ''
-        },
-        kpiScores: {
-          kpi1: 0,
-          kpi2: 0,
-          kpi3: 0,
-          kpi4: 0,
-          kpi5: 0
-        },
-        observations: {
-          strengths: '',
-          improvements: '',
-          actions: '',
-          followUpDate: ''
-        }
-      });
+      resetForm();
     }
   };
+
+  const calculateGAI = (kpiScores) => {
     const total = Object.values(kpiScores).reduce((sum, score) => sum + (score || 0), 0);
     const maximum = 20; // 5 KPIs × 4 points max
     return Math.round((total / maximum) * 100);

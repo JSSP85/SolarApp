@@ -932,3 +932,57 @@
     flex-direction: column;
   }
 }
+/* Add these styles to your SupplierEvaluation.module.css file */
+
+.subSectionTitle {
+  font-size: 1rem;
+  font-weight: 600;
+  color: #4b5563;
+  margin-bottom: 1rem;
+  margin-top: 1.5rem;
+  padding-bottom: 0.5rem;
+  border-bottom: 1px solid #e5e7eb;
+  display: flex;
+  align-items: center;
+}
+
+.subSectionTitle:first-child {
+  margin-top: 0;
+}
+
+/* Enhanced form section for better organization */
+.formSection {
+  margin-bottom: 2rem;
+}
+
+.formSection:last-child {
+  margin-bottom: 0;
+}
+
+/* Improved KPI card styling */
+.kpiCard {
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  padding: 1.5rem;
+  margin-bottom: 2rem;
+}
+
+.kpiCard:last-child {
+  margin-bottom: 0;
+}
+
+/* Better visual separation for scoring sections */
+.kpiScoring {
+  margin-top: 2rem;
+  padding-top: 1.5rem;
+  border-top: 2px solid #e2e8f0;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 0.75rem;
+}
+
+.kpiScoring h5 {
+  grid-column: 1 / -1;
+  margin-bottom: 1rem;
+}

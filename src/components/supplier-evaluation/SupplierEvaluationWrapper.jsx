@@ -1,7 +1,7 @@
 // src/components/supplier-evaluation/SupplierEvaluationWrapper.jsx
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../context/AuthContext';
-import styles from './SupplierEvaluation.module.css';
+import styles from '../../styles/SupplierEvaluation.module.css';
 
 const SUPPLIER_CATEGORIES = [
   'Metal Carpentry',

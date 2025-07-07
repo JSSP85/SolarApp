@@ -32,6 +32,7 @@ const SupplierEvaluationWrapper = ({ onBackToMenu }) => {
   const [activeTab, setActiveTab] = useState('dashboard');
   const [suppliers, setSuppliers] = useState([]);
   const [loading, setLoading] = useState(false);
+  const [expandedKPI, setExpandedKPI] = useState(null);
 
   // Form state for new supplier checklist
   const [formData, setFormData] = useState({
@@ -193,6 +194,7 @@ const SupplierEvaluationWrapper = ({ onBackToMenu }) => {
 
   const resetForm = () => {
     setFormData({
+      // General Information
       supplierName: '',
       category: '',
       location: '',
@@ -201,6 +203,12 @@ const SupplierEvaluationWrapper = ({ onBackToMenu }) => {
       auditorName: currentUser?.displayName || '',
       activityField: '',
       auditType: '',
+      // Company Data
+      companyData: {
+        annualRevenue: '',
+        employees: ''
+      },
+      // Certifications
       certifications: {
         iso9001: false,
         iso14001: false,
@@ -209,10 +217,7 @@ const SupplierEvaluationWrapper = ({ onBackToMenu }) => {
         ceMarking: false,
         others: ''
       },
-      companyData: {
-        annualRevenue: '',
-        employees: ''
-      },
+      // KPI Scores
       kpiScores: {
         kpi1: 0,
         kpi2: 0,
@@ -220,6 +225,7 @@ const SupplierEvaluationWrapper = ({ onBackToMenu }) => {
         kpi4: 0,
         kpi5: 0
       },
+      // Detailed KPI information
       kpiDetails: {
         kpi1: {
           productionLines: '',
@@ -299,6 +305,7 @@ const SupplierEvaluationWrapper = ({ onBackToMenu }) => {
         followUpDate: ''
       }
     });
+    setExpandedKPI(null); // Reset expanded state
   };
 
   // Form handling functions
@@ -330,6 +337,10 @@ const SupplierEvaluationWrapper = ({ onBackToMenu }) => {
         }
       }
     }));
+  };
+
+  const toggleKpiExpansion = (kpiKey) => {
+    setExpandedKPI(expandedKPI === kpiKey ? null : kpiKey);
   };
 
   const handleSubmit = (e) => {

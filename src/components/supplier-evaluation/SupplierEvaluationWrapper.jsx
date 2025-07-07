@@ -379,26 +379,40 @@ const SupplierEvaluationWrapper = ({ onBackToMenu }) => {
   const renderSidebar = () => (
     <div className={styles.sidebar}>
       <div className={styles.sidebarHeader}>
-        <h2 className={styles.sidebarTitle}>Supplier Evaluation</h2>
+        <div className={styles.logoContainer}>
+          <img 
+            src="/images/logo2.png" 
+            alt="Valmont Solar Logo" 
+            className={styles.companyLogo}
+          />
+        </div>
       </div>
       
-      <nav className={styles.sidebarNav}>
-        <button
+      <div className={styles.sidebarDivider}></div>
+      
+      <div className={styles.sectionTitle}>
+        <span>📋 Supplier Evaluation</span>
+      </div>
+      
+      <div className={styles.sidebarNav}>
+        <div 
           className={`${styles.navItem} ${activeTab === 'dashboard' ? styles.active : ''}`}
           onClick={() => handleTabChange('dashboard')}
         >
           <span className={styles.navIcon}>📊</span>
-          Dashboard
-        </button>
+          <span className={styles.navText}>Dashboard</span>
+          {activeTab === 'dashboard' && <div className={styles.navIndicator}></div>}
+        </div>
         
-        <button
+        <div 
           className={`${styles.navItem} ${activeTab === 'newChecklist' ? styles.active : ''}`}
           onClick={() => handleTabChange('newChecklist')}
         >
           <span className={styles.navIcon}>➕</span>
-          New Evaluation
-        </button>
-      </nav>
+          <span className={styles.navText}>New Evaluation</span>
+          {activeTab === 'newChecklist' && <div className={styles.navIndicator}></div>}
+        </div>
+      </div>
     </div>
   );
 
@@ -1097,7 +1111,13 @@ const SupplierEvaluationWrapper = ({ onBackToMenu }) => {
           <p className={styles.formSubtitle}>Create a comprehensive evaluation for structural steel profile suppliers</p>
         </div>
 
-        <div className={styles.formContainer}>
+        <div className={styles.formContainer} style={{ 
+          background: 'rgba(255, 255, 255, 0.95)', 
+          backdropFilter: 'blur(10px)',
+          borderRadius: '12px',
+          border: '1px solid rgba(255, 255, 255, 0.2)',
+          boxShadow: '0 4px 20px rgba(0, 0, 0, 0.1)'
+        }}>
           <form onSubmit={handleSubmit} className={styles.evaluationForm}>
             {/* General Information */}
             <div className={styles.formSection}>
@@ -1529,15 +1549,6 @@ const SupplierEvaluationWrapper = ({ onBackToMenu }) => {
 
   return (
     <div className={styles.wrapper}>
-      {/* Back to Menu Button */}
-      <button 
-        className={styles.backButton}
-        onClick={onBackToMenu}
-      >
-        <span className={styles.backIcon}>←</span>
-        Back to Menu
-      </button>
-
       <div className={styles.appContainer}>
         {renderSidebar()}
         
@@ -1556,6 +1567,32 @@ const SupplierEvaluationWrapper = ({ onBackToMenu }) => {
           {renderContent()}
         </div>
       </div>
+
+      {/* Circular Back Button */}
+      <button
+        onClick={onBackToMenu}
+        style={{
+          position: 'fixed',
+          bottom: '2rem',
+          right: '2rem',
+          background: 'white',
+          border: 'none',
+          borderRadius: '50%',
+          width: '50px',
+          height: '50px',
+          cursor: 'pointer',
+          boxShadow: '0 4px 12px rgba(0,0,0,0.25)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          transition: 'transform 0.3s',
+          zIndex: 1000
+        }}
+        onMouseOver={(e) => e.target.style.transform = 'translateY(-3px)'}
+        onMouseOut={(e) => e.target.style.transform = 'translateY(0)'}
+      >
+        <span style={{ fontSize: '24px', color: '#005F83' }}>←</span>
+      </button>
     </div>
   );
 };

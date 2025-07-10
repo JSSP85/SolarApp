@@ -1,9 +1,9 @@
 // src/components/supplier-evaluation/SupplierEvaluationWrapper.jsx
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../context/AuthContext';
-import BackButton from '../common/BackButton'; // Import existing BackButton
-import { saveSupplierEvaluation, updateSupplierEvaluation, getAllSupplierEvaluations } from '../../firebase/supplierEvaluationService'; // Firebase service
-import { generateSupplierEvaluationPDF } from '../../services/supplierEvaluationPDFService'; // PDF service
+import BackButton from '../common/BackButton';
+import { saveSupplierEvaluation, updateSupplierEvaluation, getAllSupplierEvaluations } from '../../firebase/supplierEvaluationService';
+import { generateSupplierEvaluationPDF } from '../../services/supplierEvaluationPDFService'; // ✅ SOLO USAR EL SERVICIO
 import styles from '../../styles/SupplierEvaluation.module.css';
 
 const SUPPLIER_CATEGORIES = [
@@ -35,7 +35,7 @@ const SupplierEvaluationWrapper = ({ onBackToMenu }) => {
   const [activeTab, setActiveTab] = useState('dashboard');
   const [suppliers, setSuppliers] = useState([]);
   const [loading, setLoading] = useState(false);
-  const [expandedKPIs, setExpandedKPIs] = useState({}); // State for KPI expansions
+  const [expandedKPIs, setExpandedKPIs] = useState({});
 
   // Form state for new supplier checklist
   const [formData, setFormData] = useState({
@@ -68,85 +68,45 @@ const SupplierEvaluationWrapper = ({ onBackToMenu }) => {
     },
     kpiDetails: {
       kpi1: {
-        // Production Lines
-        productionLines: '',
-        capacityPerLine: '',
-        profileTypes: '',
-        maxMinDimensions: '',
-        // Main Equipment
-        laserCuttingMachines: '',
-        bendingPresses: '',
-        bendingPressCapacity: '',
-        weldingStations: '',
-        heatTreatmentOvens: false,
-        automatedHandling: false,
-        // Production Schedule
-        effectiveProductionHours: '',
-        workingDays: '',
-        shiftFlexibility: false,
-        shifts: '',
-        installedCapacity: ''
+        machineCapacity: '',
+        productionVolume: '',
+        equipmentCondition: '',
+        maintenanceProgram: '',
+        technologyLevel: '',
+        expansionCapability: ''
       },
       kpi2: {
-        // Quality Department
-        qualityResponsible: '',
-        qualityTeamSize: '',
-        staffCertifications: '',
-        // Laboratory & Testing Equipment
-        ownLaboratory: false,
-        iso17025Accreditation: false,
-        tensionMachine: false,
-        tensionMachineCapacity: '',
-        durometers: false,
-        spectrometer: false,
-        ultrasoundEquipment: false,
-        cmmMachine: false,
-        // Procedures
-        inspectionTestPlan: false,
-        testingFrequency: '',
-        statisticalProcessControl: false
+        qualitySystem: '',
+        testingEquipment: '',
+        inspectionProcedures: '',
+        qualificationCertificates: '',
+        controlDocumentation: '',
+        nonconformityHandling: ''
       },
       kpi3: {
-        // Steel Suppliers
-        mainSupplier1: '',
-        mainSupplier2: '',
-        mainSupplier3: '',
-        millCertificates: '',
-        // Galvanizing/Coatings
-        ownGalvanizing: false,
-        galvanizingSupplier: '',
-        galvanizingDistance: '',
-        otherCoatings: '',
-        // Traceability
-        completeTraceability: false,
-        qrCodeIdentification: false,
-        digitalRecords: false
+        supplierCertification: '',
+        materialTraceability: '',
+        testCertificates: '',
+        inventoryManagement: '',
+        qualityAgreements: '',
+        inspectionReports: ''
       },
       kpi4: {
-        // Key Personnel
-        productionEngineer: '',
-        productionEngineerExp: '',
-        weldingSupervisor: '',
-        weldingSupervisorCert: '',
-        certifiedLabTechnicians: '',
-        qualifiedOperators: '',
-        // Training
-        trainingProgram: false,
-        currentCertifications: '',
-        annualTurnover: ''
+        keyPersonnel: '',
+        technicalCompetencies: '',
+        trainingPrograms: '',
+        teamSize: '',
+        experienceLevel: '',
+        continuousImprovement: ''
       },
       kpi5: {
-        // Logistics Capacity
-        logisticsResponsible: '',
         logisticsTeamSize: '',
         ownFleet: false,
         fleetVehicles: '',
         logisticsSubcontractors: '',
-        // Delivery Times
         standardLeadTime: '',
         urgentLeadTime: '',
         changeFlexibility: '',
-        // Packaging & Protection
         maritimePackaging: false,
         corrosionProtection: false,
         labelingIdentification: ''
@@ -286,64 +246,38 @@ const SupplierEvaluationWrapper = ({ onBackToMenu }) => {
       },
       kpiDetails: {
         kpi1: {
-          productionLines: '',
-          capacityPerLine: '',
-          profileTypes: '',
-          maxMinDimensions: '',
-          laserCuttingMachines: '',
-          bendingPresses: '',
-          bendingPressCapacity: '',
-          weldingStations: '',
-          heatTreatmentOvens: false,
-          automatedHandling: false,
-          effectiveProductionHours: '',
-          workingDays: '',
-          shiftFlexibility: false,
-          shifts: '',
-          installedCapacity: ''
+          machineCapacity: '',
+          productionVolume: '',
+          equipmentCondition: '',
+          maintenanceProgram: '',
+          technologyLevel: '',
+          expansionCapability: ''
         },
         kpi2: {
-          qualityResponsible: '',
-          qualityTeamSize: '',
-          staffCertifications: '',
-          ownLaboratory: false,
-          iso17025Accreditation: false,
-          tensionMachine: false,
-          tensionMachineCapacity: '',
-          durometers: false,
-          spectrometer: false,
-          ultrasoundEquipment: false,
-          cmmMachine: false,
-          inspectionTestPlan: false,
-          testingFrequency: '',
-          statisticalProcessControl: false
+          qualitySystem: '',
+          testingEquipment: '',
+          inspectionProcedures: '',
+          qualificationCertificates: '',
+          controlDocumentation: '',
+          nonconformityHandling: ''
         },
         kpi3: {
-          mainSupplier1: '',
-          mainSupplier2: '',
-          mainSupplier3: '',
-          millCertificates: '',
-          ownGalvanizing: false,
-          galvanizingSupplier: '',
-          galvanizingDistance: '',
-          otherCoatings: '',
-          completeTraceability: false,
-          qrCodeIdentification: false,
-          digitalRecords: false
+          supplierCertification: '',
+          materialTraceability: '',
+          testCertificates: '',
+          inventoryManagement: '',
+          qualityAgreements: '',
+          inspectionReports: ''
         },
         kpi4: {
-          productionEngineer: '',
-          productionEngineerExp: '',
-          weldingSupervisor: '',
-          weldingSupervisorCert: '',
-          certifiedLabTechnicians: '',
-          qualifiedOperators: '',
-          trainingProgram: false,
-          currentCertifications: '',
-          annualTurnover: ''
+          keyPersonnel: '',
+          technicalCompetencies: '',
+          trainingPrograms: '',
+          teamSize: '',
+          experienceLevel: '',
+          continuousImprovement: ''
         },
         kpi5: {
-          logisticsResponsible: '',
           logisticsTeamSize: '',
           ownFleet: false,
           fleetVehicles: '',
@@ -363,6 +297,21 @@ const SupplierEvaluationWrapper = ({ onBackToMenu }) => {
         followUpDate: ''
       }
     });
+  };
+
+  // ✅ FUNCIÓN PARA COMPLETAR EL PROCESO DE GUARDADO Y EXPORTACIÓN
+  const handleSaveAndExportComplete = () => {
+    // Mostrar mensaje de éxito
+    alert('✅ Supplier evaluation saved and PDF generated successfully!');
+    
+    // Resetear el formulario
+    resetForm();
+    
+    // Cambiar a la pestaña dashboard
+    setActiveTab('dashboard');
+    
+    // Limpiar expansiones de KPIs
+    setExpandedKPIs({});
   };
 
   // Form handling functions
@@ -403,6 +352,7 @@ const SupplierEvaluationWrapper = ({ onBackToMenu }) => {
     }));
   };
 
+  // ✅ FUNCIÓN HANDLESUBMIT MEJORADA SIN FUNCIÓN PDF DUPLICADA
   const handleSubmit = async (e) => {
     e.preventDefault();
     
@@ -422,302 +372,40 @@ const SupplierEvaluationWrapper = ({ onBackToMenu }) => {
 
     try {
       setLoading(true);
+      console.log('handleSubmit: Starting save & export process...');
       
-      // Save to Firebase first
-      await addSupplier(supplierData);
+      // 1. Save to Firebase first
+      console.log('handleSubmit: Saving supplier data...');
+      const savedId = await addSupplier(supplierData);
+      console.log('handleSubmit: Supplier saved with ID:', savedId);
       
-      // Generate and download PDF
-      await generateSupplierEvaluationPDF(supplierData);
+      // 2. Generate and download PDF using SERVICE
+      console.log('handleSubmit: Generating PDF...');
+      await generateSupplierEvaluationPDF(supplierData); // ✅ USAR SOLO EL SERVICIO
+      console.log('handleSubmit: PDF generated successfully');
       
-      // Complete the process
+      // 3. Complete the process
+      console.log('handleSubmit: Completing process...');
       handleSaveAndExportComplete();
       
+      console.log('handleSubmit: Process completed successfully');
+      
     } catch (error) {
-      console.error('Error in save & export process:', error);
-      alert('There was an error during the save & export process. Please try again.');
+      console.error('handleSubmit: Error in save & export process:', error);
+      
+      let errorMessage = 'There was an error during the save & export process. ';
+      
+      if (error.message.includes('PDF')) {
+        errorMessage += 'The data was saved but PDF generation failed. ';
+      } else if (error.message.includes('Firebase')) {
+        errorMessage += 'Firebase save failed, but data was saved locally. ';
+      }
+      
+      errorMessage += 'Please try again or contact support if the issue persists.';
+      
+      alert(errorMessage);
     } finally {
       setLoading(false);
-    }
-  };
-
-  const generateSupplierEvaluationPDF = async (supplierData) => {
-    try {
-      console.log('Generating Supplier Evaluation PDF...');
-      
-      // Create a new PDF document
-      const pdfDoc = await PDFDocument.create();
-      const helveticaFont = await pdfDoc.embedFont(StandardFonts.Helvetica);
-      const helveticaBoldFont = await pdfDoc.embedFont(StandardFonts.HelveticaBold);
-      
-      // Define colors
-      const primaryBlue = rgb(0/255, 95/255, 131/255);
-      const lightBlue = rgb(0/255, 144/255, 198/255);
-      const darkGray = rgb(51/255, 51/255, 51/255);
-      const lightGray = rgb(128/255, 128/255, 128/255);
-      const white = rgb(1, 1, 1);
-      
-      // Page dimensions
-      const pageWidth = 595.28; // A4 width in points
-      const pageHeight = 841.89; // A4 height in points
-      const margin = 50;
-      const contentWidth = pageWidth - (2 * margin);
-      
-      let currentPage = pdfDoc.addPage([pageWidth, pageHeight]);
-      let yPosition = pageHeight - margin;
-      
-      const addNewPageIfNeeded = (spaceNeeded) => {
-        if (yPosition - spaceNeeded < margin + 50) {
-          currentPage = pdfDoc.addPage([pageWidth, pageHeight]);
-          yPosition = pageHeight - margin;
-          return true;
-        }
-        return false;
-      };
-
-      const drawText = (text, x, y, options = {}) => {
-        const {
-          font = helveticaFont,
-          size = 10,
-          color = darkGray,
-          maxWidth = contentWidth
-        } = options;
-        
-        currentPage.drawText(text, {
-          x,
-          y,
-          size,
-          font,
-          color,
-          maxWidth
-        });
-      };
-
-      const drawSection = (title, content, startY) => {
-        let y = startY;
-        
-        // Section header with background
-        addNewPageIfNeeded(30);
-        currentPage.drawRectangle({
-          x: margin,
-          y: y - 20,
-          width: contentWidth,
-          height: 25,
-          color: primaryBlue
-        });
-        
-        drawText(title, margin + 10, y - 15, {
-          font: helveticaBoldFont,
-          size: 12,
-          color: white
-        });
-        
-        y -= 35;
-        
-        // Section content
-        if (Array.isArray(content)) {
-          content.forEach(item => {
-            addNewPageIfNeeded(20);
-            if (item.type === 'field') {
-              drawText(`${item.label}:`, margin + 10, y, {
-                font: helveticaBoldFont,
-                size: 9
-              });
-              drawText(item.value, margin + 200, y, {
-                size: 9
-              });
-              y -= 15;
-            } else if (item.type === 'subsection') {
-              addNewPageIfNeeded(25);
-              drawText(item.title, margin + 20, y, {
-                font: helveticaBoldFont,
-                size: 10,
-                color: lightBlue
-              });
-              y -= 20;
-            } else if (item.type === 'text') {
-              addNewPageIfNeeded(15);
-              drawText(item.text, margin + 20, y, {
-                size: 9
-              });
-              y -= 15;
-            }
-          });
-        }
-        
-        return y - 20;
-      };
-
-      // Header
-      currentPage.drawRectangle({
-        x: 0,
-        y: pageHeight - 80,
-        width: pageWidth,
-        height: 80,
-        color: primaryBlue
-      });
-      
-      drawText('SUPPLIER EVALUATION REPORT', margin, pageHeight - 35, {
-        font: helveticaBoldFont,
-        size: 20,
-        color: white
-      });
-      
-      drawText('Structural Steel Profile Suppliers Assessment', margin, pageHeight - 55, {
-        font: helveticaFont,
-        size: 12,
-        color: white
-      });
-      
-      yPosition = pageHeight - 100;
-
-      // Basic Information Section
-      const basicInfo = [
-        { type: 'field', label: 'Supplier Name', value: supplierData.supplierName || 'N/A' },
-        { type: 'field', label: 'Category', value: supplierData.category || 'N/A' },
-        { type: 'field', label: 'Location', value: supplierData.location || 'N/A' },
-        { type: 'field', label: 'Contact Person', value: supplierData.contactPerson || 'N/A' },
-        { type: 'field', label: 'Audit Date', value: supplierData.auditDate || 'N/A' },
-        { type: 'field', label: 'Auditor', value: supplierData.auditorName || 'N/A' },
-        { type: 'field', label: 'Audit Type', value: supplierData.auditType || 'N/A' }
-      ];
-      
-      yPosition = drawSection('GENERAL INFORMATION', basicInfo, yPosition);
-
-      // Company Certifications
-      const certificationsList = [];
-      if (supplierData.certifications) {
-        if (supplierData.certifications.iso9001) certificationsList.push('✓ ISO 9001:2015');
-        if (supplierData.certifications.iso14001) certificationsList.push('✓ ISO 14001:2015');
-        if (supplierData.certifications.iso45001) certificationsList.push('✓ ISO 45001/OHSAS 18001');
-        if (supplierData.certifications.en1090) certificationsList.push('✓ EN 1090 (Steel Structures)');
-        if (supplierData.certifications.ceMarking) certificationsList.push('✓ CE Marking');
-        if (supplierData.certifications.others) certificationsList.push(`✓ Others: ${supplierData.certifications.others}`);
-      }
-      
-      const certifications = certificationsList.map(cert => ({ type: 'text', text: cert }));
-      yPosition = drawSection('COMPANY CERTIFICATIONS', certifications, yPosition);
-
-      // Company Data
-      const companyData = [
-        { type: 'field', label: 'Annual Revenue (USD/year)', value: supplierData.companyData?.annualRevenue || 'N/A' },
-        { type: 'field', label: 'Number of Employees', value: supplierData.companyData?.employees || 'N/A' }
-      ];
-      
-      yPosition = drawSection('COMPANY DATA', companyData, yPosition);
-
-      // KPI Evaluation Results
-      const kpiResults = [];
-      
-      Object.entries(KPI_DESCRIPTIONS).forEach(([kpiKey, description]) => {
-        const score = supplierData.kpiScores?.[kpiKey] || 0;
-        const scoreLabel = SCORE_LABELS[score] || 'Not Scored';
-        
-        kpiResults.push({
-          type: 'subsection',
-          title: `${kpiKey.toUpperCase()} - ${description}`
-        });
-        
-        kpiResults.push({
-          type: 'field',
-          label: 'Score',
-          value: `${score}/4 - ${scoreLabel}`
-        });
-
-        // Add KPI details if they exist
-        const details = supplierData.kpiDetails?.[kpiKey];
-        if (details) {
-          Object.entries(details).forEach(([key, value]) => {
-            if (value && value !== '' && value !== false) {
-              let displayValue = value;
-              if (typeof value === 'boolean') {
-                displayValue = value ? 'Yes' : 'No';
-              }
-              
-              // Format field names
-              const fieldName = key.replace(/([A-Z])/g, ' $1')
-                                   .replace(/^./, str => str.toUpperCase())
-                                   .replace(/([a-z])([A-Z])/g, '$1 $2');
-              
-              kpiResults.push({
-                type: 'field',
-                label: fieldName,
-                value: displayValue.toString()
-              });
-            }
-          });
-        }
-      });
-      
-      yPosition = drawSection('KPI EVALUATION RESULTS', kpiResults, yPosition);
-
-      // GAI and Classification
-      const classification = [
-        { type: 'field', label: 'Total KPI Score', value: `${Object.values(supplierData.kpiScores).reduce((sum, score) => sum + (score || 0), 0)}/20` },
-        { type: 'field', label: 'G.A.I. (Global Assessment Index)', value: `${supplierData.gai}%` },
-        { type: 'field', label: 'Supplier Classification', value: `Class ${supplierData.supplierClass}` }
-      ];
-      
-      yPosition = drawSection('EVALUATION SUMMARY', classification, yPosition);
-
-      // Observations
-      const observations = [];
-      if (supplierData.observations?.strengths) {
-        observations.push({ type: 'subsection', title: 'Identified Strengths' });
-        observations.push({ type: 'text', text: supplierData.observations.strengths });
-      }
-      if (supplierData.observations?.improvements) {
-        observations.push({ type: 'subsection', title: 'Areas for Improvement' });
-        observations.push({ type: 'text', text: supplierData.observations.improvements });
-      }
-      if (supplierData.observations?.actions) {
-        observations.push({ type: 'subsection', title: 'Required Actions' });
-        observations.push({ type: 'text', text: supplierData.observations.actions });
-      }
-      if (supplierData.observations?.followUpDate) {
-        observations.push({ type: 'field', label: 'Follow-up Date', value: supplierData.observations.followUpDate });
-      }
-      
-      if (observations.length > 0) {
-        yPosition = drawSection('OBSERVATIONS & RECOMMENDATIONS', observations, yPosition);
-      }
-
-      // Footer on each page
-      const pages = pdfDoc.getPages();
-      pages.forEach((page, index) => {
-        page.drawText(`Page ${index + 1} of ${pages.length}`, {
-          x: pageWidth - 100,
-          y: 30,
-          size: 8,
-          font: helveticaFont,
-          color: lightGray
-        });
-        
-        page.drawText(`Generated on ${new Date().toLocaleDateString()}`, {
-          x: margin,
-          y: 30,
-          size: 8,
-          font: helveticaFont,
-          color: lightGray
-        });
-      });
-
-      // Save and download
-      const pdfBytes = await pdfDoc.save();
-      const blob = new Blob([pdfBytes], { type: 'application/pdf' });
-      const url = URL.createObjectURL(blob);
-      
-      const link = document.createElement('a');
-      link.href = url;
-      link.download = `Supplier_Evaluation_${supplierData.supplierName.replace(/[^a-z0-9]/gi, '_')}_${new Date().toISOString().split('T')[0]}.pdf`;
-      link.click();
-      
-      URL.revokeObjectURL(url);
-      
-      console.log('PDF generated and downloaded successfully');
-      
-    } catch (error) {
-      console.error('Error generating PDF:', error);
-      throw new Error('Failed to generate PDF report');
     }
   };
 
@@ -737,208 +425,89 @@ const SupplierEvaluationWrapper = ({ onBackToMenu }) => {
     return 'C';
   };
 
-  const renderSidebar = () => (
-    <div className={styles.sidebar}>
-      <div className={styles.sidebarHeader}>
-        <div className={styles.logoContainer}>
-          <img 
-            src="/images/logo2.png" 
-            alt="Valmont Solar Logo" 
-            className={styles.companyLogo}
-          />
-        </div>
-      </div>
-      
-      <div className={styles.sidebarDivider}></div>
-      
-      <div className={styles.sectionTitle}>
-        <span>📋 Supplier Evaluation</span>
-      </div>
-      
-      <div className={styles.sidebarNav}>
-        <div 
-          className={`${styles.navItem} ${activeTab === 'dashboard' ? styles.active : ''}`}
-          onClick={() => handleTabChange('dashboard')}
-        >
-          <span className={styles.navIcon}>📊</span>
-          <span className={styles.navText}>Dashboard</span>
-          {activeTab === 'dashboard' && <div className={styles.navIndicator}></div>}
-        </div>
-        
-        <div 
-          className={`${styles.navItem} ${activeTab === 'newChecklist' ? styles.active : ''}`}
-          onClick={() => handleTabChange('newChecklist')}
-        >
-          <span className={styles.navIcon}>➕</span>
-          <span className={styles.navText}>New Evaluation</span>
-          {activeTab === 'newChecklist' && <div className={styles.navIndicator}></div>}
-        </div>
-      </div>
-    </div>
-  );
-
+  // ✅ FUNCIÓN PARA RENDERIZAR DETALLES DE KPI
   const renderKPIDetailsSection = (kpiKey) => {
-    const isExpanded = expandedKPIs[kpiKey];
-    const details = formData.kpiDetails[kpiKey];
+    if (!expandedKPIs[kpiKey]) return null;
 
-    if (!isExpanded) return null;
+    const details = formData.kpiDetails[kpiKey];
 
     switch (kpiKey) {
       case 'kpi1':
         return (
           <div className={styles.kpiDetailsSection}>
-            <h5 className={styles.detailsSectionTitle}>Production Lines</h5>
+            <h5 className={styles.detailsSectionTitle}>Production Equipment</h5>
             <div className={styles.detailsGrid}>
               <div className={styles.formGroup}>
-                <label>Number of rolling/forming lines</label>
-                <input
-                  type="number"
-                  value={details.productionLines}
-                  onChange={(e) => handleKPIDetailChange(kpiKey, 'productionLines', e.target.value)}
-                  className={styles.formInput}
-                />
-              </div>
-              <div className={styles.formGroup}>
-                <label>Capacity per line (ton/day)</label>
-                <input
-                  type="number"
-                  value={details.capacityPerLine}
-                  onChange={(e) => handleKPIDetailChange(kpiKey, 'capacityPerLine', e.target.value)}
-                  className={styles.formInput}
-                />
-              </div>
-              <div className={styles.formGroup}>
-                <label>Profile types produced</label>
+                <label>Machine capacity</label>
                 <input
                   type="text"
-                  value={details.profileTypes}
-                  onChange={(e) => handleKPIDetailChange(kpiKey, 'profileTypes', e.target.value)}
+                  value={details.machineCapacity}
+                  onChange={(e) => handleKPIDetailChange(kpiKey, 'machineCapacity', e.target.value)}
                   className={styles.formInput}
                 />
               </div>
               <div className={styles.formGroup}>
-                <label>Max/Min dimensions</label>
-                <input
-                  type="text"
-                  value={details.maxMinDimensions}
-                  onChange={(e) => handleKPIDetailChange(kpiKey, 'maxMinDimensions', e.target.value)}
-                  className={styles.formInput}
-                />
-              </div>
-            </div>
-
-            <h5 className={styles.detailsSectionTitle}>Main Equipment</h5>
-            <div className={styles.detailsGrid}>
-              <div className={styles.formGroup}>
-                <label>Laser cutting machines (units)</label>
+                <label>Production volume (tons/month)</label>
                 <input
                   type="number"
-                  value={details.laserCuttingMachines}
-                  onChange={(e) => handleKPIDetailChange(kpiKey, 'laserCuttingMachines', e.target.value)}
+                  value={details.productionVolume}
+                  onChange={(e) => handleKPIDetailChange(kpiKey, 'productionVolume', e.target.value)}
                   className={styles.formInput}
                 />
               </div>
               <div className={styles.formGroup}>
-                <label>Bending presses (units)</label>
-                <input
-                  type="number"
-                  value={details.bendingPresses}
-                  onChange={(e) => handleKPIDetailChange(kpiKey, 'bendingPresses', e.target.value)}
-                  className={styles.formInput}
-                />
+                <label>Equipment condition</label>
+                <select
+                  value={details.equipmentCondition}
+                  onChange={(e) => handleKPIDetailChange(kpiKey, 'equipmentCondition', e.target.value)}
+                  className={styles.formSelect}
+                >
+                  <option value="">Select...</option>
+                  <option value="excellent">Excellent</option>
+                  <option value="good">Good</option>
+                  <option value="fair">Fair</option>
+                  <option value="poor">Poor</option>
+                </select>
               </div>
               <div className={styles.formGroup}>
-                <label>Bending press capacity (ton)</label>
-                <input
-                  type="number"
-                  value={details.bendingPressCapacity}
-                  onChange={(e) => handleKPIDetailChange(kpiKey, 'bendingPressCapacity', e.target.value)}
-                  className={styles.formInput}
-                />
+                <label>Maintenance program</label>
+                <select
+                  value={details.maintenanceProgram}
+                  onChange={(e) => handleKPIDetailChange(kpiKey, 'maintenanceProgram', e.target.value)}
+                  className={styles.formSelect}
+                >
+                  <option value="">Select...</option>
+                  <option value="preventive">Preventive</option>
+                  <option value="corrective">Corrective</option>
+                  <option value="predictive">Predictive</option>
+                  <option value="none">None</option>
+                </select>
               </div>
               <div className={styles.formGroup}>
-                <label>TIG/MIG welding stations (units)</label>
-                <input
-                  type="number"
-                  value={details.weldingStations}
-                  onChange={(e) => handleKPIDetailChange(kpiKey, 'weldingStations', e.target.value)}
-                  className={styles.formInput}
-                />
+                <label>Technology level</label>
+                <select
+                  value={details.technologyLevel}
+                  onChange={(e) => handleKPIDetailChange(kpiKey, 'technologyLevel', e.target.value)}
+                  className={styles.formSelect}
+                >
+                  <option value="">Select...</option>
+                  <option value="modern">Modern</option>
+                  <option value="standard">Standard</option>
+                  <option value="outdated">Outdated</option>
+                </select>
               </div>
               <div className={styles.formGroup}>
-                <label>
-                  <input
-                    type="checkbox"
-                    checked={details.heatTreatmentOvens}
-                    onChange={(e) => handleKPIDetailChange(kpiKey, 'heatTreatmentOvens', e.target.checked)}
-                    className={styles.checkbox}
-                  />
-                  Heat treatment ovens
-                </label>
-              </div>
-              <div className={styles.formGroup}>
-                <label>
-                  <input
-                    type="checkbox"
-                    checked={details.automatedHandling}
-                    onChange={(e) => handleKPIDetailChange(kpiKey, 'automatedHandling', e.target.checked)}
-                    className={styles.checkbox}
-                  />
-                  Automated handling systems
-                </label>
-              </div>
-            </div>
-
-            <h5 className={styles.detailsSectionTitle}>Production Schedule</h5>
-            <div className={styles.detailsGrid}>
-              <div className={styles.formGroup}>
-                <label>Effective production hours/day</label>
-                <input
-                  type="number"
-                  value={details.effectiveProductionHours}
-                  onChange={(e) => handleKPIDetailChange(kpiKey, 'effectiveProductionHours', e.target.value)}
-                  className={styles.formInput}
-                />
-              </div>
-              <div className={styles.formGroup}>
-                <label>Working days/week</label>
-                <input
-                  type="number"
-                  min="1"
-                  max="7"
-                  value={details.workingDays}
-                  onChange={(e) => handleKPIDetailChange(kpiKey, 'workingDays', e.target.value)}
-                  className={styles.formInput}
-                />
-              </div>
-              <div className={styles.formGroup}>
-                <label>Number of shifts</label>
-                <input
-                  type="number"
-                  value={details.shifts}
-                  onChange={(e) => handleKPIDetailChange(kpiKey, 'shifts', e.target.value)}
-                  className={styles.formInput}
-                />
-              </div>
-              <div className={styles.formGroup}>
-                <label>Installed capacity (ton/month)</label>
-                <input
-                  type="number"
-                  value={details.installedCapacity}
-                  onChange={(e) => handleKPIDetailChange(kpiKey, 'installedCapacity', e.target.value)}
-                  className={styles.formInput}
-                />
-              </div>
-              <div className={styles.formGroup}>
-                <label>
-                  <input
-                    type="checkbox"
-                    checked={details.shiftFlexibility}
-                    onChange={(e) => handleKPIDetailChange(kpiKey, 'shiftFlexibility', e.target.checked)}
-                    className={styles.checkbox}
-                  />
-                  Flexibility for additional shifts
-                </label>
+                <label>Expansion capability</label>
+                <select
+                  value={details.expansionCapability}
+                  onChange={(e) => handleKPIDetailChange(kpiKey, 'expansionCapability', e.target.value)}
+                  className={styles.formSelect}
+                >
+                  <option value="">Select...</option>
+                  <option value="high">High</option>
+                  <option value="medium">Medium</option>
+                  <option value="low">Low</option>
+                </select>
               </div>
             </div>
           </div>
@@ -947,159 +516,82 @@ const SupplierEvaluationWrapper = ({ onBackToMenu }) => {
       case 'kpi2':
         return (
           <div className={styles.kpiDetailsSection}>
-            <h5 className={styles.detailsSectionTitle}>Quality Department</h5>
+            <h5 className={styles.detailsSectionTitle}>Quality System</h5>
             <div className={styles.detailsGrid}>
               <div className={styles.formGroup}>
-                <label>Quality responsible (title/experience)</label>
+                <label>Quality system</label>
+                <select
+                  value={details.qualitySystem}
+                  onChange={(e) => handleKPIDetailChange(kpiKey, 'qualitySystem', e.target.value)}
+                  className={styles.formSelect}
+                >
+                  <option value="">Select...</option>
+                  <option value="iso9001">ISO 9001</option>
+                  <option value="internal">Internal system</option>
+                  <option value="none">None</option>
+                </select>
+              </div>
+              <div className={styles.formGroup}>
+                <label>Testing equipment</label>
+                <select
+                  value={details.testingEquipment}
+                  onChange={(e) => handleKPIDetailChange(kpiKey, 'testingEquipment', e.target.value)}
+                  className={styles.formSelect}
+                >
+                  <option value="">Select...</option>
+                  <option value="complete">Complete</option>
+                  <option value="partial">Partial</option>
+                  <option value="external">External</option>
+                  <option value="none">None</option>
+                </select>
+              </div>
+              <div className={styles.formGroup}>
+                <label>Inspection procedures</label>
+                <select
+                  value={details.inspectionProcedures}
+                  onChange={(e) => handleKPIDetailChange(kpiKey, 'inspectionProcedures', e.target.value)}
+                  className={styles.formSelect}
+                >
+                  <option value="">Select...</option>
+                  <option value="documented">Documented</option>
+                  <option value="verbal">Verbal</option>
+                  <option value="none">None</option>
+                </select>
+              </div>
+              <div className={styles.formGroup}>
+                <label>Qualification certificates</label>
                 <input
                   type="text"
-                  value={details.qualityResponsible}
-                  onChange={(e) => handleKPIDetailChange(kpiKey, 'qualityResponsible', e.target.value)}
+                  value={details.qualificationCertificates}
+                  onChange={(e) => handleKPIDetailChange(kpiKey, 'qualificationCertificates', e.target.value)}
                   className={styles.formInput}
                 />
               </div>
               <div className={styles.formGroup}>
-                <label>QC team personnel (number)</label>
-                <input
-                  type="number"
-                  value={details.qualityTeamSize}
-                  onChange={(e) => handleKPIDetailChange(kpiKey, 'qualityTeamSize', e.target.value)}
-                  className={styles.formInput}
-                />
+                <label>Control documentation</label>
+                <select
+                  value={details.controlDocumentation}
+                  onChange={(e) => handleKPIDetailChange(kpiKey, 'controlDocumentation', e.target.value)}
+                  className={styles.formSelect}
+                >
+                  <option value="">Select...</option>
+                  <option value="complete">Complete</option>
+                  <option value="partial">Partial</option>
+                  <option value="minimal">Minimal</option>
+                </select>
               </div>
               <div className={styles.formGroup}>
-                <label>Staff certifications</label>
-                <input
-                  type="text"
-                  value={details.staffCertifications}
-                  onChange={(e) => handleKPIDetailChange(kpiKey, 'staffCertifications', e.target.value)}
-                  className={styles.formInput}
-                />
-              </div>
-            </div>
-
-            <h5 className={styles.detailsSectionTitle}>Laboratory & Testing Equipment</h5>
-            <div className={styles.detailsGrid}>
-              <div className={styles.formGroup}>
-                <label>
-                  <input
-                    type="checkbox"
-                    checked={details.ownLaboratory}
-                    onChange={(e) => handleKPIDetailChange(kpiKey, 'ownLaboratory', e.target.checked)}
-                    className={styles.checkbox}
-                  />
-                  Own laboratory
-                </label>
-              </div>
-              <div className={styles.formGroup}>
-                <label>
-                  <input
-                    type="checkbox"
-                    checked={details.iso17025Accreditation}
-                    onChange={(e) => handleKPIDetailChange(kpiKey, 'iso17025Accreditation', e.target.checked)}
-                    className={styles.checkbox}
-                  />
-                  ISO 17025 accreditation
-                </label>
-              </div>
-              <div className={styles.formGroup}>
-                <label>
-                  <input
-                    type="checkbox"
-                    checked={details.tensionMachine}
-                    onChange={(e) => handleKPIDetailChange(kpiKey, 'tensionMachine', e.target.checked)}
-                    className={styles.checkbox}
-                  />
-                  Tension machine
-                </label>
-              </div>
-              <div className={styles.formGroup}>
-                <label>Tension machine capacity (kN)</label>
-                <input
-                  type="number"
-                  value={details.tensionMachineCapacity}
-                  onChange={(e) => handleKPIDetailChange(kpiKey, 'tensionMachineCapacity', e.target.value)}
-                  className={styles.formInput}
-                />
-              </div>
-              <div className={styles.formGroup}>
-                <label>
-                  <input
-                    type="checkbox"
-                    checked={details.durometers}
-                    onChange={(e) => handleKPIDetailChange(kpiKey, 'durometers', e.target.checked)}
-                    className={styles.checkbox}
-                  />
-                  Durometers
-                </label>
-              </div>
-              <div className={styles.formGroup}>
-                <label>
-                  <input
-                    type="checkbox"
-                    checked={details.spectrometer}
-                    onChange={(e) => handleKPIDetailChange(kpiKey, 'spectrometer', e.target.checked)}
-                    className={styles.checkbox}
-                  />
-                  Spectrometer (chemical analysis)
-                </label>
-              </div>
-              <div className={styles.formGroup}>
-                <label>
-                  <input
-                    type="checkbox"
-                    checked={details.ultrasoundEquipment}
-                    onChange={(e) => handleKPIDetailChange(kpiKey, 'ultrasoundEquipment', e.target.checked)}
-                    className={styles.checkbox}
-                  />
-                  Ultrasound/NDT equipment
-                </label>
-              </div>
-              <div className={styles.formGroup}>
-                <label>
-                  <input
-                    type="checkbox"
-                    checked={details.cmmMachine}
-                    onChange={(e) => handleKPIDetailChange(kpiKey, 'cmmMachine', e.target.checked)}
-                    className={styles.checkbox}
-                  />
-                  CMM (coordinate measuring machine)
-                </label>
-              </div>
-            </div>
-
-            <h5 className={styles.detailsSectionTitle}>Procedures</h5>
-            <div className={styles.detailsGrid}>
-              <div className={styles.formGroup}>
-                <label>
-                  <input
-                    type="checkbox"
-                    checked={details.inspectionTestPlan}
-                    onChange={(e) => handleKPIDetailChange(kpiKey, 'inspectionTestPlan', e.target.checked)}
-                    className={styles.checkbox}
-                  />
-                  Inspection and Test Plan (ITP) exists
-                </label>
-              </div>
-              <div className={styles.formGroup}>
-                <label>Testing frequency</label>
-                <input
-                  type="text"
-                  value={details.testingFrequency}
-                  onChange={(e) => handleKPIDetailChange(kpiKey, 'testingFrequency', e.target.value)}
-                  className={styles.formInput}
-                />
-              </div>
-              <div className={styles.formGroup}>
-                <label>
-                  <input
-                    type="checkbox"
-                    checked={details.statisticalProcessControl}
-                    onChange={(e) => handleKPIDetailChange(kpiKey, 'statisticalProcessControl', e.target.checked)}
-                    className={styles.checkbox}
-                  />
-                  Statistical process control
-                </label>
+                <label>Nonconformity handling</label>
+                <select
+                  value={details.nonconformityHandling}
+                  onChange={(e) => handleKPIDetailChange(kpiKey, 'nonconformityHandling', e.target.value)}
+                  className={styles.formSelect}
+                >
+                  <option value="">Select...</option>
+                  <option value="systematic">Systematic</option>
+                  <option value="caseByCase">Case by case</option>
+                  <option value="none">None</option>
+                </select>
               </div>
             </div>
           </div>
@@ -1152,82 +644,48 @@ const SupplierEvaluationWrapper = ({ onBackToMenu }) => {
               </div>
             </div>
 
-            <h5 className={styles.detailsSectionTitle}>Galvanizing/Coatings</h5>
-            <div className={styles.detailsGrid}>
-              <div className={styles.formGroup}>
-                <label>
-                  <input
-                    type="checkbox"
-                    checked={details.ownGalvanizing}
-                    onChange={(e) => handleKPIDetailChange(kpiKey, 'ownGalvanizing', e.target.checked)}
-                    className={styles.checkbox}
-                  />
-                  Own galvanizing
-                </label>
-              </div>
-              <div className={styles.formGroup}>
-                <label>Galvanizing supplier</label>
-                <input
-                  type="text"
-                  value={details.galvanizingSupplier}
-                  onChange={(e) => handleKPIDetailChange(kpiKey, 'galvanizingSupplier', e.target.value)}
-                  className={styles.formInput}
-                />
-              </div>
-              <div className={styles.formGroup}>
-                <label>Distance to galvanizing (km)</label>
-                <input
-                  type="number"
-                  value={details.galvanizingDistance}
-                  onChange={(e) => handleKPIDetailChange(kpiKey, 'galvanizingDistance', e.target.value)}
-                  className={styles.formInput}
-                />
-              </div>
-              <div className={styles.formGroup}>
-                <label>Other available coatings</label>
-                <input
-                  type="text"
-                  value={details.otherCoatings}
-                  onChange={(e) => handleKPIDetailChange(kpiKey, 'otherCoatings', e.target.value)}
-                  className={styles.formInput}
-                />
-              </div>
-            </div>
-
             <h5 className={styles.detailsSectionTitle}>Traceability</h5>
             <div className={styles.detailsGrid}>
               <div className={styles.formGroup}>
-                <label>
-                  <input
-                    type="checkbox"
-                    checked={details.completeTraceability}
-                    onChange={(e) => handleKPIDetailChange(kpiKey, 'completeTraceability', e.target.checked)}
-                    className={styles.checkbox}
-                  />
-                  Complete traceability system
-                </label>
+                <label>Supplier certification</label>
+                <select
+                  value={details.supplierCertification}
+                  onChange={(e) => handleKPIDetailChange(kpiKey, 'supplierCertification', e.target.value)}
+                  className={styles.formSelect}
+                >
+                  <option value="">Select...</option>
+                  <option value="iso9001">ISO 9001</option>
+                  <option value="en1090">EN 1090</option>
+                  <option value="other">Other</option>
+                  <option value="none">None</option>
+                </select>
               </div>
               <div className={styles.formGroup}>
-                <label>
-                  <input
-                    type="checkbox"
-                    checked={details.qrCodeIdentification}
-                    onChange={(e) => handleKPIDetailChange(kpiKey, 'qrCodeIdentification', e.target.checked)}
-                    className={styles.checkbox}
-                  />
-                  QR code/identification on products
-                </label>
+                <label>Material traceability</label>
+                <select
+                  value={details.materialTraceability}
+                  onChange={(e) => handleKPIDetailChange(kpiKey, 'materialTraceability', e.target.value)}
+                  className={styles.formSelect}
+                >
+                  <option value="">Select...</option>
+                  <option value="complete">Complete</option>
+                  <option value="partial">Partial</option>
+                  <option value="none">None</option>
+                </select>
               </div>
               <div className={styles.formGroup}>
-                <label>
-                  <input
-                    type="checkbox"
-                    checked={details.digitalRecords}
-                    onChange={(e) => handleKPIDetailChange(kpiKey, 'digitalRecords', e.target.checked)}
-                    className={styles.checkbox}
-                  />
-                  Digital records
-                </label>
+                <label>Test certificates</label>
+                <select
+                  value={details.testCertificates}
+                  onChange={(e) => handleKPIDetailChange(kpiKey, 'testCertificates', e.target.value)}
+                  className={styles.formSelect}
+                >
+                  <option value="">Select...</option>
+                  <option value="always">Always provided</option>
+                  <option value="onRequest">On request</option>
+                  <option value="sometimes">Sometimes</option>
+                  <option value="never">Never</option>
+                </select>
               </div>
             </div>
           </div>
@@ -1239,38 +697,20 @@ const SupplierEvaluationWrapper = ({ onBackToMenu }) => {
             <h5 className={styles.detailsSectionTitle}>Key Personnel</h5>
             <div className={styles.detailsGrid}>
               <div className={styles.formGroup}>
-                <label>Production engineer</label>
+                <label>Production manager</label>
                 <input
                   type="text"
-                  value={details.productionEngineer}
-                  onChange={(e) => handleKPIDetailChange(kpiKey, 'productionEngineer', e.target.value)}
+                  value={details.productionManager}
+                  onChange={(e) => handleKPIDetailChange(kpiKey, 'productionManager', e.target.value)}
                   className={styles.formInput}
                 />
               </div>
               <div className={styles.formGroup}>
-                <label>Experience (years)</label>
-                <input
-                  type="number"
-                  value={details.productionEngineerExp}
-                  onChange={(e) => handleKPIDetailChange(kpiKey, 'productionEngineerExp', e.target.value)}
-                  className={styles.formInput}
-                />
-              </div>
-              <div className={styles.formGroup}>
-                <label>Welding supervisor</label>
+                <label>Quality manager</label>
                 <input
                   type="text"
-                  value={details.weldingSupervisor}
-                  onChange={(e) => handleKPIDetailChange(kpiKey, 'weldingSupervisor', e.target.value)}
-                  className={styles.formInput}
-                />
-              </div>
-              <div className={styles.formGroup}>
-                <label>Welding supervisor certification</label>
-                <input
-                  type="text"
-                  value={details.weldingSupervisorCert}
-                  onChange={(e) => handleKPIDetailChange(kpiKey, 'weldingSupervisorCert', e.target.value)}
+                  value={details.qualityManager}
+                  onChange={(e) => handleKPIDetailChange(kpiKey, 'qualityManager', e.target.value)}
                   className={styles.formInput}
                 />
               </div>
@@ -1364,7 +804,7 @@ const SupplierEvaluationWrapper = ({ onBackToMenu }) => {
                 </label>
               </div>
               <div className={styles.formGroup}>
-                <label>Fleet vehicles (number)</label>
+                <label>Fleet vehicles</label>
                 <input
                   type="number"
                   value={details.fleetVehicles}
@@ -1386,7 +826,7 @@ const SupplierEvaluationWrapper = ({ onBackToMenu }) => {
             <h5 className={styles.detailsSectionTitle}>Delivery Times</h5>
             <div className={styles.detailsGrid}>
               <div className={styles.formGroup}>
-                <label>Standard lead time (weeks)</label>
+                <label>Standard lead time (days)</label>
                 <input
                   type="number"
                   value={details.standardLeadTime}
@@ -1404,7 +844,7 @@ const SupplierEvaluationWrapper = ({ onBackToMenu }) => {
                 />
               </div>
               <div className={styles.formGroup}>
-                <label>Flexibility for changes</label>
+                <label>Change flexibility</label>
                 <select
                   value={details.changeFlexibility}
                   onChange={(e) => handleKPIDetailChange(kpiKey, 'changeFlexibility', e.target.value)}
@@ -1543,7 +983,7 @@ const SupplierEvaluationWrapper = ({ onBackToMenu }) => {
                 </div>
 
                 <div className={styles.formGroup}>
-                  <label className={styles.formLabel}>Main Contact</label>
+                  <label className={styles.formLabel}>Contact Person</label>
                   <input
                     type="text"
                     value={formData.contactPerson}
@@ -1551,24 +991,30 @@ const SupplierEvaluationWrapper = ({ onBackToMenu }) => {
                     className={styles.formInput}
                   />
                 </div>
-              </div>
 
-              <div className={styles.formSubsection}>
-                <h4 className={styles.subsectionTitle}>Audit Type</h4>
-                <div className={styles.radioGroup}>
-                  {['1st Audit', 'Periodic Audit', 'Follow-up Audit'].map(type => (
-                    <label key={type} className={styles.radioLabel}>
-                      <input
-                        type="radio"
-                        name="auditType"
-                        value={type}
-                        checked={formData.auditType === type}
-                        onChange={(e) => handleDirectChange('auditType', e.target.value)}
-                        className={styles.radioInput}
-                      />
-                      {type}
-                    </label>
-                  ))}
+                <div className={styles.formGroup}>
+                  <label className={styles.formLabel}>Activity Field</label>
+                  <input
+                    type="text"
+                    value={formData.activityField}
+                    onChange={(e) => handleDirectChange('activityField', e.target.value)}
+                    className={styles.formInput}
+                  />
+                </div>
+
+                <div className={styles.formGroup}>
+                  <label className={styles.formLabel}>Audit Type</label>
+                  <select
+                    value={formData.auditType}
+                    onChange={(e) => handleDirectChange('auditType', e.target.value)}
+                    className={styles.formSelect}
+                  >
+                    <option value="">Select audit type</option>
+                    <option value="initial">Initial Audit</option>
+                    <option value="follow-up">Follow-up Audit</option>
+                    <option value="annual">Annual Review</option>
+                    <option value="special">Special Audit</option>
+                  </select>
                 </div>
               </div>
             </div>
@@ -1577,20 +1023,23 @@ const SupplierEvaluationWrapper = ({ onBackToMenu }) => {
             <div className={styles.formSection}>
               <h3 className={styles.sectionTitle}>Company Certifications</h3>
               <div className={styles.certificationsGrid}>
-                {Object.keys(formData.certifications).map(cert => (
-                  <label key={cert} className={styles.checkboxLabel}>
+                {[
+                  { key: 'iso9001', label: 'ISO 9001 - Quality Management' },
+                  { key: 'iso14001', label: 'ISO 14001 - Environmental Management' },
+                  { key: 'iso45001', label: 'ISO 45001 - Occupational Health & Safety' },
+                  { key: 'en1090', label: 'EN 1090 - Structural Steel' },
+                  { key: 'ceMarking', label: 'CE Marking' },
+                  { key: 'others', label: 'Other certifications' }
+                ].map(({ key, label }) => (
+                  <label key={key} className={styles.certificationLabel}>
                     <input
                       type="checkbox"
-                      checked={formData.certifications[cert]}
-                      onChange={(e) => handleInputChange('certifications', cert, e.target.checked)}
+                      checked={formData.certifications[key]}
+                      onChange={(e) => handleInputChange('certifications', key, e.target.checked)}
                       className={styles.checkbox}
                     />
-                    {cert === 'iso9001' && 'ISO 9001:2015'}
-                    {cert === 'iso14001' && 'ISO 14001:2015'}
-                    {cert === 'iso45001' && 'ISO 45001/OHSAS 18001'}
-                    {cert === 'en1090' && 'EN 1090 (Steel Structures)'}
-                    {cert === 'ceMarking' && 'CE Marking'}
-                    {cert === 'others' && (
+                    {label}
+                    {key === 'others' && (
                       <input
                         type="text"
                         placeholder="Other certifications..."
@@ -1888,7 +1337,7 @@ const SupplierEvaluationWrapper = ({ onBackToMenu }) => {
                               📍 {supplier.location || 'Location not specified'}
                             </div>
                             <div className={styles.supplierGai}>
-                              📈 G.A.I.: {gai}%
+                              📈 G.A.I: {gai}%
                             </div>
                             <div className={styles.supplierDate}>
                               📅 {new Date(supplier.auditDate || supplier.createdAt).toLocaleDateString()}
@@ -1931,6 +1380,46 @@ const SupplierEvaluationWrapper = ({ onBackToMenu }) => {
           )}
         </>
       )}
+    </div>
+  );
+
+  const renderSidebar = () => (
+    <div className={styles.sidebar}>
+      <div className={styles.sidebarHeader}>
+        <div className={styles.logoContainer}>
+          <img 
+            src="/images/logo2.png" 
+            alt="Valmont Solar Logo" 
+            className={styles.companyLogo}
+          />
+        </div>
+      </div>
+      
+      <div className={styles.sidebarDivider}></div>
+      
+      <div className={styles.sectionTitle}>
+        <span>📋 Supplier Evaluation</span>
+      </div>
+      
+      <div className={styles.sidebarNav}>
+        <div 
+          className={`${styles.navItem} ${activeTab === 'dashboard' ? styles.active : ''}`}
+          onClick={() => handleTabChange('dashboard')}
+        >
+          <span className={styles.navIcon}>📊</span>
+          <span className={styles.navText}>Dashboard</span>
+          {activeTab === 'dashboard' && <div className={styles.navIndicator}></div>}
+        </div>
+        
+        <div 
+          className={`${styles.navItem} ${activeTab === 'newChecklist' ? styles.active : ''}`}
+          onClick={() => handleTabChange('newChecklist')}
+        >
+          <span className={styles.navIcon}>📝</span>
+          <span className={styles.navText}>New Evaluation</span>
+          {activeTab === 'newChecklist' && <div className={styles.navIndicator}></div>}
+        </div>
+      </div>
     </div>
   );
 

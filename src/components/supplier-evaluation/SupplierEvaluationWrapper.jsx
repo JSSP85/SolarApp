@@ -1,6 +1,9 @@
 // src/components/supplier-evaluation/SupplierEvaluationWrapper.jsx
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../context/AuthContext';
+import BackButton from '../common/BackButton'; // Import existing BackButton
+import { saveSupplierEvaluation, updateSupplierEvaluation, getAllSupplierEvaluations } from '../../firebase/supplierEvaluationService'; // Firebase service
+import { generateSupplierEvaluationPDF } from '../../services/supplierEvaluationPDFService'; // PDF service
 import styles from '../../styles/SupplierEvaluation.module.css';
 
 const SUPPLIER_CATEGORIES = [
@@ -165,31 +168,69 @@ const SupplierEvaluationWrapper = ({ onBackToMenu }) => {
     }));
   }, [currentUser]);
 
-  // Load suppliers from localStorage on mount
+  // Load suppliers from Firebase on mount
   useEffect(() => {
-    const savedSuppliers = localStorage.getItem('supplierEvaluations');
-    if (savedSuppliers) {
-      setSuppliers(JSON.parse(savedSuppliers));
-    }
+    const loadSuppliers = async () => {
+      setLoading(true);
+      try {
+        const suppliersData = await getAllSupplierEvaluations();
+        setSuppliers(suppliersData);
+      } catch (error) {
+        console.error('Error loading suppliers:', error);
+        // Fallback to localStorage if Firebase fails
+        const savedSuppliers = localStorage.getItem('supplierEvaluations');
+        if (savedSuppliers) {
+          setSuppliers(JSON.parse(savedSuppliers));
+        }
+      } finally {
+        setLoading(false);
+      }
+    };
+    
+    loadSuppliers();
   }, []);
 
-  // Save suppliers to localStorage whenever suppliers change
-  useEffect(() => {
-    localStorage.setItem('supplierEvaluations', JSON.stringify(suppliers));
-  }, [suppliers]);
+  const addSupplier = async (supplierData) => {
+    try {
+      const newSupplier = {
+        ...supplierData,
+        createdBy: currentUser?.displayName || 'Unknown User',
+        createdAt: new Date().toISOString()
+      };
 
-  const addSupplier = (supplierData) => {
-    const newSupplier = {
-      ...supplierData,
-      id: Date.now().toString(),
-      createdAt: new Date().toISOString(),
-      createdBy: currentUser?.displayName || 'Unknown User'
-    };
-    setSuppliers(prev => [...prev, newSupplier]);
-    setActiveTab('dashboard');
-    
-    // Reset form after successful submission
-    resetForm();
+      // Save to Firebase
+      const docId = await saveSupplierEvaluation(newSupplier);
+      
+      // Add to local state with Firebase ID
+      const supplierWithId = {
+        ...newSupplier,
+        id: docId
+      };
+      
+      setSuppliers(prev => [...prev, supplierWithId]);
+      
+      console.log('Supplier evaluation saved successfully with ID:', docId);
+      return docId;
+      
+    } catch (error) {
+      console.error('Error saving supplier evaluation:', error);
+      
+      // Fallback to localStorage if Firebase fails
+      const newSupplier = {
+        ...supplierData,
+        id: Date.now().toString(),
+        createdAt: new Date().toISOString(),
+        createdBy: currentUser?.displayName || 'Unknown User'
+      };
+      setSuppliers(prev => [...prev, newSupplier]);
+      
+      // Also save to localStorage as backup
+      const updatedSuppliers = [...suppliers, newSupplier];
+      localStorage.setItem('supplierEvaluations', JSON.stringify(updatedSuppliers));
+      
+      console.log('Saved to localStorage as fallback');
+      return newSupplier.id;
+    }
   };
 
   const resetForm = () => {
@@ -340,7 +381,7 @@ const SupplierEvaluationWrapper = ({ onBackToMenu }) => {
     }));
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     
     if (!formData.supplierName || !formData.category) {
@@ -357,7 +398,305 @@ const SupplierEvaluationWrapper = ({ onBackToMenu }) => {
       supplierClass
     };
 
-    addSupplier(supplierData);
+    try {
+      setLoading(true);
+      
+      // Save to Firebase first
+      await addSupplier(supplierData);
+      
+      // Generate and download PDF
+      await generateSupplierEvaluationPDF(supplierData);
+      
+      // Complete the process
+      handleSaveAndExportComplete();
+      
+    } catch (error) {
+      console.error('Error in save & export process:', error);
+      alert('There was an error during the save & export process. Please try again.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const generateSupplierEvaluationPDF = async (supplierData) => {
+    try {
+      console.log('Generating Supplier Evaluation PDF...');
+      
+      // Create a new PDF document
+      const pdfDoc = await PDFDocument.create();
+      const helveticaFont = await pdfDoc.embedFont(StandardFonts.Helvetica);
+      const helveticaBoldFont = await pdfDoc.embedFont(StandardFonts.HelveticaBold);
+      
+      // Define colors
+      const primaryBlue = rgb(0/255, 95/255, 131/255);
+      const lightBlue = rgb(0/255, 144/255, 198/255);
+      const darkGray = rgb(51/255, 51/255, 51/255);
+      const lightGray = rgb(128/255, 128/255, 128/255);
+      const white = rgb(1, 1, 1);
+      
+      // Page dimensions
+      const pageWidth = 595.28; // A4 width in points
+      const pageHeight = 841.89; // A4 height in points
+      const margin = 50;
+      const contentWidth = pageWidth - (2 * margin);
+      
+      let currentPage = pdfDoc.addPage([pageWidth, pageHeight]);
+      let yPosition = pageHeight - margin;
+      
+      const addNewPageIfNeeded = (spaceNeeded) => {
+        if (yPosition - spaceNeeded < margin + 50) {
+          currentPage = pdfDoc.addPage([pageWidth, pageHeight]);
+          yPosition = pageHeight - margin;
+          return true;
+        }
+        return false;
+      };
+
+      const drawText = (text, x, y, options = {}) => {
+        const {
+          font = helveticaFont,
+          size = 10,
+          color = darkGray,
+          maxWidth = contentWidth
+        } = options;
+        
+        currentPage.drawText(text, {
+          x,
+          y,
+          size,
+          font,
+          color,
+          maxWidth
+        });
+      };
+
+      const drawSection = (title, content, startY) => {
+        let y = startY;
+        
+        // Section header with background
+        addNewPageIfNeeded(30);
+        currentPage.drawRectangle({
+          x: margin,
+          y: y - 20,
+          width: contentWidth,
+          height: 25,
+          color: primaryBlue
+        });
+        
+        drawText(title, margin + 10, y - 15, {
+          font: helveticaBoldFont,
+          size: 12,
+          color: white
+        });
+        
+        y -= 35;
+        
+        // Section content
+        if (Array.isArray(content)) {
+          content.forEach(item => {
+            addNewPageIfNeeded(20);
+            if (item.type === 'field') {
+              drawText(`${item.label}:`, margin + 10, y, {
+                font: helveticaBoldFont,
+                size: 9
+              });
+              drawText(item.value, margin + 200, y, {
+                size: 9
+              });
+              y -= 15;
+            } else if (item.type === 'subsection') {
+              addNewPageIfNeeded(25);
+              drawText(item.title, margin + 20, y, {
+                font: helveticaBoldFont,
+                size: 10,
+                color: lightBlue
+              });
+              y -= 20;
+            } else if (item.type === 'text') {
+              addNewPageIfNeeded(15);
+              drawText(item.text, margin + 20, y, {
+                size: 9
+              });
+              y -= 15;
+            }
+          });
+        }
+        
+        return y - 20;
+      };
+
+      // Header
+      currentPage.drawRectangle({
+        x: 0,
+        y: pageHeight - 80,
+        width: pageWidth,
+        height: 80,
+        color: primaryBlue
+      });
+      
+      drawText('SUPPLIER EVALUATION REPORT', margin, pageHeight - 35, {
+        font: helveticaBoldFont,
+        size: 20,
+        color: white
+      });
+      
+      drawText('Structural Steel Profile Suppliers Assessment', margin, pageHeight - 55, {
+        font: helveticaFont,
+        size: 12,
+        color: white
+      });
+      
+      yPosition = pageHeight - 100;
+
+      // Basic Information Section
+      const basicInfo = [
+        { type: 'field', label: 'Supplier Name', value: supplierData.supplierName || 'N/A' },
+        { type: 'field', label: 'Category', value: supplierData.category || 'N/A' },
+        { type: 'field', label: 'Location', value: supplierData.location || 'N/A' },
+        { type: 'field', label: 'Contact Person', value: supplierData.contactPerson || 'N/A' },
+        { type: 'field', label: 'Audit Date', value: supplierData.auditDate || 'N/A' },
+        { type: 'field', label: 'Auditor', value: supplierData.auditorName || 'N/A' },
+        { type: 'field', label: 'Audit Type', value: supplierData.auditType || 'N/A' }
+      ];
+      
+      yPosition = drawSection('GENERAL INFORMATION', basicInfo, yPosition);
+
+      // Company Certifications
+      const certificationsList = [];
+      if (supplierData.certifications) {
+        if (supplierData.certifications.iso9001) certificationsList.push('✓ ISO 9001:2015');
+        if (supplierData.certifications.iso14001) certificationsList.push('✓ ISO 14001:2015');
+        if (supplierData.certifications.iso45001) certificationsList.push('✓ ISO 45001/OHSAS 18001');
+        if (supplierData.certifications.en1090) certificationsList.push('✓ EN 1090 (Steel Structures)');
+        if (supplierData.certifications.ceMarking) certificationsList.push('✓ CE Marking');
+        if (supplierData.certifications.others) certificationsList.push(`✓ Others: ${supplierData.certifications.others}`);
+      }
+      
+      const certifications = certificationsList.map(cert => ({ type: 'text', text: cert }));
+      yPosition = drawSection('COMPANY CERTIFICATIONS', certifications, yPosition);
+
+      // Company Data
+      const companyData = [
+        { type: 'field', label: 'Annual Revenue (USD/year)', value: supplierData.companyData?.annualRevenue || 'N/A' },
+        { type: 'field', label: 'Number of Employees', value: supplierData.companyData?.employees || 'N/A' }
+      ];
+      
+      yPosition = drawSection('COMPANY DATA', companyData, yPosition);
+
+      // KPI Evaluation Results
+      const kpiResults = [];
+      
+      Object.entries(KPI_DESCRIPTIONS).forEach(([kpiKey, description]) => {
+        const score = supplierData.kpiScores?.[kpiKey] || 0;
+        const scoreLabel = SCORE_LABELS[score] || 'Not Scored';
+        
+        kpiResults.push({
+          type: 'subsection',
+          title: `${kpiKey.toUpperCase()} - ${description}`
+        });
+        
+        kpiResults.push({
+          type: 'field',
+          label: 'Score',
+          value: `${score}/4 - ${scoreLabel}`
+        });
+
+        // Add KPI details if they exist
+        const details = supplierData.kpiDetails?.[kpiKey];
+        if (details) {
+          Object.entries(details).forEach(([key, value]) => {
+            if (value && value !== '' && value !== false) {
+              let displayValue = value;
+              if (typeof value === 'boolean') {
+                displayValue = value ? 'Yes' : 'No';
+              }
+              
+              // Format field names
+              const fieldName = key.replace(/([A-Z])/g, ' $1')
+                                   .replace(/^./, str => str.toUpperCase())
+                                   .replace(/([a-z])([A-Z])/g, '$1 $2');
+              
+              kpiResults.push({
+                type: 'field',
+                label: fieldName,
+                value: displayValue.toString()
+              });
+            }
+          });
+        }
+      });
+      
+      yPosition = drawSection('KPI EVALUATION RESULTS', kpiResults, yPosition);
+
+      // GAI and Classification
+      const classification = [
+        { type: 'field', label: 'Total KPI Score', value: `${Object.values(supplierData.kpiScores).reduce((sum, score) => sum + (score || 0), 0)}/20` },
+        { type: 'field', label: 'G.A.I. (Global Assessment Index)', value: `${supplierData.gai}%` },
+        { type: 'field', label: 'Supplier Classification', value: `Class ${supplierData.supplierClass}` }
+      ];
+      
+      yPosition = drawSection('EVALUATION SUMMARY', classification, yPosition);
+
+      // Observations
+      const observations = [];
+      if (supplierData.observations?.strengths) {
+        observations.push({ type: 'subsection', title: 'Identified Strengths' });
+        observations.push({ type: 'text', text: supplierData.observations.strengths });
+      }
+      if (supplierData.observations?.improvements) {
+        observations.push({ type: 'subsection', title: 'Areas for Improvement' });
+        observations.push({ type: 'text', text: supplierData.observations.improvements });
+      }
+      if (supplierData.observations?.actions) {
+        observations.push({ type: 'subsection', title: 'Required Actions' });
+        observations.push({ type: 'text', text: supplierData.observations.actions });
+      }
+      if (supplierData.observations?.followUpDate) {
+        observations.push({ type: 'field', label: 'Follow-up Date', value: supplierData.observations.followUpDate });
+      }
+      
+      if (observations.length > 0) {
+        yPosition = drawSection('OBSERVATIONS & RECOMMENDATIONS', observations, yPosition);
+      }
+
+      // Footer on each page
+      const pages = pdfDoc.getPages();
+      pages.forEach((page, index) => {
+        page.drawText(`Page ${index + 1} of ${pages.length}`, {
+          x: pageWidth - 100,
+          y: 30,
+          size: 8,
+          font: helveticaFont,
+          color: lightGray
+        });
+        
+        page.drawText(`Generated on ${new Date().toLocaleDateString()}`, {
+          x: margin,
+          y: 30,
+          size: 8,
+          font: helveticaFont,
+          color: lightGray
+        });
+      });
+
+      // Save and download
+      const pdfBytes = await pdfDoc.save();
+      const blob = new Blob([pdfBytes], { type: 'application/pdf' });
+      const url = URL.createObjectURL(blob);
+      
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `Supplier_Evaluation_${supplierData.supplierName.replace(/[^a-z0-9]/gi, '_')}_${new Date().toISOString().split('T')[0]}.pdf`;
+      link.click();
+      
+      URL.revokeObjectURL(url);
+      
+      console.log('PDF generated and downloaded successfully');
+      
+    } catch (error) {
+      console.error('Error generating PDF:', error);
+      throw new Error('Failed to generate PDF report');
+    }
   };
 
   const handleTabChange = (newTab) => {
@@ -1112,11 +1451,12 @@ const SupplierEvaluationWrapper = ({ onBackToMenu }) => {
         </div>
 
         <div className={styles.formContainer} style={{ 
-          background: 'rgba(255, 255, 255, 0.95)', 
+          background: 'linear-gradient(135deg, rgba(0, 95, 131, 0.9) 0%, rgba(0, 119, 162, 0.85) 50%, rgba(0, 144, 198, 0.8) 100%)', 
           backdropFilter: 'blur(10px)',
+          WebkitBackdropFilter: 'blur(10px)',
           borderRadius: '12px',
           border: '1px solid rgba(255, 255, 255, 0.2)',
-          boxShadow: '0 4px 20px rgba(0, 0, 0, 0.1)'
+          boxShadow: '0 4px 20px rgba(0, 95, 131, 0.3)'
         }}>
           <form onSubmit={handleSubmit} className={styles.evaluationForm}>
             {/* General Information */}
@@ -1399,8 +1739,16 @@ const SupplierEvaluationWrapper = ({ onBackToMenu }) => {
               <button
                 type="submit"
                 className={styles.btnPrimary}
+                disabled={loading}
               >
-                Save Supplier Evaluation
+                {loading ? (
+                  <>
+                    <span className={styles.loadingSpinner}></span>
+                    Saving & Generating PDF...
+                  </>
+                ) : (
+                  'Save & Export Evaluation'
+                )}
               </button>
             </div>
           </form>
@@ -1418,120 +1766,129 @@ const SupplierEvaluationWrapper = ({ onBackToMenu }) => {
         </p>
       </div>
 
-      {/* Overall Statistics */}
-      <div className={styles.statsContainer}>
-        <div className={styles.statCard}>
-          <div className={styles.statIcon}>📊</div>
-          <div className={styles.statContent}>
-            <div className={styles.statNumber}>{suppliers.length}</div>
-            <div className={styles.statLabel}>Total Suppliers</div>
-          </div>
+      {loading ? (
+        <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', padding: '4rem' }}>
+          <div className={styles.loadingSpinner}></div>
+          <span style={{ marginLeft: '1rem', color: '#6b7280' }}>Loading suppliers...</span>
         </div>
-
-        <div className={styles.statCard} style={{ borderLeft: '4px solid #10b981' }}>
-          <div className={styles.statIcon}>🌟</div>
-          <div className={styles.statContent}>
-            <div className={styles.statNumber}>
-              {suppliers.filter(s => getSupplierClass(calculateGAI(s.kpiScores)) === 'A').length}
-            </div>
-            <div className={styles.statLabel}>Class A (≥80%)</div>
-          </div>
-        </div>
-
-        <div className={styles.statCard} style={{ borderLeft: '4px solid #f59e0b' }}>
-          <div className={styles.statIcon}>⚠️</div>
-          <div className={styles.statContent}>
-            <div className={styles.statNumber}>
-              {suppliers.filter(s => getSupplierClass(calculateGAI(s.kpiScores)) === 'B').length}
-            </div>
-            <div className={styles.statLabel}>Class B (60-79%)</div>
-          </div>
-        </div>
-
-        <div className={styles.statCard} style={{ borderLeft: '4px solid #ef4444' }}>
-          <div className={styles.statIcon}>❌</div>
-          <div className={styles.statContent}>
-            <div className={styles.statNumber}>
-              {suppliers.filter(s => getSupplierClass(calculateGAI(s.kpiScores)) === 'C').length}
-            </div>
-            <div className={styles.statLabel}>Class C (&lt;60%)</div>
-          </div>
-        </div>
-      </div>
-
-      {/* Suppliers by Category */}
-      <div className={styles.categoriesContainer}>
-        {SUPPLIER_CATEGORIES.map(category => {
-          const categorySuppliers = suppliers.filter(s => s.category === category);
-          
-          if (categorySuppliers.length === 0) return null;
-
-          return (
-            <div key={category} className={styles.categorySection}>
-              <div className={styles.categoryHeader}>
-                <h3 className={styles.categoryTitle}>{category}</h3>
-                <span className={styles.categoryCount}>({categorySuppliers.length} suppliers)</span>
-              </div>
-
-              <div className={styles.suppliersGrid}>
-                {categorySuppliers.map(supplier => {
-                  const gai = calculateGAI(supplier.kpiScores);
-                  const supplierClass = getSupplierClass(gai);
-                  
-                  return (
-                    <div key={supplier.id} className={`${styles.supplierCard} ${styles[`class${supplierClass}`]}`}>
-                      <div className={styles.supplierHeader}>
-                        <h4 className={styles.supplierName}>{supplier.supplierName}</h4>
-                        <div className={`${styles.supplierBadge} ${styles[`badge${supplierClass}`]}`}>
-                          Class {supplierClass}
-                        </div>
-                      </div>
-
-                      <div className={styles.supplierInfo}>
-                        <div className={styles.supplierLocation}>
-                          📍 {supplier.location || 'Location not specified'}
-                        </div>
-                        <div className={styles.supplierGai}>
-                          📈 G.A.I.: {gai}%
-                        </div>
-                        <div className={styles.supplierDate}>
-                          📅 {new Date(supplier.auditDate).toLocaleDateString()}
-                        </div>
-                      </div>
-
-                      <div className={styles.kpiBreakdown}>
-                        <div className={styles.kpiTitle}>KPI Scores:</div>
-                        <div className={styles.kpiScores}>
-                          {Object.entries(supplier.kpiScores).map(([kpi, score]) => (
-                            <span key={kpi} className={styles.kpiScore}>
-                              {kpi.toUpperCase()}: {score}/4
-                            </span>
-                          ))}
-                        </div>
-                      </div>
-                    </div>
-                  );
-                })}
+      ) : (
+        <>
+          {/* Overall Statistics */}
+          <div className={styles.statsContainer}>
+            <div className={styles.statCard}>
+              <div className={styles.statIcon}>📊</div>
+              <div className={styles.statContent}>
+                <div className={styles.statNumber}>{suppliers.length}</div>
+                <div className={styles.statLabel}>Total Suppliers</div>
               </div>
             </div>
-          );
-        })}
-      </div>
 
-      {suppliers.length === 0 && (
-        <div className={styles.emptyState}>
-          <div className={styles.emptyIcon}>📋</div>
-          <h3 className={styles.emptyTitle}>No Suppliers Evaluated Yet</h3>
-          <p className={styles.emptyDescription}>
-            Start by creating your first supplier evaluation checklist
-          </p>
-          <button
-            onClick={() => handleTabChange('newChecklist')}
-            className={styles.btnPrimary}
-          >
-            Create First Evaluation
-          </button>
-        </div>
+            <div className={styles.statCard} style={{ borderLeft: '4px solid #10b981' }}>
+              <div className={styles.statIcon}>🌟</div>
+              <div className={styles.statContent}>
+                <div className={styles.statNumber}>
+                  {suppliers.filter(s => getSupplierClass(calculateGAI(s.kpiScores)) === 'A').length}
+                </div>
+                <div className={styles.statLabel}>Class A (≥80%)</div>
+              </div>
+            </div>
+
+            <div className={styles.statCard} style={{ borderLeft: '4px solid #f59e0b' }}>
+              <div className={styles.statIcon}>⚠️</div>
+              <div className={styles.statContent}>
+                <div className={styles.statNumber}>
+                  {suppliers.filter(s => getSupplierClass(calculateGAI(s.kpiScores)) === 'B').length}
+                </div>
+                <div className={styles.statLabel}>Class B (60-79%)</div>
+              </div>
+            </div>
+
+            <div className={styles.statCard} style={{ borderLeft: '4px solid #ef4444' }}>
+              <div className={styles.statIcon}>❌</div>
+              <div className={styles.statContent}>
+                <div className={styles.statNumber}>
+                  {suppliers.filter(s => getSupplierClass(calculateGAI(s.kpiScores)) === 'C').length}
+                </div>
+                <div className={styles.statLabel}>Class C (&lt;60%)</div>
+              </div>
+            </div>
+          </div>
+
+          {/* Suppliers by Category */}
+          <div className={styles.categoriesContainer}>
+            {SUPPLIER_CATEGORIES.map(category => {
+              const categorySuppliers = suppliers.filter(s => s.category === category);
+              
+              if (categorySuppliers.length === 0) return null;
+
+              return (
+                <div key={category} className={styles.categorySection}>
+                  <div className={styles.categoryHeader}>
+                    <h3 className={styles.categoryTitle}>{category}</h3>
+                    <span className={styles.categoryCount}>({categorySuppliers.length} suppliers)</span>
+                  </div>
+
+                  <div className={styles.suppliersGrid}>
+                    {categorySuppliers.map(supplier => {
+                      const gai = calculateGAI(supplier.kpiScores);
+                      const supplierClass = getSupplierClass(gai);
+                      
+                      return (
+                        <div key={supplier.id} className={`${styles.supplierCard} ${styles[`class${supplierClass}`]}`}>
+                          <div className={styles.supplierHeader}>
+                            <h4 className={styles.supplierName}>{supplier.supplierName}</h4>
+                            <div className={`${styles.supplierBadge} ${styles[`badge${supplierClass}`]}`}>
+                              Class {supplierClass}
+                            </div>
+                          </div>
+
+                          <div className={styles.supplierInfo}>
+                            <div className={styles.supplierLocation}>
+                              📍 {supplier.location || 'Location not specified'}
+                            </div>
+                            <div className={styles.supplierGai}>
+                              📈 G.A.I.: {gai}%
+                            </div>
+                            <div className={styles.supplierDate}>
+                              📅 {new Date(supplier.auditDate).toLocaleDateString()}
+                            </div>
+                          </div>
+
+                          <div className={styles.kpiBreakdown}>
+                            <div className={styles.kpiTitle}>KPI Scores:</div>
+                            <div className={styles.kpiScores}>
+                              {Object.entries(supplier.kpiScores).map(([kpi, score]) => (
+                                <span key={kpi} className={styles.kpiScore}>
+                                  {kpi.toUpperCase()}: {score}/4
+                                </span>
+                              ))}
+                            </div>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+
+          {suppliers.length === 0 && (
+            <div className={styles.emptyState}>
+              <div className={styles.emptyIcon}>📋</div>
+              <h3 className={styles.emptyTitle}>No Suppliers Evaluated Yet</h3>
+              <p className={styles.emptyDescription}>
+                Start by creating your first supplier evaluation checklist
+              </p>
+              <button
+                onClick={() => handleTabChange('newChecklist')}
+                className={styles.btnPrimary}
+              >
+                Create First Evaluation
+              </button>
+            </div>
+          )}
+        </>
       )}
     </div>
   );
@@ -1568,31 +1925,8 @@ const SupplierEvaluationWrapper = ({ onBackToMenu }) => {
         </div>
       </div>
 
-      {/* Circular Back Button */}
-      <button
-        onClick={onBackToMenu}
-        style={{
-          position: 'fixed',
-          bottom: '2rem',
-          right: '2rem',
-          background: 'white',
-          border: 'none',
-          borderRadius: '50%',
-          width: '50px',
-          height: '50px',
-          cursor: 'pointer',
-          boxShadow: '0 4px 12px rgba(0,0,0,0.25)',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          transition: 'transform 0.3s',
-          zIndex: 1000
-        }}
-        onMouseOver={(e) => e.target.style.transform = 'translateY(-3px)'}
-        onMouseOut={(e) => e.target.style.transform = 'translateY(0)'}
-      >
-        <span style={{ fontSize: '24px', color: '#005F83' }}>←</span>
-      </button>
+      {/* Use existing BackButton component */}
+      <BackButton onClick={onBackToMenu} />
     </div>
   );
 };

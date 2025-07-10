@@ -1630,3 +1630,700 @@
   align-items: center;
   gap: 0.5rem;
 }
+/* Add these final updates to your SupplierEvaluation.module.css file */
+
+/* ============================================
+   SIDEBAR WITH BLUE TRANSPARENCY (like the title)
+   ============================================ */
+
+.sidebar {
+  width: 250px;
+  background: linear-gradient(135deg, rgba(0, 95, 131, 0.9) 0%, rgba(0, 119, 162, 0.85) 50%, rgba(0, 144, 198, 0.8) 100%);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  box-shadow: 2px 0 15px rgba(0, 95, 131, 0.3);
+  position: fixed;
+  top: 0;
+  left: 0;
+  height: 100vh;
+  z-index: 100;
+  display: flex;
+  flex-direction: column;
+  border-right: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+/* ============================================
+   FORM SECTIONS WITH WHITE BACKGROUNDS for better readability
+   ============================================ */
+
+.formSection {
+  background: rgba(255, 255, 255, 0.95) !important;
+  backdrop-filter: blur(8px) !important;
+  border-radius: 8px !important;
+  padding: 1.5rem !important;
+  margin-bottom: 2rem !important;
+  border: 1px solid rgba(255, 255, 255, 0.3) !important;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1) !important;
+}
+
+.sectionTitle {
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: #1f2937 !important;
+  margin-bottom: 1rem;
+  padding-bottom: 0.5rem;
+  border-bottom: 2px solid #e2e8f0;
+}
+
+/* ============================================
+   FORM INPUTS WITH WHITE BACKGROUNDS
+   ============================================ */
+
+.formInput,
+.formTextarea,
+.formSelect {
+  padding: 0.75rem;
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
+  font-size: 0.875rem;
+  transition: all 0.2s ease;
+  background: white !important;
+  color: #1f2937 !important;
+}
+
+.formLabel {
+  font-size: 0.875rem;
+  font-weight: 700;
+  color: #374151 !important;
+  margin-bottom: 0.5rem;
+  display: flex;
+  align-items: center;
+}
+
+/* ============================================
+   KPI DETAILS SECTIONS
+   ============================================ */
+
+.kpiDetailsSection {
+  margin-top: 1.5rem;
+  padding: 1.5rem;
+  background: rgba(255, 255, 255, 0.95) !important;
+  backdrop-filter: blur(8px) !important;
+  border-radius: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.4);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.detailsSectionTitle {
+  font-size: 1rem;
+  font-weight: 600;
+  color: #374151 !important;
+  margin-bottom: 1rem;
+  padding-bottom: 0.5rem;
+  border-bottom: 2px solid #e2e8f0;
+}
+
+/* ============================================
+   FORM SUBSECTIONS
+   ============================================ */
+
+.formSubsection {
+  margin-top: 1.5rem;
+  padding: 1.5rem;
+  background: rgba(255, 255, 255, 0.9) !important;
+  border-radius: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.3);
+}
+
+.subsectionTitle {
+  font-size: 1rem;
+  font-weight: 600;
+  color: #4b5563 !important;
+  margin-bottom: 1rem;
+}
+
+/* ============================================
+   RADIO AND CHECKBOX LABELS
+   ============================================ */
+
+.radioLabel,
+.checkboxLabel {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.875rem;
+  color: #374151 !important;
+  cursor: pointer;
+  font-weight: 500;
+}
+
+/* ============================================
+   CERTIFICATION AND OBSERVATION GRIDS
+   ============================================ */
+
+.certificationsGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 1rem;
+  margin-top: 1rem;
+  padding: 1rem;
+  background: rgba(255, 255, 255, 0.8);
+  border-radius: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.3);
+}
+
+.observationsGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 1.5rem;
+  padding: 1rem;
+  background: rgba(255, 255, 255, 0.8);
+  border-radius: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.3);
+}
+
+/* ============================================
+   KPI CARDS WITH BETTER CONTRAST
+   ============================================ */
+
+.kpiCard {
+  background: rgba(255, 255, 255, 0.95) !important;
+  backdrop-filter: blur(8px) !important;
+  border: 1px solid rgba(255, 255, 255, 0.4) !important;
+  border-radius: 8px;
+  padding: 1.5rem;
+  margin-bottom: 1rem;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1) !important;
+}
+
+.kpiTitle {
+  font-size: 1rem;
+  font-weight: 600;
+  color: #1f2937 !important;
+  margin: 0;
+}
+
+/* ============================================
+   SCORE OPTIONS WITH WHITE BACKGROUNDS
+   ============================================ */
+
+.scoreOption {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.75rem;
+  background: white !important;
+  border: 2px solid #e2e8f0;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  margin: 0;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.scoreOption:hover {
+  border-color: #3b82f6;
+  background: #f8fafc !important;
+  transform: translateY(-1px);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
+}
+
+.scoreNumber {
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: #1f2937 !important;
+}
+
+.scoreDescription {
+  font-size: 0.75rem;
+  color: #6b7280 !important;
+  line-height: 1.3;
+}
+
+/* ============================================
+   FORM ACTIONS WITH BETTER VISIBILITY
+   ============================================ */
+
+.formActions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 1rem;
+  padding: 2rem 1.5rem 1rem 1.5rem;
+  background: rgba(255, 255, 255, 0.9);
+  border-radius: 8px;
+  border-top: 1px solid rgba(255, 255, 255, 0.3);
+  margin-top: 2rem;
+}
+
+.btnPrimary {
+  background: rgba(255, 255, 255, 0.95) !important;
+  color: rgba(0, 95, 131, 1) !important;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+  border: 1px solid rgba(0, 95, 131, 0.3);
+  font-weight: 600;
+}
+
+.btnPrimary:hover {
+  background: white !important;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(0, 95, 131, 0.3);
+}
+
+.btnSecondary {
+  background: rgba(255, 255, 255, 0.9) !important;
+  color: #6b7280 !important;
+  border: 1px solid #d1d5db;
+  font-weight: 500;
+}
+
+.btnSecondary:hover {
+  background: white !important;
+  color: #374151 !important;
+  border-color: #9ca3af;
+  transform: translateY(-1px);
+}
+
+/* ============================================
+   LOADING STATES
+   ============================================ */
+
+.loadingSpinner {
+  display: inline-block;
+  width: 20px;
+  height: 20px;
+  border: 3px solid rgba(255, 255, 255, 0.3);
+  border-radius: 50%;
+  border-top-color: #fff;
+  animation: spin 1s ease-in-out infinite;
+  margin-right: 0.5rem;
+}
+
+@keyframes spin {
+  to { 
+    transform: rotate(360deg); 
+  }
+}
+
+/* ============================================
+   RESPONSIVE IMPROVEMENTS
+   ============================================ */
+
+@media (max-width: 768px) {
+  .formContainer {
+    margin: 1rem;
+    padding: 1rem !important;
+  }
+  
+  .formSection {
+    padding: 1rem !important;
+  }
+  
+  .formGrid {
+    grid-template-columns: 1fr;
+  }
+  
+  .detailsGrid {
+    grid-template-columns: 1fr;
+  }
+  
+  .kpiScoring {
+    grid-template-columns: 1fr;
+  }
+  
+  .certificationsGrid {
+    grid-template-columns: 1fr;
+  }
+  
+  .observationsGrid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.sidebarHeader {
+  padding: 1.5rem 1.5rem 1rem 1.5rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.logoContainer {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.companyLogo {
+  height: 50px;
+  filter: brightness(1.2) drop-shadow(0 2px 4px rgba(0, 0, 0, 0.3));
+}
+
+.sidebarDivider {
+  height: 1px;
+  background: linear-gradient(to right, transparent, rgba(255, 255, 255, 0.2), transparent);
+  margin: 0.75rem 1rem;
+}
+
+.sectionTitle {
+  padding: 0.75rem 1.5rem 0.5rem 1.5rem;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.7);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.sidebarNav {
+  flex: 1;
+  padding: 0.5rem 0;
+}
+
+.navItem {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.75rem 1.5rem;
+  margin: 0.25rem 1rem;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  position: relative;
+  color: rgba(255, 255, 255, 0.8);
+  font-size: 0.875rem;
+  font-weight: 500;
+}
+
+.navItem:hover {
+  background-color: rgba(255, 255, 255, 0.1);
+  color: white;
+}
+
+.navItem.active {
+  background-color: rgba(255, 255, 255, 0.2);
+  color: white;
+  font-weight: 600;
+  border-left: 3px solid white;
+}
+
+.navIcon {
+  font-size: 18px;
+  min-width: 20px;
+  text-align: center;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.navText {
+  flex: 1;
+  text-align: left;
+}
+
+.navIndicator {
+  position: absolute;
+  right: -1rem;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 3px;
+  height: 60%;
+  background: white;
+  border-radius: 2px;
+}
+
+/* ============================================
+   FORM CONTAINER FIXES - Solid background for better readability
+   ============================================ */
+
+.formContainer {
+  background: rgba(255, 255, 255, 0.95) !important;
+  backdrop-filter: blur(10px) !important;
+  border-radius: 12px !important;
+  border: 1px solid rgba(255, 255, 255, 0.2) !important;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1) !important;
+  padding: 2rem !important;
+}
+
+.formHeader {
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(10px);
+  padding: 2rem;
+  border-radius: 12px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  margin-bottom: 2rem;
+  text-align: center;
+}
+
+.formTitle {
+  font-size: 2rem;
+  font-weight: 700;
+  color: #1f2937;
+  margin-bottom: 0.5rem;
+}
+
+.formSubtitle {
+  color: #6b7280;
+  font-size: 1rem;
+  margin: 0;
+}
+
+/* ============================================
+   KPI EXPANDABLE DETAILS STYLES
+   ============================================ */
+
+.kpiDetailsSection {
+  margin-top: 1.5rem;
+  padding: 1.5rem;
+  background: rgba(255, 255, 255, 0.8);
+  border-radius: 8px;
+  border: 1px solid #e2e8f0;
+}
+
+.detailsSectionTitle {
+  font-size: 1rem;
+  font-weight: 600;
+  color: #374151;
+  margin-bottom: 1rem;
+  padding-bottom: 0.5rem;
+  border-bottom: 2px solid #e2e8f0;
+}
+
+.detailsGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 1rem;
+}
+
+.expandIcon {
+  font-size: 14px;
+  color: #6b7280;
+  transition: transform 0.2s ease;
+}
+
+.formSelect {
+  padding: 0.75rem;
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
+  font-size: 0.875rem;
+  transition: all 0.2s ease;
+  background: white;
+}
+
+.formSelect:focus {
+  outline: none;
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+
+.checkbox {
+  margin-right: 0.5rem;
+  accent-color: #3b82f6;
+}
+
+/* ============================================
+   FORM SECTIONS WITH SOLID BACKGROUNDS
+   ============================================ */
+
+.formSection {
+  background: rgba(255, 255, 255, 0.9);
+  border-radius: 8px;
+  padding: 1.5rem;
+  margin-bottom: 2rem;
+  border: 1px solid rgba(255, 255, 255, 0.3);
+}
+
+.formSubsection {
+  margin-top: 1.5rem;
+  padding-top: 1.5rem;
+  border-top: 1px solid #e2e8f0;
+}
+
+.subsectionTitle {
+  font-size: 1rem;
+  font-weight: 600;
+  color: #4b5563;
+  margin-bottom: 1rem;
+}
+
+.radioGroup {
+  display: flex;
+  gap: 1.5rem;
+  flex-wrap: wrap;
+}
+
+.radioLabel {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.875rem;
+  color: #374151;
+  cursor: pointer;
+}
+
+.radioInput {
+  accent-color: #3b82f6;
+}
+
+.certificationsGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 1rem;
+  margin-top: 1rem;
+}
+
+.checkboxLabel {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.875rem;
+  color: #374151;
+  cursor: pointer;
+}
+
+.observationsGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 1.5rem;
+}
+
+/* ============================================
+   BETTER SUPPLIER CARD CLASSES
+   ============================================ */
+
+.classA {
+  border-left: 4px solid #10b981;
+}
+
+.classB {
+  border-left: 4px solid #f59e0b;
+}
+
+.classC {
+  border-left: 4px solid #ef4444;
+}
+
+.badgeA {
+  background: rgba(16, 185, 129, 0.1);
+  color: #10b981;
+  border: 1px solid rgba(16, 185, 129, 0.3);
+}
+
+.badgeB {
+  background: rgba(245, 158, 11, 0.1);
+  color: #f59e0b;
+  border: 1px solid rgba(245, 158, 11, 0.3);
+}
+
+.badgeC {
+  background: rgba(239, 68, 68, 0.1);
+  color: #ef4444;
+  border: 1px solid rgba(239, 68, 68, 0.3);
+}
+
+.supplierBadge {
+  padding: 0.25rem 0.75rem;
+  border-radius: 12px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+}
+
+.categoryBadge {
+  padding: 0.25rem 0.75rem;
+  border-radius: 12px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  color: #1f2937;
+  background: #e5e7eb;
+}
+
+/* ============================================
+   CATEGORY SECTION STYLES
+   ============================================ */
+
+.categorySection {
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(10px);
+  border-radius: 12px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  overflow: hidden;
+}
+
+.categoryHeader {
+  background: #f8fafc;
+  padding: 1.5rem 2rem;
+  border-bottom: 1px solid #e2e8f0;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.categoryTitle {
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: #1f2937;
+  margin: 0;
+}
+
+.categoryCount {
+  background: #e0f2fe;
+  color: #0277bd;
+  padding: 0.25rem 0.75rem;
+  border-radius: 12px;
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+
+.suppliersGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 1.5rem;
+  padding: 2rem;
+}
+
+.supplierCard {
+  background: white;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  padding: 1.5rem;
+  transition: all 0.2s ease;
+}
+
+.supplierCard:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  border-color: #cbd5e1;
+}
+
+.supplierHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 1rem;
+}
+
+.supplierName {
+  font-size: 1.125rem;
+  font-weight: 600;
+  color: #1f2937;
+  margin: 0;
+}
+
+.supplierInfo {
+  margin-bottom: 1rem;
+  font-size: 0.875rem;
+  color: #6b7280;
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.supplierLocation,
+.supplierGai,
+.supplierDate {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}

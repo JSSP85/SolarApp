@@ -23,12 +23,16 @@ const SCORE_LABELS = {
  */
 export const generateSupplierEvaluationPDF = async (supplierData) => {
   try {
-    console.log('Generating Supplier Evaluation PDF...');
+    console.log('PDF Service: Starting PDF generation...');
+    console.log('PDF Service: Supplier data received:', supplierData);
     
     // Create a new PDF document
     const pdfDoc = await PDFDocument.create();
+    console.log('PDF Service: PDF document created');
+    
     const helveticaFont = await pdfDoc.embedFont(StandardFonts.Helvetica);
     const helveticaBoldFont = await pdfDoc.embedFont(StandardFonts.HelveticaBold);
+    console.log('PDF Service: Fonts embedded');
     
     // Define colors - Valmont branding
     const primaryBlue = rgb(0/255, 95/255, 131/255);
@@ -49,6 +53,8 @@ export const generateSupplierEvaluationPDF = async (supplierData) => {
     let currentPage = pdfDoc.addPage([pageWidth, pageHeight]);
     let yPosition = pageHeight - margin;
     
+    console.log('PDF Service: Page created, starting content...');
+    
     // Helper function to check if new page is needed
     const addNewPageIfNeeded = (spaceNeeded) => {
       if (yPosition - spaceNeeded < margin + 50) {
@@ -59,148 +65,40 @@ export const generateSupplierEvaluationPDF = async (supplierData) => {
       return false;
     };
 
-    // Helper function to draw text
+    // Helper function to draw text safely
     const drawText = (text, x, y, options = {}) => {
-      const {
-        font = helveticaFont,
-        size = 10,
-        color = darkGray,
-        maxWidth = contentWidth
-      } = options;
-      
-      // Handle long text by wrapping
-      const words = text.split(' ');
-      const lines = [];
-      let currentLine = '';
-      
-      words.forEach(word => {
-        const testLine = currentLine + (currentLine ? ' ' : '') + word;
-        const textWidth = font.widthOfTextAtSize(testLine, size);
+      try {
+        const {
+          font = helveticaFont,
+          size = 10,
+          color = darkGray
+        } = options;
         
-        if (textWidth <= maxWidth) {
-          currentLine = testLine;
-        } else {
-          if (currentLine) lines.push(currentLine);
-          currentLine = word;
-        }
-      });
-      
-      if (currentLine) lines.push(currentLine);
-      
-      lines.forEach((line, index) => {
-        currentPage.drawText(line, {
+        // Ensure text is a string and not too long
+        const textStr = String(text || 'N/A').substring(0, 100);
+        
+        currentPage.drawText(textStr, {
           x,
-          y: y - (index * (size + 2)),
+          y,
           size,
           font,
           color
         });
-      });
-      
-      return lines.length * (size + 2);
-    };
-
-    // Helper function to draw sections with proper spacing
-    const drawSection = (title, content, startY) => {
-      let y = startY;
-      
-      // Section header with background
-      addNewPageIfNeeded(30);
-      currentPage.drawRectangle({
-        x: margin,
-        y: y - 20,
-        width: contentWidth,
-        height: 25,
-        color: primaryBlue
-      });
-      
-      drawText(title, margin + 10, y - 15, {
-        font: helveticaBoldFont,
-        size: 12,
-        color: white
-      });
-      
-      y -= 35;
-      
-      // Section content
-      if (Array.isArray(content)) {
-        content.forEach(item => {
-          if (item.type === 'field') {
-            addNewPageIfNeeded(20);
-            drawText(`${item.label}:`, margin + 10, y, {
-              font: helveticaBoldFont,
-              size: 9
-            });
-            const textHeight = drawText(item.value, margin + 200, y, {
-              size: 9,
-              maxWidth: contentWidth - 200
-            });
-            y -= Math.max(15, textHeight);
-          } else if (item.type === 'subsection') {
-            addNewPageIfNeeded(25);
-            drawText(item.title, margin + 20, y, {
-              font: helveticaBoldFont,
-              size: 10,
-              color: lightBlue
-            });
-            y -= 20;
-          } else if (item.type === 'text') {
-            addNewPageIfNeeded(15);
-            const textHeight = drawText(item.text, margin + 20, y, {
-              size: 9,
-              maxWidth: contentWidth - 30
-            });
-            y -= Math.max(15, textHeight);
-          } else if (item.type === 'kpi-score') {
-            addNewPageIfNeeded(30);
-            // Draw KPI score with color coding
-            let scoreColor = lightGray;
-            if (item.score >= 4) scoreColor = successGreen;
-            else if (item.score >= 3) scoreColor = lightBlue;
-            else if (item.score >= 2) scoreColor = warningOrange;
-            else if (item.score >= 1) scoreColor = errorRed;
-            
-            currentPage.drawRectangle({
-              x: margin + 10,
-              y: y - 15,
-              width: 30,
-              height: 20,
-              color: scoreColor
-            });
-            
-            drawText(item.score.toString(), margin + 20, y - 10, {
-              font: helveticaBoldFont,
-              size: 12,
-              color: white
-            });
-            
-            drawText(`${item.label} - ${item.description}`, margin + 50, y - 10, {
-              font: helveticaBoldFont,
-              size: 10,
-              color: darkGray
-            });
-            
-            y -= 25;
-          }
+      } catch (error) {
+        console.error('Error drawing text:', error);
+        // Draw error placeholder
+        currentPage.drawText('Error displaying text', {
+          x,
+          y,
+          size: 8,
+          font: helveticaFont,
+          color: errorRed
         });
       }
-      
-      return y - 20;
-    };
-
-    // Helper function to format field names
-    const formatFieldName = (key) => {
-      return key.replace(/([A-Z])/g, ' $1')
-                .replace(/^./, str => str.toUpperCase())
-                .replace(/([a-z])([A-Z])/g, '$1 $2')
-                .replace(/Qc/g, 'QC')
-                .replace(/Iso/g, 'ISO')
-                .replace(/Tig/g, 'TIG')
-                .replace(/Mig/g, 'MIG')
-                .replace(/Cmm/g, 'CMM');
     };
 
     // Document Header
+    console.log('PDF Service: Drawing header...');
     currentPage.drawRectangle({
       x: 0,
       y: pageHeight - 80,
@@ -224,94 +122,194 @@ export const generateSupplierEvaluationPDF = async (supplierData) => {
     yPosition = pageHeight - 100;
 
     // Basic Information Section
-    const basicInfo = [
-      { type: 'field', label: 'Supplier Name', value: supplierData.supplierName || 'N/A' },
-      { type: 'field', label: 'Category', value: supplierData.category || 'N/A' },
-      { type: 'field', label: 'Location', value: supplierData.location || 'N/A' },
-      { type: 'field', label: 'Contact Person', value: supplierData.contactPerson || 'N/A' },
-      { type: 'field', label: 'Audit Date', value: supplierData.auditDate || 'N/A' },
-      { type: 'field', label: 'Auditor', value: supplierData.auditorName || 'N/A' },
-      { type: 'field', label: 'Activity Field', value: supplierData.activityField || 'N/A' },
-      { type: 'field', label: 'Audit Type', value: supplierData.auditType || 'N/A' }
+    console.log('PDF Service: Drawing basic information...');
+    addNewPageIfNeeded(150);
+    
+    // Section header
+    currentPage.drawRectangle({
+      x: margin,
+      y: yPosition - 20,
+      width: contentWidth,
+      height: 25,
+      color: primaryBlue
+    });
+    
+    drawText('GENERAL INFORMATION', margin + 10, yPosition - 15, {
+      font: helveticaBoldFont,
+      size: 12,
+      color: white
+    });
+    
+    yPosition -= 45;
+    
+    // Basic info fields
+    const basicFields = [
+      ['Supplier Name:', supplierData.supplierName || 'N/A'],
+      ['Category:', supplierData.category || 'N/A'],
+      ['Location:', supplierData.location || 'N/A'],
+      ['Contact Person:', supplierData.contactPerson || 'N/A'],
+      ['Audit Date:', supplierData.auditDate || 'N/A'],
+      ['Auditor:', supplierData.auditorName || 'N/A'],
+      ['Audit Type:', supplierData.auditType || 'N/A']
     ];
     
-    yPosition = drawSection('GENERAL INFORMATION', basicInfo, yPosition);
+    basicFields.forEach(([label, value]) => {
+      addNewPageIfNeeded(20);
+      drawText(label, margin + 10, yPosition, {
+        font: helveticaBoldFont,
+        size: 9
+      });
+      drawText(value, margin + 150, yPosition, {
+        size: 9
+      });
+      yPosition -= 15;
+    });
+    
+    yPosition -= 20;
 
     // Company Certifications
-    const certificationsList = [];
+    console.log('PDF Service: Drawing certifications...');
+    addNewPageIfNeeded(100);
+    
+    currentPage.drawRectangle({
+      x: margin,
+      y: yPosition - 20,
+      width: contentWidth,
+      height: 25,
+      color: primaryBlue
+    });
+    
+    drawText('COMPANY CERTIFICATIONS', margin + 10, yPosition - 15, {
+      font: helveticaBoldFont,
+      size: 12,
+      color: white
+    });
+    
+    yPosition -= 45;
+    
+    // Certifications
+    const certifications = [];
     if (supplierData.certifications) {
-      if (supplierData.certifications.iso9001) certificationsList.push({ type: 'text', text: '✓ ISO 9001:2015' });
-      if (supplierData.certifications.iso14001) certificationsList.push({ type: 'text', text: '✓ ISO 14001:2015' });
-      if (supplierData.certifications.iso45001) certificationsList.push({ type: 'text', text: '✓ ISO 45001/OHSAS 18001' });
-      if (supplierData.certifications.en1090) certificationsList.push({ type: 'text', text: '✓ EN 1090 (Steel Structures)' });
-      if (supplierData.certifications.ceMarking) certificationsList.push({ type: 'text', text: '✓ CE Marking' });
-      if (supplierData.certifications.others) certificationsList.push({ type: 'text', text: `✓ Others: ${supplierData.certifications.others}` });
+      if (supplierData.certifications.iso9001) certifications.push('✓ ISO 9001:2015');
+      if (supplierData.certifications.iso14001) certifications.push('✓ ISO 14001:2015');
+      if (supplierData.certifications.iso45001) certifications.push('✓ ISO 45001/OHSAS 18001');
+      if (supplierData.certifications.en1090) certifications.push('✓ EN 1090 (Steel Structures)');
+      if (supplierData.certifications.ceMarking) certifications.push('✓ CE Marking');
+      if (supplierData.certifications.others) certifications.push(`✓ Others: ${supplierData.certifications.others}`);
     }
     
-    if (certificationsList.length === 0) {
-      certificationsList.push({ type: 'text', text: 'No certifications specified' });
+    if (certifications.length === 0) {
+      certifications.push('No certifications specified');
     }
     
-    yPosition = drawSection('COMPANY CERTIFICATIONS', certificationsList, yPosition);
-
-    // Company Data
-    const companyData = [
-      { type: 'field', label: 'Annual Revenue (USD/year)', value: supplierData.companyData?.annualRevenue || 'N/A' },
-      { type: 'field', label: 'Number of Employees', value: supplierData.companyData?.employees || 'N/A' }
-    ];
+    certifications.forEach(cert => {
+      addNewPageIfNeeded(15);
+      drawText(cert, margin + 20, yPosition, { size: 9 });
+      yPosition -= 15;
+    });
     
-    yPosition = drawSection('COMPANY DATA', companyData, yPosition);
+    yPosition -= 20;
 
-    // KPI Evaluation Results with Details
-    const kpiResults = [];
+    // KPI Evaluation Results
+    console.log('PDF Service: Drawing KPI results...');
+    addNewPageIfNeeded(200);
     
+    currentPage.drawRectangle({
+      x: margin,
+      y: yPosition - 20,
+      width: contentWidth,
+      height: 25,
+      color: primaryBlue
+    });
+    
+    drawText('KPI EVALUATION RESULTS', margin + 10, yPosition - 15, {
+      font: helveticaBoldFont,
+      size: 12,
+      color: white
+    });
+    
+    yPosition -= 45;
+    
+    // KPI Results
     Object.entries(KPI_DESCRIPTIONS).forEach(([kpiKey, description]) => {
+      addNewPageIfNeeded(60);
+      
       const score = supplierData.kpiScores?.[kpiKey] || 0;
       const scoreLabel = SCORE_LABELS[score] || 'Not Scored';
       
-      kpiResults.push({
-        type: 'subsection',
-        title: `${kpiKey.toUpperCase()} - ${description}`
+      // KPI Title
+      drawText(`${kpiKey.toUpperCase()} - ${description}`, margin + 20, yPosition, {
+        font: helveticaBoldFont,
+        size: 10,
+        color: lightBlue
+      });
+      yPosition -= 20;
+      
+      // Score with color
+      let scoreColor = lightGray;
+      if (score >= 4) scoreColor = successGreen;
+      else if (score >= 3) scoreColor = lightBlue;
+      else if (score >= 2) scoreColor = warningOrange;
+      else if (score >= 1) scoreColor = errorRed;
+      
+      currentPage.drawRectangle({
+        x: margin + 30,
+        y: yPosition - 15,
+        width: 25,
+        height: 18,
+        color: scoreColor
       });
       
-      kpiResults.push({
-        type: 'kpi-score',
-        label: 'Score',
-        score: score,
-        description: scoreLabel
+      drawText(score.toString(), margin + 37, yPosition - 10, {
+        font: helveticaBoldFont,
+        size: 10,
+        color: white
       });
-
+      
+      drawText(`Score: ${score}/4 - ${scoreLabel}`, margin + 65, yPosition - 10, {
+        size: 9
+      });
+      
+      yPosition -= 25;
+      
       // Add KPI details if they exist
       const details = supplierData.kpiDetails?.[kpiKey];
       if (details && typeof details === 'object') {
         Object.entries(details).forEach(([key, value]) => {
           if (value !== undefined && value !== '' && value !== false && value !== 0) {
+            addNewPageIfNeeded(15);
+            
             let displayValue = value;
             if (typeof value === 'boolean') {
               displayValue = value ? 'Yes' : 'No';
             }
             
-            const fieldName = formatFieldName(key);
+            const fieldName = key.replace(/([A-Z])/g, ' $1')
+                                 .replace(/^./, str => str.toUpperCase())
+                                 .replace(/([a-z])([A-Z])/g, '$1 $2');
             
-            kpiResults.push({
-              type: 'field',
-              label: fieldName,
-              value: displayValue.toString()
+            drawText(`${fieldName}:`, margin + 40, yPosition, {
+              font: helveticaBoldFont,
+              size: 8
             });
+            drawText(displayValue.toString(), margin + 200, yPosition, {
+              size: 8
+            });
+            yPosition -= 12;
           }
         });
       }
+      
+      yPosition -= 10;
     });
-    
-    yPosition = drawSection('KPI EVALUATION RESULTS', kpiResults, yPosition);
 
-    // GAI and Classification with visual elements
-    const totalScore = Object.values(supplierData.kpiScores).reduce((sum, score) => sum + (score || 0), 0);
+    // GAI and Classification
+    console.log('PDF Service: Drawing classification...');
+    addNewPageIfNeeded(80);
+    
+    const totalScore = Object.values(supplierData.kpiScores || {}).reduce((sum, score) => sum + (score || 0), 0);
     const gai = supplierData.gai || 0;
     const supplierClass = supplierData.supplierClass || 'C';
-    
-    // Add visual classification box
-    addNewPageIfNeeded(80);
     
     let classColor = errorRed;
     if (supplierClass === 'A') classColor = successGreen;
@@ -360,29 +358,66 @@ export const generateSupplierEvaluationPDF = async (supplierData) => {
     
     yPosition -= 40;
 
-    // Observations and Recommendations
-    const observations = [];
-    if (supplierData.observations?.strengths) {
-      observations.push({ type: 'subsection', title: 'Identified Strengths' });
-      observations.push({ type: 'text', text: supplierData.observations.strengths });
-    }
-    if (supplierData.observations?.improvements) {
-      observations.push({ type: 'subsection', title: 'Areas for Improvement' });
-      observations.push({ type: 'text', text: supplierData.observations.improvements });
-    }
-    if (supplierData.observations?.actions) {
-      observations.push({ type: 'subsection', title: 'Required Actions' });
-      observations.push({ type: 'text', text: supplierData.observations.actions });
-    }
-    if (supplierData.observations?.followUpDate) {
-      observations.push({ type: 'field', label: 'Follow-up Date', value: supplierData.observations.followUpDate });
-    }
-    
-    if (observations.length > 0) {
-      yPosition = drawSection('OBSERVATIONS & RECOMMENDATIONS', observations, yPosition);
+    // Observations
+    if (supplierData.observations?.strengths || supplierData.observations?.improvements || supplierData.observations?.actions) {
+      console.log('PDF Service: Drawing observations...');
+      addNewPageIfNeeded(100);
+      
+      currentPage.drawRectangle({
+        x: margin,
+        y: yPosition - 20,
+        width: contentWidth,
+        height: 25,
+        color: primaryBlue
+      });
+      
+      drawText('OBSERVATIONS & RECOMMENDATIONS', margin + 10, yPosition - 15, {
+        font: helveticaBoldFont,
+        size: 12,
+        color: white
+      });
+      
+      yPosition -= 45;
+      
+      if (supplierData.observations?.strengths) {
+        addNewPageIfNeeded(30);
+        drawText('Identified Strengths:', margin + 20, yPosition, {
+          font: helveticaBoldFont,
+          size: 10,
+          color: lightBlue
+        });
+        yPosition -= 15;
+        drawText(supplierData.observations.strengths, margin + 30, yPosition, { size: 9 });
+        yPosition -= 20;
+      }
+      
+      if (supplierData.observations?.improvements) {
+        addNewPageIfNeeded(30);
+        drawText('Areas for Improvement:', margin + 20, yPosition, {
+          font: helveticaBoldFont,
+          size: 10,
+          color: lightBlue
+        });
+        yPosition -= 15;
+        drawText(supplierData.observations.improvements, margin + 30, yPosition, { size: 9 });
+        yPosition -= 20;
+      }
+      
+      if (supplierData.observations?.actions) {
+        addNewPageIfNeeded(30);
+        drawText('Required Actions:', margin + 20, yPosition, {
+          font: helveticaBoldFont,
+          size: 10,
+          color: lightBlue
+        });
+        yPosition -= 15;
+        drawText(supplierData.observations.actions, margin + 30, yPosition, { size: 9 });
+        yPosition -= 20;
+      }
     }
 
     // Footer on each page
+    console.log('PDF Service: Adding footers...');
     const pages = pdfDoc.getPages();
     pages.forEach((page, index) => {
       // Page number
@@ -414,23 +449,30 @@ export const generateSupplierEvaluationPDF = async (supplierData) => {
     });
 
     // Save and download
+    console.log('PDF Service: Saving and downloading PDF...');
     const pdfBytes = await pdfDoc.save();
+    console.log('PDF Service: PDF bytes generated, size:', pdfBytes.length);
+    
     const blob = new Blob([pdfBytes], { type: 'application/pdf' });
     const url = URL.createObjectURL(blob);
     
-    const fileName = `Supplier_Evaluation_${supplierData.supplierName.replace(/[^a-z0-9]/gi, '_')}_${new Date().toISOString().split('T')[0]}.pdf`;
+    const fileName = `Supplier_Evaluation_${(supplierData.supplierName || 'Unknown').replace(/[^a-z0-9]/gi, '_')}_${new Date().toISOString().split('T')[0]}.pdf`;
+    console.log('PDF Service: File name:', fileName);
     
     const link = document.createElement('a');
     link.href = url;
     link.download = fileName;
+    document.body.appendChild(link);
     link.click();
+    document.body.removeChild(link);
     
     URL.revokeObjectURL(url);
     
-    console.log('PDF generated and downloaded successfully:', fileName);
+    console.log('PDF Service: PDF generated and download triggered successfully');
     
   } catch (error) {
-    console.error('Error generating PDF:', error);
+    console.error('PDF Service: Error generating PDF:', error);
+    console.error('PDF Service: Error stack:', error.stack);
     throw new Error(`Failed to generate PDF report: ${error.message}`);
   }
 };

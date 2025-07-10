@@ -192,14 +192,21 @@ const SupplierEvaluationWrapper = ({ onBackToMenu }) => {
 
   const addSupplier = async (supplierData) => {
     try {
+      console.log('addSupplier: Starting save process...');
+      console.log('addSupplier: Supplier data to save:', supplierData);
+      
       const newSupplier = {
         ...supplierData,
         createdBy: currentUser?.displayName || 'Unknown User',
         createdAt: new Date().toISOString()
       };
 
+      console.log('addSupplier: Prepared supplier data:', newSupplier);
+
       // Save to Firebase
+      console.log('addSupplier: Attempting Firebase save...');
       const docId = await saveSupplierEvaluation(newSupplier);
+      console.log('addSupplier: Firebase save successful, ID:', docId);
       
       // Add to local state with Firebase ID
       const supplierWithId = {
@@ -207,28 +214,43 @@ const SupplierEvaluationWrapper = ({ onBackToMenu }) => {
         id: docId
       };
       
-      setSuppliers(prev => [...prev, supplierWithId]);
+      console.log('addSupplier: Adding to local state...');
+      setSuppliers(prev => {
+        const newSuppliers = [...prev, supplierWithId];
+        console.log('addSupplier: New suppliers state:', newSuppliers);
+        return newSuppliers;
+      });
       
-      console.log('Supplier evaluation saved successfully with ID:', docId);
+      console.log('addSupplier: Process completed successfully');
       return docId;
       
     } catch (error) {
-      console.error('Error saving supplier evaluation:', error);
+      console.error('addSupplier: Error saving to Firebase:', error);
       
       // Fallback to localStorage if Firebase fails
+      console.log('addSupplier: Falling back to localStorage...');
       const newSupplier = {
         ...supplierData,
         id: Date.now().toString(),
         createdAt: new Date().toISOString(),
         createdBy: currentUser?.displayName || 'Unknown User'
       };
-      setSuppliers(prev => [...prev, newSupplier]);
+      
+      setSuppliers(prev => {
+        const newSuppliers = [...prev, newSupplier];
+        console.log('addSupplier: Fallback - New suppliers state:', newSuppliers);
+        return newSuppliers;
+      });
       
       // Also save to localStorage as backup
-      const updatedSuppliers = [...suppliers, newSupplier];
+      const currentSuppliers = JSON.parse(localStorage.getItem('supplierEvaluations') || '[]');
+      const updatedSuppliers = [...currentSuppliers, newSupplier];
       localStorage.setItem('supplierEvaluations', JSON.stringify(updatedSuppliers));
       
-      console.log('Saved to localStorage as fallback');
+      console.log('addSupplier: Saved to localStorage as fallback');
+      console.log('addSupplier: localStorage data:', updatedSuppliers);
+      
+      // Still return the ID for the PDF generation
       return newSupplier.id;
     }
   };
@@ -1787,7 +1809,7 @@ const SupplierEvaluationWrapper = ({ onBackToMenu }) => {
               <div className={styles.statIcon}>🌟</div>
               <div className={styles.statContent}>
                 <div className={styles.statNumber}>
-                  {suppliers.filter(s => getSupplierClass(calculateGAI(s.kpiScores)) === 'A').length}
+                  {suppliers.filter(s => getSupplierClass(s.gai || calculateGAI(s.kpiScores)) === 'A').length}
                 </div>
                 <div className={styles.statLabel}>Class A (≥80%)</div>
               </div>
@@ -1797,7 +1819,7 @@ const SupplierEvaluationWrapper = ({ onBackToMenu }) => {
               <div className={styles.statIcon}>⚠️</div>
               <div className={styles.statContent}>
                 <div className={styles.statNumber}>
-                  {suppliers.filter(s => getSupplierClass(calculateGAI(s.kpiScores)) === 'B').length}
+                  {suppliers.filter(s => getSupplierClass(s.gai || calculateGAI(s.kpiScores)) === 'B').length}
                 </div>
                 <div className={styles.statLabel}>Class B (60-79%)</div>
               </div>
@@ -1807,12 +1829,31 @@ const SupplierEvaluationWrapper = ({ onBackToMenu }) => {
               <div className={styles.statIcon}>❌</div>
               <div className={styles.statContent}>
                 <div className={styles.statNumber}>
-                  {suppliers.filter(s => getSupplierClass(calculateGAI(s.kpiScores)) === 'C').length}
+                  {suppliers.filter(s => getSupplierClass(s.gai || calculateGAI(s.kpiScores)) === 'C').length}
                 </div>
                 <div className={styles.statLabel}>Class C (&lt;60%)</div>
               </div>
             </div>
           </div>
+
+          {/* Debug info */}
+          {suppliers.length > 0 && (
+            <div style={{ 
+              background: 'rgba(0,0,0,0.05)', 
+              padding: '1rem', 
+              borderRadius: '8px', 
+              margin: '1rem 0',
+              fontSize: '0.8rem',
+              color: '#666'
+            }}>
+              <strong>Debug Info:</strong> Found {suppliers.length} suppliers in state
+              {suppliers.map((s, i) => (
+                <div key={i} style={{ marginLeft: '1rem' }}>
+                  • {s.supplierName} - Class {s.supplierClass || getSupplierClass(s.gai || calculateGAI(s.kpiScores))} ({s.gai || calculateGAI(s.kpiScores)}%)
+                </div>
+              ))}
+            </div>
+          )}
 
           {/* Suppliers by Category */}
           <div className={styles.categoriesContainer}>
@@ -1830,8 +1871,8 @@ const SupplierEvaluationWrapper = ({ onBackToMenu }) => {
 
                   <div className={styles.suppliersGrid}>
                     {categorySuppliers.map(supplier => {
-                      const gai = calculateGAI(supplier.kpiScores);
-                      const supplierClass = getSupplierClass(gai);
+                      const gai = supplier.gai || calculateGAI(supplier.kpiScores);
+                      const supplierClass = supplier.supplierClass || getSupplierClass(gai);
                       
                       return (
                         <div key={supplier.id} className={`${styles.supplierCard} ${styles[`class${supplierClass}`]}`}>
@@ -1850,16 +1891,16 @@ const SupplierEvaluationWrapper = ({ onBackToMenu }) => {
                               📈 G.A.I.: {gai}%
                             </div>
                             <div className={styles.supplierDate}>
-                              📅 {new Date(supplier.auditDate).toLocaleDateString()}
+                              📅 {new Date(supplier.auditDate || supplier.createdAt).toLocaleDateString()}
                             </div>
                           </div>
 
                           <div className={styles.kpiBreakdown}>
                             <div className={styles.kpiTitle}>KPI Scores:</div>
                             <div className={styles.kpiScores}>
-                              {Object.entries(supplier.kpiScores).map(([kpi, score]) => (
+                              {Object.entries(supplier.kpiScores || {}).map(([kpi, score]) => (
                                 <span key={kpi} className={styles.kpiScore}>
-                                  {kpi.toUpperCase()}: {score}/4
+                                  {kpi.toUpperCase()}: {score || 0}/4
                                 </span>
                               ))}
                             </div>

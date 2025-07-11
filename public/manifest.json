@@ -1,0 +1,48 @@
+{
+  "name": "Quality Control Management System",
+  "short_name": "QC Manager",
+  "description": "Professional quality control and inspection management system for manufacturing and production environments",
+  "start_url": "/",
+  "display": "standalone",
+  "orientation": "portrait-primary",
+  "theme_color": "#005F83",
+  "background_color": "#FFFDF7",
+  "scope": "/",
+  "lang": "en",
+  "dir": "ltr",
+  "icons": [
+    {
+      "src": "/images/logo2.png",
+      "sizes": "any",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/images/logo2.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "/images/logo2.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ],
+  "categories": ["business", "productivity", "utilities"],
+  "shortcuts": [
+    {
+      "name": "Dashboard",
+      "short_name": "Dashboard",
+      "description": "Access the main dashboard",
+      "url": "/dashboard",
+      "icons": [{ "src": "/images/logo2.png", "sizes": "96x96" }]
+    },
+    {
+      "name": "Inspections",
+      "short_name": "Inspect",
+      "description": "Start new inspection",
+      "url": "/inspections",
+      "icons": [{ "src": "/images/logo2.png", "sizes": "96x96" }]
+    }
+  ]
+}

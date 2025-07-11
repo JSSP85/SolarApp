@@ -2,8 +2,9 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import BackButton from '../common/BackButton';
-import { saveSupplierEvaluation, updateSupplierEvaluation, getAllSupplierEvaluations } from '../../firebase/supplierEvaluationService';
-import { generateSupplierEvaluationPDF } from '../../services/supplierEvaluationPDFService'; // ✅ SOLO USAR EL SERVICIO
+import { saveSupplierEvaluation, updateSupplierEvaluation, getAllSupplierEvaluations, deleteSupplierEvaluation } from '../../firebase/supplierEvaluationService';
+import { generateSupplierEvaluationPDF } from '../../services/supplierEvaluationPDFService';
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, Radar, PieChart, Pie, Cell, ScatterChart, Scatter } from 'recharts';
 import styles from '../../styles/SupplierEvaluation.module.css';
 
 const SUPPLIER_CATEGORIES = [
@@ -30,15 +31,25 @@ const SCORE_LABELS = {
   4: 'Excellent (Benchmark)'
 };
 
+const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884D8'];
+
 const SupplierEvaluationWrapper = ({ onBackToMenu }) => {
   const { currentUser } = useAuth();
   const [activeTab, setActiveTab] = useState('dashboard');
   const [suppliers, setSuppliers] = useState([]);
   const [loading, setLoading] = useState(false);
   const [expandedKPIs, setExpandedKPIs] = useState({});
+  
+  // ✅ NUEVOS ESTADOS PARA FUNCIONALIDADES CRUD Y MODALES
+  const [showDetailModal, setShowDetailModal] = useState(false);
+  const [selectedSupplier, setSelectedSupplier] = useState(null);
+  const [editingSupplier, setEditingSupplier] = useState(null);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [supplierToDelete, setSupplierToDelete] = useState(null);
 
   // Form state for new supplier checklist
   const [formData, setFormData] = useState({
+    id: null, // ✅ Agregar ID para edición
     supplierName: '',
     category: '',
     location: '',
@@ -137,7 +148,6 @@ const SupplierEvaluationWrapper = ({ onBackToMenu }) => {
         setSuppliers(suppliersData);
       } catch (error) {
         console.error('Error loading suppliers:', error);
-        // Fallback to localStorage if Firebase fails
         const savedSuppliers = localStorage.getItem('supplierEvaluations');
         if (savedSuppliers) {
           setSuppliers(JSON.parse(savedSuppliers));
@@ -150,10 +160,47 @@ const SupplierEvaluationWrapper = ({ onBackToMenu }) => {
     loadSuppliers();
   }, []);
 
+  // ✅ FUNCIONES CRUD NUEVAS
+  const handleViewSupplier = (supplier) => {
+    setSelectedSupplier(supplier);
+    setShowDetailModal(true);
+  };
+
+  const handleEditSupplier = (supplier) => {
+    setEditingSupplier(supplier);
+    setFormData({
+      ...supplier,
+      id: supplier.id
+    });
+    setActiveTab('newChecklist');
+  };
+
+  const handleDeleteSupplier = (supplier) => {
+    setSupplierToDelete(supplier);
+    setShowDeleteConfirm(true);
+  };
+
+  const confirmDelete = async () => {
+    if (!supplierToDelete) return;
+    
+    try {
+      setLoading(true);
+      await deleteSupplierEvaluation(supplierToDelete.id);
+      setSuppliers(prev => prev.filter(s => s.id !== supplierToDelete.id));
+      alert('✅ Supplier evaluation deleted successfully!');
+    } catch (error) {
+      console.error('Error deleting supplier:', error);
+      alert('Error deleting supplier evaluation. Please try again.');
+    } finally {
+      setLoading(false);
+      setShowDeleteConfirm(false);
+      setSupplierToDelete(null);
+    }
+  };
+
   const addSupplier = async (supplierData) => {
     try {
       console.log('addSupplier: Starting save process...');
-      console.log('addSupplier: Supplier data to save:', supplierData);
       
       const newSupplier = {
         ...supplierData,
@@ -161,62 +208,59 @@ const SupplierEvaluationWrapper = ({ onBackToMenu }) => {
         createdAt: new Date().toISOString()
       };
 
-      console.log('addSupplier: Prepared supplier data:', newSupplier);
-
-      // Save to Firebase
-      console.log('addSupplier: Attempting Firebase save...');
-      const docId = await saveSupplierEvaluation(newSupplier);
-      console.log('addSupplier: Firebase save successful, ID:', docId);
+      let docId;
+      if (supplierData.id) {
+        // ✅ ACTUALIZAR SUPPLIER EXISTENTE
+        await updateSupplierEvaluation(supplierData.id, newSupplier);
+        docId = supplierData.id;
+        
+        // Actualizar en estado local
+        setSuppliers(prev => prev.map(s => 
+          s.id === docId ? { ...newSupplier, id: docId } : s
+        ));
+        
+        console.log('Supplier updated successfully');
+      } else {
+        // ✅ CREAR NUEVO SUPPLIER
+        docId = await saveSupplierEvaluation(newSupplier);
+        
+        const supplierWithId = {
+          ...newSupplier,
+          id: docId
+        };
+        
+        setSuppliers(prev => [...prev, supplierWithId]);
+        console.log('New supplier created successfully');
+      }
       
-      // Add to local state with Firebase ID
-      const supplierWithId = {
-        ...newSupplier,
-        id: docId
-      };
-      
-      console.log('addSupplier: Adding to local state...');
-      setSuppliers(prev => {
-        const newSuppliers = [...prev, supplierWithId];
-        console.log('addSupplier: New suppliers state:', newSuppliers);
-        return newSuppliers;
-      });
-      
-      console.log('addSupplier: Process completed successfully');
       return docId;
       
     } catch (error) {
-      console.error('addSupplier: Error saving to Firebase:', error);
+      console.error('Error saving supplier:', error);
       
-      // Fallback to localStorage if Firebase fails
-      console.log('addSupplier: Falling back to localStorage...');
+      // Fallback to localStorage
       const newSupplier = {
         ...supplierData,
-        id: Date.now().toString(),
+        id: supplierData.id || Date.now().toString(),
         createdAt: new Date().toISOString(),
         createdBy: currentUser?.displayName || 'Unknown User'
       };
       
-      setSuppliers(prev => {
-        const newSuppliers = [...prev, newSupplier];
-        console.log('addSupplier: Fallback - New suppliers state:', newSuppliers);
-        return newSuppliers;
-      });
+      if (supplierData.id) {
+        setSuppliers(prev => prev.map(s => 
+          s.id === supplierData.id ? newSupplier : s
+        ));
+      } else {
+        setSuppliers(prev => [...prev, newSupplier]);
+      }
       
-      // Also save to localStorage as backup
-      const currentSuppliers = JSON.parse(localStorage.getItem('supplierEvaluations') || '[]');
-      const updatedSuppliers = [...currentSuppliers, newSupplier];
-      localStorage.setItem('supplierEvaluations', JSON.stringify(updatedSuppliers));
-      
-      console.log('addSupplier: Saved to localStorage as fallback');
-      console.log('addSupplier: localStorage data:', updatedSuppliers);
-      
-      // Still return the ID for the PDF generation
       return newSupplier.id;
     }
   };
 
   const resetForm = () => {
     setFormData({
+      id: null,
       supplierName: '',
       category: SUPPLIER_CATEGORIES[0],
       location: '',
@@ -297,20 +341,17 @@ const SupplierEvaluationWrapper = ({ onBackToMenu }) => {
         followUpDate: ''
       }
     });
+    setEditingSupplier(null);
   };
 
-  // ✅ FUNCIÓN PARA COMPLETAR EL PROCESO DE GUARDADO Y EXPORTACIÓN
   const handleSaveAndExportComplete = () => {
-    // Mostrar mensaje de éxito
-    alert('✅ Supplier evaluation saved and PDF generated successfully!');
+    const message = editingSupplier 
+      ? '✅ Supplier evaluation updated and PDF generated successfully!'
+      : '✅ Supplier evaluation saved and PDF generated successfully!';
     
-    // Resetear el formulario
+    alert(message);
     resetForm();
-    
-    // Cambiar a la pestaña dashboard
     setActiveTab('dashboard');
-    
-    // Limpiar expansiones de KPIs
     setExpandedKPIs({});
   };
 
@@ -352,7 +393,6 @@ const SupplierEvaluationWrapper = ({ onBackToMenu }) => {
     }));
   };
 
-  // ✅ FUNCIÓN HANDLESUBMIT MEJORADA SIN FUNCIÓN PDF DUPLICADA
   const handleSubmit = async (e) => {
     e.preventDefault();
     
@@ -374,21 +414,13 @@ const SupplierEvaluationWrapper = ({ onBackToMenu }) => {
       setLoading(true);
       console.log('handleSubmit: Starting save & export process...');
       
-      // 1. Save to Firebase first
-      console.log('handleSubmit: Saving supplier data...');
       const savedId = await addSupplier(supplierData);
       console.log('handleSubmit: Supplier saved with ID:', savedId);
       
-      // 2. Generate and download PDF using SERVICE
-      console.log('handleSubmit: Generating PDF...');
-      await generateSupplierEvaluationPDF(supplierData); // ✅ USAR SOLO EL SERVICIO
+      await generateSupplierEvaluationPDF(supplierData);
       console.log('handleSubmit: PDF generated successfully');
       
-      // 3. Complete the process
-      console.log('handleSubmit: Completing process...');
       handleSaveAndExportComplete();
-      
-      console.log('handleSubmit: Process completed successfully');
       
     } catch (error) {
       console.error('handleSubmit: Error in save & export process:', error);
@@ -410,12 +442,16 @@ const SupplierEvaluationWrapper = ({ onBackToMenu }) => {
   };
 
   const handleTabChange = (newTab) => {
+    if (newTab !== 'newChecklist') {
+      setEditingSupplier(null);
+      resetForm();
+    }
     setActiveTab(newTab);
   };
 
   const calculateGAI = (kpiScores) => {
     const totalScore = Object.values(kpiScores).reduce((sum, score) => sum + (score || 0), 0);
-    const maxScore = 20; // 5 KPIs * 4 max score each
+    const maxScore = 20;
     return Math.round((totalScore / maxScore) * 100);
   };
 
@@ -425,7 +461,79 @@ const SupplierEvaluationWrapper = ({ onBackToMenu }) => {
     return 'C';
   };
 
-  // ✅ FUNCIÓN PARA RENDERIZAR DETALLES DE KPI
+  // ✅ FUNCIONES PARA GRÁFICOS
+  const prepareKPIComparisonData = () => {
+    return suppliers.map(supplier => ({
+      name: supplier.supplierName.length > 12 
+        ? supplier.supplierName.substring(0, 12) + '...' 
+        : supplier.supplierName,
+      fullName: supplier.supplierName,
+      KPI1: supplier.kpiScores?.kpi1 || 0,
+      KPI2: supplier.kpiScores?.kpi2 || 0,
+      KPI3: supplier.kpiScores?.kpi3 || 0,
+      KPI4: supplier.kpiScores?.kpi4 || 0,
+      KPI5: supplier.kpiScores?.kpi5 || 0,
+      GAI: supplier.gai || calculateGAI(supplier.kpiScores),
+      class: supplier.supplierClass || getSupplierClass(supplier.gai || calculateGAI(supplier.kpiScores))
+    }));
+  };
+
+  const prepareRadarData = () => {
+    if (suppliers.length === 0) return [];
+    
+    const avgKPIs = {
+      KPI1: 0, KPI2: 0, KPI3: 0, KPI4: 0, KPI5: 0
+    };
+    
+    suppliers.forEach(supplier => {
+      avgKPIs.KPI1 += supplier.kpiScores?.kpi1 || 0;
+      avgKPIs.KPI2 += supplier.kpiScores?.kpi2 || 0;
+      avgKPIs.KPI3 += supplier.kpiScores?.kpi3 || 0;
+      avgKPIs.KPI4 += supplier.kpiScores?.kpi4 || 0;
+      avgKPIs.KPI5 += supplier.kpiScores?.kpi5 || 0;
+    });
+    
+    Object.keys(avgKPIs).forEach(key => {
+      avgKPIs[key] = avgKPIs[key] / suppliers.length;
+    });
+
+    return [
+      { subject: 'Production Capacity', A: avgKPIs.KPI1, fullMark: 4 },
+      { subject: 'Quality Control', A: avgKPIs.KPI2, fullMark: 4 },
+      { subject: 'Raw Materials', A: avgKPIs.KPI3, fullMark: 4 },
+      { subject: 'Human Resources', A: avgKPIs.KPI4, fullMark: 4 },
+      { subject: 'Logistics', A: avgKPIs.KPI5, fullMark: 4 }
+    ];
+  };
+
+  const prepareClassDistributionData = () => {
+    const distribution = { A: 0, B: 0, C: 0 };
+    
+    suppliers.forEach(supplier => {
+      const supplierClass = supplier.supplierClass || getSupplierClass(supplier.gai || calculateGAI(supplier.kpiScores));
+      distribution[supplierClass]++;
+    });
+
+    return [
+      { name: 'Class A (≥80%)', value: distribution.A, color: '#10b981' },
+      { name: 'Class B (60-79%)', value: distribution.B, color: '#f59e0b' },
+      { name: 'Class C (<60%)', value: distribution.C, color: '#ef4444' }
+    ].filter(item => item.value > 0);
+  };
+
+  const prepareCapacityData = () => {
+    return suppliers
+      .filter(s => s.companyData?.employees && s.companyData?.annualRevenue)
+      .map(supplier => ({
+        x: parseInt(supplier.companyData.employees) || 0,
+        y: parseInt(supplier.companyData.annualRevenue) || 0,
+        name: supplier.supplierName,
+        gai: supplier.gai || calculateGAI(supplier.kpiScores),
+        class: supplier.supplierClass || getSupplierClass(supplier.gai || calculateGAI(supplier.kpiScores))
+      }));
+  };
+
+  // ✅ FUNCIÓN PARA RENDERIZAR DETALLES DE KPI (misma que antes)
   const renderKPIDetailsSection = (kpiKey) => {
     if (!expandedKPIs[kpiKey]) return null;
 
@@ -904,12 +1012,401 @@ const SupplierEvaluationWrapper = ({ onBackToMenu }) => {
     }
   };
 
+  // ✅ MODAL PARA VER DETALLES COMPLETOS
+  const renderDetailModal = () => {
+    if (!showDetailModal || !selectedSupplier) return null;
+
+    return (
+      <div style={{
+        position: 'fixed',
+        top: 0,
+        left: 0,
+        width: '100%',
+        height: '100%',
+        backgroundColor: 'rgba(0, 0, 0, 0.5)',
+        display: 'flex',
+        justifyContent: 'center',
+        alignItems: 'center',
+        zIndex: 1000
+      }}>
+        <div style={{
+          backgroundColor: 'white',
+          borderRadius: '12px',
+          padding: '2rem',
+          maxWidth: '800px',
+          maxHeight: '80vh',
+          overflow: 'auto',
+          position: 'relative',
+          width: '90%'
+        }}>
+          <button
+            onClick={() => setShowDetailModal(false)}
+            style={{
+              position: 'absolute',
+              top: '1rem',
+              right: '1rem',
+              background: 'none',
+              border: 'none',
+              fontSize: '1.5rem',
+              cursor: 'pointer',
+              color: '#666'
+            }}
+          >
+            ✕
+          </button>
+
+          <h2 style={{ marginBottom: '1.5rem', color: '#1f2937' }}>
+            {selectedSupplier.supplierName} - Complete Evaluation
+          </h2>
+
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '1.5rem' }}>
+            <div style={{ padding: '1rem', backgroundColor: '#f8fafc', borderRadius: '8px' }}>
+              <h3 style={{ color: '#374151', marginBottom: '1rem' }}>General Information</h3>
+              <p><strong>Category:</strong> {selectedSupplier.category}</p>
+              <p><strong>Location:</strong> {selectedSupplier.location || 'N/A'}</p>
+              <p><strong>Contact:</strong> {selectedSupplier.contactPerson || 'N/A'}</p>
+              <p><strong>Audit Date:</strong> {selectedSupplier.auditDate}</p>
+              <p><strong>Auditor:</strong> {selectedSupplier.auditorName}</p>
+              <p><strong>GAI Score:</strong> {selectedSupplier.gai || calculateGAI(selectedSupplier.kpiScores)}%</p>
+              <p><strong>Class:</strong> {selectedSupplier.supplierClass || getSupplierClass(selectedSupplier.gai || calculateGAI(selectedSupplier.kpiScores))}</p>
+            </div>
+
+            <div style={{ padding: '1rem', backgroundColor: '#f0f9ff', borderRadius: '8px' }}>
+              <h3 style={{ color: '#374151', marginBottom: '1rem' }}>KPI Scores</h3>
+              {Object.entries(selectedSupplier.kpiScores || {}).map(([kpi, score]) => (
+                <p key={kpi}>
+                  <strong>{kpi.toUpperCase()}:</strong> {score}/4 - {KPI_DESCRIPTIONS[kpi]}
+                </p>
+              ))}
+            </div>
+
+            <div style={{ padding: '1rem', backgroundColor: '#f0fdf4', borderRadius: '8px' }}>
+              <h3 style={{ color: '#374151', marginBottom: '1rem' }}>Company Data</h3>
+              <p><strong>Employees:</strong> {selectedSupplier.companyData?.employees || 'N/A'}</p>
+              <p><strong>Annual Revenue:</strong> ${selectedSupplier.companyData?.annualRevenue || 'N/A'}</p>
+            </div>
+
+            <div style={{ padding: '1rem', backgroundColor: '#fefce8', borderRadius: '8px' }}>
+              <h3 style={{ color: '#374151', marginBottom: '1rem' }}>Certifications</h3>
+              {Object.entries(selectedSupplier.certifications || {}).map(([cert, value]) => 
+                value && cert !== 'others' && (
+                  <p key={cert}>✅ {cert.toUpperCase()}</p>
+                )
+              )}
+              {selectedSupplier.certifications?.others && (
+                <p>✅ Others: {selectedSupplier.certifications.others}</p>
+              )}
+            </div>
+          </div>
+
+          {selectedSupplier.observations && (
+            <div style={{ marginTop: '1.5rem', padding: '1rem', backgroundColor: '#faf5ff', borderRadius: '8px' }}>
+              <h3 style={{ color: '#374151', marginBottom: '1rem' }}>Observations</h3>
+              {selectedSupplier.observations.strengths && (
+                <div style={{ marginBottom: '1rem' }}>
+                  <strong>Strengths:</strong>
+                  <p style={{ marginTop: '0.5rem' }}>{selectedSupplier.observations.strengths}</p>
+                </div>
+              )}
+              {selectedSupplier.observations.improvements && (
+                <div style={{ marginBottom: '1rem' }}>
+                  <strong>Areas for Improvement:</strong>
+                  <p style={{ marginTop: '0.5rem' }}>{selectedSupplier.observations.improvements}</p>
+                </div>
+              )}
+              {selectedSupplier.observations.actions && (
+                <div>
+                  <strong>Required Actions:</strong>
+                  <p style={{ marginTop: '0.5rem' }}>{selectedSupplier.observations.actions}</p>
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+      </div>
+    );
+  };
+
+  // ✅ MODAL PARA CONFIRMAR ELIMINACIÓN
+  const renderDeleteConfirmModal = () => {
+    if (!showDeleteConfirm || !supplierToDelete) return null;
+
+    return (
+      <div style={{
+        position: 'fixed',
+        top: 0,
+        left: 0,
+        width: '100%',
+        height: '100%',
+        backgroundColor: 'rgba(0, 0, 0, 0.5)',
+        display: 'flex',
+        justifyContent: 'center',
+        alignItems: 'center',
+        zIndex: 1000
+      }}>
+        <div style={{
+          backgroundColor: 'white',
+          borderRadius: '12px',
+          padding: '2rem',
+          maxWidth: '400px',
+          width: '90%'
+        }}>
+          <h3 style={{ color: '#dc2626', marginBottom: '1rem' }}>Confirm Deletion</h3>
+          <p style={{ marginBottom: '1.5rem' }}>
+            Are you sure you want to delete the evaluation for <strong>{supplierToDelete.supplierName}</strong>? 
+            This action cannot be undone.
+          </p>
+          <div style={{ display: 'flex', gap: '1rem', justifyContent: 'flex-end' }}>
+            <button
+              onClick={() => {
+                setShowDeleteConfirm(false);
+                setSupplierToDelete(null);
+              }}
+              style={{
+                padding: '0.5rem 1rem',
+                border: '1px solid #d1d5db',
+                backgroundColor: 'white',
+                color: '#374151',
+                borderRadius: '6px',
+                cursor: 'pointer'
+              }}
+            >
+              Cancel
+            </button>
+            <button
+              onClick={confirmDelete}
+              disabled={loading}
+              style={{
+                padding: '0.5rem 1rem',
+                border: 'none',
+                backgroundColor: '#dc2626',
+                color: 'white',
+                borderRadius: '6px',
+                cursor: loading ? 'not-allowed' : 'pointer',
+                opacity: loading ? 0.6 : 1
+              }}
+            >
+              {loading ? 'Deleting...' : 'Delete'}
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  };
+
+  // ✅ RENDERIZAR NUEVA PESTAÑA DE ANALYTICS
+  const renderAnalytics = () => {
+    const kpiData = prepareKPIComparisonData();
+    const radarData = prepareRadarData();
+    const classData = prepareClassDistributionData();
+    const capacityData = prepareCapacityData();
+
+    return (
+      <div className={styles.panelContainer}>
+        <div className={styles.dashboardHeader}>
+          <h1 className={styles.dashboardTitle}>Supplier Analytics & Comparisons</h1>
+          <p className={styles.dashboardSubtitle}>
+            Visual analysis and comparisons between suppliers
+          </p>
+        </div>
+
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(500px, 1fr))', gap: '2rem' }}>
+          
+          {/* KPI Comparison Chart */}
+          <div style={{ 
+            backgroundColor: 'white', 
+            padding: '1.5rem', 
+            borderRadius: '12px', 
+            boxShadow: '0 4px 20px rgba(0, 0, 0, 0.1)' 
+          }}>
+            <h3 style={{ marginBottom: '1rem', color: '#1f2937' }}>KPI Comparison by Supplier</h3>
+            <ResponsiveContainer width="100%" height={300}>
+              <BarChart data={kpiData}>
+                <CartesianGrid strokeDasharray="3 3" />
+                <XAxis dataKey="name" />
+                <YAxis domain={[0, 4]} />
+                <Tooltip 
+                  formatter={(value, name) => [value, name]}
+                  labelFormatter={(label) => {
+                    const supplier = kpiData.find(s => s.name === label);
+                    return supplier ? supplier.fullName : label;
+                  }}
+                />
+                <Legend />
+                <Bar dataKey="KPI1" fill="#8884d8" name="Production Capacity" />
+                <Bar dataKey="KPI2" fill="#82ca9d" name="Quality Control" />
+                <Bar dataKey="KPI3" fill="#ffc658" name="Raw Materials" />
+                <Bar dataKey="KPI4" fill="#ff7300" name="Human Resources" />
+                <Bar dataKey="KPI5" fill="#00bcd4" name="Logistics" />
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
+
+          {/* Average Performance Radar */}
+          <div style={{ 
+            backgroundColor: 'white', 
+            padding: '1.5rem', 
+            borderRadius: '12px', 
+            boxShadow: '0 4px 20px rgba(0, 0, 0, 0.1)' 
+          }}>
+            <h3 style={{ marginBottom: '1rem', color: '#1f2937' }}>Average KPI Performance</h3>
+            <ResponsiveContainer width="100%" height={300}>
+              <RadarChart data={radarData}>
+                <PolarGrid />
+                <PolarAngleAxis dataKey="subject" />
+                <PolarRadiusAxis angle={60} domain={[0, 4]} />
+                <Radar
+                  name="Average Score"
+                  dataKey="A"
+                  stroke="#8884d8"
+                  fill="#8884d8"
+                  fillOpacity={0.6}
+                />
+              </RadarChart>
+            </ResponsiveContainer>
+          </div>
+
+          {/* Class Distribution */}
+          <div style={{ 
+            backgroundColor: 'white', 
+            padding: '1.5rem', 
+            borderRadius: '12px', 
+            boxShadow: '0 4px 20px rgba(0, 0, 0, 0.1)' 
+          }}>
+            <h3 style={{ marginBottom: '1rem', color: '#1f2937' }}>Supplier Class Distribution</h3>
+            <ResponsiveContainer width="100%" height={300}>
+              <PieChart>
+                <Pie
+                  data={classData}
+                  cx="50%"
+                  cy="50%"
+                  labelLine={false}
+                  label={({ name, value, percent }) => `${name}: ${value} (${(percent * 100).toFixed(0)}%)`}
+                  outerRadius={80}
+                  fill="#8884d8"
+                  dataKey="value"
+                >
+                  {classData.map((entry, index) => (
+                    <Cell key={`cell-${index}`} fill={entry.color} />
+                  ))}
+                </Pie>
+                <Tooltip />
+              </PieChart>
+            </ResponsiveContainer>
+          </div>
+
+          {/* Capacity vs Revenue Scatter */}
+          {capacityData.length > 0 && (
+            <div style={{ 
+              backgroundColor: 'white', 
+              padding: '1.5rem', 
+              borderRadius: '12px', 
+              boxShadow: '0 4px 20px rgba(0, 0, 0, 0.1)' 
+            }}>
+              <h3 style={{ marginBottom: '1rem', color: '#1f2937' }}>Employee Count vs Annual Revenue</h3>
+              <ResponsiveContainer width="100%" height={300}>
+                <ScatterChart>
+                  <CartesianGrid />
+                  <XAxis dataKey="x" name="Employees" />
+                  <YAxis dataKey="y" name="Revenue (USD)" />
+                  <Tooltip 
+                    cursor={{ strokeDasharray: '3 3' }}
+                    formatter={(value, name) => [
+                      name === 'x' ? `${value} employees` : `$${value.toLocaleString()}`,
+                      name === 'x' ? 'Employees' : 'Annual Revenue'
+                    ]}
+                    labelFormatter={(label, payload) => {
+                      if (payload && payload.length > 0) {
+                        const data = payload[0].payload;
+                        return `${data.name} (GAI: ${data.gai}%, Class ${data.class})`;
+                      }
+                      return label;
+                    }}
+                  />
+                  <Scatter name="Suppliers" data={capacityData} fill="#8884d8" />
+                </ScatterChart>
+              </ResponsiveContainer>
+            </div>
+          )}
+
+          {/* GAI Distribution */}
+          <div style={{ 
+            backgroundColor: 'white', 
+            padding: '1.5rem', 
+            borderRadius: '12px', 
+            boxShadow: '0 4px 20px rgba(0, 0, 0, 0.1)' 
+          }}>
+            <h3 style={{ marginBottom: '1rem', color: '#1f2937' }}>GAI Score Distribution</h3>
+            <ResponsiveContainer width="100%" height={300}>
+              <BarChart data={kpiData}>
+                <CartesianGrid strokeDasharray="3 3" />
+                <XAxis dataKey="name" />
+                <YAxis domain={[0, 100]} />
+                <Tooltip 
+                  formatter={(value) => [`${value}%`, 'GAI Score']}
+                  labelFormatter={(label) => {
+                    const supplier = kpiData.find(s => s.name === label);
+                    return supplier ? supplier.fullName : label;
+                  }}
+                />
+                <Bar dataKey="GAI" fill="#10b981" name="GAI Score (%)" />
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
+
+          {/* Performance Trends by Category */}
+          <div style={{ 
+            backgroundColor: 'white', 
+            padding: '1.5rem', 
+            borderRadius: '12px', 
+            boxShadow: '0 4px 20px rgba(0, 0, 0, 0.1)' 
+          }}>
+            <h3 style={{ marginBottom: '1rem', color: '#1f2937' }}>Performance by Category</h3>
+            <div style={{ fontSize: '0.9rem', color: '#6b7280' }}>
+              {SUPPLIER_CATEGORIES.map(category => {
+                const categorySuppliers = suppliers.filter(s => s.category === category);
+                if (categorySuppliers.length === 0) return null;
+                
+                const avgGAI = categorySuppliers.reduce((sum, s) => 
+                  sum + (s.gai || calculateGAI(s.kpiScores)), 0
+                ) / categorySuppliers.length;
+                
+                return (
+                  <div key={category} style={{ 
+                    display: 'flex', 
+                    justifyContent: 'space-between', 
+                    marginBottom: '0.5rem',
+                    padding: '0.5rem',
+                    backgroundColor: '#f8fafc',
+                    borderRadius: '6px'
+                  }}>
+                    <span>{category}</span>
+                    <span style={{ fontWeight: 'bold' }}>
+                      {avgGAI.toFixed(1)}% ({categorySuppliers.length} suppliers)
+                    </span>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  };
+
   const renderNewChecklistForm = () => {
     return (
       <div className={styles.panelContainer}>
         <div className={styles.formHeader}>
-          <h1 className={styles.formTitle}>Supplier Evaluation Checklist</h1>
-          <p className={styles.formSubtitle}>Create a comprehensive evaluation for structural steel profile suppliers</p>
+          <h1 className={styles.formTitle}>
+            {editingSupplier ? `Edit Evaluation - ${editingSupplier.supplierName}` : 'Supplier Evaluation Checklist'}
+          </h1>
+          <p className={styles.formSubtitle}>
+            {editingSupplier 
+              ? 'Update the comprehensive evaluation for this supplier'
+              : 'Create a comprehensive evaluation for structural steel profile suppliers'
+            }
+          </p>
         </div>
 
         <div className={styles.formContainer} style={{ 
@@ -1202,7 +1699,11 @@ const SupplierEvaluationWrapper = ({ onBackToMenu }) => {
             <div className={styles.formActions}>
               <button
                 type="button"
-                onClick={() => handleTabChange('dashboard')}
+                onClick={() => {
+                  setEditingSupplier(null);
+                  resetForm();
+                  handleTabChange('dashboard');
+                }}
                 className={styles.btnSecondary}
               >
                 Cancel
@@ -1215,10 +1716,10 @@ const SupplierEvaluationWrapper = ({ onBackToMenu }) => {
                 {loading ? (
                   <>
                     <span className={styles.loadingSpinner}></span>
-                    Saving & Generating PDF...
+                    {editingSupplier ? 'Updating & Generating PDF...' : 'Saving & Generating PDF...'}
                   </>
                 ) : (
-                  'Save & Export Evaluation'
+                  editingSupplier ? 'Update & Export Evaluation' : 'Save & Export Evaluation'
                 )}
               </button>
             </div>
@@ -1285,25 +1786,6 @@ const SupplierEvaluationWrapper = ({ onBackToMenu }) => {
             </div>
           </div>
 
-          {/* Debug info */}
-          {suppliers.length > 0 && (
-            <div style={{ 
-              background: 'rgba(0,0,0,0.05)', 
-              padding: '1rem', 
-              borderRadius: '8px', 
-              margin: '1rem 0',
-              fontSize: '0.8rem',
-              color: '#666'
-            }}>
-              <strong>Debug Info:</strong> Found {suppliers.length} suppliers in state
-              {suppliers.map((s, i) => (
-                <div key={i} style={{ marginLeft: '1rem' }}>
-                  • {s.supplierName} - Class {s.supplierClass || getSupplierClass(s.gai || calculateGAI(s.kpiScores))} ({s.gai || calculateGAI(s.kpiScores)}%)
-                </div>
-              ))}
-            </div>
-          )}
-
           {/* Suppliers by Category */}
           <div className={styles.categoriesContainer}>
             {SUPPLIER_CATEGORIES.map(category => {
@@ -1353,6 +1835,71 @@ const SupplierEvaluationWrapper = ({ onBackToMenu }) => {
                                 </span>
                               ))}
                             </div>
+                          </div>
+
+                          {/* ✅ NUEVOS BOTONES DE ACCIÓN */}
+                          <div style={{ 
+                            marginTop: '1rem', 
+                            display: 'flex', 
+                            gap: '0.5rem', 
+                            justifyContent: 'center',
+                            borderTop: '1px solid #e2e8f0',
+                            paddingTop: '1rem'
+                          }}>
+                            <button
+                              onClick={() => handleViewSupplier(supplier)}
+                              style={{
+                                padding: '0.5rem 0.75rem',
+                                backgroundColor: '#3b82f6',
+                                color: 'white',
+                                border: 'none',
+                                borderRadius: '6px',
+                                cursor: 'pointer',
+                                fontSize: '0.875rem',
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: '0.25rem'
+                              }}
+                              title="View Details"
+                            >
+                              👁️ View
+                            </button>
+                            <button
+                              onClick={() => handleEditSupplier(supplier)}
+                              style={{
+                                padding: '0.5rem 0.75rem',
+                                backgroundColor: '#10b981',
+                                color: 'white',
+                                border: 'none',
+                                borderRadius: '6px',
+                                cursor: 'pointer',
+                                fontSize: '0.875rem',
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: '0.25rem'
+                              }}
+                              title="Edit Evaluation"
+                            >
+                              ✏️ Edit
+                            </button>
+                            <button
+                              onClick={() => handleDeleteSupplier(supplier)}
+                              style={{
+                                padding: '0.5rem 0.75rem',
+                                backgroundColor: '#ef4444',
+                                color: 'white',
+                                border: 'none',
+                                borderRadius: '6px',
+                                cursor: 'pointer',
+                                fontSize: '0.875rem',
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: '0.25rem'
+                              }}
+                              title="Delete Evaluation"
+                            >
+                              🗑️ Delete
+                            </button>
                           </div>
                         </div>
                       );
@@ -1419,6 +1966,16 @@ const SupplierEvaluationWrapper = ({ onBackToMenu }) => {
           <span className={styles.navText}>New Evaluation</span>
           {activeTab === 'newChecklist' && <div className={styles.navIndicator}></div>}
         </div>
+
+        {/* ✅ NUEVA PESTAÑA DE ANALYTICS */}
+        <div 
+          className={`${styles.navItem} ${activeTab === 'analytics' ? styles.active : ''}`}
+          onClick={() => handleTabChange('analytics')}
+        >
+          <span className={styles.navIcon}>📈</span>
+          <span className={styles.navText}>Analytics</span>
+          {activeTab === 'analytics' && <div className={styles.navIndicator}></div>}
+        </div>
       </div>
     </div>
   );
@@ -1429,6 +1986,8 @@ const SupplierEvaluationWrapper = ({ onBackToMenu }) => {
         return renderDashboard();
       case 'newChecklist':
         return renderNewChecklistForm();
+      case 'analytics':
+        return renderAnalytics();
       default:
         return renderDashboard();
     }
@@ -1440,23 +1999,28 @@ const SupplierEvaluationWrapper = ({ onBackToMenu }) => {
         {renderSidebar()}
         
         <div className={styles.mainContent}>
-          {/* Content Header */}
           <div className={styles.contentHeader}>
             <div className={styles.headerInfo}>
               <h1 className={styles.mainTitle}>Supplier Evaluation Management</h1>
               <div className={styles.breadcrumb}>
-                Quality Control → Supplier Management → {activeTab === 'dashboard' ? 'Dashboard' : 'New Evaluation'}
+                Quality Control → Supplier Management → {
+                  activeTab === 'dashboard' ? 'Dashboard' : 
+                  activeTab === 'analytics' ? 'Analytics' : 
+                  'New Evaluation'
+                }
               </div>
             </div>
           </div>
 
-          {/* Main Content */}
           {renderContent()}
         </div>
       </div>
 
-      {/* Use existing BackButton component */}
       <BackButton onClick={onBackToMenu} />
+
+      {/* ✅ MODALES */}
+      {renderDetailModal()}
+      {renderDeleteConfirmModal()}
     </div>
   );
 };

@@ -1,18 +1,34 @@
-// SOLUCIÓN DEFINITIVA: Reemplazar solo la función generateSupplierEvaluationPDF
-// Mantener todas las demás constantes e importaciones del archivo original
+// src/services/supplierEvaluationPDFService.js
+// COPIANDO EXACTAMENTE LA ESTRUCTURA QUE FUNCIONA EN QualityBookGenerator.jsx
 
+import { PDFDocument, rgb, StandardFonts } from 'pdf-lib';
+
+const KPI_DESCRIPTIONS = {
+  kpi1: 'Production Capacity & Equipment',
+  kpi2: 'Quality Control System',
+  kpi3: 'Raw Materials Management & Traceability',
+  kpi4: 'Human Resources & Competencies',
+  kpi5: 'Logistics Planning & Deliveries'
+};
+
+const SCORE_LABELS = {
+  1: 'Not Acceptable/Reject',
+  2: 'Improvement/Update Required',
+  3: 'Acceptable',
+  4: 'Excellent (Benchmark)'
+};
+
+/**
+ * Generate and download a professional PDF report for supplier evaluation
+ * @param {Object} supplierData - Complete supplier evaluation data
+ * @returns {Promise<void>}
+ */
 export const generateSupplierEvaluationPDF = async (supplierData) => {
   try {
-    console.log('PDF Service: Starting PDF generation with dynamic import...');
+    console.log('PDF Service: Starting PDF generation...');
     console.log('PDF Service: Supplier data received:', supplierData);
     
-    // ✅ IMPORTACIÓN DINÁMICA - esto evita problemas de bundling
-    const pdfLib = await import('pdf-lib');
-    const { PDFDocument, rgb, StandardFonts } = pdfLib;
-    
-    console.log('PDF Service: pdf-lib loaded dynamically');
-    
-    // Create a new PDF document
+    // ✅ COPIANDO EXACTAMENTE LA ESTRUCTURA DE QualityBookGenerator
     const pdfDoc = await PDFDocument.create();
     console.log('PDF Service: PDF document created');
     
@@ -41,7 +57,7 @@ export const generateSupplierEvaluationPDF = async (supplierData) => {
     
     console.log('PDF Service: Page created, starting content...');
     
-    // Helper function to check if new page is needed - MODIFICADA
+    // ✅ Helper function modificada para soportar forceNewPage
     const addNewPageIfNeeded = (spaceNeeded, forceNewPage = false) => {
       if (forceNewPage || yPosition - spaceNeeded < margin + 50) {
         currentPage = pdfDoc.addPage([pageWidth, pageHeight]);
@@ -51,7 +67,7 @@ export const generateSupplierEvaluationPDF = async (supplierData) => {
       return false;
     };
 
-    // Helper function to draw text safely - MEJORADA
+    // ✅ Helper function mejorada siguiendo el patrón de QualityBookGenerator
     const drawText = (text, x, y, options = {}) => {
       try {
         const {
@@ -60,14 +76,14 @@ export const generateSupplierEvaluationPDF = async (supplierData) => {
           color = darkGray
         } = options;
         
-        // ✅ Validación robusta para evitar "Error displaying text"
+        // Validación robusta para evitar errores
         let textStr = 'N/A';
         if (text !== null && text !== undefined) {
           textStr = String(text).trim();
           if (textStr === '') textStr = 'N/A';
         }
         
-        // Limpiar caracteres problemáticos
+        // Limitar longitud y limpiar caracteres problemáticos
         textStr = textStr.substring(0, 100).replace(/[^\x00-\x7F]/g, '');
         
         currentPage.drawText(textStr, {
@@ -90,6 +106,8 @@ export const generateSupplierEvaluationPDF = async (supplierData) => {
       }
     };
 
+    // ===== PÁGINA 1: GENERAL INFORMATION + CERTIFICATIONS =====
+    
     // Document Header
     console.log('PDF Service: Drawing header...');
     currentPage.drawRectangle({
@@ -180,12 +198,13 @@ export const generateSupplierEvaluationPDF = async (supplierData) => {
     
     yPosition -= 45;
     
-    // ✅ CERTIFICACIONES CON VALIDACIÓN ROBUSTA
+    // ✅ CERTIFICACIONES CON VALIDACIÓN ROBUSTA - siguiendo patrón QualityBookGenerator
     const certifications = [];
     
     console.log('PDF Service: Processing certifications:', supplierData.certifications);
     
-    if (supplierData.certifications && typeof supplierData.certifications === 'object') {
+    // Validar que supplierData y certifications existen
+    if (supplierData && supplierData.certifications && typeof supplierData.certifications === 'object') {
       try {
         if (supplierData.certifications.iso9001 === true) {
           certifications.push('✓ ISO 9001:2015');
@@ -203,13 +222,16 @@ export const generateSupplierEvaluationPDF = async (supplierData) => {
           certifications.push('✓ CE Marking');
         }
         if (supplierData.certifications.others && 
-            String(supplierData.certifications.others).trim() !== '') {
-          certifications.push(`✓ Others: ${String(supplierData.certifications.others).trim()}`);
+            typeof supplierData.certifications.others === 'string' && 
+            supplierData.certifications.others.trim() !== '') {
+          certifications.push(`✓ Others: ${supplierData.certifications.others.trim()}`);
         }
       } catch (certError) {
         console.error('Error processing individual certifications:', certError);
         certifications.push('Error processing certifications');
       }
+    } else {
+      console.log('No certifications data found or invalid format');
     }
     
     if (certifications.length === 0) {
@@ -231,9 +253,11 @@ export const generateSupplierEvaluationPDF = async (supplierData) => {
     
     yPosition -= 20;
 
-    // ✅ KPI Evaluation Results - FORZAR NUEVA PÁGINA
+    // ===== PÁGINA 2: KPI EVALUATION RESULTS + FIRMA =====
+    
+    // ✅ FORZAR NUEVA PÁGINA para KPI Results
     console.log('PDF Service: Drawing KPI results...');
-    addNewPageIfNeeded(0, true); // ✅ Forzar nueva página
+    addNewPageIfNeeded(0, true); // Forzar nueva página
     
     currentPage.drawRectangle({
       x: margin,
@@ -255,7 +279,7 @@ export const generateSupplierEvaluationPDF = async (supplierData) => {
     Object.entries(KPI_DESCRIPTIONS).forEach(([kpiKey, description]) => {
       addNewPageIfNeeded(60);
       
-      const score = supplierData.kpiScores?.[kpiKey] || 0;
+      const score = (supplierData && supplierData.kpiScores && supplierData.kpiScores[kpiKey]) || 0;
       const scoreLabel = SCORE_LABELS[score] || 'Not Scored';
       
       // KPI Title
@@ -294,7 +318,7 @@ export const generateSupplierEvaluationPDF = async (supplierData) => {
       yPosition -= 25;
       
       // Add KPI details if they exist
-      const details = supplierData.kpiDetails?.[kpiKey];
+      const details = supplierData && supplierData.kpiDetails && supplierData.kpiDetails[kpiKey];
       if (details && typeof details === 'object') {
         Object.entries(details).forEach(([key, value]) => {
           if (value !== undefined && value !== '' && value !== false && value !== 0) {
@@ -328,9 +352,10 @@ export const generateSupplierEvaluationPDF = async (supplierData) => {
     console.log('PDF Service: Drawing classification...');
     addNewPageIfNeeded(80);
     
-    const totalScore = Object.values(supplierData.kpiScores || {}).reduce((sum, score) => sum + (score || 0), 0);
-    const gai = supplierData.gai || 0;
-    const supplierClass = supplierData.supplierClass || 'C';
+    const kpiScores = supplierData && supplierData.kpiScores ? supplierData.kpiScores : {};
+    const totalScore = Object.values(kpiScores).reduce((sum, score) => sum + (score || 0), 0);
+    const gai = (supplierData && supplierData.gai) || 0;
+    const supplierClass = (supplierData && supplierData.supplierClass) || 'C';
     
     let classColor = errorRed;
     if (supplierClass === 'A') classColor = successGreen;
@@ -380,7 +405,8 @@ export const generateSupplierEvaluationPDF = async (supplierData) => {
     yPosition -= 40;
 
     // Observations
-    if (supplierData.observations?.strengths || supplierData.observations?.improvements || supplierData.observations?.actions) {
+    const observations = supplierData && supplierData.observations ? supplierData.observations : {};
+    if (observations.strengths || observations.improvements || observations.actions) {
       console.log('PDF Service: Drawing observations...');
       addNewPageIfNeeded(100);
       
@@ -400,7 +426,7 @@ export const generateSupplierEvaluationPDF = async (supplierData) => {
       
       yPosition -= 45;
       
-      if (supplierData.observations?.strengths) {
+      if (observations.strengths) {
         addNewPageIfNeeded(30);
         drawText('Identified Strengths:', margin + 20, yPosition, {
           font: helveticaBoldFont,
@@ -408,11 +434,11 @@ export const generateSupplierEvaluationPDF = async (supplierData) => {
           color: lightBlue
         });
         yPosition -= 15;
-        drawText(supplierData.observations.strengths, margin + 30, yPosition, { size: 9 });
+        drawText(observations.strengths, margin + 30, yPosition, { size: 9 });
         yPosition -= 20;
       }
       
-      if (supplierData.observations?.improvements) {
+      if (observations.improvements) {
         addNewPageIfNeeded(30);
         drawText('Areas for Improvement:', margin + 20, yPosition, {
           font: helveticaBoldFont,
@@ -420,11 +446,11 @@ export const generateSupplierEvaluationPDF = async (supplierData) => {
           color: lightBlue
         });
         yPosition -= 15;
-        drawText(supplierData.observations.improvements, margin + 30, yPosition, { size: 9 });
+        drawText(observations.improvements, margin + 30, yPosition, { size: 9 });
         yPosition -= 20;
       }
       
-      if (supplierData.observations?.actions) {
+      if (observations.actions) {
         addNewPageIfNeeded(30);
         drawText('Required Actions:', margin + 20, yPosition, {
           font: helveticaBoldFont,
@@ -432,7 +458,7 @@ export const generateSupplierEvaluationPDF = async (supplierData) => {
           color: lightBlue
         });
         yPosition -= 15;
-        drawText(supplierData.observations.actions, margin + 30, yPosition, { size: 9 });
+        drawText(observations.actions, margin + 30, yPosition, { size: 9 });
         yPosition -= 20;
       }
     }
@@ -483,12 +509,15 @@ export const generateSupplierEvaluationPDF = async (supplierData) => {
     
     // Información del evaluador
     yPosition -= 30;
-    drawText(`Evaluated by: ${supplierData.auditorName || 'N/A'}`, margin + 20, yPosition, {
+    const auditorName = (supplierData && supplierData.auditorName) || 'N/A';
+    const auditDate = (supplierData && supplierData.auditDate) || new Date().toLocaleDateString();
+    
+    drawText(`Evaluated by: ${auditorName}`, margin + 20, yPosition, {
       size: 9
     });
     
     yPosition -= 15;
-    drawText(`Date: ${supplierData.auditDate || new Date().toLocaleDateString()}`, margin + 20, yPosition, {
+    drawText(`Date: ${auditDate}`, margin + 20, yPosition, {
       size: 9
     });
     
@@ -506,7 +535,7 @@ export const generateSupplierEvaluationPDF = async (supplierData) => {
       size: 10
     });
 
-    // Footer on each page
+    // Footer on each page - siguiendo patrón QualityBookGenerator
     console.log('PDF Service: Adding footers...');
     const pages = pdfDoc.getPages();
     pages.forEach((page, index) => {
@@ -538,27 +567,27 @@ export const generateSupplierEvaluationPDF = async (supplierData) => {
       });
     });
 
-    // Save and download
+    // Save and download - COPIANDO EXACTAMENTE QualityBookGenerator
     console.log('PDF Service: Saving and downloading PDF...');
     const pdfBytes = await pdfDoc.save();
     console.log('PDF Service: PDF bytes generated, size:', pdfBytes.length);
     
-    const blob = new Blob([pdfBytes], { type: 'application/pdf' });
-    const url = URL.createObjectURL(blob);
-    
-    const fileName = `Supplier_Evaluation_${(supplierData.supplierName || 'Unknown').replace(/[^a-z0-9]/gi, '_')}_${new Date().toISOString().split('T')[0]}.pdf`;
+    const supplierName = (supplierData && supplierData.supplierName) || 'Unknown';
+    const fileName = `Supplier_Evaluation_${supplierName.replace(/[^a-z0-9]/gi, '_')}_${new Date().toISOString().split('T')[0]}.pdf`;
     console.log('PDF Service: File name:', fileName);
     
-    const link = document.createElement('a');
-    link.href = url;
-    link.download = fileName;
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    
+    // Create download - EXACTO COMO QualityBookGenerator
+    const blob = new Blob([pdfBytes], { type: 'application/pdf' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = fileName;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
     URL.revokeObjectURL(url);
     
-    console.log('✅ PDF generated successfully with dynamic import');
+    console.log('✅ PDF generated successfully with QualityBookGenerator structure');
     
   } catch (error) {
     console.error('PDF Service: Error generating PDF:', error);

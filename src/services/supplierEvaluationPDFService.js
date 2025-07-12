@@ -1,5 +1,5 @@
 // src/services/supplierEvaluationPDFService.js
-// ARCHIVO COMPLETO CON MEJORAS: Gráfico de KPIs + Presentación mejorada
+// VERSIÓN CONSERVADORA: Código original + solo gráfico básico
 
 import { PDFDocument, rgb, StandardFonts } from 'pdf-lib';
 
@@ -16,271 +16,6 @@ const SCORE_LABELS = {
   2: 'Improvement/Update Required',
   3: 'Acceptable',
   4: 'Excellent (Benchmark)'
-};
-
-// ✅ NUEVA FUNCIÓN: Crear gráfico de barras de KPIs
-const drawKPIChart = (currentPage, kpiScores, x, y, width, height, fonts, colors) => {
-  try {
-    console.log('Drawing KPI chart...');
-    
-    const { helveticaFont, helveticaBoldFont } = fonts;
-    const { primaryBlue, lightBlue, successGreen, warningOrange, errorRed, lightGray, darkGray } = colors;
-    
-    // Datos del gráfico
-    const kpiData = [
-      { label: 'KPI1', value: kpiScores.kpi1 || 0, name: 'Production' },
-      { label: 'KPI2', value: kpiScores.kpi2 || 0, name: 'Quality' },
-      { label: 'KPI3', value: kpiScores.kpi3 || 0, name: 'Materials' },
-      { label: 'KPI4', value: kpiScores.kpi4 || 0, name: 'HR' },
-      { label: 'KPI5', value: kpiScores.kpi5 || 0, name: 'Logistics' }
-    ];
-    
-    // Configuración del gráfico
-    const chartWidth = width;
-    const chartHeight = height;
-    const barWidth = chartWidth / 6; // 5 barras + espacios
-    const maxValue = 4;
-    
-    // Fondo del gráfico
-    currentPage.drawRectangle({
-      x: x,
-      y: y,
-      width: chartWidth,
-      height: chartHeight,
-      color: { r: 0.98, g: 0.98, b: 0.98 },
-      borderColor: lightGray,
-      borderWidth: 1
-    });
-    
-    // Título del gráfico
-    currentPage.drawText('KPI Performance Overview', {
-      x: x + chartWidth / 2 - 60,
-      y: y + chartHeight - 15,
-      size: 11,
-      font: helveticaBoldFont,
-      color: darkGray
-    });
-    
-    // Líneas de grid horizontales
-    for (let i = 0; i <= 4; i++) {
-      const gridY = y + 25 + (i * (chartHeight - 50) / 4);
-      currentPage.drawLine({
-        start: { x: x + 10, y: gridY },
-        end: { x: x + chartWidth - 10, y: gridY },
-        thickness: 0.5,
-        color: { r: 0.9, g: 0.9, b: 0.9 }
-      });
-      
-      // Etiquetas del eje Y
-      currentPage.drawText((4 - i).toString(), {
-        x: x + 5,
-        y: gridY - 3,
-        size: 8,
-        font: helveticaFont,
-        color: darkGray
-      });
-    }
-    
-    // Dibujar barras
-    kpiData.forEach((kpi, index) => {
-      const barX = x + 20 + (index * barWidth);
-      const barHeight = (kpi.value / maxValue) * (chartHeight - 50);
-      const barY = y + 25;
-      
-      // Color de la barra según el valor
-      let barColor = lightGray;
-      if (kpi.value >= 4) barColor = successGreen;
-      else if (kpi.value >= 3) barColor = lightBlue;
-      else if (kpi.value >= 2) barColor = warningOrange;
-      else if (kpi.value >= 1) barColor = errorRed;
-      
-      // Dibujar barra
-      currentPage.drawRectangle({
-        x: barX,
-        y: barY,
-        width: barWidth - 10,
-        height: barHeight,
-        color: barColor
-      });
-      
-      // Valor encima de la barra
-      currentPage.drawText(kpi.value.toString(), {
-        x: barX + (barWidth - 10) / 2 - 3,
-        y: barY + barHeight + 5,
-        size: 9,
-        font: helveticaBoldFont,
-        color: darkGray
-      });
-      
-      // Etiqueta del KPI
-      currentPage.drawText(kpi.name, {
-        x: barX + (barWidth - 10) / 2 - (kpi.name.length * 2.5),
-        y: y + 10,
-        size: 8,
-        font: helveticaFont,
-        color: darkGray
-      });
-    });
-    
-    console.log('KPI chart drawn successfully');
-  } catch (error) {
-    console.error('Error drawing KPI chart:', error);
-  }
-};
-
-// ✅ NUEVA FUNCIÓN: Dibujar sección de KPI mejorada
-const drawEnhancedKPISection = (currentPage, kpiKey, description, score, scoreLabel, details, yPos, margin, contentWidth, fonts, colors, addNewPageCallback) => {
-  try {
-    const { helveticaFont, helveticaBoldFont } = fonts;
-    const { primaryBlue, lightBlue, successGreen, warningOrange, errorRed, lightGray, darkGray, white } = colors;
-    
-    let yPosition = yPos;
-    
-    // Verificar espacio necesario
-    addNewPageCallback(120);
-    
-    // Contenedor principal del KPI
-    const kpiBoxHeight = 100;
-    currentPage.drawRectangle({
-      x: margin,
-      y: yPosition - kpiBoxHeight,
-      width: contentWidth,
-      height: kpiBoxHeight,
-      color: { r: 0.98, g: 0.99, b: 1 },
-      borderColor: lightBlue,
-      borderWidth: 1
-    });
-    
-    // Header del KPI
-    currentPage.drawRectangle({
-      x: margin,
-      y: yPosition - 25,
-      width: contentWidth,
-      height: 25,
-      color: lightBlue
-    });
-    
-    // Título del KPI
-    currentPage.drawText(`${kpiKey.toUpperCase()} - ${description}`, {
-      x: margin + 10,
-      y: yPosition - 20,
-      size: 11,
-      font: helveticaBoldFont,
-      color: white
-    });
-    
-    yPosition -= 35;
-    
-    // Score badge mejorado
-    let scoreColor = lightGray;
-    if (score >= 4) scoreColor = successGreen;
-    else if (score >= 3) scoreColor = lightBlue;
-    else if (score >= 2) scoreColor = warningOrange;
-    else if (score >= 1) scoreColor = errorRed;
-    
-    // Badge circular para el score
-    currentPage.drawEllipse({
-      x: margin + 30,
-      y: yPosition - 15,
-      xScale: 15,
-      yScale: 15,
-      color: scoreColor
-    });
-    
-    currentPage.drawText(score.toString(), {
-      x: margin + 27,
-      y: yPosition - 18,
-      size: 11,
-      font: helveticaBoldFont,
-      color: white
-    });
-    
-    // Descripción del score
-    currentPage.drawText(`Score: ${score}/4 - ${scoreLabel}`, {
-      x: margin + 55,
-      y: yPosition - 18,
-      size: 10,
-      font: helveticaBoldFont,
-      color: darkGray
-    });
-    
-    yPosition -= 30;
-    
-    // Detalles del KPI en formato de tabla
-    if (details && typeof details === 'object') {
-      const detailEntries = Object.entries(details).filter(([key, value]) => 
-        value !== undefined && value !== '' && value !== false && value !== 0
-      );
-      
-      if (detailEntries.length > 0) {
-        yPosition -= 10;
-        
-        // Título de detalles
-        currentPage.drawText('Details:', {
-          x: margin + 15,
-          y: yPosition,
-          size: 9,
-          font: helveticaBoldFont,
-          color: darkGray
-        });
-        
-        yPosition -= 15;
-        
-        // Tabla de detalles
-        detailEntries.forEach(([key, value], index) => {
-          if (index > 0 && index % 3 === 0) {
-            addNewPageCallback(20);
-            yPosition -= 15;
-          }
-          
-          let displayValue = value;
-          if (typeof value === 'boolean') {
-            displayValue = value ? '✓ Yes' : '✗ No';
-          }
-          
-          const fieldName = key.replace(/([A-Z])/g, ' $1')
-                               .replace(/^./, str => str.toUpperCase())
-                               .replace(/([a-z])([A-Z])/g, '$1 $2');
-          
-          // Fondo alternado para mejor lectura
-          if (index % 2 === 0) {
-            currentPage.drawRectangle({
-              x: margin + 10,
-              y: yPosition - 12,
-              width: contentWidth - 20,
-              height: 12,
-              color: { r: 0.96, g: 0.97, b: 0.98 }
-            });
-          }
-          
-          // Campo
-          currentPage.drawText(`${fieldName}:`, {
-            x: margin + 15,
-            y: yPosition - 8,
-            size: 8,
-            font: helveticaBoldFont,
-            color: darkGray
-          });
-          
-          // Valor
-          currentPage.drawText(displayValue.toString(), {
-            x: margin + 200,
-            y: yPosition - 8,
-            size: 8,
-            font: helveticaFont,
-            color: darkGray
-          });
-          
-          yPosition -= 12;
-        });
-      }
-    }
-    
-    return yPosition - 20; // Espacio adicional entre KPIs
-  } catch (error) {
-    console.error('Error drawing enhanced KPI section:', error);
-    return yPos - 100; // Fallback
-  }
 };
 
 /**
@@ -332,7 +67,7 @@ export const generateSupplierEvaluationPDF = async (supplierData) => {
       return false;
     };
 
-    // Helper function mejorada siguiendo el patrón de QualityBookGenerator
+    // Helper function mejorada
     const drawText = (text, x, y, options = {}) => {
       try {
         const {
@@ -371,8 +106,6 @@ export const generateSupplierEvaluationPDF = async (supplierData) => {
       }
     };
 
-    // ===== PÁGINA 1: GENERAL INFORMATION + CERTIFICATIONS =====
-    
     // Document Header
     console.log('PDF Service: Drawing header...');
     currentPage.drawRectangle({
@@ -463,12 +196,11 @@ export const generateSupplierEvaluationPDF = async (supplierData) => {
     
     yPosition -= 45;
     
-    // ✅ CERTIFICACIONES CON VALIDACIÓN ROBUSTA
+    // Certificaciones con validación robusta
     const certifications = [];
     
     console.log('PDF Service: Processing certifications:', supplierData.certifications);
     
-    // Validar que supplierData y certifications existen
     if (supplierData && supplierData.certifications && typeof supplierData.certifications === 'object') {
       try {
         if (supplierData.certifications.iso9001 === true) {
@@ -518,9 +250,7 @@ export const generateSupplierEvaluationPDF = async (supplierData) => {
     
     yPosition -= 20;
 
-    // ===== PÁGINA 2: KPI EVALUATION RESULTS + GRÁFICO + FIRMA =====
-    
-    // ✅ FORZAR NUEVA PÁGINA para KPI Results
+    // FORZAR NUEVA PÁGINA para KPI Results
     console.log('PDF Service: Drawing KPI results...');
     addNewPageIfNeeded(0, true); // Forzar nueva página
     
@@ -540,45 +270,66 @@ export const generateSupplierEvaluationPDF = async (supplierData) => {
     
     yPosition -= 45;
     
-    // ✅ KPI Results - VERSIÓN MEJORADA
-    const fonts = { helveticaFont, helveticaBoldFont };
-    const colors = { primaryBlue, lightBlue, successGreen, warningOrange, errorRed, lightGray, darkGray, white };
-
+    // KPI Results - MEJORADO CONSERVADORAMENTE
     Object.entries(KPI_DESCRIPTIONS).forEach(([kpiKey, description]) => {
+      addNewPageIfNeeded(80);
+      
       const score = (supplierData && supplierData.kpiScores && supplierData.kpiScores[kpiKey]) || 0;
       const scoreLabel = SCORE_LABELS[score] || 'Not Scored';
-      const details = supplierData && supplierData.kpiDetails && supplierData.kpiDetails[kpiKey];
       
-      yPosition = drawEnhancedKPISection(
-        currentPage, 
-        kpiKey, 
-        description, 
-        score, 
-        scoreLabel, 
-        details, 
-        yPosition, 
-        margin, 
-        contentWidth, 
-        fonts, 
-        colors,
-        (space) => {
-          if (addNewPageIfNeeded(space)) {
-            // Si se creó nueva página, actualizar currentPage
-            const pages = pdfDoc.getPages();
-            currentPage = pages[pages.length - 1];
-          }
-        }
-      );
+      // ✅ CONTENEDOR MEJORADO PARA CADA KPI
+      currentPage.drawRectangle({
+        x: margin,
+        y: yPosition - 50,
+        width: contentWidth,
+        height: 50,
+        color: { r: 0.98, g: 0.99, b: 1 },
+        borderColor: lightBlue,
+        borderWidth: 0.5
+      });
+      
+      // KPI Title
+      drawText(`${kpiKey.toUpperCase()} - ${description}`, margin + 10, yPosition - 15, {
+        font: helveticaBoldFont,
+        size: 10,
+        color: lightBlue
+      });
+      yPosition -= 25;
+      
+      // Score with color
+      let scoreColor = lightGray;
+      if (score >= 4) scoreColor = successGreen;
+      else if (score >= 3) scoreColor = lightBlue;
+      else if (score >= 2) scoreColor = warningOrange;
+      else if (score >= 1) scoreColor = errorRed;
+      
+      currentPage.drawRectangle({
+        x: margin + 20,
+        y: yPosition - 15,
+        width: 25,
+        height: 18,
+        color: scoreColor
+      });
+      
+      drawText(score.toString(), margin + 27, yPosition - 10, {
+        font: helveticaBoldFont,
+        size: 10,
+        color: white
+      });
+      
+      drawText(`Score: ${score}/4 - ${scoreLabel}`, margin + 55, yPosition - 10, {
+        size: 9
+      });
+      
+      yPosition -= 35;
     });
 
-    // ✅ AGREGAR GRÁFICO DESPUÉS DE LOS KPIs Y ANTES DE EVALUATION SUMMARY
-    console.log('PDF Service: Adding KPI chart...');
-    addNewPageIfNeeded(150);
+    // ✅ AGREGAR GRÁFICO SIMPLE DESPUÉS DE LOS KPIs
+    console.log('PDF Service: Adding simple KPI chart...');
+    addNewPageIfNeeded(100);
 
     // Título del gráfico
-    drawText('KPI Performance Summary', {
-      x: margin + 20,
-      y: yPosition,
+    drawText('KPI Performance Summary', margin + 20, yPosition, {
       size: 12,
       font: helveticaBoldFont,
       color: primaryBlue
@@ -586,13 +337,72 @@ export const generateSupplierEvaluationPDF = async (supplierData) => {
 
     yPosition -= 30;
 
-    // Dibujar el gráfico
+    // Gráfico simple de barras
     const kpiScores = supplierData && supplierData.kpiScores ? supplierData.kpiScores : {};
-    drawKPIChart(currentPage, kpiScores, margin + 20, yPosition - 120, contentWidth - 40, 120, fonts, colors);
+    const kpiData = [
+      { label: 'KPI1', value: kpiScores.kpi1 || 0, name: 'Production' },
+      { label: 'KPI2', value: kpiScores.kpi2 || 0, name: 'Quality' },
+      { label: 'KPI3', value: kpiScores.kpi3 || 0, name: 'Materials' },
+      { label: 'KPI4', value: kpiScores.kpi4 || 0, name: 'HR' },
+      { label: 'KPI5', value: kpiScores.kpi5 || 0, name: 'Logistics' }
+    ];
+    
+    const chartX = margin + 20;
+    const chartY = yPosition - 80;
+    const chartWidth = contentWidth - 40;
+    const barWidth = chartWidth / 6;
+    
+    // Fondo del gráfico
+    currentPage.drawRectangle({
+      x: chartX,
+      y: chartY,
+      width: chartWidth,
+      height: 80,
+      color: { r: 0.98, g: 0.98, b: 0.98 },
+      borderColor: lightGray,
+      borderWidth: 1
+    });
+    
+    // Dibujar barras simples
+    kpiData.forEach((kpi, index) => {
+      const barX = chartX + 10 + (index * barWidth);
+      const barHeight = (kpi.value / 4) * 50;
+      const barY = chartY + 10;
+      
+      // Color de la barra
+      let barColor = lightGray;
+      if (kpi.value >= 4) barColor = successGreen;
+      else if (kpi.value >= 3) barColor = lightBlue;
+      else if (kpi.value >= 2) barColor = warningOrange;
+      else if (kpi.value >= 1) barColor = errorRed;
+      
+      // Dibujar barra
+      currentPage.drawRectangle({
+        x: barX,
+        y: barY,
+        width: barWidth - 15,
+        height: barHeight,
+        color: barColor
+      });
+      
+      // Valor encima de la barra
+      drawText(kpi.value.toString(), barX + (barWidth - 15) / 2 - 3, barY + barHeight + 5, {
+        size: 9,
+        font: helveticaBoldFont,
+        color: darkGray
+      });
+      
+      // Etiqueta del KPI
+      drawText(kpi.name, barX + (barWidth - 15) / 2 - (kpi.name.length * 2), chartY - 5, {
+        size: 8,
+        font: helveticaFont,
+        color: darkGray
+      });
+    });
 
-    yPosition -= 140; // Espacio después del gráfico
+    yPosition -= 100; // Espacio después del gráfico
 
-    // GAI and Classification
+    // GAI and Classification (código original)
     console.log('PDF Service: Drawing classification...');
     addNewPageIfNeeded(80);
     
@@ -647,7 +457,7 @@ export const generateSupplierEvaluationPDF = async (supplierData) => {
     
     yPosition -= 40;
 
-    // Observations
+    // Observations (código original)
     const observations = supplierData && supplierData.observations ? supplierData.observations : {};
     if (observations.strengths || observations.improvements || observations.actions) {
       console.log('PDF Service: Drawing observations...');
@@ -706,13 +516,11 @@ export const generateSupplierEvaluationPDF = async (supplierData) => {
       }
     }
 
-    // ✅ SECCIÓN DE FIRMA AL FINAL
+    // SECCIÓN DE FIRMA (código original)
     console.log('PDF Service: Adding signature section...');
     
-    // Asegurar espacio para la firma
     addNewPageIfNeeded(120);
     
-    // Posicionar correctamente
     if (yPosition > pageHeight - 200) {
       yPosition = Math.min(yPosition, pageHeight - 200);
     }
@@ -720,7 +528,6 @@ export const generateSupplierEvaluationPDF = async (supplierData) => {
       yPosition = 180;
     }
     
-    // Sección de firma
     currentPage.drawRectangle({
       x: margin,
       y: yPosition - 20,
@@ -737,7 +544,6 @@ export const generateSupplierEvaluationPDF = async (supplierData) => {
     
     yPosition -= 50;
     
-    // Línea para la firma
     currentPage.drawLine({
       start: { x: margin + 20, y: yPosition },
       end: { x: margin + 250, y: yPosition },
@@ -750,7 +556,6 @@ export const generateSupplierEvaluationPDF = async (supplierData) => {
       size: 10
     });
     
-    // Información del evaluador
     yPosition -= 30;
     const auditorName = (supplierData && supplierData.auditorName) || 'N/A';
     const auditDate = (supplierData && supplierData.auditDate) || new Date().toLocaleDateString();
@@ -764,7 +569,6 @@ export const generateSupplierEvaluationPDF = async (supplierData) => {
       size: 9
     });
     
-    // Línea para fecha de aprobación
     yPosition -= 25;
     currentPage.drawLine({
       start: { x: margin + 350, y: yPosition + 15 },
@@ -782,7 +586,6 @@ export const generateSupplierEvaluationPDF = async (supplierData) => {
     console.log('PDF Service: Adding footers...');
     const pages = pdfDoc.getPages();
     pages.forEach((page, index) => {
-      // Page number
       page.drawText(`Page ${index + 1} of ${pages.length}`, {
         x: pageWidth - 100,
         y: 30,
@@ -791,7 +594,6 @@ export const generateSupplierEvaluationPDF = async (supplierData) => {
         color: lightGray
       });
       
-      // Generation date
       page.drawText(`Generated on ${new Date().toLocaleDateString()}`, {
         x: margin,
         y: 30,
@@ -800,7 +602,6 @@ export const generateSupplierEvaluationPDF = async (supplierData) => {
         color: lightGray
       });
       
-      // Company footer
       page.drawText('Valmont Solar - Quality Control Department', {
         x: margin,
         y: 15,
@@ -819,7 +620,6 @@ export const generateSupplierEvaluationPDF = async (supplierData) => {
     const fileName = `Supplier_Evaluation_${supplierName.replace(/[^a-z0-9]/gi, '_')}_${new Date().toISOString().split('T')[0]}.pdf`;
     console.log('PDF Service: File name:', fileName);
     
-    // Create download
     const blob = new Blob([pdfBytes], { type: 'application/pdf' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
@@ -830,7 +630,7 @@ export const generateSupplierEvaluationPDF = async (supplierData) => {
     document.body.removeChild(a);
     URL.revokeObjectURL(url);
     
-    console.log('✅ PDF generated successfully with enhanced design and KPI chart');
+    console.log('✅ PDF generated successfully with conservative improvements');
     
   } catch (error) {
     console.error('PDF Service: Error generating PDF:', error);

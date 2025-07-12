@@ -1,5 +1,5 @@
 // src/services/supplierEvaluationPDFService.js
-// VERSIÓN CONSERVADORA: Código original + solo gráfico básico
+// COPIANDO EXACTAMENTE LA ESTRUCTURA QUE FUNCIONA EN QualityBookGenerator.jsx
 
 import { PDFDocument, rgb, StandardFonts } from 'pdf-lib';
 
@@ -28,7 +28,7 @@ export const generateSupplierEvaluationPDF = async (supplierData) => {
     console.log('PDF Service: Starting PDF generation...');
     console.log('PDF Service: Supplier data received:', supplierData);
     
-    // Create a new PDF document
+    // ✅ COPIANDO EXACTAMENTE LA ESTRUCTURA DE QualityBookGenerator
     const pdfDoc = await PDFDocument.create();
     console.log('PDF Service: PDF document created');
     
@@ -57,7 +57,7 @@ export const generateSupplierEvaluationPDF = async (supplierData) => {
     
     console.log('PDF Service: Page created, starting content...');
     
-    // Helper function modificada para soportar forceNewPage
+    // ✅ Helper function modificada para soportar forceNewPage
     const addNewPageIfNeeded = (spaceNeeded, forceNewPage = false) => {
       if (forceNewPage || yPosition - spaceNeeded < margin + 50) {
         currentPage = pdfDoc.addPage([pageWidth, pageHeight]);
@@ -67,7 +67,7 @@ export const generateSupplierEvaluationPDF = async (supplierData) => {
       return false;
     };
 
-    // Helper function mejorada
+    // ✅ Helper function mejorada siguiendo el patrón de QualityBookGenerator
     const drawText = (text, x, y, options = {}) => {
       try {
         const {
@@ -106,6 +106,8 @@ export const generateSupplierEvaluationPDF = async (supplierData) => {
       }
     };
 
+    // ===== PÁGINA 1: GENERAL INFORMATION + CERTIFICATIONS =====
+    
     // Document Header
     console.log('PDF Service: Drawing header...');
     currentPage.drawRectangle({
@@ -196,11 +198,12 @@ export const generateSupplierEvaluationPDF = async (supplierData) => {
     
     yPosition -= 45;
     
-    // Certificaciones con validación robusta
+    // ✅ CERTIFICACIONES CON VALIDACIÓN ROBUSTA - siguiendo patrón QualityBookGenerator
     const certifications = [];
     
     console.log('PDF Service: Processing certifications:', supplierData.certifications);
     
+    // Validar que supplierData y certifications existen
     if (supplierData && supplierData.certifications && typeof supplierData.certifications === 'object') {
       try {
         if (supplierData.certifications.iso9001 === true) {
@@ -250,7 +253,9 @@ export const generateSupplierEvaluationPDF = async (supplierData) => {
     
     yPosition -= 20;
 
-    // FORZAR NUEVA PÁGINA para KPI Results
+    // ===== PÁGINA 2: KPI EVALUATION RESULTS + FIRMA =====
+    
+    // ✅ FORZAR NUEVA PÁGINA para KPI Results
     console.log('PDF Service: Drawing KPI results...');
     addNewPageIfNeeded(0, true); // Forzar nueva página
     
@@ -270,31 +275,20 @@ export const generateSupplierEvaluationPDF = async (supplierData) => {
     
     yPosition -= 45;
     
-    // KPI Results - MEJORADO CONSERVADORAMENTE
+    // KPI Results
     Object.entries(KPI_DESCRIPTIONS).forEach(([kpiKey, description]) => {
-      addNewPageIfNeeded(80);
+      addNewPageIfNeeded(60);
       
       const score = (supplierData && supplierData.kpiScores && supplierData.kpiScores[kpiKey]) || 0;
       const scoreLabel = SCORE_LABELS[score] || 'Not Scored';
       
-      // ✅ CONTENEDOR MEJORADO PARA CADA KPI
-      currentPage.drawRectangle({
-        x: margin,
-        y: yPosition - 50,
-        width: contentWidth,
-        height: 50,
-        color: { r: 0.98, g: 0.99, b: 1 },
-        borderColor: lightBlue,
-        borderWidth: 0.5
-      });
-      
       // KPI Title
-      drawText(`${kpiKey.toUpperCase()} - ${description}`, margin + 10, yPosition - 15, {
+      drawText(`${kpiKey.toUpperCase()} - ${description}`, margin + 20, yPosition, {
         font: helveticaBoldFont,
         size: 10,
         color: lightBlue
       });
-      yPosition -= 25;
+      yPosition -= 20;
       
       // Score with color
       let scoreColor = lightGray;
@@ -304,108 +298,61 @@ export const generateSupplierEvaluationPDF = async (supplierData) => {
       else if (score >= 1) scoreColor = errorRed;
       
       currentPage.drawRectangle({
-        x: margin + 20,
+        x: margin + 30,
         y: yPosition - 15,
         width: 25,
         height: 18,
         color: scoreColor
       });
       
-      drawText(score.toString(), margin + 27, yPosition - 10, {
+      drawText(score.toString(), margin + 37, yPosition - 10, {
         font: helveticaBoldFont,
         size: 10,
         color: white
       });
       
-      drawText(`Score: ${score}/4 - ${scoreLabel}`, margin + 55, yPosition - 10, {
+      drawText(`Score: ${score}/4 - ${scoreLabel}`, margin + 65, yPosition - 10, {
         size: 9
       });
       
-      yPosition -= 35;
+      yPosition -= 25;
+      
+      // Add KPI details if they exist
+      const details = supplierData && supplierData.kpiDetails && supplierData.kpiDetails[kpiKey];
+      if (details && typeof details === 'object') {
+        Object.entries(details).forEach(([key, value]) => {
+          if (value !== undefined && value !== '' && value !== false && value !== 0) {
+            addNewPageIfNeeded(15);
+            
+            let displayValue = value;
+            if (typeof value === 'boolean') {
+              displayValue = value ? 'Yes' : 'No';
+            }
+            
+            const fieldName = key.replace(/([A-Z])/g, ' $1')
+                                 .replace(/^./, str => str.toUpperCase())
+                                 .replace(/([a-z])([A-Z])/g, '$1 $2');
+            
+            drawText(`${fieldName}:`, margin + 40, yPosition, {
+              font: helveticaBoldFont,
+              size: 8
+            });
+            drawText(displayValue.toString(), margin + 200, yPosition, {
+              size: 8
+            });
+            yPosition -= 12;
+          }
+        });
+      }
+      
+      yPosition -= 10;
     });
 
-    // ✅ AGREGAR GRÁFICO SIMPLE DESPUÉS DE LOS KPIs
-    console.log('PDF Service: Adding simple KPI chart...');
-    addNewPageIfNeeded(100);
-
-    // Título del gráfico
-    drawText('KPI Performance Summary', margin + 20, yPosition, {
-      size: 12,
-      font: helveticaBoldFont,
-      color: primaryBlue
-    });
-
-    yPosition -= 30;
-
-    // Gráfico simple de barras
-    const kpiScores = supplierData && supplierData.kpiScores ? supplierData.kpiScores : {};
-    const kpiData = [
-      { label: 'KPI1', value: kpiScores.kpi1 || 0, name: 'Production' },
-      { label: 'KPI2', value: kpiScores.kpi2 || 0, name: 'Quality' },
-      { label: 'KPI3', value: kpiScores.kpi3 || 0, name: 'Materials' },
-      { label: 'KPI4', value: kpiScores.kpi4 || 0, name: 'HR' },
-      { label: 'KPI5', value: kpiScores.kpi5 || 0, name: 'Logistics' }
-    ];
-    
-    const chartX = margin + 20;
-    const chartY = yPosition - 80;
-    const chartWidth = contentWidth - 40;
-    const barWidth = chartWidth / 6;
-    
-    // Fondo del gráfico
-    currentPage.drawRectangle({
-      x: chartX,
-      y: chartY,
-      width: chartWidth,
-      height: 80,
-      color: { r: 0.98, g: 0.98, b: 0.98 },
-      borderColor: lightGray,
-      borderWidth: 1
-    });
-    
-    // Dibujar barras simples
-    kpiData.forEach((kpi, index) => {
-      const barX = chartX + 10 + (index * barWidth);
-      const barHeight = (kpi.value / 4) * 50;
-      const barY = chartY + 10;
-      
-      // Color de la barra
-      let barColor = lightGray;
-      if (kpi.value >= 4) barColor = successGreen;
-      else if (kpi.value >= 3) barColor = lightBlue;
-      else if (kpi.value >= 2) barColor = warningOrange;
-      else if (kpi.value >= 1) barColor = errorRed;
-      
-      // Dibujar barra
-      currentPage.drawRectangle({
-        x: barX,
-        y: barY,
-        width: barWidth - 15,
-        height: barHeight,
-        color: barColor
-      });
-      
-      // Valor encima de la barra
-      drawText(kpi.value.toString(), barX + (barWidth - 15) / 2 - 3, barY + barHeight + 5, {
-        size: 9,
-        font: helveticaBoldFont,
-        color: darkGray
-      });
-      
-      // Etiqueta del KPI
-      drawText(kpi.name, barX + (barWidth - 15) / 2 - (kpi.name.length * 2), chartY - 5, {
-        size: 8,
-        font: helveticaFont,
-        color: darkGray
-      });
-    });
-
-    yPosition -= 100; // Espacio después del gráfico
-
-    // GAI and Classification (código original)
+    // GAI and Classification
     console.log('PDF Service: Drawing classification...');
     addNewPageIfNeeded(80);
     
+    const kpiScores = supplierData && supplierData.kpiScores ? supplierData.kpiScores : {};
     const totalScore = Object.values(kpiScores).reduce((sum, score) => sum + (score || 0), 0);
     const gai = (supplierData && supplierData.gai) || 0;
     const supplierClass = (supplierData && supplierData.supplierClass) || 'C';
@@ -457,7 +404,7 @@ export const generateSupplierEvaluationPDF = async (supplierData) => {
     
     yPosition -= 40;
 
-    // Observations (código original)
+    // Observations
     const observations = supplierData && supplierData.observations ? supplierData.observations : {};
     if (observations.strengths || observations.improvements || observations.actions) {
       console.log('PDF Service: Drawing observations...');
@@ -516,11 +463,13 @@ export const generateSupplierEvaluationPDF = async (supplierData) => {
       }
     }
 
-    // SECCIÓN DE FIRMA (código original)
+    // ✅ NUEVA SECCIÓN DE FIRMA AL FINAL
     console.log('PDF Service: Adding signature section...');
     
+    // Asegurar espacio para la firma
     addNewPageIfNeeded(120);
     
+    // Posicionar correctamente
     if (yPosition > pageHeight - 200) {
       yPosition = Math.min(yPosition, pageHeight - 200);
     }
@@ -528,6 +477,7 @@ export const generateSupplierEvaluationPDF = async (supplierData) => {
       yPosition = 180;
     }
     
+    // Sección de firma
     currentPage.drawRectangle({
       x: margin,
       y: yPosition - 20,
@@ -544,6 +494,7 @@ export const generateSupplierEvaluationPDF = async (supplierData) => {
     
     yPosition -= 50;
     
+    // Línea para la firma
     currentPage.drawLine({
       start: { x: margin + 20, y: yPosition },
       end: { x: margin + 250, y: yPosition },
@@ -556,6 +507,7 @@ export const generateSupplierEvaluationPDF = async (supplierData) => {
       size: 10
     });
     
+    // Información del evaluador
     yPosition -= 30;
     const auditorName = (supplierData && supplierData.auditorName) || 'N/A';
     const auditDate = (supplierData && supplierData.auditDate) || new Date().toLocaleDateString();
@@ -569,6 +521,7 @@ export const generateSupplierEvaluationPDF = async (supplierData) => {
       size: 9
     });
     
+    // Línea para fecha de aprobación
     yPosition -= 25;
     currentPage.drawLine({
       start: { x: margin + 350, y: yPosition + 15 },
@@ -582,10 +535,11 @@ export const generateSupplierEvaluationPDF = async (supplierData) => {
       size: 10
     });
 
-    // Footer on each page
+    // Footer on each page - siguiendo patrón QualityBookGenerator
     console.log('PDF Service: Adding footers...');
     const pages = pdfDoc.getPages();
     pages.forEach((page, index) => {
+      // Page number
       page.drawText(`Page ${index + 1} of ${pages.length}`, {
         x: pageWidth - 100,
         y: 30,
@@ -594,6 +548,7 @@ export const generateSupplierEvaluationPDF = async (supplierData) => {
         color: lightGray
       });
       
+      // Generation date
       page.drawText(`Generated on ${new Date().toLocaleDateString()}`, {
         x: margin,
         y: 30,
@@ -602,6 +557,7 @@ export const generateSupplierEvaluationPDF = async (supplierData) => {
         color: lightGray
       });
       
+      // Company footer
       page.drawText('Valmont Solar - Quality Control Department', {
         x: margin,
         y: 15,
@@ -611,7 +567,7 @@ export const generateSupplierEvaluationPDF = async (supplierData) => {
       });
     });
 
-    // Save and download
+    // Save and download - COPIANDO EXACTAMENTE QualityBookGenerator
     console.log('PDF Service: Saving and downloading PDF...');
     const pdfBytes = await pdfDoc.save();
     console.log('PDF Service: PDF bytes generated, size:', pdfBytes.length);
@@ -620,6 +576,7 @@ export const generateSupplierEvaluationPDF = async (supplierData) => {
     const fileName = `Supplier_Evaluation_${supplierName.replace(/[^a-z0-9]/gi, '_')}_${new Date().toISOString().split('T')[0]}.pdf`;
     console.log('PDF Service: File name:', fileName);
     
+    // Create download - EXACTO COMO QualityBookGenerator
     const blob = new Blob([pdfBytes], { type: 'application/pdf' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
@@ -630,7 +587,7 @@ export const generateSupplierEvaluationPDF = async (supplierData) => {
     document.body.removeChild(a);
     URL.revokeObjectURL(url);
     
-    console.log('✅ PDF generated successfully with conservative improvements');
+    console.log('✅ PDF generated successfully with QualityBookGenerator structure');
     
   } catch (error) {
     console.error('PDF Service: Error generating PDF:', error);

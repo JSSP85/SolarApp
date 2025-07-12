@@ -1,111 +1,41 @@
-// Modificaciones para src/services/supplierEvaluationPDFService.js
-
-// 1. ✅ FIX PARA EL ERROR "Error displaying text" EN CERTIFICACIONES
-// Reemplazar la función drawText existente con esta versión mejorada:
-
-const drawText = (text, x, y, options = {}) => {
-  try {
-    const {
-      font = helveticaFont,
-      size = 10,
-      color = darkGray
-    } = options;
-    
-    // Asegurar que el texto sea válido
-    let textStr = '';
-    if (text === null || text === undefined) {
-      textStr = 'N/A';
-    } else {
-      textStr = String(text).trim();
-      if (textStr === '') {
-        textStr = 'N/A';
-      }
-    }
-    
-    // Limitar longitud y caracteres especiales
-    textStr = textStr.substring(0, 100).replace(/[^\x00-\x7F]/g, ''); // Remover caracteres no ASCII
-    
-    // Verificar que la fuente esté disponible antes de usar
-    if (!font) {
-      console.warn('Font not available, using default');
-      currentPage.drawText(textStr, {
-        x,
-        y,
-        size,
-        color
-      });
-    } else {
-      currentPage.drawText(textStr, {
-        x,
-        y,
-        size,
-        font,
-        color
-      });
-    }
-  } catch (error) {
-    console.error('Error drawing text:', error);
-    console.error('Text value:', text);
-    console.error('Options:', options);
-    
-    // Fallback más seguro sin fuente específica
-    try {
-      currentPage.drawText('Error displaying text', {
-        x,
-        y,
-        size: 8,
-        color: rgb(0.8, 0, 0) // Rojo para error
-      });
-    } catch (fallbackError) {
-      console.error('Even fallback text failed:', fallbackError);
-    }
-  }
-};
-
-// 2. ✅ NUEVA ESTRUCTURA DE PÁGINAS
-// Reemplazar la lógica de generación de contenido con esta nueva estructura:
+// CAMBIOS ESPECÍFICOS para el código funcional existente
+// Usar este código como reemplazo completo de la función generateSupplierEvaluationPDF
 
 export const generateSupplierEvaluationPDF = async (supplierData) => {
   try {
     console.log('PDF Service: Starting PDF generation...');
+    console.log('PDF Service: Supplier data received:', supplierData);
     
+    // Create a new PDF document
     const pdfDoc = await PDFDocument.create();
+    console.log('PDF Service: PDF document created');
+    
+    const helveticaFont = await pdfDoc.embedFont(StandardFonts.Helvetica);
+    const helveticaBoldFont = await pdfDoc.embedFont(StandardFonts.HelveticaBold);
+    console.log('PDF Service: Fonts embedded');
+    
+    // Define colors - Valmont branding
+    const primaryBlue = rgb(0/255, 95/255, 131/255);
+    const lightBlue = rgb(0/255, 144/255, 198/255);
+    const darkGray = rgb(51/255, 51/255, 51/255);
+    const lightGray = rgb(128/255, 128/255, 128/255);
+    const white = rgb(1, 1, 1);
+    const successGreen = rgb(16/255, 185/255, 129/255);
+    const warningOrange = rgb(245/255, 158/255, 11/255);
+    const errorRed = rgb(239/255, 68/255, 68/255);
+    
+    // Page dimensions
     const pageWidth = 595.28; // A4 width in points
     const pageHeight = 841.89; // A4 height in points
     const margin = 50;
     const contentWidth = pageWidth - (2 * margin);
     
-    // Cargar fuentes con manejo de errores
-    let helveticaFont, helveticaBoldFont;
-    try {
-      helveticaFont = await pdfDoc.embedFont(StandardFonts.Helvetica);
-      helveticaBoldFont = await pdfDoc.embedFont(StandardFonts.HelveticaBold);
-    } catch (fontError) {
-      console.warn('Error loading fonts:', fontError);
-      helveticaFont = null;
-      helveticaBoldFont = null;
-    }
-    
-    // Colores
-    const primaryBlue = rgb(0, 0.373, 0.514);
-    const lightBlue = rgb(0.2, 0.6, 0.8);
-    const darkGray = rgb(0.2, 0.2, 0.2);
-    const lightGray = rgb(0.5, 0.5, 0.5);
-    const white = rgb(1, 1, 1);
-    const errorRed = rgb(0.8, 0, 0);
-    const successGreen = rgb(0.0, 0.7, 0.0);
-    const warningOrange = rgb(1.0, 0.6, 0.0);
-
-    // ===========================================
-    // PÁGINA 1: GENERAL INFORMATION + CERTIFICATIONS
-    // ===========================================
-    
     let currentPage = pdfDoc.addPage([pageWidth, pageHeight]);
     let yPosition = pageHeight - margin;
     
-    console.log('PDF Service: Creating Page 1...');
+    console.log('PDF Service: Page created, starting content...');
     
-    // Helper function para nueva página
+    // ✅ CAMBIO 1: Helper function modificada para soportar forceNewPage
     const addNewPageIfNeeded = (spaceNeeded, forceNewPage = false) => {
       if (forceNewPage || yPosition - spaceNeeded < margin + 50) {
         currentPage = pdfDoc.addPage([pageWidth, pageHeight]);
@@ -115,7 +45,47 @@ export const generateSupplierEvaluationPDF = async (supplierData) => {
       return false;
     };
 
-    // Header de la página 1
+    // ✅ CAMBIO 2: Helper function mejorada para evitar "Error displaying text"
+    const drawText = (text, x, y, options = {}) => {
+      try {
+        const {
+          font = helveticaFont,
+          size = 10,
+          color = darkGray
+        } = options;
+        
+        // Validación mejorada para evitar errores
+        let textStr = 'N/A';
+        if (text !== null && text !== undefined) {
+          textStr = String(text).trim();
+          if (textStr === '') textStr = 'N/A';
+        }
+        
+        // Limitar longitud y limpiar caracteres problemáticos
+        textStr = textStr.substring(0, 100).replace(/[^\x00-\x7F]/g, '');
+        
+        currentPage.drawText(textStr, {
+          x,
+          y,
+          size,
+          font,
+          color
+        });
+      } catch (error) {
+        console.error('Error drawing text:', error);
+        // Draw error placeholder
+        currentPage.drawText('Error displaying text', {
+          x,
+          y,
+          size: 8,
+          font: helveticaFont,
+          color: errorRed
+        });
+      }
+    };
+
+    // Document Header
+    console.log('PDF Service: Drawing header...');
     currentPage.drawRectangle({
       x: 0,
       y: pageHeight - 80,
@@ -138,7 +108,11 @@ export const generateSupplierEvaluationPDF = async (supplierData) => {
     
     yPosition = pageHeight - 100;
 
-    // ===== GENERAL INFORMATION SECTION =====
+    // Basic Information Section
+    console.log('PDF Service: Drawing basic information...');
+    addNewPageIfNeeded(150);
+    
+    // Section header
     currentPage.drawRectangle({
       x: margin,
       y: yPosition - 20,
@@ -155,7 +129,7 @@ export const generateSupplierEvaluationPDF = async (supplierData) => {
     
     yPosition -= 45;
     
-    // Campos básicos
+    // Basic info fields
     const basicFields = [
       ['Supplier Name:', supplierData.supplierName || 'N/A'],
       ['Category:', supplierData.category || 'N/A'],
@@ -167,6 +141,7 @@ export const generateSupplierEvaluationPDF = async (supplierData) => {
     ];
     
     basicFields.forEach(([label, value]) => {
+      addNewPageIfNeeded(20);
       drawText(label, margin + 10, yPosition, {
         font: helveticaBoldFont,
         size: 9
@@ -179,7 +154,10 @@ export const generateSupplierEvaluationPDF = async (supplierData) => {
     
     yPosition -= 20;
 
-    // ===== COMPANY CERTIFICATIONS SECTION =====
+    // Company Certifications
+    console.log('PDF Service: Drawing certifications...');
+    addNewPageIfNeeded(100);
+    
     currentPage.drawRectangle({
       x: margin,
       y: yPosition - 20,
@@ -196,28 +174,35 @@ export const generateSupplierEvaluationPDF = async (supplierData) => {
     
     yPosition -= 45;
     
-    // ✅ FIX PARA CERTIFICACIONES - Validación mejorada
+    // ✅ CAMBIO 3: Certificaciones con validación mejorada
     const certifications = [];
     
-    // Verificar que supplierData.certifications existe y es un objeto
+    console.log('PDF Service: Processing certifications:', supplierData.certifications);
+    
     if (supplierData.certifications && typeof supplierData.certifications === 'object') {
-      if (supplierData.certifications.iso9001 === true) {
-        certifications.push('✓ ISO 9001:2015');
-      }
-      if (supplierData.certifications.iso14001 === true) {
-        certifications.push('✓ ISO 14001:2015');
-      }
-      if (supplierData.certifications.iso45001 === true) {
-        certifications.push('✓ ISO 45001/OHSAS 18001');
-      }
-      if (supplierData.certifications.en1090 === true) {
-        certifications.push('✓ EN 1090 (Steel Structures)');
-      }
-      if (supplierData.certifications.ceMarking === true) {
-        certifications.push('✓ CE Marking');
-      }
-      if (supplierData.certifications.others && supplierData.certifications.others.trim() !== '') {
-        certifications.push(`✓ Others: ${supplierData.certifications.others.trim()}`);
+      try {
+        if (supplierData.certifications.iso9001 === true) {
+          certifications.push('✓ ISO 9001:2015');
+        }
+        if (supplierData.certifications.iso14001 === true) {
+          certifications.push('✓ ISO 14001:2015');
+        }
+        if (supplierData.certifications.iso45001 === true) {
+          certifications.push('✓ ISO 45001/OHSAS 18001');
+        }
+        if (supplierData.certifications.en1090 === true) {
+          certifications.push('✓ EN 1090 (Steel Structures)');
+        }
+        if (supplierData.certifications.ceMarking === true) {
+          certifications.push('✓ CE Marking');
+        }
+        if (supplierData.certifications.others && 
+            String(supplierData.certifications.others).trim() !== '') {
+          certifications.push(`✓ Others: ${String(supplierData.certifications.others).trim()}`);
+        }
+      } catch (certError) {
+        console.error('Error processing individual certifications:', certError);
+        certifications.push('Error processing certifications');
       }
     }
     
@@ -225,49 +210,25 @@ export const generateSupplierEvaluationPDF = async (supplierData) => {
       certifications.push('No certifications specified');
     }
     
-    // Dibujar certificaciones con validación extra
+    // Dibujar certificaciones con manejo de errores individual
     certifications.forEach((cert, index) => {
       try {
+        addNewPageIfNeeded(15);
         console.log(`Drawing certification ${index + 1}:`, cert);
         drawText(cert, margin + 20, yPosition, { size: 9 });
         yPosition -= 15;
       } catch (certError) {
         console.error(`Error drawing certification ${index + 1}:`, certError);
-        drawText('Error loading certification', margin + 20, yPosition, { 
-          size: 9, 
-          color: errorRed 
-        });
-        yPosition -= 15;
+        yPosition -= 15; // Continuar con la siguiente
       }
     });
+    
+    yPosition -= 20;
 
-    // ===========================================
-    // PÁGINA 2: KPI EVALUATION RESULTS + FIRMA
-    // ===========================================
+    // ✅ CAMBIO 4: KPI Evaluation Results - FORZAR NUEVA PÁGINA
+    console.log('PDF Service: Drawing KPI results...');
+    addNewPageIfNeeded(0, true); // ✅ Forzar nueva página aquí
     
-    // ✅ FORZAR NUEVA PÁGINA para KPI Results
-    addNewPageIfNeeded(0, true); // forceNewPage = true
-    
-    console.log('PDF Service: Creating Page 2...');
-    
-    // Header de la página 2
-    currentPage.drawRectangle({
-      x: 0,
-      y: pageHeight - 40,
-      width: pageWidth,
-      height: 40,
-      color: primaryBlue
-    });
-    
-    drawText('SUPPLIER EVALUATION REPORT - PAGE 2', margin, pageHeight - 25, {
-      font: helveticaBoldFont,
-      size: 14,
-      color: white
-    });
-    
-    yPosition = pageHeight - 70;
-
-    // ===== KPI EVALUATION RESULTS SECTION =====
     currentPage.drawRectangle({
       x: margin,
       y: yPosition - 20,
@@ -284,24 +245,7 @@ export const generateSupplierEvaluationPDF = async (supplierData) => {
     
     yPosition -= 45;
     
-    // KPI Descriptions (definir si no existe)
-    const KPI_DESCRIPTIONS = {
-      kpi1: 'Production Capacity & Equipment',
-      kpi2: 'Quality Control & Testing',
-      kpi3: 'Raw Materials & Supply Chain',
-      kpi4: 'Human Resources & Training',
-      kpi5: 'Logistics & Delivery'
-    };
-    
-    const SCORE_LABELS = {
-      0: 'Not Scored',
-      1: 'Poor',
-      2: 'Fair',
-      3: 'Good',
-      4: 'Excellent'
-    };
-    
-    // Dibujar KPIs
+    // KPI Results
     Object.entries(KPI_DESCRIPTIONS).forEach(([kpiKey, description]) => {
       addNewPageIfNeeded(60);
       
@@ -316,7 +260,7 @@ export const generateSupplierEvaluationPDF = async (supplierData) => {
       });
       yPosition -= 20;
       
-      // Score con color
+      // Score with color
       let scoreColor = lightGray;
       if (score >= 4) scoreColor = successGreen;
       else if (score >= 3) scoreColor = lightBlue;
@@ -341,10 +285,43 @@ export const generateSupplierEvaluationPDF = async (supplierData) => {
         size: 9
       });
       
-      yPosition -= 35;
+      yPosition -= 25;
+      
+      // Add KPI details if they exist
+      const details = supplierData.kpiDetails?.[kpiKey];
+      if (details && typeof details === 'object') {
+        Object.entries(details).forEach(([key, value]) => {
+          if (value !== undefined && value !== '' && value !== false && value !== 0) {
+            addNewPageIfNeeded(15);
+            
+            let displayValue = value;
+            if (typeof value === 'boolean') {
+              displayValue = value ? 'Yes' : 'No';
+            }
+            
+            const fieldName = key.replace(/([A-Z])/g, ' $1')
+                                 .replace(/^./, str => str.toUpperCase())
+                                 .replace(/([a-z])([A-Z])/g, '$1 $2');
+            
+            drawText(`${fieldName}:`, margin + 40, yPosition, {
+              font: helveticaBoldFont,
+              size: 8
+            });
+            drawText(displayValue.toString(), margin + 200, yPosition, {
+              size: 8
+            });
+            yPosition -= 12;
+          }
+        });
+      }
+      
+      yPosition -= 10;
     });
 
-    // GAI y Clasificación
+    // GAI and Classification
+    console.log('PDF Service: Drawing classification...');
+    addNewPageIfNeeded(80);
+    
     const totalScore = Object.values(supplierData.kpiScores || {}).reduce((sum, score) => sum + (score || 0), 0);
     const gai = supplierData.gai || 0;
     const supplierClass = supplierData.supplierClass || 'C';
@@ -353,7 +330,14 @@ export const generateSupplierEvaluationPDF = async (supplierData) => {
     if (supplierClass === 'A') classColor = successGreen;
     else if (supplierClass === 'B') classColor = warningOrange;
     
-    addNewPageIfNeeded(80);
+    currentPage.drawRectangle({
+      x: margin,
+      y: yPosition - 60,
+      width: contentWidth,
+      height: 60,
+      color: classColor,
+      opacity: 0.1
+    });
     
     currentPage.drawRectangle({
       x: margin,
@@ -389,8 +373,9 @@ export const generateSupplierEvaluationPDF = async (supplierData) => {
     
     yPosition -= 40;
 
-    // Observations (si existen)
+    // Observations
     if (supplierData.observations?.strengths || supplierData.observations?.improvements || supplierData.observations?.actions) {
+      console.log('PDF Service: Drawing observations...');
       addNewPageIfNeeded(100);
       
       currentPage.drawRectangle({
@@ -446,12 +431,18 @@ export const generateSupplierEvaluationPDF = async (supplierData) => {
       }
     }
 
-    // ✅ NUEVA SECCIÓN DE FIRMA AL FINAL DE LA PÁGINA 2
+    // ✅ CAMBIO 5: NUEVA SECCIÓN DE FIRMA al final de la segunda página
+    console.log('PDF Service: Adding signature section...');
+    
+    // Asegurar espacio para la firma
     addNewPageIfNeeded(120);
     
-    // Si no hay suficiente espacio, ir al final de la página
-    if (yPosition < 150) {
-      yPosition = 150;
+    // Si estamos muy arriba, bajar un poco, si estamos muy abajo, subir
+    if (yPosition > pageHeight - 200) {
+      yPosition = Math.min(yPosition, pageHeight - 200);
+    }
+    if (yPosition < 180) {
+      yPosition = 180;
     }
     
     // Sección de firma
@@ -495,7 +486,7 @@ export const generateSupplierEvaluationPDF = async (supplierData) => {
       size: 9
     });
     
-    // Línea para fecha de aprobación
+    // Línea para fecha de aprobación (lado derecho)
     yPosition -= 25;
     currentPage.drawLine({
       start: { x: margin + 350, y: yPosition + 15 },
@@ -509,40 +500,48 @@ export const generateSupplierEvaluationPDF = async (supplierData) => {
       size: 10
     });
 
-    // Footer en todas las páginas
+    // Footer on each page
+    console.log('PDF Service: Adding footers...');
     const pages = pdfDoc.getPages();
     pages.forEach((page, index) => {
+      // Page number
       page.drawText(`Page ${index + 1} of ${pages.length}`, {
         x: pageWidth - 100,
         y: 30,
         size: 8,
-        font: helveticaFont || undefined,
+        font: helveticaFont,
         color: lightGray
       });
       
+      // Generation date
       page.drawText(`Generated on ${new Date().toLocaleDateString()}`, {
         x: margin,
         y: 30,
         size: 8,
-        font: helveticaFont || undefined,
+        font: helveticaFont,
         color: lightGray
       });
       
+      // Company footer
       page.drawText('Valmont Solar - Quality Control Department', {
         x: margin,
         y: 15,
         size: 8,
-        font: helveticaFont || undefined,
+        font: helveticaFont,
         color: lightGray
       });
     });
 
-    // Guardar y descargar
+    // Save and download
+    console.log('PDF Service: Saving and downloading PDF...');
     const pdfBytes = await pdfDoc.save();
+    console.log('PDF Service: PDF bytes generated, size:', pdfBytes.length);
+    
     const blob = new Blob([pdfBytes], { type: 'application/pdf' });
     const url = URL.createObjectURL(blob);
     
     const fileName = `Supplier_Evaluation_${(supplierData.supplierName || 'Unknown').replace(/[^a-z0-9]/gi, '_')}_${new Date().toISOString().split('T')[0]}.pdf`;
+    console.log('PDF Service: File name:', fileName);
     
     const link = document.createElement('a');
     link.href = url;
@@ -553,10 +552,11 @@ export const generateSupplierEvaluationPDF = async (supplierData) => {
     
     URL.revokeObjectURL(url);
     
-    console.log('✅ PDF generado exitosamente con nueva estructura');
+    console.log('✅ PDF generated successfully with all requested changes');
     
   } catch (error) {
-    console.error('Error generando PDF:', error);
+    console.error('PDF Service: Error generating PDF:', error);
+    console.error('PDF Service: Error stack:', error.stack);
     throw new Error(`Failed to generate PDF report: ${error.message}`);
   }
 };

@@ -1363,6 +1363,32 @@ const prepareKPIComparisonData = (categoryFilter = 'All Categories') => {
   )}
 </div>
 
+                  {/* GAI Distribution */}
+          <div style={{ 
+            backgroundColor: 'white', 
+            padding: '1.5rem', 
+            borderRadius: '12px', 
+            boxShadow: '0 4px 20px rgba(0, 0, 0, 0.1)' 
+          }}>
+            <h3 style={{ marginBottom: '1rem', color: '#1f2937' }}>GAI Score Distribution</h3>
+            <ResponsiveContainer width="100%" height={300}>
+              <BarChart data={kpiData}>
+                <CartesianGrid strokeDasharray="3 3" />
+                <XAxis dataKey="name" />
+                <YAxis domain={[0, 100]} />
+                <Tooltip 
+                  formatter={(value) => [`${value}%`, 'GAI Score']}
+                  labelFormatter={(label) => {
+                    const supplier = kpiData.find(s => s.name === label);
+                    return supplier ? supplier.fullName : label;
+                  }}
+                />
+                <Bar dataKey="GAI" fill="#10b981" name="GAI Score (%)" />
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
+          
+
      {/* Supplier Comparison Radar */}
 <div style={{ 
   backgroundColor: 'white', 
@@ -1622,67 +1648,9 @@ const prepareKPIComparisonData = (categoryFilter = 'All Categories') => {
               </PieChart>
             </ResponsiveContainer>
           </div>
+          
 
-          {/* Capacity vs Revenue Scatter */}
-          {capacityData.length > 0 && (
-            <div style={{ 
-              backgroundColor: 'white', 
-              padding: '1.5rem', 
-              borderRadius: '12px', 
-              boxShadow: '0 4px 20px rgba(0, 0, 0, 0.1)' 
-            }}>
-              <h3 style={{ marginBottom: '1rem', color: '#1f2937' }}>Employee Count vs Annual Revenue</h3>
-              <ResponsiveContainer width="100%" height={300}>
-                <ScatterChart>
-                  <CartesianGrid />
-                  <XAxis dataKey="x" name="Employees" />
-                  <YAxis dataKey="y" name="Revenue (USD)" />
-                  <Tooltip 
-                    cursor={{ strokeDasharray: '3 3' }}
-                    formatter={(value, name) => [
-                      name === 'x' ? `${value} employees` : `$${value.toLocaleString()}`,
-                      name === 'x' ? 'Employees' : 'Annual Revenue'
-                    ]}
-                    labelFormatter={(label, payload) => {
-                      if (payload && payload.length > 0) {
-                        const data = payload[0].payload;
-                        return `${data.name} (GAI: ${data.gai}%, Class ${data.class})`;
-                      }
-                      return label;
-                    }}
-                  />
-                  <Scatter name="Suppliers" data={capacityData} fill="#8884d8" />
-                </ScatterChart>
-              </ResponsiveContainer>
-            </div>
-          )}
-
-          {/* GAI Distribution */}
-          <div style={{ 
-            backgroundColor: 'white', 
-            padding: '1.5rem', 
-            borderRadius: '12px', 
-            boxShadow: '0 4px 20px rgba(0, 0, 0, 0.1)' 
-          }}>
-            <h3 style={{ marginBottom: '1rem', color: '#1f2937' }}>GAI Score Distribution</h3>
-            <ResponsiveContainer width="100%" height={300}>
-              <BarChart data={kpiData}>
-                <CartesianGrid strokeDasharray="3 3" />
-                <XAxis dataKey="name" />
-                <YAxis domain={[0, 100]} />
-                <Tooltip 
-                  formatter={(value) => [`${value}%`, 'GAI Score']}
-                  labelFormatter={(label) => {
-                    const supplier = kpiData.find(s => s.name === label);
-                    return supplier ? supplier.fullName : label;
-                  }}
-                />
-                <Bar dataKey="GAI" fill="#10b981" name="GAI Score (%)" />
-              </BarChart>
-            </ResponsiveContainer>
-          </div>
-
-          {/* Performance Trends by Category */}
+              {/* Performance Trends by Category */}
           <div style={{ 
             backgroundColor: 'white', 
             padding: '1.5rem', 

@@ -238,15 +238,15 @@ export const generateSupplierEvaluationPDF = async (supplierData) => {
         borderWidth: 1
       });
       
-      // Ejes del gráfico (sin título para evitar superposición)
-      const chartMargin = 20;
+      // Ejes del gráfico con más espacio
+      const chartMargin = 25;
       const chartWidth = width - (2 * chartMargin);
-      const chartHeight = height - 30;
+      const chartHeight = height - 50; // Más espacio arriba y abajo
       const barWidth = chartWidth / 7; // Espacio para 5 barras + espacios
       
       // Eje Y (vertical) - líneas de puntuación
       for (let i = 0; i <= 4; i++) {
-        const lineY = y - height + chartMargin + (i * chartHeight / 4);
+        const lineY = y - height + chartMargin + 15 + (i * (chartHeight - 30) / 4); // Más margen
         
         // Línea horizontal sutil
         currentPage.drawRectangle({
@@ -265,11 +265,11 @@ export const generateSupplierEvaluationPDF = async (supplierData) => {
         });
       }
       
-      // Dibujar barras para cada KPI
+      // Dibujar barras para cada KPI con más espacio
       Object.entries(kpiScores).forEach(([kpiKey, score], index) => {
         const barX = x + chartMargin + (index * barWidth) + (barWidth * 0.2);
-        const barHeight = (score / 4) * chartHeight;
-        const barY = y - height + chartMargin;
+        const barHeight = (score / 4) * (chartHeight - 30); // Ajustar a la nueva altura
+        const barY = y - height + chartMargin + 15; // Más margen inferior
         
         // Barra con gradiente simulado
         currentPage.drawRectangle({
@@ -281,14 +281,14 @@ export const generateSupplierEvaluationPDF = async (supplierData) => {
         });
         
         // Valor encima de la barra
-        drawText(score.toString(), barX + (barWidth * 0.2), barY + barHeight + 5, {
+        drawText(score.toString(), barX + (barWidth * 0.2), barY + barHeight + 8, {
           font: helveticaBoldFont,
           size: 9,
           color: primaryBlue
         });
         
         // Etiqueta del KPI
-        drawText(kpiKey.toUpperCase(), barX + (barWidth * 0.1), barY - 15, {
+        drawText(kpiKey.toUpperCase(), barX + (barWidth * 0.1), barY - 12, {
           font: helveticaBoldFont,
           size: 7,
           color: primaryBlue
@@ -603,11 +603,11 @@ export const generateSupplierEvaluationPDF = async (supplierData) => {
 
     // ✅ EVALUATION SUMMARY MEJORADO CON GRÁFICO
     console.log('PDF Service: Drawing evaluation summary...');
-    addNewPageIfNeeded(180);
+    addNewPageIfNeeded(220);
     
-    const summaryHeight = 160;
+    const summaryHeight = 200; // Aumentado para más espacio
     
-    // Fondo degradado simulado para summary
+    // Fondo degradado simulado para summary (más grande)
     currentPage.drawRectangle({
       x: margin,
       y: yPosition - summaryHeight,
@@ -619,7 +619,7 @@ export const generateSupplierEvaluationPDF = async (supplierData) => {
     });
     
     // Título del summary
-    drawText('📊 EVALUATION SUMMARY', margin + contentWidth/2 - 50, yPosition - 20, {
+    drawText('📊 EVALUATION SUMMARY', margin + contentWidth/2 - 60, yPosition - 20, {
       font: helveticaBoldFont,
       size: 14,
       color: primaryBlue
@@ -634,13 +634,14 @@ export const generateSupplierEvaluationPDF = async (supplierData) => {
     if (supplierClass === 'A') classColor = successGreen;
     else if (supplierClass === 'B') classColor = warningOrange;
     
-    // NUEVA ORGANIZACIÓN: Classification Badge arriba y centrado
-    const classBoxWidth = 100;
-    const classBoxHeight = 50;
+    // Classification Badge centrado arriba de los stats (no del gráfico)
+    const classBoxWidth = 90;
+    const classBoxHeight = 45;
+    const classX = margin + 115; // Centrado arriba de los dos cuadros de stats
     const classY = yPosition - 50;
     
     currentPage.drawRectangle({
-      x: margin + (contentWidth / 2) - (classBoxWidth / 2),
+      x: classX,
       y: classY - classBoxHeight,
       width: classBoxWidth,
       height: classBoxHeight,
@@ -651,31 +652,31 @@ export const generateSupplierEvaluationPDF = async (supplierData) => {
     
     // Badge circular para la clase
     currentPage.drawRectangle({
-      x: margin + (contentWidth / 2) - 15,
+      x: classX + 30,
       y: classY - 25,
       width: 30,
-      height: 20,
+      height: 18,
       color: classColor
     });
-    drawText(supplierClass, margin + (contentWidth / 2) - 5, classY - 18, {
+    drawText(supplierClass, classX + 42, classY - 18, {
       font: helveticaBoldFont,
-      size: 14,
+      size: 12,
       color: white
     });
-    drawText('Classification', margin + (contentWidth / 2) - 20, classY - 40, {
+    drawText('Classification', classX + 15, classY - 38, {
       font: helveticaFont,
       size: 8,
       color: lightGray
     });
     
-    // Stats en cuadros DEBAJO de la clasificación
+    // Stats en cuadros DEBAJO de la clasificación y bien separados
     const statBoxWidth = 80;
     const statBoxHeight = 50;
-    const statY = yPosition - 110;
+    const statY = yPosition - 120; // Más abajo para dar espacio
     
     // Total KPI Score
     currentPage.drawRectangle({
-      x: margin + 50,
+      x: margin + 40,
       y: statY - statBoxHeight,
       width: statBoxWidth,
       height: statBoxHeight,
@@ -683,12 +684,12 @@ export const generateSupplierEvaluationPDF = async (supplierData) => {
       borderColor: rgb(0.85, 0.85, 0.85),
       borderWidth: 1
     });
-    drawText(`${totalScore}/20`, margin + 75, statY - 20, {
+    drawText(`${totalScore}/20`, margin + 65, statY - 20, {
       font: helveticaBoldFont,
       size: 16,
       color: primaryBlue
     });
-    drawText('Total KPI Score', margin + 55, statY - 40, {
+    drawText('Total KPI Score', margin + 45, statY - 40, {
       font: helveticaFont,
       size: 8,
       color: lightGray
@@ -696,7 +697,7 @@ export const generateSupplierEvaluationPDF = async (supplierData) => {
     
     // G.A.I.
     currentPage.drawRectangle({
-      x: margin + 150,
+      x: margin + 140,
       y: statY - statBoxHeight,
       width: statBoxWidth,
       height: statBoxHeight,
@@ -704,23 +705,23 @@ export const generateSupplierEvaluationPDF = async (supplierData) => {
       borderColor: rgb(0.85, 0.85, 0.85),
       borderWidth: 1
     });
-    drawText(`${gai}%`, margin + 180, statY - 20, {
+    drawText(`${gai}%`, margin + 170, statY - 20, {
       font: helveticaBoldFont,
       size: 16,
       color: primaryBlue
     });
-    drawText('G.A.I.', margin + 185, statY - 40, {
+    drawText('G.A.I.', margin + 175, statY - 40, {
       font: helveticaFont,
       size: 8,
       color: lightGray
     });
     
-    // Gráfico de barras KPI (ahora con más espacio)
-    const chartWidth = 180;
-    const chartHeight = 100;
-    drawKPIChart(margin + contentWidth - chartWidth - 20, yPosition - 50, chartWidth, chartHeight, kpiScores);
+    // Gráfico de barras KPI con más altura y mejor posicionado
+    const chartWidth = 200;
+    const chartHeight = 140; // Aumentado significativamente
+    drawKPIChart(margin + contentWidth - chartWidth - 15, yPosition - 45, chartWidth, chartHeight, kpiScores);
     
-    yPosition -= summaryHeight + 20;
+    yPosition -= summaryHeight + 25;
 
     // ✅ OBSERVATIONS CON CUADROS DE COLORES
     console.log('PDF Service: Drawing observations...');

@@ -717,7 +717,7 @@ export const generateSupplierEvaluationPDF = async (supplierData) => {
     });
     
     // Gráfico de barras KPI con más altura y mejor posicionado
-    const chartWidth = 150;
+    const chartWidth = 200;
     const chartHeight = 140; // Aumentado significativamente
     drawKPIChart(margin + contentWidth - chartWidth - 15, yPosition - 45, chartWidth, chartHeight, kpiScores);
     

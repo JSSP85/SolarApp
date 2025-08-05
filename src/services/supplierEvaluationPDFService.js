@@ -238,17 +238,10 @@ export const generateSupplierEvaluationPDF = async (supplierData) => {
         borderWidth: 1
       });
       
-      // Título del gráfico
-      drawText('KPI Performance Overview', x + width/2 - 40, y - 15, {
-        font: helveticaBoldFont,
-        size: 10,
-        color: primaryBlue
-      });
-      
-      // Ejes del gráfico
-      const chartMargin = 30;
+      // Ejes del gráfico (sin título para evitar superposición)
+      const chartMargin = 20;
       const chartWidth = width - (2 * chartMargin);
-      const chartHeight = height - 50;
+      const chartHeight = height - 30;
       const barWidth = chartWidth / 7; // Espacio para 5 barras + espacios
       
       // Eje Y (vertical) - líneas de puntuación
@@ -641,60 +634,16 @@ export const generateSupplierEvaluationPDF = async (supplierData) => {
     if (supplierClass === 'A') classColor = successGreen;
     else if (supplierClass === 'B') classColor = warningOrange;
     
-    // Stats en cuadros
-    const statBoxWidth = 80;
-    const statBoxHeight = 50;
-    const statY = yPosition - 80;
-    
-    // Total KPI Score
-    currentPage.drawRectangle({
-      x: margin + 20,
-      y: statY - statBoxHeight,
-      width: statBoxWidth,
-      height: statBoxHeight,
-      color: white,
-      borderColor: rgb(0.85, 0.85, 0.85),
-      borderWidth: 1
-    });
-    drawText(`${totalScore}/20`, margin + 45, statY - 20, {
-      font: helveticaBoldFont,
-      size: 16,
-      color: primaryBlue
-    });
-    drawText('Total KPI Score', margin + 25, statY - 40, {
-      font: helveticaFont,
-      size: 8,
-      color: lightGray
-    });
-    
-    // G.A.I.
-    currentPage.drawRectangle({
-      x: margin + 120,
-      y: statY - statBoxHeight,
-      width: statBoxWidth,
-      height: statBoxHeight,
-      color: white,
-      borderColor: rgb(0.85, 0.85, 0.85),
-      borderWidth: 1
-    });
-    drawText(`${gai}%`, margin + 150, statY - 20, {
-      font: helveticaBoldFont,
-      size: 16,
-      color: primaryBlue
-    });
-    drawText('G.A.I.', margin + 155, statY - 40, {
-      font: helveticaFont,
-      size: 8,
-      color: lightGray
-    });
-    
-    // Classification Badge
+    // NUEVA ORGANIZACIÓN: Classification Badge arriba y centrado
     const classBoxWidth = 100;
+    const classBoxHeight = 50;
+    const classY = yPosition - 50;
+    
     currentPage.drawRectangle({
-      x: margin + 220,
-      y: statY - statBoxHeight,
+      x: margin + (contentWidth / 2) - (classBoxWidth / 2),
+      y: classY - classBoxHeight,
       width: classBoxWidth,
-      height: statBoxHeight,
+      height: classBoxHeight,
       color: white,
       borderColor: classColor,
       borderWidth: 3
@@ -702,27 +651,74 @@ export const generateSupplierEvaluationPDF = async (supplierData) => {
     
     // Badge circular para la clase
     currentPage.drawRectangle({
-      x: margin + 255,
-      y: statY - 25,
+      x: margin + (contentWidth / 2) - 15,
+      y: classY - 25,
       width: 30,
       height: 20,
       color: classColor
     });
-    drawText(supplierClass, margin + 265, statY - 18, {
+    drawText(supplierClass, margin + (contentWidth / 2) - 5, classY - 18, {
       font: helveticaBoldFont,
       size: 14,
       color: white
     });
-    drawText('Classification', margin + 240, statY - 40, {
+    drawText('Classification', margin + (contentWidth / 2) - 20, classY - 40, {
       font: helveticaFont,
       size: 8,
       color: lightGray
     });
     
-    // Gráfico de barras KPI
+    // Stats en cuadros DEBAJO de la clasificación
+    const statBoxWidth = 80;
+    const statBoxHeight = 50;
+    const statY = yPosition - 110;
+    
+    // Total KPI Score
+    currentPage.drawRectangle({
+      x: margin + 50,
+      y: statY - statBoxHeight,
+      width: statBoxWidth,
+      height: statBoxHeight,
+      color: white,
+      borderColor: rgb(0.85, 0.85, 0.85),
+      borderWidth: 1
+    });
+    drawText(`${totalScore}/20`, margin + 75, statY - 20, {
+      font: helveticaBoldFont,
+      size: 16,
+      color: primaryBlue
+    });
+    drawText('Total KPI Score', margin + 55, statY - 40, {
+      font: helveticaFont,
+      size: 8,
+      color: lightGray
+    });
+    
+    // G.A.I.
+    currentPage.drawRectangle({
+      x: margin + 150,
+      y: statY - statBoxHeight,
+      width: statBoxWidth,
+      height: statBoxHeight,
+      color: white,
+      borderColor: rgb(0.85, 0.85, 0.85),
+      borderWidth: 1
+    });
+    drawText(`${gai}%`, margin + 180, statY - 20, {
+      font: helveticaBoldFont,
+      size: 16,
+      color: primaryBlue
+    });
+    drawText('G.A.I.', margin + 185, statY - 40, {
+      font: helveticaFont,
+      size: 8,
+      color: lightGray
+    });
+    
+    // Gráfico de barras KPI (ahora con más espacio)
     const chartWidth = 180;
     const chartHeight = 100;
-    drawKPIChart(margin + contentWidth - chartWidth - 20, yPosition - 40, chartWidth, chartHeight, kpiScores);
+    drawKPIChart(margin + contentWidth - chartWidth - 20, yPosition - 50, chartWidth, chartHeight, kpiScores);
     
     yPosition -= summaryHeight + 20;
 

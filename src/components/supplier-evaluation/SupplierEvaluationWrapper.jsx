@@ -42,6 +42,7 @@ const SupplierEvaluationWrapper = ({ onBackToMenu }) => {
   const [selectedCategory, setSelectedCategory] = useState('All Categories');
   const [selectedSupplier1, setSelectedSupplier1] = useState('');
   const [selectedSupplier2, setSelectedSupplier2] = useState('');
+  const [selectedClass, setSelectedClass] = useState(null);
   
   // ✅ NUEVOS ESTADOS PARA FUNCIONALIDADES CRUD Y MODALES
   const [showDetailModal, setShowDetailModal] = useState(false);
@@ -574,6 +575,20 @@ const prepareKPIComparisonData = (categoryFilter = 'All Categories') => {
         class: supplier.supplierClass || getSupplierClass(supplier.gai || calculateGAI(supplier.kpiScores))
       }));
   };
+
+  const getSuppliersByClass = (supplierClass) => {
+  return suppliers.filter(supplier => {
+    const gai = supplier.gai || calculateGAI(supplier.kpiScores);
+    const currentClass = supplier.supplierClass || getSupplierClass(gai);
+    return currentClass === supplierClass;
+  }).map(supplier => ({
+    name: supplier.supplierName,
+    category: supplier.category,
+    gai: supplier.gai || calculateGAI(supplier.kpiScores),
+    location: supplier.location || 'Not specified',
+    auditDate: supplier.auditDate
+  }));
+};
 
   // ✅ FUNCIÓN PARA RENDERIZAR DETALLES DE KPI (misma que antes)
   const renderKPIDetailsSection = (kpiKey) => {
@@ -1620,34 +1635,226 @@ const prepareKPIComparisonData = (categoryFilter = 'All Categories') => {
   )}
 </div>
 
-          {/* Class Distribution */}
-          <div style={{ 
-            backgroundColor: 'white', 
-            padding: '1.5rem', 
-            borderRadius: '12px', 
-            boxShadow: '0 4px 20px rgba(0, 0, 0, 0.1)' 
-          }}>
-            <h3 style={{ marginBottom: '1rem', color: '#1f2937' }}>Supplier Class Distribution</h3>
-            <ResponsiveContainer width="100%" height={300}>
-              <PieChart>
-                <Pie
-                  data={classData}
-                  cx="50%"
-                  cy="50%"
-                  labelLine={false}
-                  label={({ name, value, percent }) => `${name}: ${value} (${(percent * 100).toFixed(0)}%)`}
-                  outerRadius={80}
-                  fill="#8884d8"
-                  dataKey="value"
-                >
-                  {classData.map((entry, index) => (
-                    <Cell key={`cell-${index}`} fill={entry.color} />
-                  ))}
-                </Pie>
-                <Tooltip />
-              </PieChart>
-            </ResponsiveContainer>
+{/* Class Distribution - MEJORADO CON INTERACTIVIDAD */}
+<div style={{ 
+  backgroundColor: 'white', 
+  padding: '1.5rem', 
+  borderRadius: '12px', 
+  boxShadow: '0 8px 25px rgba(0, 0, 0, 0.15)',
+  border: '1px solid #f1f5f9'
+}}>
+  <div style={{
+    display: 'flex',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: '1rem'
+  }}>
+    <h3 style={{ margin: 0, color: '#1f2937', fontSize: '1.125rem', fontWeight: '600' }}>
+      Supplier Class Distribution
+    </h3>
+    {selectedClass && (
+      <button
+        onClick={() => setSelectedClass(null)}
+        style={{
+          padding: '0.25rem 0.75rem',
+          backgroundColor: '#f3f4f6',
+          border: '1px solid #d1d5db',
+          borderRadius: '20px',
+          fontSize: '0.75rem',
+          cursor: 'pointer',
+          color: '#6b7280'
+        }}
+      >
+        ✕ Clear Selection
+      </button>
+    )}
+  </div>
+
+  <div style={{
+    padding: '0.75rem',
+    backgroundColor: '#f8fafc',
+    borderRadius: '8px',
+    marginBottom: '1rem',
+    fontSize: '0.875rem',
+    color: '#64748b',
+    borderLeft: '4px solid #3b82f6'
+  }}>
+    {selectedClass ? 
+      `Showing ${getSuppliersByClass(selectedClass).length} suppliers in Class ${selectedClass}` :
+      `Click on any segment to see detailed supplier breakdown • Total: ${suppliers.length} suppliers`
+    }
+  </div>
+
+  {!selectedClass ? (
+    // GRÁFICO PIE PRINCIPAL
+    <ResponsiveContainer width="100%" height={300}>
+      <PieChart>
+        <defs>
+          <linearGradient id="gradientA" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" stopColor="#10b981" stopOpacity={1} />
+            <stop offset="100%" stopColor="#059669" stopOpacity={1} />
+          </linearGradient>
+          <linearGradient id="gradientB" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" stopColor="#f59e0b" stopOpacity={1} />
+            <stop offset="100%" stopColor="#d97706" stopOpacity={1} />
+          </linearGradient>
+          <linearGradient id="gradientC" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" stopColor="#ef4444" stopOpacity={1} />
+            <stop offset="100%" stopColor="#dc2626" stopOpacity={1} />
+          </linearGradient>
+        </defs>
+        <Pie
+          data={classData}
+          cx="50%"
+          cy="50%"
+          labelLine={false}
+          label={({ name, value, percent }) => `${value} (${(percent * 100).toFixed(0)}%)`}
+          outerRadius={90}
+          innerRadius={40}
+          fill="#8884d8"
+          dataKey="value"
+          strokeWidth={3}
+          stroke="#ffffff"
+        >
+          {classData.map((entry, index) => (
+            <Cell 
+              key={`cell-${index}`} 
+              fill={
+                entry.name.includes('Class A') ? 'url(#gradientA)' :
+                entry.name.includes('Class B') ? 'url(#gradientB)' :
+                'url(#gradientC)'
+              }
+              style={{ 
+                cursor: 'pointer',
+                filter: 'drop-shadow(0 4px 8px rgba(0,0,0,0.1))'
+              }}
+              onClick={() => {
+                const className = entry.name.includes('Class A') ? 'A' : 
+                                entry.name.includes('Class B') ? 'B' : 'C';
+                setSelectedClass(className);
+              }}
+            />
+          ))}
+        </Pie>
+        <Tooltip 
+          formatter={(value, name) => [`${value} suppliers`, name]}
+          contentStyle={{
+            backgroundColor: '#1f2937',
+            border: 'none',
+            borderRadius: '8px',
+            color: 'white',
+            fontSize: '0.875rem',
+            boxShadow: '0 10px 25px rgba(0,0,0,0.2)'
+          }}
+        />
+      </PieChart>
+    </ResponsiveContainer>
+  ) : (
+    // VISTA DETALLADA DE LA CLASE SELECCIONADA
+    <div style={{ height: '300px', overflowY: 'auto' }}>
+      <div style={{
+        display: 'flex',
+        alignItems: 'center',
+        gap: '0.75rem',
+        marginBottom: '1rem',
+        padding: '0.75rem',
+        backgroundColor: 
+          selectedClass === 'A' ? '#f0fdf4' :
+          selectedClass === 'B' ? '#fffbeb' : '#fef2f2',
+        borderRadius: '8px',
+        border: `2px solid ${
+          selectedClass === 'A' ? '#10b981' :
+          selectedClass === 'B' ? '#f59e0b' : '#ef4444'
+        }`
+      }}>
+        <div style={{
+          width: '40px',
+          height: '40px',
+          borderRadius: '50%',
+          backgroundColor: 
+            selectedClass === 'A' ? '#10b981' :
+            selectedClass === 'B' ? '#f59e0b' : '#ef4444',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          color: 'white',
+          fontWeight: 'bold',
+          fontSize: '1.25rem'
+        }}>
+          {selectedClass}
+        </div>
+        <div>
+          <div style={{ fontWeight: '600', fontSize: '1rem', color: '#1f2937' }}>
+            Class {selectedClass} Suppliers
           </div>
+          <div style={{ fontSize: '0.875rem', color: '#6b7280' }}>
+            {selectedClass === 'A' ? 'Excellent Performance (≥80% GAI)' :
+             selectedClass === 'B' ? 'Good Performance (60-79% GAI)' :
+             'Needs Improvement (<60% GAI)'}
+          </div>
+        </div>
+      </div>
+
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+        {getSuppliersByClass(selectedClass).map((supplier, index) => (
+          <div key={index} style={{
+            padding: '1rem',
+            backgroundColor: '#f8fafc',
+            borderRadius: '8px',
+            border: '1px solid #e2e8f0',
+            transition: 'all 0.2s ease'
+          }}
+          onMouseEnter={(e) => {
+            e.target.style.backgroundColor = '#f1f5f9';
+            e.target.style.transform = 'translateY(-1px)';
+            e.target.style.boxShadow = '0 4px 12px rgba(0,0,0,0.1)';
+          }}
+          onMouseLeave={(e) => {
+            e.target.style.backgroundColor = '#f8fafc';
+            e.target.style.transform = 'translateY(0)';
+            e.target.style.boxShadow = 'none';
+          }}>
+            <div style={{ 
+              display: 'flex', 
+              justifyContent: 'space-between', 
+              alignItems: 'center',
+              marginBottom: '0.5rem'
+            }}>
+              <div style={{ fontWeight: '600', color: '#1f2937', fontSize: '0.95rem' }}>
+                {supplier.name}
+              </div>
+              <div style={{
+                padding: '0.25rem 0.75rem',
+                backgroundColor: 
+                  selectedClass === 'A' ? '#dcfce7' :
+                  selectedClass === 'B' ? '#fef3c7' : '#fee2e2',
+                color: 
+                  selectedClass === 'A' ? '#166534' :
+                  selectedClass === 'B' ? '#92400e' : '#991b1b',
+                borderRadius: '12px',
+                fontSize: '0.75rem',
+                fontWeight: '600'
+              }}>
+                {supplier.gai}% GAI
+              </div>
+            </div>
+            <div style={{ 
+              display: 'grid', 
+              gridTemplateColumns: '1fr 1fr', 
+              gap: '0.5rem',
+              fontSize: '0.8rem',
+              color: '#64748b'
+            }}>
+              <div>📂 {supplier.category}</div>
+              <div>📍 {supplier.location}</div>
+              <div>📅 {supplier.auditDate ? new Date(supplier.auditDate).toLocaleDateString() : 'No date'}</div>
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  )}
+</div>
           
 
               {/* Performance Trends by Category */}

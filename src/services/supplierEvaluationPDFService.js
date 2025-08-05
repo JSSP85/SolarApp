@@ -637,7 +637,7 @@ export const generateSupplierEvaluationPDF = async (supplierData) => {
     // Classification Badge centrado arriba de los stats (no del gráfico)
     const classBoxWidth = 90;
     const classBoxHeight = 45;
-    const classX = margin + 115; // Centrado arriba de los dos cuadros de stats
+    const classX = margin + 85; // Centrado arriba de los dos cuadros de stats
     const classY = yPosition - 50;
     
     currentPage.drawRectangle({

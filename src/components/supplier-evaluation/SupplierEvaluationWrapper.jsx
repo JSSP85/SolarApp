@@ -40,6 +40,8 @@ const SupplierEvaluationWrapper = ({ onBackToMenu }) => {
   const [loading, setLoading] = useState(false);
   const [expandedKPIs, setExpandedKPIs] = useState({});
   const [selectedCategory, setSelectedCategory] = useState('All Categories');
+  const [selectedSupplier1, setSelectedSupplier1] = useState('');
+  const [selectedSupplier2, setSelectedSupplier2] = useState('');
   
   // ✅ NUEVOS ESTADOS PARA FUNCIONALIDADES CRUD Y MODALES
   const [showDetailModal, setShowDetailModal] = useState(false);
@@ -493,7 +495,31 @@ const prepareKPIComparisonData = (categoryFilter = 'All Categories') => {
   );
   return ['All Categories', ...categoriesWithSuppliers];
 };
+
+  const getAvailableSuppliers = () => {
+  return suppliers.map(supplier => ({
+    id: supplier.id,
+    name: supplier.supplierName,
+    category: supplier.category,
+    class: supplier.supplierClass || getSupplierClass(supplier.gai || calculateGAI(supplier.kpiScores))
+  }));
+};
+
+  const prepareSupplierComparisonData = (supplierId) => {
+  if (!supplierId) return [];
   
+  const supplier = suppliers.find(s => s.id === supplierId);
+  if (!supplier) return [];
+  
+  return [
+    { subject: 'Production Capacity', value: supplier.kpiScores?.kpi1 || 0, fullMark: 4 },
+    { subject: 'Quality Control', value: supplier.kpiScores?.kpi2 || 0, fullMark: 4 },
+    { subject: 'Raw Materials', value: supplier.kpiScores?.kpi3 || 0, fullMark: 4 },
+    { subject: 'Human Resources', value: supplier.kpiScores?.kpi4 || 0, fullMark: 4 },
+    { subject: 'Logistics', value: supplier.kpiScores?.kpi5 || 0, fullMark: 4 }
+  ];
+};
+    
   const prepareRadarData = () => {
     if (suppliers.length === 0) return [];
     
@@ -1214,7 +1240,11 @@ const prepareKPIComparisonData = (categoryFilter = 'All Categories') => {
   const renderAnalytics = () => {
     const kpiData = prepareKPIComparisonData(selectedCategory);
     const availableCategories = getAvailableCategories();
-    const radarData = prepareRadarData();
+    const availableSuppliers = getAvailableSuppliers();
+    const supplier1Data = prepareSupplierComparisonData(selectedSupplier1);
+    const supplier2Data = prepareSupplierComparisonData(selectedSupplier2);
+    const selectedSupplier1Info = suppliers.find(s => s.id === selectedSupplier1);
+    const selectedSupplier2Info = suppliers.find(s => s.id === selectedSupplier2);
     const classData = prepareClassDistributionData();
     const capacityData = prepareCapacityData();
 
@@ -1333,29 +1363,236 @@ const prepareKPIComparisonData = (categoryFilter = 'All Categories') => {
   )}
 </div>
 
-          {/* Average Performance Radar */}
-          <div style={{ 
-            backgroundColor: 'white', 
-            padding: '1.5rem', 
-            borderRadius: '12px', 
-            boxShadow: '0 4px 20px rgba(0, 0, 0, 0.1)' 
-          }}>
-            <h3 style={{ marginBottom: '1rem', color: '#1f2937' }}>Average KPI Performance</h3>
-            <ResponsiveContainer width="100%" height={300}>
-              <RadarChart data={radarData}>
+     {/* Supplier Comparison Radar */}
+<div style={{ 
+  backgroundColor: 'white', 
+  padding: '1.5rem', 
+  borderRadius: '12px', 
+  boxShadow: '0 4px 20px rgba(0, 0, 0, 0.1)' 
+}}>
+  <h3 style={{ marginBottom: '1rem', color: '#1f2937', textAlign: 'center' }}>
+    Supplier KPI Comparison
+  </h3>
+  
+  {/* SELECTORES DE PROVEEDORES */}
+  <div style={{ 
+    display: 'grid', 
+    gridTemplateColumns: '1fr 1fr', 
+    gap: '1rem', 
+    marginBottom: '1.5rem' 
+  }}>
+    <div>
+      <label style={{ 
+        fontSize: '0.875rem', 
+        fontWeight: '500', 
+        color: '#6b7280',
+        display: 'block',
+        marginBottom: '0.5rem'
+      }}>
+        Supplier 1:
+      </label>
+      <select
+        value={selectedSupplier1}
+        onChange={(e) => setSelectedSupplier1(e.target.value)}
+        style={{
+          width: '100%',
+          padding: '0.5rem 0.75rem',
+          border: '1px solid #d1d5db',
+          borderRadius: '6px',
+          fontSize: '0.875rem',
+          backgroundColor: 'white',
+          color: '#374151',
+          cursor: 'pointer'
+        }}
+      >
+        <option value="">Select Supplier 1...</option>
+        {availableSuppliers.map(supplier => (
+          <option key={supplier.id} value={supplier.id}>
+            {supplier.name} ({supplier.category}) - Class {supplier.class}
+          </option>
+        ))}
+      </select>
+    </div>
+    
+    <div>
+      <label style={{ 
+        fontSize: '0.875rem', 
+        fontWeight: '500', 
+        color: '#6b7280',
+        display: 'block',
+        marginBottom: '0.5rem'
+      }}>
+        Supplier 2:
+      </label>
+      <select
+        value={selectedSupplier2}
+        onChange={(e) => setSelectedSupplier2(e.target.value)}
+        style={{
+          width: '100%',
+          padding: '0.5rem 0.75rem',
+          border: '1px solid #d1d5db',
+          borderRadius: '6px',
+          fontSize: '0.875rem',
+          backgroundColor: 'white',
+          color: '#374151',
+          cursor: 'pointer'
+        }}
+      >
+        <option value="">Select Supplier 2...</option>
+        {availableSuppliers.map(supplier => (
+          <option key={supplier.id} value={supplier.id}>
+            {supplier.name} ({supplier.category}) - Class {supplier.class}
+          </option>
+        ))}
+      </select>
+    </div>
+  </div>
+
+  {/* GRÁFICOS DE RADAR LADO A LADO */}
+  {selectedSupplier1 || selectedSupplier2 ? (
+    <div style={{ 
+      display: 'grid', 
+      gridTemplateColumns: '1fr 1fr', 
+      gap: '1rem',
+      height: '300px'
+    }}>
+      {/* RADAR SUPPLIER 1 */}
+      <div style={{ 
+        border: selectedSupplier1 ? '2px solid #8884d8' : '2px dashed #e5e7eb',
+        borderRadius: '8px',
+        padding: '0.5rem'
+      }}>
+        {selectedSupplier1 && selectedSupplier1Info ? (
+          <>
+            <div style={{ 
+              textAlign: 'center', 
+              marginBottom: '0.5rem',
+              fontSize: '0.875rem',
+              fontWeight: '600',
+              color: '#8884d8'
+            }}>
+              {selectedSupplier1Info.supplierName}
+            </div>
+            <ResponsiveContainer width="100%" height="90%">
+              <RadarChart data={supplier1Data}>
                 <PolarGrid />
-                <PolarAngleAxis dataKey="subject" />
-                <PolarRadiusAxis angle={60} domain={[0, 4]} />
+                <PolarAngleAxis dataKey="subject" style={{ fontSize: '10px' }} />
+                <PolarRadiusAxis angle={60} domain={[0, 4]} style={{ fontSize: '8px' }} />
                 <Radar
-                  name="Average Score"
-                  dataKey="A"
+                  name={selectedSupplier1Info.supplierName}
+                  dataKey="value"
                   stroke="#8884d8"
                   fill="#8884d8"
-                  fillOpacity={0.6}
+                  fillOpacity={0.3}
+                  strokeWidth={2}
                 />
               </RadarChart>
             </ResponsiveContainer>
+          </>
+        ) : (
+          <div style={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            height: '100%',
+            color: '#9ca3af',
+            fontSize: '0.875rem'
+          }}>
+            Select Supplier 1
           </div>
+        )}
+      </div>
+
+      {/* RADAR SUPPLIER 2 */}
+      <div style={{ 
+        border: selectedSupplier2 ? '2px solid #82ca9d' : '2px dashed #e5e7eb',
+        borderRadius: '8px',
+        padding: '0.5rem'
+      }}>
+        {selectedSupplier2 && selectedSupplier2Info ? (
+          <>
+            <div style={{ 
+              textAlign: 'center', 
+              marginBottom: '0.5rem',
+              fontSize: '0.875rem',
+              fontWeight: '600',
+              color: '#82ca9d'
+            }}>
+              {selectedSupplier2Info.supplierName}
+            </div>
+            <ResponsiveContainer width="100%" height="90%">
+              <RadarChart data={supplier2Data}>
+                <PolarGrid />
+                <PolarAngleAxis dataKey="subject" style={{ fontSize: '10px' }} />
+                <PolarRadiusAxis angle={60} domain={[0, 4]} style={{ fontSize: '8px' }} />
+                <Radar
+                  name={selectedSupplier2Info.supplierName}
+                  dataKey="value"
+                  stroke="#82ca9d"
+                  fill="#82ca9d"
+                  fillOpacity={0.3}
+                  strokeWidth={2}
+                />
+              </RadarChart>
+            </ResponsiveContainer>
+          </>
+        ) : (
+          <div style={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            height: '100%',
+            color: '#9ca3af',
+            fontSize: '0.875rem'
+          }}>
+            Select Supplier 2
+          </div>
+        )}
+      </div>
+    </div>
+  ) : (
+    <div style={{
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      height: '300px',
+      color: '#6b7280',
+      fontSize: '1rem',
+      textAlign: 'center'
+    }}>
+      Select two suppliers above to compare their KPI performance
+    </div>
+  )}
+
+  {/* INFORMACIÓN COMPARATIVA */}
+  {selectedSupplier1 && selectedSupplier2 && selectedSupplier1Info && selectedSupplier2Info && (
+    <div style={{
+      marginTop: '1rem',
+      padding: '1rem',
+      backgroundColor: '#f9fafb',
+      borderRadius: '6px',
+      display: 'grid',
+      gridTemplateColumns: '1fr 1fr',
+      gap: '1rem',
+      fontSize: '0.875rem'
+    }}>
+      <div style={{ textAlign: 'center' }}>
+        <div style={{ fontWeight: '600', color: '#8884d8' }}>
+          {selectedSupplier1Info.supplierName}
+        </div>
+        <div>GAI: {selectedSupplier1Info.gai || calculateGAI(selectedSupplier1Info.kpiScores)}%</div>
+        <div>Class: {selectedSupplier1Info.supplierClass || getSupplierClass(selectedSupplier1Info.gai || calculateGAI(selectedSupplier1Info.kpiScores))}</div>
+      </div>
+      <div style={{ textAlign: 'center' }}>
+        <div style={{ fontWeight: '600', color: '#82ca9d' }}>
+          {selectedSupplier2Info.supplierName}
+        </div>
+        <div>GAI: {selectedSupplier2Info.gai || calculateGAI(selectedSupplier2Info.kpiScores)}%</div>
+        <div>Class: {selectedSupplier2Info.supplierClass || getSupplierClass(selectedSupplier2Info.gai || calculateGAI(selectedSupplier2Info.kpiScores))}</div>
+      </div>
+    </div>
+  )}
+</div>
 
           {/* Class Distribution */}
           <div style={{ 

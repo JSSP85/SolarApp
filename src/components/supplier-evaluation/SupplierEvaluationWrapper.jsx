@@ -39,6 +39,7 @@ const SupplierEvaluationWrapper = ({ onBackToMenu }) => {
   const [suppliers, setSuppliers] = useState([]);
   const [loading, setLoading] = useState(false);
   const [expandedKPIs, setExpandedKPIs] = useState({});
+  const [selectedCategory, setSelectedCategory] = useState('All Categories');
   
   // ✅ NUEVOS ESTADOS PARA FUNCIONALIDADES CRUD Y MODALES
   const [showDetailModal, setShowDetailModal] = useState(false);
@@ -462,22 +463,37 @@ const SupplierEvaluationWrapper = ({ onBackToMenu }) => {
   };
 
   // ✅ FUNCIONES PARA GRÁFICOS
-  const prepareKPIComparisonData = () => {
-    return suppliers.map(supplier => ({
-      name: supplier.supplierName.length > 12 
-        ? supplier.supplierName.substring(0, 12) + '...' 
-        : supplier.supplierName,
-      fullName: supplier.supplierName,
-      KPI1: supplier.kpiScores?.kpi1 || 0,
-      KPI2: supplier.kpiScores?.kpi2 || 0,
-      KPI3: supplier.kpiScores?.kpi3 || 0,
-      KPI4: supplier.kpiScores?.kpi4 || 0,
-      KPI5: supplier.kpiScores?.kpi5 || 0,
-      GAI: supplier.gai || calculateGAI(supplier.kpiScores),
-      class: supplier.supplierClass || getSupplierClass(supplier.gai || calculateGAI(supplier.kpiScores))
-    }));
-  };
+const prepareKPIComparisonData = (categoryFilter = 'All Categories') => {
+  let filteredSuppliers = suppliers;
+  
+  // Filtrar por categoría si no es "All Categories"
+  if (categoryFilter !== 'All Categories') {
+    filteredSuppliers = suppliers.filter(supplier => supplier.category === categoryFilter);
+  }
+  
+  return filteredSuppliers.map(supplier => ({
+    name: supplier.supplierName.length > 12 
+      ? supplier.supplierName.substring(0, 12) + '...' 
+      : supplier.supplierName,
+    fullName: supplier.supplierName,
+    category: supplier.category,
+    KPI1: supplier.kpiScores?.kpi1 || 0,
+    KPI2: supplier.kpiScores?.kpi2 || 0,
+    KPI3: supplier.kpiScores?.kpi3 || 0,
+    KPI4: supplier.kpiScores?.kpi4 || 0,
+    KPI5: supplier.kpiScores?.kpi5 || 0,
+    GAI: supplier.gai || calculateGAI(supplier.kpiScores),
+    class: supplier.supplierClass || getSupplierClass(supplier.gai || calculateGAI(supplier.kpiScores))
+  }));
+};
 
+  const getAvailableCategories = () => {
+  const categoriesWithSuppliers = SUPPLIER_CATEGORIES.filter(category => 
+    suppliers.some(supplier => supplier.category === category)
+  );
+  return ['All Categories', ...categoriesWithSuppliers];
+};
+  
   const prepareRadarData = () => {
     if (suppliers.length === 0) return [];
     
@@ -1196,7 +1212,8 @@ const SupplierEvaluationWrapper = ({ onBackToMenu }) => {
 
   // ✅ RENDERIZAR NUEVA PESTAÑA DE ANALYTICS
   const renderAnalytics = () => {
-    const kpiData = prepareKPIComparisonData();
+    const kpiData = prepareKPIComparisonData(selectedCategory);
+    const availableCategories = getAvailableCategories();
     const radarData = prepareRadarData();
     const classData = prepareClassDistributionData();
     const capacityData = prepareCapacityData();
@@ -1212,35 +1229,109 @@ const SupplierEvaluationWrapper = ({ onBackToMenu }) => {
 
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(500px, 1fr))', gap: '2rem' }}>
           
-          {/* KPI Comparison Chart */}
-          <div style={{ 
-            backgroundColor: 'white', 
-            padding: '1.5rem', 
-            borderRadius: '12px', 
-            boxShadow: '0 4px 20px rgba(0, 0, 0, 0.1)' 
-          }}>
-            <h3 style={{ marginBottom: '1rem', color: '#1f2937' }}>KPI Comparison by Supplier</h3>
-            <ResponsiveContainer width="100%" height={300}>
-              <BarChart data={kpiData}>
-                <CartesianGrid strokeDasharray="3 3" />
-                <XAxis dataKey="name" />
-                <YAxis domain={[0, 4]} />
-                <Tooltip 
-                  formatter={(value, name) => [value, name]}
-                  labelFormatter={(label) => {
-                    const supplier = kpiData.find(s => s.name === label);
-                    return supplier ? supplier.fullName : label;
-                  }}
-                />
-                <Legend />
-                <Bar dataKey="KPI1" fill="#8884d8" name="Production Capacity" />
-                <Bar dataKey="KPI2" fill="#82ca9d" name="Quality Control" />
-                <Bar dataKey="KPI3" fill="#ffc658" name="Raw Materials" />
-                <Bar dataKey="KPI4" fill="#ff7300" name="Human Resources" />
-                <Bar dataKey="KPI5" fill="#00bcd4" name="Logistics" />
-              </BarChart>
-            </ResponsiveContainer>
-          </div>
+ {/* KPI Comparison Chart CON SELECTOR DE CATEGORÍA */}
+<div style={{ 
+  backgroundColor: 'white', 
+  padding: '1.5rem', 
+  borderRadius: '12px', 
+  boxShadow: '0 4px 20px rgba(0, 0, 0, 0.1)' 
+}}>
+  <div style={{ 
+    display: 'flex', 
+    justifyContent: 'space-between', 
+    alignItems: 'center', 
+    marginBottom: '1rem' 
+  }}>
+    <h3 style={{ margin: 0, color: '#1f2937' }}>KPI Comparison by Supplier</h3>
+    
+    {/* SELECTOR DE CATEGORÍA */}
+    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+      <label style={{ 
+        fontSize: '0.875rem', 
+        fontWeight: '500', 
+        color: '#6b7280' 
+      }}>
+        Category:
+      </label>
+      <select
+        value={selectedCategory}
+        onChange={(e) => setSelectedCategory(e.target.value)}
+        style={{
+          padding: '0.5rem 0.75rem',
+          border: '1px solid #d1d5db',
+          borderRadius: '6px',
+          fontSize: '0.875rem',
+          backgroundColor: 'white',
+          color: '#374151',
+          cursor: 'pointer',
+          minWidth: '160px'
+        }}
+      >
+        {availableCategories.map(category => (
+          <option key={category} value={category}>
+            {category}
+          </option>
+        ))}
+      </select>
+    </div>
+  </div>
+  
+  {/* INFORMACIÓN DE FILTRO */}
+  <div style={{
+    padding: '0.75rem',
+    backgroundColor: '#f3f4f6',
+    borderRadius: '6px',
+    marginBottom: '1rem',
+    fontSize: '0.875rem',
+    color: '#6b7280'
+  }}>
+    {selectedCategory === 'All Categories' ? 
+      `Showing all ${kpiData.length} suppliers across all categories` :
+      `Showing ${kpiData.length} suppliers in category: ${selectedCategory}`
+    }
+  </div>
+
+  {/* GRÁFICO */}
+  {kpiData.length > 0 ? (
+    <ResponsiveContainer width="100%" height={300}>
+      <BarChart data={kpiData}>
+        <CartesianGrid strokeDasharray="3 3" />
+        <XAxis 
+          dataKey="name" 
+          angle={-45}
+          textAnchor="end"
+          height={80}
+        />
+        <YAxis domain={[0, 4]} />
+        <Tooltip 
+          formatter={(value, name) => [value, name]}
+          labelFormatter={(label) => {
+            const supplier = kpiData.find(s => s.name === label);
+            return supplier ? 
+              `${supplier.fullName} (${supplier.category})` : label;
+          }}
+        />
+        <Legend />
+        <Bar dataKey="KPI1" fill="#8884d8" name="Production Capacity" />
+        <Bar dataKey="KPI2" fill="#82ca9d" name="Quality Control" />
+        <Bar dataKey="KPI3" fill="#ffc658" name="Raw Materials" />
+        <Bar dataKey="KPI4" fill="#ff7300" name="Human Resources" />
+        <Bar dataKey="KPI5" fill="#00bcd4" name="Logistics" />
+      </BarChart>
+    </ResponsiveContainer>
+  ) : (
+    <div style={{
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      height: '300px',
+      color: '#6b7280',
+      fontSize: '1rem'
+    }}>
+      No suppliers found in category: {selectedCategory}
+    </div>
+  )}
+</div>
 
           {/* Average Performance Radar */}
           <div style={{ 

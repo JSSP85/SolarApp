@@ -185,7 +185,7 @@
 
 .sidebar {
   width: 250px;
-  background-color: rgba(0, 95, 131, 0.25);
+  background-color: rgba(0, 95, 131, 0.15);
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
   box-shadow: 2px 0 15px rgba(0, 0, 0, 0.3);

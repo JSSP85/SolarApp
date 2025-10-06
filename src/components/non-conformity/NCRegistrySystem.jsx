@@ -10,7 +10,7 @@ import {
   getAllNCs,
   updateNCStatus,
   getNextNCNumber
-} from '../firebase/ncRegistryService';
+} from '../../firebase/ncRegistryService';
 import NCStatisticsCharts from './NCStatisticsCharts';
 
 const NCRegistrySystem = () => {

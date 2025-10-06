@@ -34,7 +34,7 @@ import BackButton from './components/common/BackButton';
 import QualityBookGenerator from './components/quality/QualityBookGenerator';
 
 // Import Non-Conformity App
-import NonConformityApp from './components/non-conformity/NonConformityApp';
+import NCRegistrySystem from './components/non-conformity/NCRegistrySystem';
 
 import SupplierEvaluationWrapper from './components/supplier-evaluation/SupplierEvaluationWrapper';
 
@@ -135,12 +135,12 @@ const MainMenu = () => {
             <QualityBookGenerator onBackClick={() => setSelectedOption(null)} />
           </div>
         );
-      case 'non-conformity-manager':
-        return (
-          <div className="non-conformity-wrapper">
-            <NonConformityApp onBack={() => setSelectedOption(null)} />
-          </div>
-        );
+    case 'non-conformity-manager':
+  return (
+    <div className="non-conformity-wrapper">
+      <NCRegistrySystem onBack={() => setSelectedOption(null)} />
+    </div>
+  );
         case 'supplier-evaluation':
   return (
     <SupplierEvaluationWrapper 

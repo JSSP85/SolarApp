@@ -10,10 +10,10 @@ import {
   getAllNCs,
   updateNCStatus,
   getNextNCNumber
-} from '../../firebase/ncRegistryService';
+} from '../firebase/ncRegistryService';
 import NCStatisticsCharts from './NCStatisticsCharts';
 
-const NCRegistrySystem = () => {
+const NCRegistrySystem = ({ onBack }) => {
   const [activeView, setActiveView] = useState('registry');
   const [ncList, setNcList] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -451,6 +451,17 @@ const NCRegistrySystem = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-900 via-blue-900 to-slate-800 text-white">
+      {/* Back to Menu Button */}
+      {onBack && (
+        <button 
+          onClick={onBack}
+          className="fixed top-4 right-4 z-50 flex items-center gap-2 px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg font-semibold transition-all shadow-lg"
+        >
+          <X size={20} />
+          Back to Main Menu
+        </button>
+      )}
+
       {/* Sidebar */}
       <div className="fixed left-0 top-0 h-full w-64 bg-slate-800/90 backdrop-blur-sm border-r border-slate-700 shadow-2xl z-40">
         <div className="p-6 border-b border-slate-700">

@@ -1,19 +1,20 @@
+// src/components/non-conformity/NCRegistrySystem.jsx
+// VERSIÓN COMPLETA CON TODAS LAS FUNCIONALIDADES + ESTILOS ADAPTADOS
+
 import React, { useState, useEffect } from 'react';
-import { 
-  Search, Plus, Edit, Trash2, Eye, X, Download,
-  BarChart3, TrendingUp, AlertCircle, CheckCircle, Clock, Save
-} from 'lucide-react';
+import { useAuth } from '../../context/AuthContext';
 import {
   addNCToRegistry,
   updateNCInRegistry,
   deleteNCFromRegistry,
   getAllNCs,
-  updateNCStatus,
   getNextNCNumber
 } from '../../firebase/ncRegistryService';
 import NCStatisticsCharts from './NCStatisticsCharts';
+import '../../styles/non-conformity.css';
 
 const NCRegistrySystem = ({ onBack }) => {
+  const { currentUser } = useAuth();
   const [activeView, setActiveView] = useState('registry');
   const [ncList, setNcList] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -54,26 +55,26 @@ const NCRegistrySystem = ({ onBack }) => {
 
   // Options
   const statusOptions = [
-    { value: 'open', label: '🔴 Open', color: 'bg-red-100 text-red-800 border-red-300' },
-    { value: 'in_progress', label: '🟡 In Progress', color: 'bg-yellow-100 text-yellow-800 border-yellow-300' },
-    { value: 'closed', label: '🟢 Closed', color: 'bg-green-100 text-green-800 border-green-300' },
-    { value: 'cancelled', label: '⚫ Cancelled', color: 'bg-gray-100 text-gray-800 border-gray-300' }
+    { value: 'open', label: '🔴 Open' },
+    { value: 'in_progress', label: '🟡 In Progress' },
+    { value: 'closed', label: '🟢 Closed' },
+    { value: 'cancelled', label: '⚫ Cancelled' }
   ];
 
   const ncClassOptions = [
-    { value: 'critical', label: '🚨 CRITICAL', color: 'bg-red-600 text-white' },
-    { value: 'major', label: '🔴 MAJOR', color: 'bg-orange-500 text-white' },
-    { value: 'minor', label: '🟡 MINOR', color: 'bg-yellow-500 text-white' }
+    { value: 'critical', label: '🚨 CRITICAL' },
+    { value: 'major', label: '🔴 MAJOR' },
+    { value: 'minor', label: '🟡 MINOR' }
   ];
 
   const detectionPhaseOptions = [
-    { value: 'incoming_goods', label: '📦 Incoming goods' },
-    { value: 'production', label: '🏭 Production' },
-    { value: 'logistics', label: '🚛 Logistics' },
-    { value: 'on_site', label: '🏗️ On site' },
-    { value: 'by_client', label: '👥 By client' },
-    { value: 'installation', label: '🔧 Installation' },
-    { value: 'malpractice', label: '⚠️ Malpractice' }
+    { value: 'production', label: 'Production' },
+    { value: 'on_site', label: 'On Site' },
+    { value: 'by_client', label: 'NC BY CLIENT' },
+    { value: 'incoming_goods', label: 'Incoming Goods' },
+    { value: 'installation', label: 'Installation' },
+    { value: 'malpractice', label: 'Malpractice' },
+    { value: 'logistics', label: 'Logistics' }
   ];
 
   const monthOptions = [
@@ -81,7 +82,6 @@ const NCRegistrySystem = ({ onBack }) => {
     '07-jul', '08-aug', '09-sep', '10-oct', '11-nov', '12-dec'
   ];
 
-  // Load NCs from Firebase
   useEffect(() => {
     loadNCs();
   }, []);
@@ -89,41 +89,15 @@ const NCRegistrySystem = ({ onBack }) => {
   const loadNCs = async () => {
     try {
       setLoading(true);
-      const ncs = await getAllNCs();
-      setNcList(ncs);
+      const data = await getAllNCs();
+      setNcList(data);
     } catch (error) {
       console.error('Error loading NCs:', error);
-      alert('❌ Error loading NCs from database');
     } finally {
       setLoading(false);
     }
   };
 
-  // Utility functions
-  const getStatusBadge = (status) => {
-    const option = statusOptions.find(opt => opt.value === status);
-    return option ? (
-      <span className={`px-3 py-1 rounded-full text-xs font-semibold border ${option.color}`}>
-        {option.label}
-      </span>
-    ) : null;
-  };
-
-  const getNCClassBadge = (ncClass) => {
-    const option = ncClassOptions.find(opt => opt.value === ncClass);
-    return option ? (
-      <span className={`px-2 py-1 rounded text-xs font-bold ${option.color}`}>
-        {option.label}
-      </span>
-    ) : null;
-  };
-
-  const getDetectionPhaseLabel = (phase) => {
-    const option = detectionPhaseOptions.find(opt => opt.value === phase);
-    return option ? option.label : phase;
-  };
-
-  // Filter NCs
   const filteredNCList = ncList.filter(nc => {
     if (filters.search && 
         !nc.number.includes(filters.search) && 
@@ -137,6 +111,8 @@ const NCRegistrySystem = ({ onBack }) => {
     if (filters.year && nc.year !== parseInt(filters.year)) return false;
     return true;
   });
+
+  const uniqueYears = [...new Set(ncList.map(nc => nc.year))].sort((a, b) => b - a);
 
   // Handlers
   const handleAddNC = async () => {
@@ -153,12 +129,10 @@ const NCRegistrySystem = ({ onBack }) => {
 
     try {
       if (currentNC.id) {
-        // Update existing
         const { id, ...updateData } = currentNC;
         await updateNCInRegistry(id, updateData);
         alert('✅ NC updated successfully');
       } else {
-        // Create new
         await addNCToRegistry(currentNC);
         alert('✅ NC created successfully');
       }
@@ -197,527 +171,588 @@ const NCRegistrySystem = ({ onBack }) => {
 
   const handleUpdateStatus = async (ncId, newStatus) => {
     try {
-      await updateNCStatus(ncId, newStatus);
+      await updateNCInRegistry(ncId, { status: newStatus });
       await loadNCs();
-      alert('✅ Status updated');
+      if (selectedNC && selectedNC.id === ncId) {
+        setSelectedNC({ ...selectedNC, status: newStatus });
+      }
     } catch (error) {
       console.error('Error updating status:', error);
-      alert('❌ Error updating status');
     }
+  };
+
+  const getDetectionPhaseLabel = (phase) => {
+    const option = detectionPhaseOptions.find(opt => opt.value === phase);
+    return option ? option.label : phase;
   };
 
   // NC Form Component
   const NCForm = ({ nc, onChange }) => (
-    <div className="space-y-4">
-      {/* Row 1: Number, Year, Month */}
-      <div className="grid grid-cols-3 gap-4">
-        <div>
-          <label className="block text-sm font-semibold mb-2">
-            NC Number <span className="text-red-400">*</span>
-          </label>
-          <input
-            type="text"
-            value={nc.number}
-            onChange={(e) => onChange({ ...nc, number: e.target.value })}
-            placeholder="562"
-            className="w-full px-4 py-2 bg-slate-700 border border-slate-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none"
-          />
-        </div>
-        <div>
-          <label className="block text-sm font-semibold mb-2">Year</label>
-          <input
-            type="number"
-            value={nc.year}
-            onChange={(e) => onChange({ ...nc, year: parseInt(e.target.value) })}
-            className="w-full px-4 py-2 bg-slate-700 border border-slate-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none"
-          />
-        </div>
-        <div>
-          <label className="block text-sm font-semibold mb-2">Month</label>
-          <select
-            value={nc.month}
-            onChange={(e) => onChange({ ...nc, month: e.target.value })}
-            className="w-full px-4 py-2 bg-slate-700 border border-slate-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none"
-          >
-            <option value="">Select...</option>
-            {monthOptions.map(m => <option key={m} value={m}>{m}</option>)}
-          </select>
+    <div className="nc-form-container">
+      <div className="nc-form-section">
+        <h3 className="nc-section-title">Basic Information</h3>
+        
+        <div className="nc-form-grid">
+          <div className="nc-form-group">
+            <label className="nc-form-label">NC Number *</label>
+            <input
+              type="text"
+              value={nc.number}
+              onChange={(e) => onChange({ ...nc, number: e.target.value })}
+              className="nc-form-input"
+              placeholder="562"
+            />
+          </div>
+
+          <div className="nc-form-group">
+            <label className="nc-form-label">Year</label>
+            <input
+              type="number"
+              value={nc.year}
+              onChange={(e) => onChange({ ...nc, year: parseInt(e.target.value) })}
+              className="nc-form-input"
+            />
+          </div>
+
+          <div className="nc-form-group">
+            <label className="nc-form-label">Month</label>
+            <select
+              value={nc.month}
+              onChange={(e) => onChange({ ...nc, month: e.target.value })}
+              className="nc-form-select"
+            >
+              <option value="">Select...</option>
+              {monthOptions.map(opt => (
+                <option key={opt} value={opt}>{opt}</option>
+              ))}
+            </select>
+          </div>
+
+          <div className="nc-form-group">
+            <label className="nc-form-label">Status *</label>
+            <select
+              value={nc.status}
+              onChange={(e) => onChange({ ...nc, status: e.target.value })}
+              className="nc-form-select"
+            >
+              {statusOptions.map(opt => (
+                <option key={opt.value} value={opt.value}>{opt.label}</option>
+              ))}
+            </select>
+          </div>
+
+          <div className="nc-form-group">
+            <label className="nc-form-label">NC Issuer</label>
+            <input
+              type="text"
+              value={nc.ncIssuer}
+              onChange={(e) => onChange({ ...nc, ncIssuer: e.target.value })}
+              className="nc-form-input"
+            />
+          </div>
+
+          <div className="nc-form-group">
+            <label className="nc-form-label">Date of Detection</label>
+            <input
+              type="date"
+              value={nc.dateOfDetection}
+              onChange={(e) => onChange({ ...nc, dateOfDetection: e.target.value })}
+              className="nc-form-input"
+            />
+          </div>
+
+          <div className="nc-form-group">
+            <label className="nc-form-label">Detection Phase</label>
+            <select
+              value={nc.detectionPhase}
+              onChange={(e) => onChange({ ...nc, detectionPhase: e.target.value })}
+              className="nc-form-select"
+            >
+              <option value="">Select...</option>
+              {detectionPhaseOptions.map(opt => (
+                <option key={opt.value} value={opt.value}>{opt.label}</option>
+              ))}
+            </select>
+          </div>
+
+          <div className="nc-form-group">
+            <label className="nc-form-label">Order Number</label>
+            <input
+              type="text"
+              value={nc.orderNumber}
+              onChange={(e) => onChange({ ...nc, orderNumber: e.target.value })}
+              className="nc-form-input"
+              placeholder="PO26171"
+            />
+          </div>
+
+          <div className="nc-form-group">
+            <label className="nc-form-label">Project Code</label>
+            <input
+              type="text"
+              value={nc.projectCode}
+              onChange={(e) => onChange({ ...nc, projectCode: e.target.value })}
+              className="nc-form-input"
+            />
+          </div>
+
+          <div className="nc-form-group">
+            <label className="nc-form-label">Project Name</label>
+            <input
+              type="text"
+              value={nc.projectName}
+              onChange={(e) => onChange({ ...nc, projectName: e.target.value })}
+              className="nc-form-input"
+            />
+          </div>
+
+          <div className="nc-form-group">
+            <label className="nc-form-label">NC Class *</label>
+            <select
+              value={nc.ncClass}
+              onChange={(e) => onChange({ ...nc, ncClass: e.target.value })}
+              className="nc-form-select"
+            >
+              <option value="">Select...</option>
+              {ncClassOptions.map(opt => (
+                <option key={opt.value} value={opt.value}>{opt.label}</option>
+              ))}
+            </select>
+          </div>
+
+          <div className="nc-form-group">
+            <label className="nc-form-label">Accountable</label>
+            <input
+              type="text"
+              value={nc.accountable}
+              onChange={(e) => onChange({ ...nc, accountable: e.target.value })}
+              className="nc-form-input"
+            />
+          </div>
         </div>
       </div>
 
-      {/* Row 2: Status, NC Class */}
-      <div className="grid grid-cols-2 gap-4">
-        <div>
-          <label className="block text-sm font-semibold mb-2">
-            Status <span className="text-red-400">*</span>
-          </label>
-          <select
-            value={nc.status}
-            onChange={(e) => onChange({ ...nc, status: e.target.value })}
-            className="w-full px-4 py-2 bg-slate-700 border border-slate-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none"
-          >
-            {statusOptions.map(opt => (
-              <option key={opt.value} value={opt.value}>{opt.label}</option>
-            ))}
-          </select>
-        </div>
-        <div>
-          <label className="block text-sm font-semibold mb-2">
-            NC Class <span className="text-red-400">*</span>
-          </label>
-          <select
-            value={nc.ncClass}
-            onChange={(e) => onChange({ ...nc, ncClass: e.target.value })}
-            className="w-full px-4 py-2 bg-slate-700 border border-slate-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none"
-          >
-            <option value="">Select...</option>
-            {ncClassOptions.map(opt => (
-              <option key={opt.value} value={opt.value}>{opt.label}</option>
-            ))}
-          </select>
-        </div>
-      </div>
-
-      {/* Row 3: NC Issuer, Date, Detection Phase */}
-      <div className="grid grid-cols-3 gap-4">
-        <div>
-          <label className="block text-sm font-semibold mb-2">NC Issuer (Opening)</label>
+      <div className="nc-form-section">
+        <h3 className="nc-section-title">NC Details</h3>
+        
+        <div className="nc-form-group-full">
+          <label className="nc-form-label">NC Main Subject *</label>
           <input
             type="text"
-            value={nc.ncIssuer}
-            onChange={(e) => onChange({ ...nc, ncIssuer: e.target.value })}
-            placeholder="Name"
-            className="w-full px-4 py-2 bg-slate-700 border border-slate-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none"
+            value={nc.ncMainSubject}
+            onChange={(e) => onChange({ ...nc, ncMainSubject: e.target.value })}
+            className="nc-form-input"
+            placeholder="Main subject..."
           />
         </div>
-        <div>
-          <label className="block text-sm font-semibold mb-2">Date of Detection</label>
+
+        <div className="nc-form-group-full">
+          <label className="nc-form-label">NC Brief Summary & Root Cause</label>
+          <textarea
+            value={nc.ncBriefSummary}
+            onChange={(e) => onChange({ ...nc, ncBriefSummary: e.target.value })}
+            className="nc-form-textarea"
+            placeholder="Brief summary and root cause..."
+            rows="3"
+          />
+        </div>
+
+        <div className="nc-form-group-full">
+          <label className="nc-form-label">Treatment</label>
+          <textarea
+            value={nc.treatment}
+            onChange={(e) => onChange({ ...nc, treatment: e.target.value })}
+            className="nc-form-textarea"
+            placeholder="Treatment description..."
+            rows="2"
+          />
+        </div>
+
+        <div className="nc-form-group">
+          <label className="nc-form-label">Date of Closure</label>
           <input
             type="date"
-            value={nc.dateOfDetection}
-            onChange={(e) => onChange({ ...nc, dateOfDetection: e.target.value })}
-            className="w-full px-4 py-2 bg-slate-700 border border-slate-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none"
+            value={nc.dateOfClosure}
+            onChange={(e) => onChange({ ...nc, dateOfClosure: e.target.value })}
+            className="nc-form-input"
           />
         </div>
-        <div>
-          <label className="block text-sm font-semibold mb-2">Detection Phase</label>
-          <select
-            value={nc.detectionPhase}
-            onChange={(e) => onChange({ ...nc, detectionPhase: e.target.value })}
-            className="w-full px-4 py-2 bg-slate-700 border border-slate-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none"
-          >
-            <option value="">Select...</option>
-            {detectionPhaseOptions.map(opt => (
-              <option key={opt.value} value={opt.value}>{opt.label}</option>
-            ))}
-          </select>
-        </div>
-      </div>
 
-      {/* Row 4: Order, Project Code, Project Name (OPTIONAL) */}
-      <div className="grid grid-cols-3 gap-4">
-        <div>
-          <label className="block text-sm font-semibold mb-2 text-slate-400">
-            Order Number <span className="text-xs">(optional)</span>
-          </label>
-          <input
-            type="text"
-            value={nc.orderNumber}
-            onChange={(e) => onChange({ ...nc, orderNumber: e.target.value })}
-            placeholder="PO26171"
-            className="w-full px-4 py-2 bg-slate-700 border border-slate-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none"
+        <div className="nc-form-group-full">
+          <label className="nc-form-label">Root Cause Analysis</label>
+          <textarea
+            value={nc.rootCauseAnalysis}
+            onChange={(e) => onChange({ ...nc, rootCauseAnalysis: e.target.value })}
+            className="nc-form-textarea"
+            placeholder="Root cause analysis..."
+            rows="3"
           />
         </div>
-        <div>
-          <label className="block text-sm font-semibold mb-2 text-slate-400">
-            Project Code <span className="text-xs">(optional)</span>
-          </label>
-          <input
-            type="text"
-            value={nc.projectCode}
-            onChange={(e) => onChange({ ...nc, projectCode: e.target.value })}
-            placeholder="12515"
-            className="w-full px-4 py-2 bg-slate-700 border border-slate-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none"
+
+        <div className="nc-form-group-full">
+          <label className="nc-form-label">Corrective Action</label>
+          <textarea
+            value={nc.correctiveAction}
+            onChange={(e) => onChange({ ...nc, correctiveAction: e.target.value })}
+            className="nc-form-textarea"
+            placeholder="Containment and corrective actions..."
+            rows="3"
           />
         </div>
-        <div>
-          <label className="block text-sm font-semibold mb-2 text-slate-400">
-            Project Name <span className="text-xs">(optional)</span>
-          </label>
-          <input
-            type="text"
-            value={nc.projectName}
-            onChange={(e) => onChange({ ...nc, projectName: e.target.value })}
-            placeholder="Project name"
-            className="w-full px-4 py-2 bg-slate-700 border border-slate-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none"
-          />
-        </div>
-      </div>
-
-      {/* Accountable */}
-      <div>
-        <label className="block text-sm font-semibold mb-2">Accountable (Responsible/Supplier)</label>
-        <input
-          type="text"
-          value={nc.accountable}
-          onChange={(e) => onChange({ ...nc, accountable: e.target.value })}
-          placeholder="Supplier or responsible party"
-          className="w-full px-4 py-2 bg-slate-700 border border-slate-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none"
-        />
-      </div>
-
-      {/* NC Main Subject */}
-      <div>
-        <label className="block text-sm font-semibold mb-2">
-          NC Main Subject <span className="text-red-400">*</span>
-        </label>
-        <input
-          type="text"
-          value={nc.ncMainSubject}
-          onChange={(e) => onChange({ ...nc, ncMainSubject: e.target.value })}
-          placeholder="Main subject/title of the NC"
-          className="w-full px-4 py-2 bg-slate-700 border border-slate-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none"
-        />
-      </div>
-
-      {/* NC Brief Summary */}
-      <div>
-        <label className="block text-sm font-semibold mb-2">NC Brief Summary & Root Cause</label>
-        <textarea
-          value={nc.ncBriefSummary}
-          onChange={(e) => onChange({ ...nc, ncBriefSummary: e.target.value })}
-          placeholder="Brief summary and root cause..."
-          rows="3"
-          className="w-full px-4 py-2 bg-slate-700 border border-slate-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none"
-        />
-      </div>
-
-      {/* Treatment */}
-      <div>
-        <label className="block text-sm font-semibold mb-2">Treatment</label>
-        <textarea
-          value={nc.treatment}
-          onChange={(e) => onChange({ ...nc, treatment: e.target.value })}
-          placeholder="Treatment description..."
-          rows="2"
-          className="w-full px-4 py-2 bg-slate-700 border border-slate-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none"
-        />
-      </div>
-
-      {/* Date of Closure */}
-      <div>
-        <label className="block text-sm font-semibold mb-2">Date of Treatment Closure</label>
-        <input
-          type="date"
-          value={nc.dateOfClosure}
-          onChange={(e) => onChange({ ...nc, dateOfClosure: e.target.value })}
-          className="w-full px-4 py-2 bg-slate-700 border border-slate-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none"
-        />
-      </div>
-
-      {/* Root Cause Analysis */}
-      <div>
-        <label className="block text-sm font-semibold mb-2">Root Cause Analysis</label>
-        <textarea
-          value={nc.rootCauseAnalysis}
-          onChange={(e) => onChange({ ...nc, rootCauseAnalysis: e.target.value })}
-          placeholder="Root cause analysis..."
-          rows="3"
-          className="w-full px-4 py-2 bg-slate-700 border border-slate-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none"
-        />
-      </div>
-
-      {/* Corrective Action */}
-      <div>
-        <label className="block text-sm font-semibold mb-2">Containment Action / Corrective Action</label>
-        <textarea
-          value={nc.correctiveAction}
-          onChange={(e) => onChange({ ...nc, correctiveAction: e.target.value })}
-          placeholder="Containment and corrective actions..."
-          rows="3"
-          className="w-full px-4 py-2 bg-slate-700 border border-slate-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none"
-        />
       </div>
     </div>
   );
 
-  if (loading) {
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-900 via-blue-900 to-slate-800 flex items-center justify-center">
-        <div className="text-white text-xl">Loading NC Registry...</div>
-      </div>
-    );
-  }
-
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-blue-900 to-slate-800 text-white">
-      {/* Back to Menu Button */}
+    <div className="non-conformity-wrapper">
       {onBack && (
-        <button 
-          onClick={onBack}
-          className="fixed top-4 right-4 z-50 flex items-center gap-2 px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg font-semibold transition-all shadow-lg"
-        >
-          <X size={20} />
-          Back to Main Menu
+        <button className="nc-back-to-menu" onClick={onBack}>
+          <span>←</span>
+          <span>Back to Main Menu</span>
         </button>
       )}
 
-      {/* Sidebar */}
-      <div className="fixed left-0 top-0 h-full w-64 bg-slate-800/90 backdrop-blur-sm border-r border-slate-700 shadow-2xl z-40">
-        <div className="p-6 border-b border-slate-700">
-          <h1 className="text-2xl font-bold text-blue-400">CONVERT</h1>
-          <p className="text-xs text-slate-400 mt-1">Quality Management</p>
-        </div>
-        
-        <nav className="p-4 space-y-2">
-          <button className="w-full flex items-center gap-3 px-4 py-3 rounded-lg hover:bg-slate-700 transition-all">
-            <span className="text-xl">🏠</span>
-            <span>Dashboard</span>
-          </button>
-          
-          <div className="space-y-1">
-            <div className="w-full flex items-center gap-3 px-4 py-3 bg-blue-600 rounded-lg font-semibold">
-              <span className="text-xl">📊</span>
-              <span>NC Registry</span>
+      <div className="nc-app-container">
+        {/* Sidebar */}
+        <div className="nc-sidebar">
+          <div className="nc-sidebar-header">
+            <div className="nc-company-logo-container">
+              <img 
+                src="/images/logo2.png" 
+                alt="Company Logo" 
+                className="nc-company-logo"
+              />
             </div>
-            
-            <button 
+          </div>
+
+          <div className="nc-sidebar-divider"></div>
+
+          <nav className="nc-sidebar-nav">
+            <div className="nc-sidebar-section-title">
+              📋 NC Management
+            </div>
+
+            <div 
+              className={`nc-nav-item ${activeView === 'registry' ? 'nc-active' : ''}`}
               onClick={() => setActiveView('registry')}
-              className={`w-full flex items-center gap-3 px-4 py-2 ml-4 rounded-lg transition-all ${
-                activeView === 'registry' ? 'bg-slate-700 text-blue-400' : 'hover:bg-slate-700/50'
-              }`}
             >
-              <span>📋 NC List</span>
-            </button>
-            
-            <button 
+              <span className="nc-nav-icon">📋</span>
+              <span className="nc-nav-text">NC Registry</span>
+              <span className="nc-nav-badge">{ncList.length}</span>
+              {activeView === 'registry' && <div className="nc-nav-indicator"></div>}
+            </div>
+
+            <div 
+              className={`nc-nav-item ${activeView === 'stats' ? 'nc-active' : ''}`}
               onClick={() => setActiveView('stats')}
-              className={`w-full flex items-center gap-3 px-4 py-2 ml-4 rounded-lg transition-all ${
-                activeView === 'stats' ? 'bg-slate-700 text-blue-400' : 'hover:bg-slate-700/50'
-              }`}
             >
-              <span>📈 Statistics</span>
-            </button>
-          </div>
-          
-          <button className="w-full flex items-center gap-3 px-4 py-3 rounded-lg hover:bg-slate-700 transition-all">
-            <span className="text-xl">📦</span>
-            <span>Inspections</span>
-          </button>
-          
-          <button className="w-full flex items-center gap-3 px-4 py-3 rounded-lg hover:bg-slate-700 transition-all">
-            <span className="text-xl">📄</span>
-            <span>Reports</span>
-          </button>
-          
-          <button className="w-full flex items-center gap-3 px-4 py-3 rounded-lg hover:bg-slate-700 transition-all">
-            <span className="text-xl">⚙️</span>
-            <span>Settings</span>
-          </button>
-        </nav>
-      </div>
-
-      {/* Main Content */}
-      <div className="ml-64 p-8">
-        {activeView === 'registry' ? (
-          // REGISTRY VIEW
-          <div>
-            <div className="flex justify-between items-center mb-8">
-              <div>
-                <h2 className="text-3xl font-bold mb-2">📋 NC Registry</h2>
-                <p className="text-slate-300">Non-Conformity Management & Tracking</p>
-              </div>
-              <div className="flex gap-3">
-                <button 
-                  onClick={handleAddNC}
-                  className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 px-6 py-3 rounded-lg font-semibold transition-all shadow-lg"
-                >
-                  <Plus size={20} />
-                  New NC
-                </button>
-              </div>
+              <span className="nc-nav-icon">📈</span>
+              <span className="nc-nav-text">Statistics</span>
+              {activeView === 'stats' && <div className="nc-nav-indicator"></div>}
             </div>
 
-            {/* Filters */}
-            <div className="bg-slate-800/50 backdrop-blur-sm rounded-xl p-6 mb-6 border border-slate-700">
-              <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
-                <div className="relative">
-                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-400" size={18} />
-                  <input
-                    type="text"
-                    placeholder="Search NC..."
-                    value={filters.search}
-                    onChange={(e) => setFilters({...filters, search: e.target.value})}
-                    className="w-full pl-10 pr-4 py-2 bg-slate-700 border border-slate-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none"
-                  />
+            <div className="nc-sidebar-divider"></div>
+
+            <div className="nc-sidebar-section-title">
+              📊 Quick Stats
+            </div>
+          </nav>
+
+          <div className="nc-sidebar-footer">
+            <div className="nc-user-info">
+              <div className="nc-user-role-section">
+                <span className="nc-user-role-label">Current User</span>
+                <span className={`nc-user-role-value nc-role-${currentUser?.role || 'unknown'}`}>
+                  {currentUser?.displayName || 'Unknown'}
+                </span>
+              </div>
+
+              <div className="nc-quick-stats">
+                <div className="nc-stat-item">
+                  <span className="nc-stat-label">Total:</span>
+                  <span className="nc-stat-value">{ncList.length}</span>
                 </div>
-                
-                <select 
-                  value={filters.status}
-                  onChange={(e) => setFilters({...filters, status: e.target.value})}
-                  className="px-4 py-2 bg-slate-700 border border-slate-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none"
-                >
-                  <option value="">All Status</option>
-                  {statusOptions.map(opt => <option key={opt.value} value={opt.value}>{opt.label}</option>)}
-                </select>
-                
-                <select 
-                  value={filters.priority}
-                  onChange={(e) => setFilters({...filters, priority: e.target.value})}
-                  className="px-4 py-2 bg-slate-700 border border-slate-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none"
-                >
-                  <option value="">All Classes</option>
-                  {ncClassOptions.map(opt => <option key={opt.value} value={opt.value}>{opt.label}</option>)}
-                </select>
-                
-                <select 
-                  value={filters.detectionPlace}
-                  onChange={(e) => setFilters({...filters, detectionPlace: e.target.value})}
-                  className="px-4 py-2 bg-slate-700 border border-slate-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none"
-                >
-                  <option value="">All Phases</option>
-                  {detectionPhaseOptions.map(opt => <option key={opt.value} value={opt.value}>{opt.label}</option>)}
-                </select>
-                
-                <select 
-                  value={filters.year}
-                  onChange={(e) => setFilters({...filters, year: e.target.value})}
-                  className="px-4 py-2 bg-slate-700 border border-slate-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none"
-                >
-                  <option value="">All Years</option>
-                  <option value="2025">2025</option>
-                  <option value="2024">2024</option>
-                  <option value="2023">2023</option>
-                  <option value="2022">2022</option>
-                </select>
+                <div className="nc-stat-item nc-critical">
+                  <span className="nc-stat-label">Open:</span>
+                  <span className="nc-stat-value">
+                    {ncList.filter(nc => nc.status === 'open').length}
+                  </span>
+                </div>
+                <div className="nc-stat-item">
+                  <span className="nc-stat-label">Closed:</span>
+                  <span className="nc-stat-value">
+                    {ncList.filter(nc => nc.status === 'closed').length}
+                  </span>
+                </div>
               </div>
             </div>
+          </div>
+        </div>
 
-            {/* Results counter */}
-            <div className="mb-4 text-slate-300">
-              Showing <span className="font-bold text-white">{filteredNCList.length}</span> of <span className="font-bold text-white">{ncList.length}</span> NCs
+        {/* Main Content */}
+        <div className="nc-main-content">
+          <div className="nc-content-header">
+            <div className="nc-header-info">
+              <h1 className="nc-main-title">Non-Conformity Registry</h1>
+              <div className="nc-breadcrumb">
+                Quality Management → Non-Conformities → {activeView === 'registry' ? 'NC List' : 'Statistics'}
+              </div>
             </div>
+            <div className="nc-header-actions">
+              {activeView === 'registry' && (
+                <button className="nc-btn nc-btn-primary" onClick={handleAddNC}>
+                  <span>➕</span>
+                  <span>New NC</span>
+                </button>
+              )}
+              <div className="nc-user-role-indicator">
+                <span className={`nc-role-badge nc-role-${currentUser?.role || 'unknown'}`}>
+                  {currentUser?.role || 'Unknown'}
+                </span>
+              </div>
+            </div>
+          </div>
 
-            {/* NC Table */}
-            <div className="bg-slate-800/50 backdrop-blur-sm rounded-xl overflow-hidden border border-slate-700 shadow-2xl">
-              <div className="overflow-x-auto">
-                <table className="w-full">
-                  <thead className="bg-slate-700/80">
-                    <tr>
-                      <th className="px-4 py-4 text-left text-sm font-semibold">N°</th>
-                      <th className="px-4 py-4 text-left text-sm font-semibold">Year</th>
-                      <th className="px-4 py-4 text-left text-sm font-semibold">Status</th>
-                      <th className="px-4 py-4 text-left text-sm font-semibold">Class</th>
-                      <th className="px-4 py-4 text-left text-sm font-semibold">Subject</th>
-                      <th className="px-4 py-4 text-left text-sm font-semibold">Project</th>
-                      <th className="px-4 py-4 text-left text-sm font-semibold">Detection</th>
-                      <th className="px-4 py-4 text-left text-sm font-semibold">Accountable</th>
-                      <th className="px-4 py-4 text-center text-sm font-semibold">Actions</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-slate-700">
-                    {filteredNCList.length === 0 ? (
-                      <tr>
-                        <td colSpan="9" className="px-6 py-12 text-center text-slate-400">
-                          No NCs found with applied filters
-                        </td>
-                      </tr>
+          {/* Registry View */}
+          {activeView === 'registry' && (
+            <div className="nc-panel-container">
+              <div className="nc-panel-card">
+                <div className="nc-form-container">
+                  <div className="nc-form-section">
+                    <h3 className="nc-section-title">🔍 Search & Filters</h3>
+                    
+                    <div className="nc-form-grid">
+                      <div className="nc-form-group">
+                        <label className="nc-form-label">Search</label>
+                        <input
+                          type="text"
+                          className="nc-form-input"
+                          placeholder="NC number, project, subject..."
+                          value={filters.search}
+                          onChange={(e) => setFilters({...filters, search: e.target.value})}
+                        />
+                      </div>
+
+                      <div className="nc-form-group">
+                        <label className="nc-form-label">Status</label>
+                        <select
+                          className="nc-form-select"
+                          value={filters.status}
+                          onChange={(e) => setFilters({...filters, status: e.target.value})}
+                        >
+                          <option value="">All Status</option>
+                          {statusOptions.map(opt => (
+                            <option key={opt.value} value={opt.value}>{opt.label}</option>
+                          ))}
+                        </select>
+                      </div>
+
+                      <div className="nc-form-group">
+                        <label className="nc-form-label">Class</label>
+                        <select
+                          className="nc-form-select"
+                          value={filters.priority}
+                          onChange={(e) => setFilters({...filters, priority: e.target.value})}
+                        >
+                          <option value="">All Classes</option>
+                          {ncClassOptions.map(opt => (
+                            <option key={opt.value} value={opt.value}>{opt.label}</option>
+                          ))}
+                        </select>
+                      </div>
+
+                      <div className="nc-form-group">
+                        <label className="nc-form-label">Detection</label>
+                        <select
+                          className="nc-form-select"
+                          value={filters.detectionPlace}
+                          onChange={(e) => setFilters({...filters, detectionPlace: e.target.value})}
+                        >
+                          <option value="">All Phases</option>
+                          {detectionPhaseOptions.map(opt => (
+                            <option key={opt.value} value={opt.value}>{opt.label}</option>
+                          ))}
+                        </select>
+                      </div>
+
+                      <div className="nc-form-group">
+                        <label className="nc-form-label">Year</label>
+                        <select
+                          className="nc-form-select"
+                          value={filters.year}
+                          onChange={(e) => setFilters({...filters, year: e.target.value})}
+                        >
+                          <option value="">All Years</option>
+                          {uniqueYears.map(year => (
+                            <option key={year} value={year}>{year}</option>
+                          ))}
+                        </select>
+                      </div>
+                    </div>
+
+                    <div style={{ marginTop: '1rem', fontSize: '0.875rem', color: '#6b7280' }}>
+                      Showing {filteredNCList.length} of {ncList.length} NCs
+                    </div>
+                  </div>
+
+                  <div className="nc-form-section">
+                    {loading ? (
+                      <div className="nc-empty-state">
+                        <span className="nc-empty-icon">⏳</span>
+                        <h3 className="nc-empty-title">Loading NCs...</h3>
+                      </div>
+                    ) : filteredNCList.length === 0 ? (
+                      <div className="nc-empty-state">
+                        <span className="nc-empty-icon">📋</span>
+                        <h3 className="nc-empty-title">No NCs Found</h3>
+                        <p className="nc-empty-description">
+                          {Object.values(filters).some(v => v) ? 'Try adjusting your filters' : 'Click "New NC" to register your first non-conformity'}
+                        </p>
+                      </div>
                     ) : (
-                      filteredNCList.map((nc) => (
-                        <tr key={nc.id} className="hover:bg-slate-700/30 transition-colors">
-                          <td className="px-4 py-4 font-mono font-bold text-blue-400">{nc.number}</td>
-                          <td className="px-4 py-4 text-slate-300">{nc.year}</td>
-                          <td className="px-4 py-4">{getStatusBadge(nc.status)}</td>
-                          <td className="px-4 py-4">{getNCClassBadge(nc.ncClass)}</td>
-                          <td className="px-4 py-4 text-slate-300 max-w-xs truncate">{nc.ncMainSubject}</td>
-                          <td className="px-4 py-4 text-slate-300 max-w-xs truncate">{nc.projectName}</td>
-                          <td className="px-4 py-4 text-slate-300 text-sm">{getDetectionPhaseLabel(nc.detectionPhase)}</td>
-                          <td className="px-4 py-4 text-slate-300 text-sm">{nc.accountable}</td>
-                          <td className="px-4 py-4">
-                            <div className="flex items-center justify-center gap-2">
-                              <button 
-                                onClick={() => handleViewNC(nc)}
-                                className="p-2 bg-blue-600 hover:bg-blue-700 rounded-lg transition-all"
-                                title="View"
-                              >
-                                <Eye size={16} />
-                              </button>
-                              <button 
-                                onClick={() => handleEditNC(nc)}
-                                className="p-2 bg-green-600 hover:bg-green-700 rounded-lg transition-all" 
-                                title="Edit"
-                              >
-                                <Edit size={16} />
-                              </button>
-                              <button 
-                                onClick={() => handleDeleteNC(nc.id)}
-                                className="p-2 bg-red-600 hover:bg-red-700 rounded-lg transition-all" 
-                                title="Delete"
-                              >
-                                <Trash2 size={16} />
-                              </button>
-                            </div>
-                          </td>
-                        </tr>
-                      ))
+                      <div className="nc-table-container">
+                        <table className="nc-table">
+                          <thead>
+                            <tr>
+                              <th>N°</th>
+                              <th>Year</th>
+                              <th>Status</th>
+                              <th>Class</th>
+                              <th>Subject</th>
+                              <th>Project</th>
+                              <th>Detection</th>
+                              <th>Accountable</th>
+                              <th>Actions</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {filteredNCList.map((nc) => (
+                              <tr key={nc.id}>
+                                <td style={{ fontWeight: 600, fontFamily: 'monospace' }}>{nc.number}</td>
+                                <td>{nc.year}</td>
+                                <td>
+                                  <span className={`nc-status-badge nc-status-${nc.status}`}>
+                                    {nc.status?.replace('_', ' ')}
+                                  </span>
+                                </td>
+                                <td>
+                                  <span className={`nc-status-badge nc-priority-${nc.ncClass}`}>
+                                    {nc.ncClass}
+                                  </span>
+                                </td>
+                                <td style={{ maxWidth: '200px' }}>{nc.ncMainSubject}</td>
+                                <td style={{ maxWidth: '150px' }}>{nc.projectName}</td>
+                                <td style={{ fontSize: '0.75rem' }}>
+                                  {getDetectionPhaseLabel(nc.detectionPhase)}
+                                </td>
+                                <td style={{ fontSize: '0.75rem' }}>{nc.accountable}</td>
+                                <td>
+                                  <div style={{ display: 'flex', gap: '0.5rem', justifyContent: 'center' }}>
+                                    <button
+                                      onClick={() => handleViewNC(nc)}
+                                      className="nc-btn nc-btn-primary"
+                                      style={{ padding: '0.4rem 0.8rem', fontSize: '0.75rem' }}
+                                      title="View"
+                                    >
+                                      👁️
+                                    </button>
+                                    <button
+                                      onClick={() => handleEditNC(nc)}
+                                      className="nc-btn nc-btn-success"
+                                      style={{ padding: '0.4rem 0.8rem', fontSize: '0.75rem' }}
+                                      title="Edit"
+                                    >
+                                      ✏️
+                                    </button>
+                                    <button
+                                      onClick={() => handleDeleteNC(nc.id)}
+                                      className="nc-btn nc-btn-danger"
+                                      style={{ padding: '0.4rem 0.8rem', fontSize: '0.75rem' }}
+                                      title="Delete"
+                                    >
+                                      🗑️
+                                    </button>
+                                  </div>
+                                </td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      </div>
                     )}
-                  </tbody>
-                </table>
+                  </div>
+                </div>
               </div>
             </div>
-          </div>
-        ) : (
-          // STATISTICS VIEW
-          <div>
-            <div className="mb-8">
-              <h2 className="text-3xl font-bold mb-2">📈 Statistics & Analytics</h2>
-              <p className="text-slate-300">Non-Conformity Metrics Dashboard</p>
-            </div>
+          )}
 
-            <NCStatisticsCharts ncList={ncList} />
-          </div>
-        )}
+          {/* Statistics View */}
+          {activeView === 'stats' && (
+            <div className="nc-panel-container">
+              <NCStatisticsCharts ncList={ncList} />
+            </div>
+          )}
+        </div>
       </div>
 
       {/* Add/Edit Modal */}
       {(showAddModal || showEditPanel) && (
-        <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-          <div className="bg-slate-800 rounded-xl p-8 max-w-5xl w-full border border-slate-700 shadow-2xl max-h-[90vh] overflow-y-auto">
-            <div className="flex justify-between items-center mb-6">
-              <h3 className="text-2xl font-bold">
-                {currentNC.id ? `✏️ Edit NC #${currentNC.number}` : '➕ Register New NC'}
-              </h3>
-              <button 
-                onClick={() => {
-                  setShowAddModal(false);
-                  setShowEditPanel(false);
-                  setCurrentNC(emptyNC);
-                }}
-                className="p-2 hover:bg-slate-700 rounded-lg transition-all"
-              >
-                <X size={24} />
-              </button>
+        <div style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          background: 'rgba(0, 0, 0, 0.7)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          zIndex: 1000,
+          padding: '2rem'
+        }}>
+          <div className="nc-panel-card" style={{
+            maxWidth: '1200px',
+            width: '100%',
+            maxHeight: '90vh',
+            overflow: 'auto'
+          }}>
+            <div className="nc-panel-header">
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <h2 className="nc-panel-title">
+                  {currentNC.id ? `✏️ Edit NC #${currentNC.number}` : '➕ Register New NC'}
+                </h2>
+                <button
+                  onClick={() => {
+                    setShowAddModal(false);
+                    setShowEditPanel(false);
+                    setCurrentNC(emptyNC);
+                  }}
+                  className="nc-btn nc-btn-secondary"
+                  style={{ padding: '0.5rem' }}
+                >
+                  ✕
+                </button>
+              </div>
             </div>
-            
+
             <NCForm nc={currentNC} onChange={setCurrentNC} />
 
-            <div className="flex justify-end gap-4 mt-8">
-              <button 
+            <div className="nc-form-actions">
+              <button
                 onClick={() => {
                   setShowAddModal(false);
                   setShowEditPanel(false);
                   setCurrentNC(emptyNC);
                 }}
-                className="px-6 py-2 bg-slate-700 hover:bg-slate-600 rounded-lg transition-all"
+                className="nc-btn nc-btn-secondary"
               >
                 Cancel
               </button>
-              <button 
+              <button
                 onClick={handleSaveNC}
-                className="flex items-center gap-2 px-6 py-2 bg-blue-600 hover:bg-blue-700 rounded-lg font-semibold transition-all"
+                className="nc-btn nc-btn-success"
               >
-                <Save size={18} />
-                Save NC
+                💾 Save NC
               </button>
             </div>
           </div>
@@ -726,117 +761,107 @@ const NCRegistrySystem = ({ onBack }) => {
 
       {/* View Details Modal */}
       {selectedNC && (
-        <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-          <div className="bg-slate-800 rounded-xl p-8 max-w-4xl w-full border border-slate-700 shadow-2xl max-h-[90vh] overflow-y-auto">
-            <div className="flex justify-between items-start mb-6">
-              <div>
-                <h3 className="text-2xl font-bold mb-2">NC #{selectedNC.number}</h3>
-                <p className="text-slate-400">{selectedNC.projectName}</p>
+        <div style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          background: 'rgba(0, 0, 0, 0.7)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          zIndex: 1000,
+          padding: '2rem'
+        }}>
+          <div className="nc-panel-card" style={{
+            maxWidth: '900px',
+            width: '100%',
+            maxHeight: '90vh',
+            overflow: 'auto'
+          }}>
+            <div className="nc-panel-header">
+              <h2 className="nc-panel-title">
+                NC #{selectedNC.number} - {selectedNC.year}
+              </h2>
+              <div style={{ display: 'flex', gap: '1rem', marginTop: '1rem' }}>
+                <span className={`nc-status-badge nc-status-${selectedNC.status}`}>
+                  {selectedNC.status?.replace('_', ' ')}
+                </span>
+                <span className={`nc-status-badge nc-priority-${selectedNC.ncClass}`}>
+                  {selectedNC.ncClass}
+                </span>
               </div>
-              <button 
-                onClick={() => setSelectedNC(null)}
-                className="p-2 hover:bg-slate-700 rounded-lg transition-all"
-              >
-                <X size={24} />
-              </button>
             </div>
 
-            <div className="space-y-6">
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="text-sm font-semibold text-slate-400">Status</label>
-                  <div className="mt-2">{getStatusBadge(selectedNC.status)}</div>
+            <div className="nc-form-container">
+              <div className="nc-details-grid">
+                <div className="nc-detail-item">
+                  <span className="nc-detail-label">Project:</span>
+                  <span className="nc-detail-value">{selectedNC.projectName || '-'}</span>
                 </div>
-                <div>
-                  <label className="text-sm font-semibold text-slate-400">NC Class</label>
-                  <div className="mt-2">{getNCClassBadge(selectedNC.ncClass)}</div>
+                <div className="nc-detail-item">
+                  <span className="nc-detail-label">Detection:</span>
+                  <span className="nc-detail-value">{getDetectionPhaseLabel(selectedNC.detectionPhase)}</span>
                 </div>
-              </div>
-
-              <div className="grid grid-cols-3 gap-4">
-                <div>
-                  <label className="text-sm font-semibold text-slate-400">Year</label>
-                  <p className="mt-1 text-lg">{selectedNC.year}</p>
+                <div className="nc-detail-item">
+                  <span className="nc-detail-label">Date:</span>
+                  <span className="nc-detail-value">{selectedNC.dateOfDetection}</span>
                 </div>
-                <div>
-                  <label className="text-sm font-semibold text-slate-400">Month</label>
-                  <p className="mt-1 text-lg">{selectedNC.month}</p>
-                </div>
-                <div>
-                  <label className="text-sm font-semibold text-slate-400">Date of Detection</label>
-                  <p className="mt-1 text-lg">{selectedNC.dateOfDetection}</p>
+                <div className="nc-detail-item">
+                  <span className="nc-detail-label">Accountable:</span>
+                  <span className="nc-detail-value">{selectedNC.accountable || '-'}</span>
                 </div>
               </div>
 
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="text-sm font-semibold text-slate-400">NC Issuer</label>
-                  <p className="mt-1 text-lg">{selectedNC.ncIssuer || '-'}</p>
+              {selectedNC.ncMainSubject && (
+                <div className="nc-description-section">
+                  <h4 className="nc-subsection-title">NC Main Subject</h4>
+                  <p className="nc-description-text">{selectedNC.ncMainSubject}</p>
                 </div>
-                <div>
-                  <label className="text-sm font-semibold text-slate-400">Detection Phase</label>
-                  <p className="mt-1 text-lg">{getDetectionPhaseLabel(selectedNC.detectionPhase)}</p>
-                </div>
-              </div>
-
-              <div>
-                <label className="text-sm font-semibold text-slate-400">Accountable</label>
-                <p className="mt-1 text-lg">{selectedNC.accountable || '-'}</p>
-              </div>
-
-              <div className="bg-slate-900/50 rounded-lg p-4 border border-slate-700">
-                <label className="text-sm font-semibold text-slate-400">NC Main Subject</label>
-                <p className="mt-2 text-lg">{selectedNC.ncMainSubject}</p>
-              </div>
+              )}
 
               {selectedNC.ncBriefSummary && (
-                <div className="bg-slate-900/50 rounded-lg p-4 border border-slate-700">
-                  <label className="text-sm font-semibold text-slate-400">NC Brief Summary & Root Cause</label>
-                  <p className="mt-2">{selectedNC.ncBriefSummary}</p>
+                <div className="nc-description-section">
+                  <h4 className="nc-subsection-title">Brief Summary</h4>
+                  <p className="nc-description-text">{selectedNC.ncBriefSummary}</p>
                 </div>
               )}
 
               {selectedNC.treatment && (
-                <div className="bg-slate-900/50 rounded-lg p-4 border border-slate-700">
-                  <label className="text-sm font-semibold text-slate-400">Treatment</label>
-                  <p className="mt-2">{selectedNC.treatment}</p>
+                <div className="nc-description-section">
+                  <h4 className="nc-subsection-title">Treatment</h4>
+                  <p className="nc-description-text">{selectedNC.treatment}</p>
                 </div>
               )}
 
               {selectedNC.rootCauseAnalysis && (
-                <div className="bg-slate-900/50 rounded-lg p-4 border border-slate-700">
-                  <label className="text-sm font-semibold text-slate-400">Root Cause Analysis</label>
-                  <p className="mt-2">{selectedNC.rootCauseAnalysis}</p>
+                <div className="nc-description-section">
+                  <h4 className="nc-subsection-title">Root Cause Analysis</h4>
+                  <p className="nc-description-text">{selectedNC.rootCauseAnalysis}</p>
                 </div>
               )}
 
               {selectedNC.correctiveAction && (
-                <div className="bg-slate-900/50 rounded-lg p-4 border border-slate-700">
-                  <label className="text-sm font-semibold text-slate-400">Corrective Action</label>
-                  <p className="mt-2">{selectedNC.correctiveAction}</p>
+                <div className="nc-description-section">
+                  <h4 className="nc-subsection-title">Corrective Action</h4>
+                  <p className="nc-description-text">{selectedNC.correctiveAction}</p>
                 </div>
               )}
 
-              {selectedNC.dateOfClosure && (
-                <div>
-                  <label className="text-sm font-semibold text-slate-400">Date of Closure</label>
-                  <p className="mt-1 text-lg">{selectedNC.dateOfClosure}</p>
-                </div>
-              )}
-
-              {/* Quick Status Update */}
-              <div className="bg-blue-900/30 rounded-lg p-4 border border-blue-700">
-                <h4 className="font-semibold mb-3">🔄 Quick Status Update</h4>
-                <div className="flex gap-2 flex-wrap">
+              <div className="nc-form-section">
+                <h4 className="nc-subsection-title">🔄 Quick Status Update</h4>
+                <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
                   {statusOptions.map(opt => (
                     <button
                       key={opt.value}
-                      onClick={() => {
-                        handleUpdateStatus(selectedNC.id, opt.value);
-                        setSelectedNC({...selectedNC, status: opt.value});
-                      }}
-                      className={`px-4 py-2 rounded-lg transition-all ${
-                        selectedNC.status === opt.value ? opt.color + ' font-bold' : 'bg-slate-700 hover:bg-slate-600'
+                      onClick={() => handleUpdateStatus(selectedNC.id, opt.value)}
+                      className={`nc-btn ${
+                        selectedNC.status === opt.value 
+                          ? opt.value === 'open' ? 'nc-btn-danger'
+                          : opt.value === 'closed' ? 'nc-btn-success'
+                          : 'nc-btn-primary'
+                          : 'nc-btn-secondary'
                       }`}
                     >
                       {opt.label}
@@ -845,21 +870,21 @@ const NCRegistrySystem = ({ onBack }) => {
                 </div>
               </div>
 
-              <div className="flex justify-end gap-4 mt-6">
-                <button 
+              <div className="nc-form-actions">
+                <button
                   onClick={() => setSelectedNC(null)}
-                  className="px-6 py-2 bg-slate-700 hover:bg-slate-600 rounded-lg transition-all"
+                  className="nc-btn nc-btn-secondary"
                 >
                   Close
                 </button>
-                <button 
+                <button
                   onClick={() => {
                     handleEditNC(selectedNC);
                     setSelectedNC(null);
                   }}
-                  className="px-6 py-2 bg-blue-600 hover:bg-blue-700 rounded-lg font-semibold transition-all"
+                  className="nc-btn nc-btn-primary"
                 >
-                  Edit NC
+                  ✏️ Edit NC
                 </button>
               </div>
             </div>

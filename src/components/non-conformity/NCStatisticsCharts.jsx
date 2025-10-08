@@ -8,12 +8,21 @@ import { BarChart3, TrendingUp, AlertCircle, CheckCircle, Clock, Calendar } from
 
 const NCStatisticsCharts = ({ ncList }) => {
   const [stats, setStats] = useState(null);
+  const [selectedYearPhase, setSelectedYearPhase] = useState('all');
+  const [selectedYearAccountable, setSelectedYearAccountable] = useState('all');
+  const [availableYears, setAvailableYears] = useState([]);
 
   useEffect(() => {
     if (ncList && ncList.length > 0) {
       calculateStats();
+      extractAvailableYears();
     }
   }, [ncList]);
+
+  const extractAvailableYears = () => {
+    const years = [...new Set(ncList.map(nc => nc.year).filter(Boolean))].sort((a, b) => b - a);
+    setAvailableYears(years);
+  };
 
   const calculateStats = () => {
     const total = ncList.length;
@@ -33,11 +42,38 @@ const NCStatisticsCharts = ({ ncList }) => {
       minor: ncList.filter(nc => nc.ncClass === 'minor').length
     };
 
-    // Detection Phase distribution
+    // Detection Phase distribution (all data for filtering)
     const phaseDist = {};
+    const phaseDistByYear = {};
+    
     ncList.forEach(nc => {
       if (nc.detectionPhase) {
         phaseDist[nc.detectionPhase] = (phaseDist[nc.detectionPhase] || 0) + 1;
+        
+        if (nc.year) {
+          if (!phaseDistByYear[nc.year]) {
+            phaseDistByYear[nc.year] = {};
+          }
+          phaseDistByYear[nc.year][nc.detectionPhase] = 
+            (phaseDistByYear[nc.year][nc.detectionPhase] || 0) + 1;
+        }
+      }
+    });
+
+    // Accountable/Supplier distribution
+    const accountableDist = {};
+    const accountableDistByYear = {};
+    
+    ncList.forEach(nc => {
+      const accountable = nc.accountable || nc.supplier || nc.responsiblePerson || 'Not Assigned';
+      accountableDist[accountable] = (accountableDist[accountable] || 0) + 1;
+      
+      if (nc.year) {
+        if (!accountableDistByYear[nc.year]) {
+          accountableDistByYear[nc.year] = {};
+        }
+        accountableDistByYear[nc.year][accountable] = 
+          (accountableDistByYear[nc.year][accountable] || 0) + 1;
       }
     });
 
@@ -68,6 +104,9 @@ const NCStatisticsCharts = ({ ncList }) => {
       statusDist,
       classDist,
       phaseDist,
+      phaseDistByYear,
+      accountableDist,
+      accountableDistByYear,
       monthlyData,
       yearlyDist
     });
@@ -95,12 +134,36 @@ const NCStatisticsCharts = ({ ncList }) => {
     { name: 'Minor', value: stats.classDist.minor, color: '#eab308' }
   ].filter(item => item.value > 0);
 
-  const phaseChartData = Object.entries(stats.phaseDist)
+  // Filter phase data by selected year
+  const getPhaseDataForYear = () => {
+    if (selectedYearPhase === 'all') {
+      return stats.phaseDist;
+    }
+    return stats.phaseDistByYear[selectedYearPhase] || {};
+  };
+
+  const phaseChartData = Object.entries(getPhaseDataForYear())
     .map(([phase, count]) => ({
       name: phase.split('_').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' '),
       value: count
     }))
     .sort((a, b) => b.value - a.value);
+
+  // Filter accountable data by selected year
+  const getAccountableDataForYear = () => {
+    if (selectedYearAccountable === 'all') {
+      return stats.accountableDist;
+    }
+    return stats.accountableDistByYear[selectedYearAccountable] || {};
+  };
+
+  const accountableChartData = Object.entries(getAccountableDataForYear())
+    .map(([accountable, count]) => ({
+      name: accountable,
+      value: count
+    }))
+    .sort((a, b) => b.value - a.value)
+    .slice(0, 10); // Top 10 accountables
 
   const yearlyChartData = Object.entries(stats.yearlyDist)
     .map(([year, count]) => ({
@@ -119,7 +182,7 @@ const NCStatisticsCharts = ({ ncList }) => {
     }))
     .slice(-12);
 
-  const COLORS = ['#ef4444', '#eab308', '#22c55e', '#6b7280', '#3b82f6', '#8b5cf6', '#ec4899'];
+  const COLORS = ['#ef4444', '#eab308', '#22c55e', '#6b7280', '#3b82f6', '#8b5cf6', '#ec4899', '#14b8a6', '#f59e0b', '#06b6d4'];
 
   return (
     <div className="space-y-6">
@@ -196,199 +259,187 @@ const NCStatisticsCharts = ({ ncList }) => {
         </div>
       </div>
 
-      {/* Charts Row 1: Status & Class Distribution */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      {/* Charts Row 1: Status and Class Pie Charts */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         {/* Status Distribution Pie Chart */}
         <div className="bg-slate-800/50 backdrop-blur-sm rounded-xl p-6 border border-slate-700">
-          <h3 className="text-xl font-bold mb-4">📊 NC Status Distribution</h3>
-          <ResponsiveContainer width="100%" height={300}>
-            <PieChart>
-              <Pie
-                data={statusChartData}
-                cx="50%"
-                cy="50%"
-                labelLine={false}
-                label={({ name, percent }) => `${name}: ${(percent * 100).toFixed(0)}%`}
-                outerRadius={100}
-                fill="#8884d8"
-                dataKey="value"
-              >
-                {statusChartData.map((entry, index) => (
-                  <Cell key={`cell-${index}`} fill={entry.color} />
-                ))}
-              </Pie>
-              <Tooltip 
-                contentStyle={{ backgroundColor: '#1e293b', border: '1px solid #334155', borderRadius: '8px' }}
-                labelStyle={{ color: '#e2e8f0' }}
-              />
-            </PieChart>
-          </ResponsiveContainer>
+          <h3 className="text-xl font-bold mb-4">📊 Status Distribution</h3>
+          <div className="bg-white/90 backdrop-blur-sm rounded-lg p-4">
+            <ResponsiveContainer width="100%" height={300}>
+              <PieChart>
+                <Pie
+                  data={statusChartData}
+                  cx="50%"
+                  cy="50%"
+                  labelLine={false}
+                  label={({ name, percent }) => `${name}: ${(percent * 100).toFixed(0)}%`}
+                  outerRadius={80}
+                  fill="#8884d8"
+                  dataKey="value"
+                >
+                  {statusChartData.map((entry, index) => (
+                    <Cell key={`cell-${index}`} fill={entry.color} />
+                  ))}
+                </Pie>
+                <Tooltip 
+                  contentStyle={{ backgroundColor: '#1e293b', border: '1px solid #334155', borderRadius: '8px' }}
+                  labelStyle={{ color: '#e2e8f0' }}
+                />
+              </PieChart>
+            </ResponsiveContainer>
+          </div>
         </div>
 
-        {/* NC Class Pie Chart */}
+        {/* NC Class Distribution Pie Chart */}
         <div className="bg-slate-800/50 backdrop-blur-sm rounded-xl p-6 border border-slate-700">
-          <h3 className="text-xl font-bold mb-4">⚠️ NC Class Distribution</h3>
-          <ResponsiveContainer width="100%" height={300}>
-            <PieChart>
-              <Pie
-                data={classChartData}
-                cx="50%"
-                cy="50%"
-                labelLine={false}
-                label={({ name, percent }) => `${name}: ${(percent * 100).toFixed(0)}%`}
-                outerRadius={100}
-                fill="#8884d8"
-                dataKey="value"
-              >
-                {classChartData.map((entry, index) => (
-                  <Cell key={`cell-${index}`} fill={entry.color} />
-                ))}
-              </Pie>
-              <Tooltip 
-                contentStyle={{ backgroundColor: '#1e293b', border: '1px solid #334155', borderRadius: '8px' }}
-                labelStyle={{ color: '#e2e8f0' }}
-              />
-            </PieChart>
-          </ResponsiveContainer>
+          <h3 className="text-xl font-bold mb-4">⚡ NC Class Distribution</h3>
+          <div className="bg-white/90 backdrop-blur-sm rounded-lg p-4">
+            <ResponsiveContainer width="100%" height={300}>
+              <PieChart>
+                <Pie
+                  data={classChartData}
+                  cx="50%"
+                  cy="50%"
+                  labelLine={false}
+                  label={({ name, percent }) => `${name}: ${(percent * 100).toFixed(0)}%`}
+                  outerRadius={80}
+                  fill="#8884d8"
+                  dataKey="value"
+                >
+                  {classChartData.map((entry, index) => (
+                    <Cell key={`cell-${index}`} fill={entry.color} />
+                  ))}
+                </Pie>
+                <Tooltip 
+                  contentStyle={{ backgroundColor: '#1e293b', border: '1px solid #334155', borderRadius: '8px' }}
+                  labelStyle={{ color: '#e2e8f0' }}
+                />
+              </PieChart>
+            </ResponsiveContainer>
+          </div>
         </div>
       </div>
 
-      {/* Charts Row 2: Detection Phase Bar Chart */}
+      {/* Charts Row 2: Detection Phase Bar Chart with Year Filter */}
       <div className="bg-slate-800/50 backdrop-blur-sm rounded-xl p-6 border border-slate-700">
-        <h3 className="text-xl font-bold mb-4">📍 NCs by Detection Phase</h3>
-        <ResponsiveContainer width="100%" height={350}>
-          <BarChart data={phaseChartData} layout="vertical">
-            <CartesianGrid strokeDasharray="3 3" stroke="#334155" />
-            <XAxis type="number" stroke="#94a3b8" />
-            <YAxis dataKey="name" type="category" width={150} stroke="#94a3b8" />
-            <Tooltip 
-              contentStyle={{ backgroundColor: '#1e293b', border: '1px solid #334155', borderRadius: '8px' }}
-              labelStyle={{ color: '#e2e8f0' }}
-            />
-            <Bar dataKey="value" fill="#3b82f6" radius={[0, 8, 8, 0]}>
-              {phaseChartData.map((entry, index) => (
-                <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+        <div className="flex justify-between items-center mb-4">
+          <h3 className="text-xl font-bold">📍 NCs by Detection Phase</h3>
+          <div className="flex items-center gap-2">
+            <label className="text-sm text-slate-300">Year:</label>
+            <select 
+              value={selectedYearPhase}
+              onChange={(e) => setSelectedYearPhase(e.target.value)}
+              className="bg-slate-700 text-white rounded-lg px-3 py-2 border border-slate-600 focus:outline-none focus:ring-2 focus:ring-blue-500"
+            >
+              <option value="all">All Years</option>
+              {availableYears.map(year => (
+                <option key={year} value={year}>{year}</option>
               ))}
-            </Bar>
-          </BarChart>
-        </ResponsiveContainer>
-      </div>
-
-      {/* Charts Row 3: Yearly Trend */}
-      {yearlyChartData.length > 1 && (
-        <div className="bg-slate-800/50 backdrop-blur-sm rounded-xl p-6 border border-slate-700">
-          <h3 className="text-xl font-bold mb-4">📅 NCs by Year</h3>
-          <ResponsiveContainer width="100%" height={300}>
-            <BarChart data={yearlyChartData}>
-              <CartesianGrid strokeDasharray="3 3" stroke="#334155" />
-              <XAxis dataKey="year" stroke="#94a3b8" />
-              <YAxis stroke="#94a3b8" />
+            </select>
+          </div>
+        </div>
+        <div className="bg-white/90 backdrop-blur-sm rounded-lg p-4">
+          <ResponsiveContainer width="100%" height={350}>
+            <BarChart data={phaseChartData} layout="vertical">
+              <CartesianGrid strokeDasharray="3 3" stroke="#cbd5e1" />
+              <XAxis type="number" stroke="#475569" />
+              <YAxis dataKey="name" type="category" width={150} stroke="#475569" />
               <Tooltip 
                 contentStyle={{ backgroundColor: '#1e293b', border: '1px solid #334155', borderRadius: '8px' }}
                 labelStyle={{ color: '#e2e8f0' }}
               />
-              <Bar dataKey="count" fill="#8b5cf6" radius={[8, 8, 0, 0]} />
+              <Bar dataKey="value" fill="#3b82f6" radius={[0, 8, 8, 0]}>
+                {phaseChartData.map((entry, index) => (
+                  <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                ))}
+              </Bar>
             </BarChart>
           </ResponsiveContainer>
         </div>
-      )}
+      </div>
 
-      {/* Charts Row 4: Monthly Trend */}
-      {monthlyTrendData.length > 0 && (
-        <div className="bg-slate-800/50 backdrop-blur-sm rounded-xl p-6 border border-slate-700">
-          <h3 className="text-xl font-bold mb-4 flex items-center gap-2">
-            <TrendingUp size={24} />
-            Monthly Trend (Last 12 Months)
-          </h3>
-          <ResponsiveContainer width="100%" height={300}>
-            <LineChart data={monthlyTrendData}>
-              <CartesianGrid strokeDasharray="3 3" stroke="#334155" />
-              <XAxis 
-                dataKey="month" 
-                stroke="#94a3b8"
-                angle={-45}
-                textAnchor="end"
-                height={80}
-              />
-              <YAxis stroke="#94a3b8" />
+      {/* Charts Row 3: NCs by Accountable/Supplier with Year Filter */}
+      <div className="bg-slate-800/50 backdrop-blur-sm rounded-xl p-6 border border-slate-700">
+        <div className="flex justify-between items-center mb-4">
+          <h3 className="text-xl font-bold">👥 NCs by Accountable / Supplier</h3>
+          <div className="flex items-center gap-2">
+            <label className="text-sm text-slate-300">Year:</label>
+            <select 
+              value={selectedYearAccountable}
+              onChange={(e) => setSelectedYearAccountable(e.target.value)}
+              className="bg-slate-700 text-white rounded-lg px-3 py-2 border border-slate-600 focus:outline-none focus:ring-2 focus:ring-blue-500"
+            >
+              <option value="all">All Years</option>
+              {availableYears.map(year => (
+                <option key={year} value={year}>{year}</option>
+              ))}
+            </select>
+          </div>
+        </div>
+        <div className="bg-white/90 backdrop-blur-sm rounded-lg p-4">
+          <ResponsiveContainer width="100%" height={400}>
+            <BarChart data={accountableChartData} layout="vertical">
+              <CartesianGrid strokeDasharray="3 3" stroke="#cbd5e1" />
+              <XAxis type="number" stroke="#475569" />
+              <YAxis dataKey="name" type="category" width={180} stroke="#475569" />
               <Tooltip 
                 contentStyle={{ backgroundColor: '#1e293b', border: '1px solid #334155', borderRadius: '8px' }}
                 labelStyle={{ color: '#e2e8f0' }}
               />
-              <Legend />
-              <Line 
-                type="monotone" 
-                dataKey="total" 
-                stroke="#3b82f6" 
-                strokeWidth={2}
-                name="Total NCs"
-              />
-              <Line 
-                type="monotone" 
-                dataKey="open" 
-                stroke="#ef4444" 
-                strokeWidth={2}
-                name="Open"
-              />
-              <Line 
-                type="monotone" 
-                dataKey="closed" 
-                stroke="#22c55e" 
-                strokeWidth={2}
-                name="Closed"
-              />
-            </LineChart>
+              <Bar dataKey="value" fill="#8b5cf6" radius={[0, 8, 8, 0]}>
+                {accountableChartData.map((entry, index) => (
+                  <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                ))}
+              </Bar>
+            </BarChart>
           </ResponsiveContainer>
+        </div>
+      </div>
+
+      {/* Charts Row 4: Yearly Trend */}
+      {yearlyChartData.length > 1 && (
+        <div className="bg-slate-800/50 backdrop-blur-sm rounded-xl p-6 border border-slate-700">
+          <h3 className="text-xl font-bold mb-4">📅 NCs by Year</h3>
+          <div className="bg-white/90 backdrop-blur-sm rounded-lg p-4">
+            <ResponsiveContainer width="100%" height={300}>
+              <BarChart data={yearlyChartData}>
+                <CartesianGrid strokeDasharray="3 3" stroke="#cbd5e1" />
+                <XAxis dataKey="year" stroke="#475569" />
+                <YAxis stroke="#475569" />
+                <Tooltip 
+                  contentStyle={{ backgroundColor: '#1e293b', border: '1px solid #334155', borderRadius: '8px' }}
+                  labelStyle={{ color: '#e2e8f0' }}
+                />
+                <Bar dataKey="count" fill="#8b5cf6" radius={[8, 8, 0, 0]} />
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
         </div>
       )}
 
-      {/* Summary Table */}
-      <div className="bg-slate-800/50 backdrop-blur-sm rounded-xl p-6 border border-slate-700">
-        <h3 className="text-xl font-bold mb-4">📋 Summary Statistics</h3>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          {/* Status Summary */}
-          <div>
-            <h4 className="font-semibold mb-3 text-slate-300">By Status</h4>
-            <div className="space-y-2">
-              <div className="flex justify-between items-center p-2 bg-slate-900/50 rounded">
-                <span className="text-slate-300">🔴 Open</span>
-                <span className="font-bold">{stats.statusDist.open}</span>
-              </div>
-              <div className="flex justify-between items-center p-2 bg-slate-900/50 rounded">
-                <span className="text-slate-300">🟡 In Progress</span>
-                <span className="font-bold">{stats.statusDist.inProgress}</span>
-              </div>
-              <div className="flex justify-between items-center p-2 bg-slate-900/50 rounded">
-                <span className="text-slate-300">🟢 Closed</span>
-                <span className="font-bold">{stats.statusDist.closed}</span>
-              </div>
-              <div className="flex justify-between items-center p-2 bg-slate-900/50 rounded">
-                <span className="text-slate-300">⚫ Cancelled</span>
-                <span className="font-bold">{stats.statusDist.cancelled}</span>
-              </div>
-            </div>
-          </div>
-
-          {/* Class Summary */}
-          <div>
-            <h4 className="font-semibold mb-3 text-slate-300">By NC Class</h4>
-            <div className="space-y-2">
-              <div className="flex justify-between items-center p-2 bg-slate-900/50 rounded">
-                <span className="text-slate-300">🚨 Critical</span>
-                <span className="font-bold text-red-400">{stats.classDist.critical}</span>
-              </div>
-              <div className="flex justify-between items-center p-2 bg-slate-900/50 rounded">
-                <span className="text-slate-300">🔴 Major</span>
-                <span className="font-bold text-orange-400">{stats.classDist.major}</span>
-              </div>
-              <div className="flex justify-between items-center p-2 bg-slate-900/50 rounded">
-                <span className="text-slate-300">🟡 Minor</span>
-                <span className="font-bold text-yellow-400">{stats.classDist.minor}</span>
-              </div>
-            </div>
+      {/* Charts Row 5: Monthly Trend */}
+      {monthlyTrendData.length > 0 && (
+        <div className="bg-slate-800/50 backdrop-blur-sm rounded-xl p-6 border border-slate-700">
+          <h3 className="text-xl font-bold mb-4">📈 Monthly Trend (Last 12 Months)</h3>
+          <div className="bg-white/90 backdrop-blur-sm rounded-lg p-4">
+            <ResponsiveContainer width="100%" height={300}>
+              <LineChart data={monthlyTrendData}>
+                <CartesianGrid strokeDasharray="3 3" stroke="#cbd5e1" />
+                <XAxis dataKey="month" stroke="#475569" />
+                <YAxis stroke="#475569" />
+                <Tooltip 
+                  contentStyle={{ backgroundColor: '#1e293b', border: '1px solid #334155', borderRadius: '8px' }}
+                  labelStyle={{ color: '#e2e8f0' }}
+                />
+                <Legend />
+                <Line type="monotone" dataKey="total" stroke="#3b82f6" strokeWidth={2} name="Total NCs" />
+                <Line type="monotone" dataKey="open" stroke="#ef4444" strokeWidth={2} name="Open" />
+                <Line type="monotone" dataKey="closed" stroke="#22c55e" strokeWidth={2} name="Closed" />
+              </LineChart>
+            </ResponsiveContainer>
           </div>
         </div>
-      </div>
+      )}
     </div>
   );
 };

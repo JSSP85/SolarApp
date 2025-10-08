@@ -10,6 +10,7 @@ const NCStatisticsCharts = ({ ncList }) => {
   const [stats, setStats] = useState(null);
   const [selectedYearPhase, setSelectedYearPhase] = useState('all');
   const [selectedYearAccountable, setSelectedYearAccountable] = useState('all');
+  const [selectedYearPieCharts, setSelectedYearPieCharts] = useState('all');
   const [availableYears, setAvailableYears] = useState([]);
 
   useEffect(() => {
@@ -120,27 +121,7 @@ const NCStatisticsCharts = ({ ncList }) => {
     );
   }
 
-  // Prepare data for charts
-  const filteredStatusDist = getStatusDataForYear();
-  const filteredClassDist = getClassDataForYear();
-  
-  const statusChartData = [
-    { name: 'Open', value: filteredStatusDist.open, color: '#ef4444' },
-    { name: 'In Progress', value: filteredStatusDist.inProgress, color: '#eab308' },
-    { name: 'Closed', value: filteredStatusDist.closed, color: '#22c55e' },
-    { name: 'Cancelled', value: filteredStatusDist.cancelled, color: '#6b7280' }
-  ].filter(item => item.value > 0);
-
-  const classChartData = [
-    { name: 'Critical', value: filteredClassDist.critical, color: '#dc2626' },
-    { name: 'Major', value: filteredClassDist.major, color: '#f97316' },
-    { name: 'Minor', value: filteredClassDist.minor, color: '#eab308' }
-  ].filter(item => item.value > 0);
-
-  // Add state for pie charts year filter
-  const [selectedYearPieCharts, setSelectedYearPieCharts] = useState('all');
-
-  // Filter phase data by selected year
+  // Filter functions - defined here before use
   const getPhaseDataForYear = () => {
     if (selectedYearPhase === 'all') {
       return stats.phaseDist;
@@ -148,7 +129,6 @@ const NCStatisticsCharts = ({ ncList }) => {
     return stats.phaseDistByYear[selectedYearPhase] || {};
   };
 
-  // Filter status and class data by selected year
   const getStatusDataForYear = () => {
     if (selectedYearPieCharts === 'all') {
       return stats.statusDist;
@@ -174,6 +154,30 @@ const NCStatisticsCharts = ({ ncList }) => {
     };
   };
 
+  const getAccountableDataForYear = () => {
+    if (selectedYearAccountable === 'all') {
+      return stats.accountableDist;
+    }
+    return stats.accountableDistByYear[selectedYearAccountable] || {};
+  };
+
+  // Prepare data for charts
+  const filteredStatusDist = getStatusDataForYear();
+  const filteredClassDist = getClassDataForYear();
+  
+  const statusChartData = [
+    { name: 'Open', value: filteredStatusDist.open, color: '#ef4444' },
+    { name: 'In Progress', value: filteredStatusDist.inProgress, color: '#eab308' },
+    { name: 'Closed', value: filteredStatusDist.closed, color: '#22c55e' },
+    { name: 'Cancelled', value: filteredStatusDist.cancelled, color: '#6b7280' }
+  ].filter(item => item.value > 0);
+
+  const classChartData = [
+    { name: 'Critical', value: filteredClassDist.critical, color: '#dc2626' },
+    { name: 'Major', value: filteredClassDist.major, color: '#f97316' },
+    { name: 'Minor', value: filteredClassDist.minor, color: '#eab308' }
+  ].filter(item => item.value > 0);
+
   const phaseChartData = Object.entries(getPhaseDataForYear())
     .map(([phase, count]) => ({
       name: phase.split('_').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' '),
@@ -182,13 +186,6 @@ const NCStatisticsCharts = ({ ncList }) => {
     .sort((a, b) => b.value - a.value);
 
   // Filter accountable data by selected year
-  const getAccountableDataForYear = () => {
-    if (selectedYearAccountable === 'all') {
-      return stats.accountableDist;
-    }
-    return stats.accountableDistByYear[selectedYearAccountable] || {};
-  };
-
   const accountableChartData = Object.entries(getAccountableDataForYear())
     .map(([accountable, count]) => ({
       name: accountable,

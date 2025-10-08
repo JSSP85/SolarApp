@@ -100,6 +100,18 @@ const NCStatisticsCharts = ({ ncList }) => {
       }
     });
 
+    // Yearly distribution by detection phase (for stacked chart)
+    const yearlyByPhase = {};
+    ncList.forEach(nc => {
+      if (nc.year && nc.detectionPhase) {
+        if (!yearlyByPhase[nc.year]) {
+          yearlyByPhase[nc.year] = {};
+        }
+        yearlyByPhase[nc.year][nc.detectionPhase] = 
+          (yearlyByPhase[nc.year][nc.detectionPhase] || 0) + 1;
+      }
+    });
+
     setStats({
       total,
       statusDist,
@@ -109,7 +121,8 @@ const NCStatisticsCharts = ({ ncList }) => {
       accountableDist,
       accountableDistByYear,
       monthlyData,
-      yearlyDist
+      yearlyDist,
+      yearlyByPhase
     });
   };
 
@@ -200,6 +213,34 @@ const NCStatisticsCharts = ({ ncList }) => {
       count: count
     }))
     .sort((a, b) => a.year - b.year);
+
+  // Prepare stacked bar chart data for yearly NCs by detection phase
+  const yearlyStackedData = Object.keys(stats.yearlyByPhase)
+    .sort((a, b) => a - b)
+    .map(year => {
+      const phases = stats.yearlyByPhase[year];
+      return {
+        year: year,
+        'NC BY CLIENT': phases['nc_by_client'] || 0,
+        'Installation': phases['installation'] || 0,
+        'On Site': phases['on_site'] || 0,
+        'Production': phases['production'] || 0,
+        'Malpractice': phases['malpractice'] || 0,
+        'Incoming Goods': phases['incoming_goods'] || 0,
+        'Other': phases['other'] || 0
+      };
+    });
+
+  // Detection phase colors for stacked chart
+  const phaseColors = {
+    'NC BY CLIENT': '#22c55e',
+    'Installation': '#3b82f6',
+    'On Site': '#eab308',
+    'Production': '#9ca3af',
+    'Malpractice': '#f97316',
+    'Incoming Goods': '#60a5fa',
+    'Other': '#a78bfa'
+  };
 
   // Monthly trend (last 12 entries)
   const monthlyTrendData = Object.entries(stats.monthlyData)
@@ -577,6 +618,39 @@ const NCStatisticsCharts = ({ ncList }) => {
           </ResponsiveContainer>
         </div>
       </div>
+
+      {/* Stacked Bar Chart: NCs by Year and Detection Phase */}
+      {yearlyStackedData.length > 0 && (
+        <div className="bg-slate-800/50 backdrop-blur-sm rounded-xl p-6 border border-slate-700">
+          <h3 style={{ fontSize: '1.25rem', fontWeight: '700', marginBottom: '1rem', color: '#f1f5f9' }}>
+            📊 NC Detection Phases by Year
+          </h3>
+          <div style={{ backgroundColor: 'rgba(255, 255, 255, 0.85)', borderRadius: '8px', padding: '1.5rem', boxShadow: '0 4px 6px rgba(0,0,0,0.1)' }}>
+            <ResponsiveContainer width="100%" height={400}>
+              <BarChart data={yearlyStackedData}>
+                <CartesianGrid strokeDasharray="3 3" stroke="#cbd5e1" />
+                <XAxis dataKey="year" stroke="#475569" />
+                <YAxis stroke="#475569" label={{ value: 'Count of NCs', angle: -90, position: 'insideLeft', style: { fill: '#475569' } }} />
+                <Tooltip 
+                  contentStyle={{ backgroundColor: '#1e293b', border: '1px solid #334155', borderRadius: '8px' }}
+                  labelStyle={{ color: '#e2e8f0' }}
+                />
+                <Legend 
+                  wrapperStyle={{ paddingTop: '20px' }}
+                  iconType="square"
+                />
+                <Bar dataKey="NC BY CLIENT" stackId="a" fill={phaseColors['NC BY CLIENT']} />
+                <Bar dataKey="Installation" stackId="a" fill={phaseColors['Installation']} />
+                <Bar dataKey="On Site" stackId="a" fill={phaseColors['On Site']} />
+                <Bar dataKey="Production" stackId="a" fill={phaseColors['Production']} />
+                <Bar dataKey="Malpractice" stackId="a" fill={phaseColors['Malpractice']} />
+                <Bar dataKey="Incoming Goods" stackId="a" fill={phaseColors['Incoming Goods']} />
+                <Bar dataKey="Other" stackId="a" fill={phaseColors['Other']} />
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
+        </div>
+      )}
 
       {/* Charts Row 4: Yearly Trend */}
       {yearlyChartData.length > 1 && (

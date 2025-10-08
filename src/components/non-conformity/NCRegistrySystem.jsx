@@ -84,111 +84,8 @@ const NCRegistrySystem = ({ onBack }) => {
     'JAN', 'FEB', 'MAR', 'APR', 'MAY', 'JUN',
   'JUL', 'AUG', 'SEP', 'OCT', 'NOV', 'DEC'
 ];
-  useEffect(() => {
-    loadNCs();
-  }, []);
 
-  const loadNCs = async () => {
-    try {
-      setLoading(true);
-      const data = await getAllNCs();
-      setNcList(data);
-    } catch (error) {
-      console.error('Error loading NCs:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const filteredNCList = ncList.filter(nc => {
-    if (filters.search && 
-        !nc.number.includes(filters.search) && 
-        !nc.projectName?.toLowerCase().includes(filters.search.toLowerCase()) &&
-        !nc.ncMainSubject?.toLowerCase().includes(filters.search.toLowerCase())) {
-      return false;
-    }
-    if (filters.status && nc.status !== filters.status) return false;
-    if (filters.priority && nc.ncClass !== filters.priority) return false;
-    if (filters.detectionPlace && nc.detectionPhase !== filters.detectionPlace) return false;
-    if (filters.year && nc.year !== parseInt(filters.year)) return false;
-    return true;
-  });
-
-  const uniqueYears = [...new Set(ncList.map(nc => nc.year))].sort((a, b) => b - a);
-
-  // Handlers
-  const handleAddNC = async () => {
-    const nextNumber = await getNextNCNumber();
-    setCurrentNC({ ...emptyNC, number: nextNumber });
-    setShowAddModal(true);
-  };
-
-  const handleSaveNC = async () => {
-    if (!currentNC.number || !currentNC.ncMainSubject || !currentNC.ncClass) {
-      alert('⚠️ Please complete required fields: Number, Subject, and NC Class');
-      return;
-    }
-
-    try {
-      if (currentNC.id) {
-        const { id, ...updateData } = currentNC;
-        await updateNCInRegistry(id, updateData);
-        alert('✅ NC updated successfully');
-      } else {
-        await addNCToRegistry(currentNC);
-        alert('✅ NC created successfully');
-      }
-
-      await loadNCs();
-      setShowAddModal(false);
-      setShowEditPanel(false);
-      setCurrentNC(emptyNC);
-    } catch (error) {
-      console.error('Error saving NC:', error);
-      alert('❌ Error saving NC');
-    }
-  };
-
-  const handleEditNC = (nc) => {
-    setCurrentNC(nc);
-    setShowEditPanel(true);
-  };
-
-  const handleDeleteNC = async (id) => {
-    if (!window.confirm('Are you sure you want to delete this NC?')) return;
-
-    try {
-      await deleteNCFromRegistry(id);
-      await loadNCs();
-      alert('✅ NC deleted successfully');
-    } catch (error) {
-      console.error('Error deleting NC:', error);
-      alert('❌ Error deleting NC');
-    }
-  };
-
-  const handleViewNC = (nc) => {
-    setSelectedNC(nc);
-  };
-
-  const handleUpdateStatus = async (ncId, newStatus) => {
-    try {
-      await updateNCInRegistry(ncId, { status: newStatus });
-      await loadNCs();
-      if (selectedNC && selectedNC.id === ncId) {
-        setSelectedNC({ ...selectedNC, status: newStatus });
-      }
-    } catch (error) {
-      console.error('Error updating status:', error);
-    }
-  };
-
-  const getDetectionPhaseLabel = (phase) => {
-    const option = detectionPhaseOptions.find(opt => opt.value === phase);
-    return option ? option.label : phase;
-  };
-
-  // NC Form Component
+ // NC Form Component
  const NCForm = memo(({ nc, onChange }) => {
   const handleInputChange = useCallback((field) => (e) => {
     onChange({ ...nc, [field]: e.target.value });
@@ -419,7 +316,111 @@ const NCRegistrySystem = ({ onBack }) => {
   );
 });
 
-  return (
+  useEffect(() => {
+    loadNCs();
+  }, []);
+
+  const loadNCs = async () => {
+    try {
+      setLoading(true);
+      const data = await getAllNCs();
+      setNcList(data);
+    } catch (error) {
+      console.error('Error loading NCs:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const filteredNCList = ncList.filter(nc => {
+    if (filters.search && 
+        !nc.number.includes(filters.search) && 
+        !nc.projectName?.toLowerCase().includes(filters.search.toLowerCase()) &&
+        !nc.ncMainSubject?.toLowerCase().includes(filters.search.toLowerCase())) {
+      return false;
+    }
+    if (filters.status && nc.status !== filters.status) return false;
+    if (filters.priority && nc.ncClass !== filters.priority) return false;
+    if (filters.detectionPlace && nc.detectionPhase !== filters.detectionPlace) return false;
+    if (filters.year && nc.year !== parseInt(filters.year)) return false;
+    return true;
+  });
+
+  const uniqueYears = [...new Set(ncList.map(nc => nc.year))].sort((a, b) => b - a);
+
+  // Handlers
+  const handleAddNC = async () => {
+    const nextNumber = await getNextNCNumber();
+    setCurrentNC({ ...emptyNC, number: nextNumber });
+    setShowAddModal(true);
+  };
+
+  const handleSaveNC = async () => {
+    if (!currentNC.number || !currentNC.ncMainSubject || !currentNC.ncClass) {
+      alert('⚠️ Please complete required fields: Number, Subject, and NC Class');
+      return;
+    }
+
+    try {
+      if (currentNC.id) {
+        const { id, ...updateData } = currentNC;
+        await updateNCInRegistry(id, updateData);
+        alert('✅ NC updated successfully');
+      } else {
+        await addNCToRegistry(currentNC);
+        alert('✅ NC created successfully');
+      }
+
+      await loadNCs();
+      setShowAddModal(false);
+      setShowEditPanel(false);
+      setCurrentNC(emptyNC);
+    } catch (error) {
+      console.error('Error saving NC:', error);
+      alert('❌ Error saving NC');
+    }
+  };
+
+  const handleEditNC = (nc) => {
+    setCurrentNC(nc);
+    setShowEditPanel(true);
+  };
+
+  const handleDeleteNC = async (id) => {
+    if (!window.confirm('Are you sure you want to delete this NC?')) return;
+
+    try {
+      await deleteNCFromRegistry(id);
+      await loadNCs();
+      alert('✅ NC deleted successfully');
+    } catch (error) {
+      console.error('Error deleting NC:', error);
+      alert('❌ Error deleting NC');
+    }
+  };
+
+  const handleViewNC = (nc) => {
+    setSelectedNC(nc);
+  };
+
+  const handleUpdateStatus = async (ncId, newStatus) => {
+    try {
+      await updateNCInRegistry(ncId, { status: newStatus });
+      await loadNCs();
+      if (selectedNC && selectedNC.id === ncId) {
+        setSelectedNC({ ...selectedNC, status: newStatus });
+      }
+    } catch (error) {
+      console.error('Error updating status:', error);
+    }
+  };
+
+  const getDetectionPhaseLabel = (phase) => {
+    const option = detectionPhaseOptions.find(opt => opt.value === phase);
+    return option ? option.label : phase;
+  };
+
+   return (
     <div className="non-conformity-wrapper">
       {onBack && (
         <button className="nc-back-to-menu" onClick={onBack}>

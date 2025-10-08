@@ -134,7 +134,6 @@ const NCStatisticsCharts = ({ ncList }) => {
       return stats.statusDist;
     }
     const yearNCs = ncList.filter(nc => String(nc.year) === String(selectedYearPieCharts));
-    console.log('Filtering status for year:', selectedYearPieCharts, 'Found:', yearNCs.length, 'NCs');
     return {
       open: yearNCs.filter(nc => nc.status === 'open').length,
       inProgress: yearNCs.filter(nc => nc.status === 'in_progress').length,
@@ -148,7 +147,6 @@ const NCStatisticsCharts = ({ ncList }) => {
       return stats.classDist;
     }
     const yearNCs = ncList.filter(nc => String(nc.year) === String(selectedYearPieCharts));
-    console.log('Filtering class for year:', selectedYearPieCharts, 'Found:', yearNCs.length, 'NCs');
     return {
       critical: yearNCs.filter(nc => nc.ncClass === 'critical').length,
       major: yearNCs.filter(nc => nc.ncClass === 'major').length,
@@ -296,18 +294,59 @@ const NCStatisticsCharts = ({ ncList }) => {
       <div className="bg-slate-800/50 backdrop-blur-sm rounded-xl p-6 border border-slate-700">
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-4 gap-3">
           <h3 className="text-xl font-bold">📊 Status & NC Class Distribution</h3>
-          <div className="flex items-center gap-2">
-            <label className="text-sm text-slate-300">Year:</label>
-            <select 
-              value={selectedYearPieCharts}
-              onChange={(e) => setSelectedYearPieCharts(e.target.value)}
-              className="bg-slate-700 text-white rounded-lg px-3 py-2 border border-slate-600 focus:outline-none focus:ring-2 focus:ring-blue-500"
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flexWrap: 'wrap' }}>
+            <span style={{ fontSize: '0.875rem', color: '#cbd5e1', fontWeight: '500' }}>📅</span>
+            <button
+              onClick={() => setSelectedYearPieCharts('all')}
+              style={{
+                padding: '0.5rem 1rem',
+                borderRadius: '8px',
+                border: 'none',
+                fontSize: '0.875rem',
+                fontWeight: '600',
+                cursor: 'pointer',
+                transition: 'all 0.2s',
+                backgroundColor: selectedYearPieCharts === 'all' ? '#3b82f6' : '#475569',
+                color: selectedYearPieCharts === 'all' ? '#ffffff' : '#cbd5e1',
+                boxShadow: selectedYearPieCharts === 'all' ? '0 4px 12px rgba(59, 130, 246, 0.4)' : 'none',
+                transform: selectedYearPieCharts === 'all' ? 'translateY(-2px)' : 'none'
+              }}
             >
-              <option value="all">All Years</option>
-              {availableYears.map(year => (
-                <option key={year} value={year}>{year}</option>
-              ))}
-            </select>
+              All Years
+            </button>
+            {availableYears.map(year => (
+              <button
+                key={year}
+                onClick={() => setSelectedYearPieCharts(year)}
+                style={{
+                  padding: '0.5rem 1rem',
+                  borderRadius: '8px',
+                  border: 'none',
+                  fontSize: '0.875rem',
+                  fontWeight: '600',
+                  cursor: 'pointer',
+                  transition: 'all 0.2s',
+                  backgroundColor: selectedYearPieCharts === year ? '#3b82f6' : '#475569',
+                  color: selectedYearPieCharts === year ? '#ffffff' : '#cbd5e1',
+                  boxShadow: selectedYearPieCharts === year ? '0 4px 12px rgba(59, 130, 246, 0.4)' : 'none',
+                  transform: selectedYearPieCharts === year ? 'translateY(-2px)' : 'none'
+                }}
+                onMouseEnter={(e) => {
+                  if (selectedYearPieCharts !== year) {
+                    e.currentTarget.style.backgroundColor = '#64748b';
+                    e.currentTarget.style.transform = 'translateY(-2px)';
+                  }
+                }}
+                onMouseLeave={(e) => {
+                  if (selectedYearPieCharts !== year) {
+                    e.currentTarget.style.backgroundColor = '#475569';
+                    e.currentTarget.style.transform = 'none';
+                  }
+                }}
+              >
+                {year}
+              </button>
+            ))}
           </div>
         </div>
         <div style={{ 
@@ -377,20 +416,61 @@ const NCStatisticsCharts = ({ ncList }) => {
 
       {/* Charts Row: Detection Phase Bar Chart with Year Filter */}
       <div className="bg-slate-800/50 backdrop-blur-sm rounded-xl p-6 border border-slate-700">
-        <div className="flex justify-between items-center mb-4">
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-4 gap-3">
           <h3 className="text-xl font-bold">📍 NCs by Detection Phase</h3>
-          <div className="flex items-center gap-2">
-            <label className="text-sm text-slate-300">Year:</label>
-            <select 
-              value={selectedYearPhase}
-              onChange={(e) => setSelectedYearPhase(e.target.value)}
-              className="bg-slate-700 text-white rounded-lg px-3 py-2 border border-slate-600 focus:outline-none focus:ring-2 focus:ring-blue-500"
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flexWrap: 'wrap' }}>
+            <span style={{ fontSize: '0.875rem', color: '#cbd5e1', fontWeight: '500' }}>📅</span>
+            <button
+              onClick={() => setSelectedYearPhase('all')}
+              style={{
+                padding: '0.5rem 1rem',
+                borderRadius: '8px',
+                border: 'none',
+                fontSize: '0.875rem',
+                fontWeight: '600',
+                cursor: 'pointer',
+                transition: 'all 0.2s',
+                backgroundColor: selectedYearPhase === 'all' ? '#8b5cf6' : '#475569',
+                color: selectedYearPhase === 'all' ? '#ffffff' : '#cbd5e1',
+                boxShadow: selectedYearPhase === 'all' ? '0 4px 12px rgba(139, 92, 246, 0.4)' : 'none',
+                transform: selectedYearPhase === 'all' ? 'translateY(-2px)' : 'none'
+              }}
             >
-              <option value="all">All Years</option>
-              {availableYears.map(year => (
-                <option key={year} value={year}>{year}</option>
-              ))}
-            </select>
+              All Years
+            </button>
+            {availableYears.map(year => (
+              <button
+                key={year}
+                onClick={() => setSelectedYearPhase(year)}
+                style={{
+                  padding: '0.5rem 1rem',
+                  borderRadius: '8px',
+                  border: 'none',
+                  fontSize: '0.875rem',
+                  fontWeight: '600',
+                  cursor: 'pointer',
+                  transition: 'all 0.2s',
+                  backgroundColor: selectedYearPhase === year ? '#8b5cf6' : '#475569',
+                  color: selectedYearPhase === year ? '#ffffff' : '#cbd5e1',
+                  boxShadow: selectedYearPhase === year ? '0 4px 12px rgba(139, 92, 246, 0.4)' : 'none',
+                  transform: selectedYearPhase === year ? 'translateY(-2px)' : 'none'
+                }}
+                onMouseEnter={(e) => {
+                  if (selectedYearPhase !== year) {
+                    e.currentTarget.style.backgroundColor = '#64748b';
+                    e.currentTarget.style.transform = 'translateY(-2px)';
+                  }
+                }}
+                onMouseLeave={(e) => {
+                  if (selectedYearPhase !== year) {
+                    e.currentTarget.style.backgroundColor = '#475569';
+                    e.currentTarget.style.transform = 'none';
+                  }
+                }}
+              >
+                {year}
+              </button>
+            ))}
           </div>
         </div>
         <div style={{ backgroundColor: 'rgba(255, 255, 255, 0.85)', borderRadius: '8px', padding: '1.5rem', boxShadow: '0 4px 6px rgba(0,0,0,0.1)' }}>
@@ -415,20 +495,61 @@ const NCStatisticsCharts = ({ ncList }) => {
 
       {/* Charts Row 3: NCs by Accountable/Supplier with Year Filter */}
       <div className="bg-slate-800/50 backdrop-blur-sm rounded-xl p-6 border border-slate-700">
-        <div className="flex justify-between items-center mb-4">
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-4 gap-3">
           <h3 className="text-xl font-bold">👥 NCs by Accountable / Supplier</h3>
-          <div className="flex items-center gap-2">
-            <label className="text-sm text-slate-300">Year:</label>
-            <select 
-              value={selectedYearAccountable}
-              onChange={(e) => setSelectedYearAccountable(e.target.value)}
-              className="bg-slate-700 text-white rounded-lg px-3 py-2 border border-slate-600 focus:outline-none focus:ring-2 focus:ring-blue-500"
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flexWrap: 'wrap' }}>
+            <span style={{ fontSize: '0.875rem', color: '#cbd5e1', fontWeight: '500' }}>📅</span>
+            <button
+              onClick={() => setSelectedYearAccountable('all')}
+              style={{
+                padding: '0.5rem 1rem',
+                borderRadius: '8px',
+                border: 'none',
+                fontSize: '0.875rem',
+                fontWeight: '600',
+                cursor: 'pointer',
+                transition: 'all 0.2s',
+                backgroundColor: selectedYearAccountable === 'all' ? '#10b981' : '#475569',
+                color: selectedYearAccountable === 'all' ? '#ffffff' : '#cbd5e1',
+                boxShadow: selectedYearAccountable === 'all' ? '0 4px 12px rgba(16, 185, 129, 0.4)' : 'none',
+                transform: selectedYearAccountable === 'all' ? 'translateY(-2px)' : 'none'
+              }}
             >
-              <option value="all">All Years</option>
-              {availableYears.map(year => (
-                <option key={year} value={year}>{year}</option>
-              ))}
-            </select>
+              All Years
+            </button>
+            {availableYears.map(year => (
+              <button
+                key={year}
+                onClick={() => setSelectedYearAccountable(year)}
+                style={{
+                  padding: '0.5rem 1rem',
+                  borderRadius: '8px',
+                  border: 'none',
+                  fontSize: '0.875rem',
+                  fontWeight: '600',
+                  cursor: 'pointer',
+                  transition: 'all 0.2s',
+                  backgroundColor: selectedYearAccountable === year ? '#10b981' : '#475569',
+                  color: selectedYearAccountable === year ? '#ffffff' : '#cbd5e1',
+                  boxShadow: selectedYearAccountable === year ? '0 4px 12px rgba(16, 185, 129, 0.4)' : 'none',
+                  transform: selectedYearAccountable === year ? 'translateY(-2px)' : 'none'
+                }}
+                onMouseEnter={(e) => {
+                  if (selectedYearAccountable !== year) {
+                    e.currentTarget.style.backgroundColor = '#64748b';
+                    e.currentTarget.style.transform = 'translateY(-2px)';
+                  }
+                }}
+                onMouseLeave={(e) => {
+                  if (selectedYearAccountable !== year) {
+                    e.currentTarget.style.backgroundColor = '#475569';
+                    e.currentTarget.style.transform = 'none';
+                  }
+                }}
+              >
+                {year}
+              </button>
+            ))}
           </div>
         </div>
         <div style={{ backgroundColor: 'rgba(255, 255, 255, 0.85)', borderRadius: '8px', padding: '1.5rem', boxShadow: '0 4px 6px rgba(0,0,0,0.1)' }}>

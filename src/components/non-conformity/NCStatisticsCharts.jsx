@@ -215,76 +215,82 @@ const NCStatisticsCharts = ({ ncList }) => {
 
   return (
     <div className="space-y-6">
-      {/* KPI Cards with background */}
+      {/* Compact KPI Cards and NC Class Distribution Combined */}
       <div style={{ backgroundColor: 'rgba(255, 255, 255, 0.9)', borderRadius: '12px', padding: '1.5rem', boxShadow: '0 4px 6px rgba(0,0,0,0.1)' }}>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        <div className="bg-gradient-to-br from-blue-600 to-blue-800 rounded-xl p-6 shadow-2xl">
-          <div className="flex items-center justify-between mb-2">
-            <span className="text-blue-200">Total NCs</span>
-            <BarChart3 className="text-blue-200" size={24} />
-          </div>
-          <p className="text-4xl font-bold">{stats.total}</p>
-          <p className="text-blue-200 text-sm mt-2">All records</p>
-        </div>
-
-        <div className="bg-gradient-to-br from-red-600 to-red-800 rounded-xl p-6 shadow-2xl">
-          <div className="flex items-center justify-between mb-2">
-            <span className="text-red-200">Open</span>
-            <AlertCircle className="text-red-200" size={24} />
-          </div>
-          <p className="text-4xl font-bold">{stats.statusDist.open}</p>
-          <p className="text-red-200 text-sm mt-2">
-            {stats.total > 0 ? ((stats.statusDist.open / stats.total) * 100).toFixed(1) : 0}% of total
-          </p>
-        </div>
-
-        <div className="bg-gradient-to-br from-yellow-600 to-yellow-800 rounded-xl p-6 shadow-2xl">
-          <div className="flex items-center justify-between mb-2">
-            <span className="text-yellow-200">In Progress</span>
-            <Clock className="text-yellow-200" size={24} />
-          </div>
-          <p className="text-4xl font-bold">{stats.statusDist.inProgress}</p>
-          <p className="text-yellow-200 text-sm mt-2">
-            {stats.total > 0 ? ((stats.statusDist.inProgress / stats.total) * 100).toFixed(1) : 0}% of total
-          </p>
-        </div>
-
-        <div className="bg-gradient-to-br from-green-600 to-green-800 rounded-xl p-6 shadow-2xl">
-          <div className="flex items-center justify-between mb-2">
-            <span className="text-green-200">Closed</span>
-            <CheckCircle className="text-green-200" size={24} />
-          </div>
-          <p className="text-4xl font-bold">{stats.statusDist.closed}</p>
-          <p className="text-green-200 text-sm mt-2">
-            {stats.total > 0 ? ((stats.statusDist.closed / stats.total) * 100).toFixed(1) : 0}% closure rate
-          </p>
-        </div>
-      </div>
-      </div>
-
-      {/* NC Class Distribution Cards with background */}
-      <div style={{ backgroundColor: 'rgba(255, 255, 255, 0.9)', borderRadius: '12px', padding: '1.5rem', boxShadow: '0 4px 6px rgba(0,0,0,0.1)' }}>
-        <h3 className="text-xl font-bold mb-4">Distribution by NC Class</h3>
-        <div className="grid grid-cols-3 gap-4">
-          <div className="bg-red-900/30 border border-red-700 rounded-lg p-4 text-center">
-            <div className="text-3xl font-bold text-red-400">{stats.classDist.critical}</div>
-            <div className="text-sm text-red-300 mt-2">🚨 CRITICAL</div>
-            <div className="text-xs text-red-400 mt-1">
-              {stats.total > 0 ? ((stats.classDist.critical / stats.total) * 100).toFixed(1) : 0}%
+        <h3 style={{ fontSize: '1.25rem', fontWeight: '700', marginBottom: '1rem', color: '#1f2937' }}>📊 Key Performance Indicators</h3>
+        
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '1rem' }}>
+          {/* Total NCs - Compact */}
+          <div className="bg-gradient-to-br from-blue-600 to-blue-800 rounded-lg p-4 shadow-lg">
+            <div className="flex items-center justify-between mb-1">
+              <span className="text-blue-200 text-sm">Total NCs</span>
+              <BarChart3 className="text-blue-200" size={20} />
             </div>
+            <p className="text-3xl font-bold text-white">{stats.total}</p>
+            <p className="text-blue-200 text-xs mt-1">All records</p>
           </div>
-          <div className="bg-orange-900/30 border border-orange-700 rounded-lg p-4 text-center">
-            <div className="text-3xl font-bold text-orange-400">{stats.classDist.major}</div>
-            <div className="text-sm text-orange-300 mt-2">🔴 MAJOR</div>
-            <div className="text-xs text-orange-400 mt-1">
-              {stats.total > 0 ? ((stats.classDist.major / stats.total) * 100).toFixed(1) : 0}%
+
+          {/* Open - Compact */}
+          <div className="bg-gradient-to-br from-red-600 to-red-800 rounded-lg p-4 shadow-lg">
+            <div className="flex items-center justify-between mb-1">
+              <span className="text-red-200 text-sm">Open</span>
+              <AlertCircle className="text-red-200" size={20} />
             </div>
+            <p className="text-3xl font-bold text-white">{stats.statusDist.open}</p>
+            <p className="text-red-200 text-xs mt-1">
+              {stats.total > 0 ? ((stats.statusDist.open / stats.total) * 100).toFixed(1) : 0}% of total
+            </p>
           </div>
-          <div className="bg-yellow-900/30 border border-yellow-700 rounded-lg p-4 text-center">
-            <div className="text-3xl font-bold text-yellow-400">{stats.classDist.minor}</div>
-            <div className="text-sm text-yellow-300 mt-2">🟡 MINOR</div>
-            <div className="text-xs text-yellow-400 mt-1">
-              {stats.total > 0 ? ((stats.classDist.minor / stats.total) * 100).toFixed(1) : 0}%
+
+          {/* In Progress - Compact */}
+          <div className="bg-gradient-to-br from-yellow-600 to-yellow-800 rounded-lg p-4 shadow-lg">
+            <div className="flex items-center justify-between mb-1">
+              <span className="text-yellow-200 text-sm">In Progress</span>
+              <Clock className="text-yellow-200" size={20} />
+            </div>
+            <p className="text-3xl font-bold text-white">{stats.statusDist.inProgress}</p>
+            <p className="text-yellow-200 text-xs mt-1">
+              {stats.total > 0 ? ((stats.statusDist.inProgress / stats.total) * 100).toFixed(1) : 0}% of total
+            </p>
+          </div>
+
+          {/* Closed - Compact */}
+          <div className="bg-gradient-to-br from-green-600 to-green-800 rounded-lg p-4 shadow-lg">
+            <div className="flex items-center justify-between mb-1">
+              <span className="text-green-200 text-sm">Closed</span>
+              <CheckCircle className="text-green-200" size={20} />
+            </div>
+            <p className="text-3xl font-bold text-white">{stats.statusDist.closed}</p>
+            <p className="text-green-200 text-xs mt-1">
+              {stats.total > 0 ? ((stats.statusDist.closed / stats.total) * 100).toFixed(1) : 0}% closure rate
+            </p>
+          </div>
+        </div>
+
+        {/* NC Class Distribution - Compact inline */}
+        <div style={{ marginTop: '1.5rem', paddingTop: '1.5rem', borderTop: '2px solid #e5e7eb' }}>
+          <h4 style={{ fontSize: '1rem', fontWeight: '600', marginBottom: '0.75rem', color: '#1f2937' }}>Distribution by NC Class</h4>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: '0.75rem' }}>
+            <div className="bg-red-900/30 border border-red-700 rounded-lg p-3 text-center">
+              <div className="text-2xl font-bold text-red-500">{stats.classDist.critical}</div>
+              <div className="text-xs text-red-600 font-semibold mt-1">🚨 CRITICAL</div>
+              <div className="text-xs text-red-700 mt-0.5">
+                {stats.total > 0 ? ((stats.classDist.critical / stats.total) * 100).toFixed(1) : 0}%
+              </div>
+            </div>
+            <div className="bg-orange-900/30 border border-orange-700 rounded-lg p-3 text-center">
+              <div className="text-2xl font-bold text-orange-500">{stats.classDist.major}</div>
+              <div className="text-xs text-orange-600 font-semibold mt-1">🔴 MAJOR</div>
+              <div className="text-xs text-orange-700 mt-0.5">
+                {stats.total > 0 ? ((stats.classDist.major / stats.total) * 100).toFixed(1) : 0}%
+              </div>
+            </div>
+            <div className="bg-yellow-900/30 border border-yellow-700 rounded-lg p-3 text-center">
+              <div className="text-2xl font-bold text-yellow-600">{stats.classDist.minor}</div>
+              <div className="text-xs text-yellow-700 font-semibold mt-1">🟡 MINOR</div>
+              <div className="text-xs text-yellow-800 mt-0.5">
+                {stats.total > 0 ? ((stats.classDist.minor / stats.total) * 100).toFixed(1) : 0}%
+              </div>
             </div>
           </div>
         </div>
@@ -293,7 +299,7 @@ const NCStatisticsCharts = ({ ncList }) => {
       {/* Combined Pie Charts Row: Status and Class Distribution */}
       <div className="bg-slate-800/50 backdrop-blur-sm rounded-xl p-6 border border-slate-700">
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-4 gap-3">
-          <h3 className="text-xl font-bold">📊 Status & NC Class Distribution</h3>
+          <h3 style={{ fontSize: '1.25rem', fontWeight: '700', color: '#f1f5f9' }}>📊 Status & NC Class Distribution</h3>
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flexWrap: 'wrap' }}>
             <span style={{ fontSize: '0.875rem', color: '#cbd5e1', fontWeight: '500' }}>📅</span>
             <button
@@ -356,7 +362,7 @@ const NCStatisticsCharts = ({ ncList }) => {
         }}>
           {/* Status Distribution Pie Chart */}
           <div>
-            <h4 className="text-lg font-semibold mb-3 text-center text-slate-200">Status Distribution</h4>
+            <h4 style={{ fontSize: '1.125rem', fontWeight: '600', marginBottom: '0.75rem', textAlign: 'center', color: '#cbd5e1' }}>Status Distribution</h4>
             <div style={{ backgroundColor: 'rgba(255, 255, 255, 0.85)', borderRadius: '8px', padding: '1.5rem', boxShadow: '0 4px 6px rgba(0,0,0,0.1)' }}>
               <ResponsiveContainer width="100%" height={300}>
                 <PieChart key={`status-${selectedYearPieCharts}`}>
@@ -385,7 +391,7 @@ const NCStatisticsCharts = ({ ncList }) => {
 
           {/* NC Class Distribution Pie Chart */}
           <div>
-            <h4 className="text-lg font-semibold mb-3 text-center text-slate-200">NC Class Distribution</h4>
+            <h4 style={{ fontSize: '1.125rem', fontWeight: '600', marginBottom: '0.75rem', textAlign: 'center', color: '#cbd5e1' }}>NC Class Distribution</h4>
             <div style={{ backgroundColor: 'rgba(255, 255, 255, 0.85)', borderRadius: '8px', padding: '1.5rem', boxShadow: '0 4px 6px rgba(0,0,0,0.1)' }}>
               <ResponsiveContainer width="100%" height={300}>
                 <PieChart key={`class-${selectedYearPieCharts}`}>
@@ -417,7 +423,7 @@ const NCStatisticsCharts = ({ ncList }) => {
       {/* Charts Row: Detection Phase Bar Chart with Year Filter */}
       <div className="bg-slate-800/50 backdrop-blur-sm rounded-xl p-6 border border-slate-700">
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-4 gap-3">
-          <h3 className="text-xl font-bold">📍 NCs by Detection Phase</h3>
+          <h3 style={{ fontSize: '1.25rem', fontWeight: '700', color: '#f1f5f9' }}>📍 NCs by Detection Phase</h3>
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flexWrap: 'wrap' }}>
             <span style={{ fontSize: '0.875rem', color: '#cbd5e1', fontWeight: '500' }}>📅</span>
             <button
@@ -496,7 +502,7 @@ const NCStatisticsCharts = ({ ncList }) => {
       {/* Charts Row 3: NCs by Accountable/Supplier with Year Filter */}
       <div className="bg-slate-800/50 backdrop-blur-sm rounded-xl p-6 border border-slate-700">
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-4 gap-3">
-          <h3 className="text-xl font-bold">👥 NCs by Accountable / Supplier</h3>
+          <h3 style={{ fontSize: '1.25rem', fontWeight: '700', color: '#f1f5f9' }}>👥 NCs by Accountable / Supplier</h3>
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flexWrap: 'wrap' }}>
             <span style={{ fontSize: '0.875rem', color: '#cbd5e1', fontWeight: '500' }}>📅</span>
             <button
@@ -575,7 +581,7 @@ const NCStatisticsCharts = ({ ncList }) => {
       {/* Charts Row 4: Yearly Trend */}
       {yearlyChartData.length > 1 && (
         <div className="bg-slate-800/50 backdrop-blur-sm rounded-xl p-6 border border-slate-700">
-          <h3 className="text-xl font-bold mb-4">📅 NCs by Year</h3>
+          <h3 style={{ fontSize: '1.25rem', fontWeight: '700', marginBottom: '1rem', color: '#f1f5f9' }}>📅 NCs by Year</h3>
           <div style={{ backgroundColor: 'rgba(255, 255, 255, 0.85)', borderRadius: '8px', padding: '1.5rem', boxShadow: '0 4px 6px rgba(0,0,0,0.1)' }}>
             <ResponsiveContainer width="100%" height={300}>
               <BarChart data={yearlyChartData}>
@@ -596,7 +602,7 @@ const NCStatisticsCharts = ({ ncList }) => {
       {/* Charts Row 5: Monthly Trend */}
       {monthlyTrendData.length > 0 && (
         <div className="bg-slate-800/50 backdrop-blur-sm rounded-xl p-6 border border-slate-700">
-          <h3 className="text-xl font-bold mb-4">📈 Monthly Trend (Last 12 Months)</h3>
+          <h3 style={{ fontSize: '1.25rem', fontWeight: '700', marginBottom: '1rem', color: '#f1f5f9' }}>📈 Monthly Trend (Last 12 Months)</h3>
           <div style={{ backgroundColor: 'rgba(255, 255, 255, 0.85)', borderRadius: '8px', padding: '1.5rem', boxShadow: '0 4px 6px rgba(0,0,0,0.1)' }}>
             <ResponsiveContainer width="100%" height={300}>
               <LineChart data={monthlyTrendData}>

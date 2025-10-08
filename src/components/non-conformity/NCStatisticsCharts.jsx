@@ -121,18 +121,24 @@ const NCStatisticsCharts = ({ ncList }) => {
   }
 
   // Prepare data for charts
+  const filteredStatusDist = getStatusDataForYear();
+  const filteredClassDist = getClassDataForYear();
+  
   const statusChartData = [
-    { name: 'Open', value: stats.statusDist.open, color: '#ef4444' },
-    { name: 'In Progress', value: stats.statusDist.inProgress, color: '#eab308' },
-    { name: 'Closed', value: stats.statusDist.closed, color: '#22c55e' },
-    { name: 'Cancelled', value: stats.statusDist.cancelled, color: '#6b7280' }
+    { name: 'Open', value: filteredStatusDist.open, color: '#ef4444' },
+    { name: 'In Progress', value: filteredStatusDist.inProgress, color: '#eab308' },
+    { name: 'Closed', value: filteredStatusDist.closed, color: '#22c55e' },
+    { name: 'Cancelled', value: filteredStatusDist.cancelled, color: '#6b7280' }
   ].filter(item => item.value > 0);
 
   const classChartData = [
-    { name: 'Critical', value: stats.classDist.critical, color: '#dc2626' },
-    { name: 'Major', value: stats.classDist.major, color: '#f97316' },
-    { name: 'Minor', value: stats.classDist.minor, color: '#eab308' }
+    { name: 'Critical', value: filteredClassDist.critical, color: '#dc2626' },
+    { name: 'Major', value: filteredClassDist.major, color: '#f97316' },
+    { name: 'Minor', value: filteredClassDist.minor, color: '#eab308' }
   ].filter(item => item.value > 0);
+
+  // Add state for pie charts year filter
+  const [selectedYearPieCharts, setSelectedYearPieCharts] = useState('all');
 
   // Filter phase data by selected year
   const getPhaseDataForYear = () => {
@@ -140,6 +146,32 @@ const NCStatisticsCharts = ({ ncList }) => {
       return stats.phaseDist;
     }
     return stats.phaseDistByYear[selectedYearPhase] || {};
+  };
+
+  // Filter status and class data by selected year
+  const getStatusDataForYear = () => {
+    if (selectedYearPieCharts === 'all') {
+      return stats.statusDist;
+    }
+    const yearNCs = ncList.filter(nc => nc.year === selectedYearPieCharts);
+    return {
+      open: yearNCs.filter(nc => nc.status === 'open').length,
+      inProgress: yearNCs.filter(nc => nc.status === 'in_progress').length,
+      closed: yearNCs.filter(nc => nc.status === 'closed').length,
+      cancelled: yearNCs.filter(nc => nc.status === 'cancelled').length
+    };
+  };
+
+  const getClassDataForYear = () => {
+    if (selectedYearPieCharts === 'all') {
+      return stats.classDist;
+    }
+    const yearNCs = ncList.filter(nc => nc.year === selectedYearPieCharts);
+    return {
+      critical: yearNCs.filter(nc => nc.ncClass === 'critical').length,
+      major: yearNCs.filter(nc => nc.ncClass === 'major').length,
+      minor: yearNCs.filter(nc => nc.ncClass === 'minor').length
+    };
   };
 
   const phaseChartData = Object.entries(getPhaseDataForYear())
@@ -186,8 +218,9 @@ const NCStatisticsCharts = ({ ncList }) => {
 
   return (
     <div className="space-y-6">
-      {/* KPI Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+      {/* KPI Cards with background */}
+      <div style={{ backgroundColor: 'rgba(255, 255, 255, 0.9)', borderRadius: '12px', padding: '1.5rem', boxShadow: '0 4px 6px rgba(0,0,0,0.1)' }}>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         <div className="bg-gradient-to-br from-blue-600 to-blue-800 rounded-xl p-6 shadow-2xl">
           <div className="flex items-center justify-between mb-2">
             <span className="text-blue-200">Total NCs</span>
@@ -230,8 +263,11 @@ const NCStatisticsCharts = ({ ncList }) => {
           </p>
         </div>
       </div>
+        </div>
+      </div>
 
       {/* NC Class Distribution Cards */}
+      <div style={{ backgroundColor: 'rgba(255, 255, 255, 0.9)', borderRadius: '12px', padding: '1.5rem', boxShadow: '0 4px 6px rgba(0,0,0,0.1)' }}>
       <div className="bg-slate-800/50 backdrop-blur-sm rounded-xl p-6 border border-slate-700">
         <h3 className="text-xl font-bold mb-4">Distribution by NC Class</h3>
         <div className="grid grid-cols-3 gap-4">
@@ -258,69 +294,88 @@ const NCStatisticsCharts = ({ ncList }) => {
           </div>
         </div>
       </div>
+      </div>
 
-      {/* Charts Row 1: Status and Class Pie Charts */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        {/* Status Distribution Pie Chart */}
-        <div className="bg-slate-800/50 backdrop-blur-sm rounded-xl p-6 border border-slate-700">
-          <h3 className="text-xl font-bold mb-4">📊 Status Distribution</h3>
-          <div style={{ backgroundColor: '#ffffff', borderRadius: '8px', padding: '1.5rem', boxShadow: '0 4px 6px rgba(0,0,0,0.1)' }}>
-            <ResponsiveContainer width="100%" height={300}>
-              <PieChart>
-                <Pie
-                  data={statusChartData}
-                  cx="50%"
-                  cy="50%"
-                  labelLine={false}
-                  label={({ name, percent }) => `${name}: ${(percent * 100).toFixed(0)}%`}
-                  outerRadius={80}
-                  fill="#8884d8"
-                  dataKey="value"
-                >
-                  {statusChartData.map((entry, index) => (
-                    <Cell key={`cell-${index}`} fill={entry.color} />
-                  ))}
-                </Pie>
-                <Tooltip 
-                  contentStyle={{ backgroundColor: '#1e293b', border: '1px solid #334155', borderRadius: '8px' }}
-                  labelStyle={{ color: '#e2e8f0' }}
-                />
-              </PieChart>
-            </ResponsiveContainer>
+      {/* Combined Pie Charts Row: Status and Class Distribution */}
+      <div className="bg-slate-800/50 backdrop-blur-sm rounded-xl p-6 border border-slate-700">
+        <div className="flex justify-between items-center mb-4">
+          <h3 className="text-xl font-bold">📊 Status & NC Class Distribution</h3>
+          <div className="flex items-center gap-2">
+            <label className="text-sm text-slate-300">Year:</label>
+            <select 
+              value={selectedYearPieCharts}
+              onChange={(e) => setSelectedYearPieCharts(e.target.value)}
+              className="bg-slate-700 text-white rounded-lg px-3 py-2 border border-slate-600 focus:outline-none focus:ring-2 focus:ring-blue-500"
+            >
+              <option value="all">All Years</option>
+              {availableYears.map(year => (
+                <option key={year} value={year}>{year}</option>
+              ))}
+            </select>
           </div>
         </div>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          {/* Status Distribution Pie Chart */}
+          <div>
+            <h4 className="text-lg font-semibold mb-3 text-center">Status Distribution</h4>
+            <div style={{ backgroundColor: 'rgba(255, 255, 255, 0.85)', borderRadius: '8px', padding: '1.5rem', boxShadow: '0 4px 6px rgba(0,0,0,0.1)' }}>
+              <ResponsiveContainer width="100%" height={300}>
+                <PieChart>
+                  <Pie
+                    data={statusChartData}
+                    cx="50%"
+                    cy="50%"
+                    labelLine={false}
+                    label={({ name, percent }) => `${name}: ${(percent * 100).toFixed(0)}%`}
+                    outerRadius={80}
+                    fill="#8884d8"
+                    dataKey="value"
+                  >
+                    {statusChartData.map((entry, index) => (
+                      <Cell key={`cell-${index}`} fill={entry.color} />
+                    ))}
+                  </Pie>
+                  <Tooltip 
+                    contentStyle={{ backgroundColor: '#1e293b', border: '1px solid #334155', borderRadius: '8px' }}
+                    labelStyle={{ color: '#e2e8f0' }}
+                  />
+                </PieChart>
+              </ResponsiveContainer>
+            </div>
+          </div>
 
-        {/* NC Class Distribution Pie Chart */}
-        <div className="bg-slate-800/50 backdrop-blur-sm rounded-xl p-6 border border-slate-700">
-          <h3 className="text-xl font-bold mb-4">⚡ NC Class Distribution</h3>
-          <div style={{ backgroundColor: '#ffffff', borderRadius: '8px', padding: '1.5rem', boxShadow: '0 4px 6px rgba(0,0,0,0.1)' }}>
-            <ResponsiveContainer width="100%" height={300}>
-              <PieChart>
-                <Pie
-                  data={classChartData}
-                  cx="50%"
-                  cy="50%"
-                  labelLine={false}
-                  label={({ name, percent }) => `${name}: ${(percent * 100).toFixed(0)}%`}
-                  outerRadius={80}
-                  fill="#8884d8"
-                  dataKey="value"
-                >
-                  {classChartData.map((entry, index) => (
-                    <Cell key={`cell-${index}`} fill={entry.color} />
-                  ))}
-                </Pie>
-                <Tooltip 
-                  contentStyle={{ backgroundColor: '#1e293b', border: '1px solid #334155', borderRadius: '8px' }}
-                  labelStyle={{ color: '#e2e8f0' }}
-                />
-              </PieChart>
-            </ResponsiveContainer>
+          {/* NC Class Distribution Pie Chart */}
+          <div>
+            <h4 className="text-lg font-semibold mb-3 text-center">NC Class Distribution</h4>
+            <div style={{ backgroundColor: 'rgba(255, 255, 255, 0.85)', borderRadius: '8px', padding: '1.5rem', boxShadow: '0 4px 6px rgba(0,0,0,0.1)' }}>
+              <ResponsiveContainer width="100%" height={300}>
+                <PieChart>
+                  <Pie
+                    data={classChartData}
+                    cx="50%"
+                    cy="50%"
+                    labelLine={false}
+                    label={({ name, percent }) => `${name}: ${(percent * 100).toFixed(0)}%`}
+                    outerRadius={80}
+                    fill="#8884d8"
+                    dataKey="value"
+                  >
+                    {classChartData.map((entry, index) => (
+                      <Cell key={`cell-${index}`} fill={entry.color} />
+                    ))}
+                  </Pie>
+                  <Tooltip 
+                    contentStyle={{ backgroundColor: '#1e293b', border: '1px solid #334155', borderRadius: '8px' }}
+                    labelStyle={{ color: '#e2e8f0' }}
+                  />
+                </PieChart>
+              </ResponsiveContainer>
+            </div>
           </div>
         </div>
       </div>
 
-      {/* Charts Row 2: Detection Phase Bar Chart with Year Filter */}
+      {/* Charts Row: Detection Phase Bar Chart with Year Filter */}
       <div className="bg-slate-800/50 backdrop-blur-sm rounded-xl p-6 border border-slate-700">
         <div className="flex justify-between items-center mb-4">
           <h3 className="text-xl font-bold">📍 NCs by Detection Phase</h3>
@@ -338,7 +393,7 @@ const NCStatisticsCharts = ({ ncList }) => {
             </select>
           </div>
         </div>
-        <div style={{ backgroundColor: '#ffffff', borderRadius: '8px', padding: '1.5rem', boxShadow: '0 4px 6px rgba(0,0,0,0.1)' }}>
+        <div style={{ backgroundColor: 'rgba(255, 255, 255, 0.85)', borderRadius: '8px', padding: '1.5rem', boxShadow: '0 4px 6px rgba(0,0,0,0.1)' }}>
           <ResponsiveContainer width="100%" height={350}>
             <BarChart data={phaseChartData} layout="vertical">
               <CartesianGrid strokeDasharray="3 3" stroke="#cbd5e1" />
@@ -376,7 +431,7 @@ const NCStatisticsCharts = ({ ncList }) => {
             </select>
           </div>
         </div>
-        <div style={{ backgroundColor: '#ffffff', borderRadius: '8px', padding: '1.5rem', boxShadow: '0 4px 6px rgba(0,0,0,0.1)' }}>
+        <div style={{ backgroundColor: 'rgba(255, 255, 255, 0.85)', borderRadius: '8px', padding: '1.5rem', boxShadow: '0 4px 6px rgba(0,0,0,0.1)' }}>
           <ResponsiveContainer width="100%" height={400}>
             <BarChart data={accountableChartData} layout="vertical">
               <CartesianGrid strokeDasharray="3 3" stroke="#cbd5e1" />
@@ -400,7 +455,7 @@ const NCStatisticsCharts = ({ ncList }) => {
       {yearlyChartData.length > 1 && (
         <div className="bg-slate-800/50 backdrop-blur-sm rounded-xl p-6 border border-slate-700">
           <h3 className="text-xl font-bold mb-4">📅 NCs by Year</h3>
-          <div style={{ backgroundColor: '#ffffff', borderRadius: '8px', padding: '1.5rem', boxShadow: '0 4px 6px rgba(0,0,0,0.1)' }}>
+          <div style={{ backgroundColor: 'rgba(255, 255, 255, 0.85)', borderRadius: '8px', padding: '1.5rem', boxShadow: '0 4px 6px rgba(0,0,0,0.1)' }}>
             <ResponsiveContainer width="100%" height={300}>
               <BarChart data={yearlyChartData}>
                 <CartesianGrid strokeDasharray="3 3" stroke="#cbd5e1" />
@@ -421,7 +476,7 @@ const NCStatisticsCharts = ({ ncList }) => {
       {monthlyTrendData.length > 0 && (
         <div className="bg-slate-800/50 backdrop-blur-sm rounded-xl p-6 border border-slate-700">
           <h3 className="text-xl font-bold mb-4">📈 Monthly Trend (Last 12 Months)</h3>
-          <div style={{ backgroundColor: '#ffffff', borderRadius: '8px', padding: '1.5rem', boxShadow: '0 4px 6px rgba(0,0,0,0.1)' }}>
+          <div style={{ backgroundColor: 'rgba(255, 255, 255, 0.85)', borderRadius: '8px', padding: '1.5rem', boxShadow: '0 4px 6px rgba(0,0,0,0.1)' }}>
             <ResponsiveContainer width="100%" height={300}>
               <LineChart data={monthlyTrendData}>
                 <CartesianGrid strokeDasharray="3 3" stroke="#cbd5e1" />

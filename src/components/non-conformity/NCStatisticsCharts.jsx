@@ -133,7 +133,8 @@ const NCStatisticsCharts = ({ ncList }) => {
     if (selectedYearPieCharts === 'all') {
       return stats.statusDist;
     }
-    const yearNCs = ncList.filter(nc => nc.year === selectedYearPieCharts);
+    const yearNCs = ncList.filter(nc => String(nc.year) === String(selectedYearPieCharts));
+    console.log('Filtering status for year:', selectedYearPieCharts, 'Found:', yearNCs.length, 'NCs');
     return {
       open: yearNCs.filter(nc => nc.status === 'open').length,
       inProgress: yearNCs.filter(nc => nc.status === 'in_progress').length,
@@ -146,7 +147,8 @@ const NCStatisticsCharts = ({ ncList }) => {
     if (selectedYearPieCharts === 'all') {
       return stats.classDist;
     }
-    const yearNCs = ncList.filter(nc => nc.year === selectedYearPieCharts);
+    const yearNCs = ncList.filter(nc => String(nc.year) === String(selectedYearPieCharts));
+    console.log('Filtering class for year:', selectedYearPieCharts, 'Found:', yearNCs.length, 'NCs');
     return {
       critical: yearNCs.filter(nc => nc.ncClass === 'critical').length,
       major: yearNCs.filter(nc => nc.ncClass === 'major').length,
@@ -292,7 +294,7 @@ const NCStatisticsCharts = ({ ncList }) => {
 
       {/* Combined Pie Charts Row: Status and Class Distribution */}
       <div className="bg-slate-800/50 backdrop-blur-sm rounded-xl p-6 border border-slate-700">
-        <div className="flex justify-between items-center mb-4">
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-4 gap-3">
           <h3 className="text-xl font-bold">📊 Status & NC Class Distribution</h3>
           <div className="flex items-center gap-2">
             <label className="text-sm text-slate-300">Year:</label>
@@ -308,13 +310,17 @@ const NCStatisticsCharts = ({ ncList }) => {
             </select>
           </div>
         </div>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div style={{ 
+          display: 'grid', 
+          gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', 
+          gap: '1.5rem' 
+        }}>
           {/* Status Distribution Pie Chart */}
           <div>
-            <h4 className="text-lg font-semibold mb-3 text-center">Status Distribution</h4>
+            <h4 className="text-lg font-semibold mb-3 text-center text-slate-200">Status Distribution</h4>
             <div style={{ backgroundColor: 'rgba(255, 255, 255, 0.85)', borderRadius: '8px', padding: '1.5rem', boxShadow: '0 4px 6px rgba(0,0,0,0.1)' }}>
               <ResponsiveContainer width="100%" height={300}>
-                <PieChart>
+                <PieChart key={`status-${selectedYearPieCharts}`}>
                   <Pie
                     data={statusChartData}
                     cx="50%"
@@ -340,10 +346,10 @@ const NCStatisticsCharts = ({ ncList }) => {
 
           {/* NC Class Distribution Pie Chart */}
           <div>
-            <h4 className="text-lg font-semibold mb-3 text-center">NC Class Distribution</h4>
+            <h4 className="text-lg font-semibold mb-3 text-center text-slate-200">NC Class Distribution</h4>
             <div style={{ backgroundColor: 'rgba(255, 255, 255, 0.85)', borderRadius: '8px', padding: '1.5rem', boxShadow: '0 4px 6px rgba(0,0,0,0.1)' }}>
               <ResponsiveContainer width="100%" height={300}>
-                <PieChart>
+                <PieChart key={`class-${selectedYearPieCharts}`}>
                   <Pie
                     data={classChartData}
                     cx="50%"

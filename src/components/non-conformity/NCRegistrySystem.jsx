@@ -1,7 +1,7 @@
 // src/components/non-conformity/NCRegistrySystem.jsx
 // VERSIÓN COMPLETA CON TODAS LAS FUNCIONALIDADES + ESTILOS ADAPTADOS
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback, memo } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import {
   addNCToRegistry,
@@ -78,10 +78,9 @@ const NCRegistrySystem = ({ onBack }) => {
   ];
 
   const monthOptions = [
-    '01-jan', '02-feb', '03-mar', '04-apr', '05-may', '06-jun',
-    '07-jul', '08-aug', '09-sep', '10-oct', '11-nov', '12-dec'
-  ];
-
+    'JAN', 'FEB', 'MAR', 'APR', 'MAY', 'JUN',
+  'JUL', 'AUG', 'SEP', 'OCT', 'NOV', 'DEC'
+];
   useEffect(() => {
     loadNCs();
   }, []);
@@ -187,7 +186,20 @@ const NCRegistrySystem = ({ onBack }) => {
   };
 
   // NC Form Component
-  const NCForm = ({ nc, onChange }) => (
+ const NCForm = memo(({ nc, onChange }) => {
+  const handleInputChange = useCallback((field) => (e) => {
+    onChange({ ...nc, [field]: e.target.value });
+  }, [nc, onChange]);
+
+  const handleSelectChange = useCallback((field) => (e) => {
+    onChange({ ...nc, [field]: e.target.value });
+  }, [nc, onChange]);
+
+  const handleNumberChange = useCallback((field) => (e) => {
+    onChange({ ...nc, [field]: parseInt(e.target.value) || 0 });
+  }, [nc, onChange]);
+
+  return (
     <div className="nc-form-container">
       <div className="nc-form-section">
         <h3 className="nc-section-title">Basic Information</h3>
@@ -197,8 +209,8 @@ const NCRegistrySystem = ({ onBack }) => {
             <label className="nc-form-label">NC Number *</label>
             <input
               type="text"
-              value={nc.number}
-              onChange={(e) => onChange({ ...nc, number: e.target.value })}
+              value={nc.number || ''}
+              onChange={handleInputChange('number')}
               className="nc-form-input"
               placeholder="562"
             />
@@ -208,8 +220,8 @@ const NCRegistrySystem = ({ onBack }) => {
             <label className="nc-form-label">Year</label>
             <input
               type="number"
-              value={nc.year}
-              onChange={(e) => onChange({ ...nc, year: parseInt(e.target.value) })}
+              value={nc.year || ''}
+              onChange={handleNumberChange('year')}
               className="nc-form-input"
             />
           </div>
@@ -217,8 +229,8 @@ const NCRegistrySystem = ({ onBack }) => {
           <div className="nc-form-group">
             <label className="nc-form-label">Month</label>
             <select
-              value={nc.month}
-              onChange={(e) => onChange({ ...nc, month: e.target.value })}
+              value={nc.month || ''}
+              onChange={handleSelectChange('month')}
               className="nc-form-select"
             >
               <option value="">Select...</option>
@@ -231,8 +243,8 @@ const NCRegistrySystem = ({ onBack }) => {
           <div className="nc-form-group">
             <label className="nc-form-label">Status *</label>
             <select
-              value={nc.status}
-              onChange={(e) => onChange({ ...nc, status: e.target.value })}
+              value={nc.status || ''}
+              onChange={handleSelectChange('status')}
               className="nc-form-select"
             >
               {statusOptions.map(opt => (
@@ -245,8 +257,8 @@ const NCRegistrySystem = ({ onBack }) => {
             <label className="nc-form-label">NC Issuer</label>
             <input
               type="text"
-              value={nc.ncIssuer}
-              onChange={(e) => onChange({ ...nc, ncIssuer: e.target.value })}
+              value={nc.ncIssuer || ''}
+              onChange={handleInputChange('ncIssuer')}
               className="nc-form-input"
             />
           </div>
@@ -255,8 +267,8 @@ const NCRegistrySystem = ({ onBack }) => {
             <label className="nc-form-label">Date of Detection</label>
             <input
               type="date"
-              value={nc.dateOfDetection}
-              onChange={(e) => onChange({ ...nc, dateOfDetection: e.target.value })}
+              value={nc.dateOfDetection || ''}
+              onChange={handleInputChange('dateOfDetection')}
               className="nc-form-input"
             />
           </div>
@@ -264,8 +276,8 @@ const NCRegistrySystem = ({ onBack }) => {
           <div className="nc-form-group">
             <label className="nc-form-label">Detection Phase</label>
             <select
-              value={nc.detectionPhase}
-              onChange={(e) => onChange({ ...nc, detectionPhase: e.target.value })}
+              value={nc.detectionPhase || ''}
+              onChange={handleSelectChange('detectionPhase')}
               className="nc-form-select"
             >
               <option value="">Select...</option>
@@ -279,8 +291,8 @@ const NCRegistrySystem = ({ onBack }) => {
             <label className="nc-form-label">Order Number</label>
             <input
               type="text"
-              value={nc.orderNumber}
-              onChange={(e) => onChange({ ...nc, orderNumber: e.target.value })}
+              value={nc.orderNumber || ''}
+              onChange={handleInputChange('orderNumber')}
               className="nc-form-input"
               placeholder="PO26171"
             />
@@ -290,8 +302,8 @@ const NCRegistrySystem = ({ onBack }) => {
             <label className="nc-form-label">Project Code</label>
             <input
               type="text"
-              value={nc.projectCode}
-              onChange={(e) => onChange({ ...nc, projectCode: e.target.value })}
+              value={nc.projectCode || ''}
+              onChange={handleInputChange('projectCode')}
               className="nc-form-input"
             />
           </div>
@@ -300,8 +312,8 @@ const NCRegistrySystem = ({ onBack }) => {
             <label className="nc-form-label">Project Name</label>
             <input
               type="text"
-              value={nc.projectName}
-              onChange={(e) => onChange({ ...nc, projectName: e.target.value })}
+              value={nc.projectName || ''}
+              onChange={handleInputChange('projectName')}
               className="nc-form-input"
             />
           </div>
@@ -309,8 +321,8 @@ const NCRegistrySystem = ({ onBack }) => {
           <div className="nc-form-group">
             <label className="nc-form-label">NC Class *</label>
             <select
-              value={nc.ncClass}
-              onChange={(e) => onChange({ ...nc, ncClass: e.target.value })}
+              value={nc.ncClass || ''}
+              onChange={handleSelectChange('ncClass')}
               className="nc-form-select"
             >
               <option value="">Select...</option>
@@ -324,8 +336,8 @@ const NCRegistrySystem = ({ onBack }) => {
             <label className="nc-form-label">Accountable</label>
             <input
               type="text"
-              value={nc.accountable}
-              onChange={(e) => onChange({ ...nc, accountable: e.target.value })}
+              value={nc.accountable || ''}
+              onChange={handleInputChange('accountable')}
               className="nc-form-input"
             />
           </div>
@@ -339,8 +351,8 @@ const NCRegistrySystem = ({ onBack }) => {
           <label className="nc-form-label">NC Main Subject *</label>
           <input
             type="text"
-            value={nc.ncMainSubject}
-            onChange={(e) => onChange({ ...nc, ncMainSubject: e.target.value })}
+            value={nc.ncMainSubject || ''}
+            onChange={handleInputChange('ncMainSubject')}
             className="nc-form-input"
             placeholder="Main subject..."
           />
@@ -349,8 +361,8 @@ const NCRegistrySystem = ({ onBack }) => {
         <div className="nc-form-group-full">
           <label className="nc-form-label">NC Brief Summary & Root Cause</label>
           <textarea
-            value={nc.ncBriefSummary}
-            onChange={(e) => onChange({ ...nc, ncBriefSummary: e.target.value })}
+            value={nc.ncBriefSummary || ''}
+            onChange={handleInputChange('ncBriefSummary')}
             className="nc-form-textarea"
             placeholder="Brief summary and root cause..."
             rows="3"
@@ -360,8 +372,8 @@ const NCRegistrySystem = ({ onBack }) => {
         <div className="nc-form-group-full">
           <label className="nc-form-label">Treatment</label>
           <textarea
-            value={nc.treatment}
-            onChange={(e) => onChange({ ...nc, treatment: e.target.value })}
+            value={nc.treatment || ''}
+            onChange={handleInputChange('treatment')}
             className="nc-form-textarea"
             placeholder="Treatment description..."
             rows="2"
@@ -372,8 +384,8 @@ const NCRegistrySystem = ({ onBack }) => {
           <label className="nc-form-label">Date of Closure</label>
           <input
             type="date"
-            value={nc.dateOfClosure}
-            onChange={(e) => onChange({ ...nc, dateOfClosure: e.target.value })}
+            value={nc.dateOfClosure || ''}
+            onChange={handleInputChange('dateOfClosure')}
             className="nc-form-input"
           />
         </div>
@@ -381,8 +393,8 @@ const NCRegistrySystem = ({ onBack }) => {
         <div className="nc-form-group-full">
           <label className="nc-form-label">Root Cause Analysis</label>
           <textarea
-            value={nc.rootCauseAnalysis}
-            onChange={(e) => onChange({ ...nc, rootCauseAnalysis: e.target.value })}
+            value={nc.rootCauseAnalysis || ''}
+            onChange={handleInputChange('rootCauseAnalysis')}
             className="nc-form-textarea"
             placeholder="Root cause analysis..."
             rows="3"
@@ -392,8 +404,8 @@ const NCRegistrySystem = ({ onBack }) => {
         <div className="nc-form-group-full">
           <label className="nc-form-label">Corrective Action</label>
           <textarea
-            value={nc.correctiveAction}
-            onChange={(e) => onChange({ ...nc, correctiveAction: e.target.value })}
+            value={nc.correctiveAction || ''}
+            onChange={handleInputChange('correctiveAction')}
             className="nc-form-textarea"
             placeholder="Containment and corrective actions..."
             rows="3"
@@ -402,6 +414,7 @@ const NCRegistrySystem = ({ onBack }) => {
       </div>
     </div>
   );
+});
 
   return (
     <div className="non-conformity-wrapper">

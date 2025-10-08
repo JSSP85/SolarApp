@@ -264,7 +264,7 @@ const NCStatisticsCharts = ({ ncList }) => {
         {/* Status Distribution Pie Chart */}
         <div className="bg-slate-800/50 backdrop-blur-sm rounded-xl p-6 border border-slate-700">
           <h3 className="text-xl font-bold mb-4">📊 Status Distribution</h3>
-          <div className="bg-white/90 backdrop-blur-sm rounded-lg p-4">
+          <div className="bg-white rounded-lg p-6 shadow-lg">
             <ResponsiveContainer width="100%" height={300}>
               <PieChart>
                 <Pie
@@ -293,7 +293,7 @@ const NCStatisticsCharts = ({ ncList }) => {
         {/* NC Class Distribution Pie Chart */}
         <div className="bg-slate-800/50 backdrop-blur-sm rounded-xl p-6 border border-slate-700">
           <h3 className="text-xl font-bold mb-4">⚡ NC Class Distribution</h3>
-          <div className="bg-white/90 backdrop-blur-sm rounded-lg p-4">
+          <div className="bg-white rounded-lg p-6 shadow-lg">
             <ResponsiveContainer width="100%" height={300}>
               <PieChart>
                 <Pie
@@ -338,7 +338,7 @@ const NCStatisticsCharts = ({ ncList }) => {
             </select>
           </div>
         </div>
-        <div className="bg-white/90 backdrop-blur-sm rounded-lg p-4">
+        <div className="bg-white rounded-lg p-6 shadow-lg">
           <ResponsiveContainer width="100%" height={350}>
             <BarChart data={phaseChartData} layout="vertical">
               <CartesianGrid strokeDasharray="3 3" stroke="#cbd5e1" />
@@ -376,7 +376,7 @@ const NCStatisticsCharts = ({ ncList }) => {
             </select>
           </div>
         </div>
-        <div className="bg-white/90 backdrop-blur-sm rounded-lg p-4">
+        <div className="bg-white rounded-lg p-6 shadow-lg">
           <ResponsiveContainer width="100%" height={400}>
             <BarChart data={accountableChartData} layout="vertical">
               <CartesianGrid strokeDasharray="3 3" stroke="#cbd5e1" />
@@ -400,7 +400,7 @@ const NCStatisticsCharts = ({ ncList }) => {
       {yearlyChartData.length > 1 && (
         <div className="bg-slate-800/50 backdrop-blur-sm rounded-xl p-6 border border-slate-700">
           <h3 className="text-xl font-bold mb-4">📅 NCs by Year</h3>
-          <div className="bg-white/90 backdrop-blur-sm rounded-lg p-4">
+          <div className="bg-white rounded-lg p-6 shadow-lg">
             <ResponsiveContainer width="100%" height={300}>
               <BarChart data={yearlyChartData}>
                 <CartesianGrid strokeDasharray="3 3" stroke="#cbd5e1" />
@@ -421,7 +421,7 @@ const NCStatisticsCharts = ({ ncList }) => {
       {monthlyTrendData.length > 0 && (
         <div className="bg-slate-800/50 backdrop-blur-sm rounded-xl p-6 border border-slate-700">
           <h3 className="text-xl font-bold mb-4">📈 Monthly Trend (Last 12 Months)</h3>
-          <div className="bg-white/90 backdrop-blur-sm rounded-lg p-4">
+          <div className="bg-white rounded-lg p-6 shadow-lg">
             <ResponsiveContainer width="100%" height={300}>
               <LineChart data={monthlyTrendData}>
                 <CartesianGrid strokeDasharray="3 3" stroke="#cbd5e1" />

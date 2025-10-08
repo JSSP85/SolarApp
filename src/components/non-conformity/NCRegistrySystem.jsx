@@ -52,6 +52,9 @@ const NCRegistrySystem = ({ onBack }) => {
   };
 
   const [currentNC, setCurrentNC] = useState(emptyNC);
+  const handleNCChange = useCallback((updatedNC) => {
+  setCurrentNC(updatedNC);
+}, []);
 
   // Options
   const statusOptions = [
@@ -748,7 +751,7 @@ const NCRegistrySystem = ({ onBack }) => {
               </div>
             </div>
 
-            <NCForm nc={currentNC} onChange={setCurrentNC} />
+            <NCForm nc={currentNC} onChange={handleNCChange} />
 
             <div className="nc-form-actions">
               <button

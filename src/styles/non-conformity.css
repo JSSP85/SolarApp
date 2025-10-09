@@ -50,7 +50,7 @@
 /* Override BackButton para que funcione en NC Sidebar */
 .nc-back-button-wrapper {
   position: absolute;
-  top: 1rem;        /* 👈 Cambia este valor para moverlo verticalmente */
+  top: 2rem;        /* 👈 Cambia este valor para moverlo verticalmente */
   left: 1rem;       /* 👈 Cambia este valor para moverlo horizontalmente */
   z-index: 150;
 }

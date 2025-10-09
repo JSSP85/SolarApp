@@ -184,7 +184,7 @@
 
 .nc-sidebar {
   width: 250px;
-  background: linear-gradient(135deg, rgba(0, 95, 131, 0.7) 0%, rgba(0, 119, 162, 0.55) 50%, rgba(0, 144, 198, 0.5) 100%);
+  background: linear-gradient(135deg, rgba(0, 95, 131, 0.7) 0%, rgba(0, 119, 162, 0.65) 50%, rgba(0, 144, 198, 0.6) 100%);
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
   box-shadow: 2px 0 15px rgba(0, 95, 131, 0.3);

@@ -47,7 +47,32 @@
 /* ============================================
    BACK TO MENU BUTTON
    ============================================ */
+/* Override BackButton para que funcione en NC Sidebar */
+.nc-back-button-wrapper {
+  position: absolute;
+  top: 1rem;        /* 👈 Cambia este valor para moverlo verticalmente */
+  left: 1rem;       /* 👈 Cambia este valor para moverlo horizontalmente */
+  z-index: 150;
+}
 
+.nc-sidebar .back-to-menu-btn {
+  position: relative !important;
+  top: auto !important;
+  left: auto !important;
+  background: rgba(255, 255, 255, 0.2);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+}
+
+.nc-sidebar .back-to-menu-btn:hover {
+  background: rgba(255, 255, 255, 0.3);
+  transform: scale(1.1);
+}
+
+/* Dar espacio al logo para que no tape el botón */
+.nc-sidebar-header {
+  margin-top: 3.5rem;
+  padding-top: 0.5rem !important;
+}
 /* ============================================
    APP CONTAINER & MAIN LAYOUT
    ============================================ */

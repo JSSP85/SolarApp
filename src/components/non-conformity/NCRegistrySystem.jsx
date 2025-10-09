@@ -420,16 +420,16 @@ const NCRegistrySystem = ({ onBack }) => {
 
   return (
     <div className="non-conformity-wrapper">
-      {onBack && (
-        <button className="nc-back-to-menu" onClick={onBack}>
-          <span>←</span>
-          <span>Back to Main Menu</span>
-        </button>
-      )}
-
       <div className="nc-app-container">
         {/* Sidebar */}
         <div className="nc-sidebar">
+          {/* ✅ Back Button wrapper para NC */}
+          {onBack && (
+            <div className="nc-back-button-wrapper">
+              <BackButton onClick={onBack} />
+            </div>
+          )}
+          
           <div className="nc-sidebar-header">
             <div className="nc-company-logo-container">
               <img 

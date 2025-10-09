@@ -48,36 +48,6 @@
    BACK TO MENU BUTTON
    ============================================ */
 
-.nc-back-to-menu {
-  position: fixed;
-  top: 1rem;
-  right: 1rem;
-  z-index: 200;
-  background: #ef4444;
-  color: white;
-  border: none;
-  padding: 0.5rem 1rem;
-  border-radius: 8px;
-  cursor: pointer;
-  font-size: 0.875rem;
-  font-weight: 600;
-  transition: all 0.2s ease;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-}
-
-.nc-back-to-menu:hover {
-  background: #dc2626;
-  transform: translateY(-1px);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
-}
-
-.nc-btn-icon {
-  font-size: 1rem;
-}
-
 /* ============================================
    APP CONTAINER & MAIN LAYOUT
    ============================================ */

@@ -9,6 +9,7 @@ import {
   getNextNCNumber
 } from '../../firebase/ncRegistryService';
 import NCStatisticsCharts from './NCStatisticsCharts';
+import BackButton from '../common/BackButton';
 import '../../styles/non-conformity.css';
 
 // ================================================================

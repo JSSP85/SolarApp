@@ -669,7 +669,7 @@ const LoginPage = () => {
             </div>
             
             <h1 className="main-title">
-              TEST REPORTS SYSTEM
+              SYSTEM MANAGEMENT
             </h1>
             
             <p className="subtitle">

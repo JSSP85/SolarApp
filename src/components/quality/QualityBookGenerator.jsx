@@ -638,6 +638,207 @@ const QualityBookGenerator = ({ onBackClick }) => {
     return page;
   };
 
+  // FUNCIÓN NUEVA: Crear Attestato di Conformità
+const createAttestatoConformita = async (pdfDoc, projectInfo) => {
+  const page = pdfDoc.addPage(PageSizes.A4);
+  const { width, height } = page.getSize();
+  
+  const titleFont = await pdfDoc.embedFont(StandardFonts.HelveticaBold);
+  const regularFont = await pdfDoc.embedFont(StandardFonts.Helvetica);
+
+  // Valmont Blue color
+  const valmontBlue = rgb(0.0, 0.235, 0.514); // #003d7a
+
+  // Logo VALMONT en la esquina superior izquierda
+  page.drawRectangle({
+    x: 40,
+    y: height - 80,
+    width: 140,
+    height: 35,
+    color: valmontBlue
+  });
+
+  page.drawText('VALMONT', {
+    x: 55,
+    y: height - 65,
+    size: 20,
+    font: titleFont,
+    color: rgb(1, 1, 1),
+    letterSpacing: 2
+  });
+
+  // Línea horizontal decorativa debajo del logo
+  page.drawRectangle({
+    x: 40,
+    y: height - 85,
+    width: width - 80,
+    height: 3,
+    color: valmontBlue
+  });
+
+  // Título centrado: ATTESTATO DI CONFORMITÀ
+  const titleText = 'ATTESTATO DI CONFORMITÀ';
+  const titleWidth = titleFont.widthOfTextAtSize(titleText, 24);
+  page.drawText(titleText, {
+    x: (width - titleWidth) / 2,
+    y: height - 130,
+    size: 24,
+    font: titleFont,
+    color: valmontBlue
+  });
+
+  // Rectángulo de información del proyecto
+  const infoBoxY = height - 220;
+  const infoBoxHeight = 120;
+  
+  // Fondo gris claro para el recuadro
+  page.drawRectangle({
+    x: 40,
+    y: infoBoxY - infoBoxHeight,
+    width: width - 80,
+    height: infoBoxHeight,
+    color: rgb(0.97, 0.97, 0.98),
+    borderColor: valmontBlue,
+    borderWidth: 0
+  });
+
+  // Línea izquierda del recuadro (borde azul)
+  page.drawRectangle({
+    x: 40,
+    y: infoBoxY - infoBoxHeight,
+    width: 5,
+    height: infoBoxHeight,
+    color: valmontBlue
+  });
+
+  // Información del proyecto
+  let currentY = infoBoxY - 30;
+  const labelX = 60;
+  const valueX = 180;
+  const lineSpacing = 30;
+
+  // PROGETTO
+  page.drawText('PROGETTO:', {
+    x: labelX,
+    y: currentY,
+    size: 12,
+    font: titleFont,
+    color: valmontBlue
+  });
+  page.drawText(projectInfo.projectName || '[NOME DEL PROGETTO]', {
+    x: valueX,
+    y: currentY,
+    size: 12,
+    font: regularFont,
+    color: rgb(0.2, 0.2, 0.2)
+  });
+
+  currentY -= lineSpacing;
+
+  // CLIENTE
+  page.drawText('CLIENTE:', {
+    x: labelX,
+    y: currentY,
+    size: 12,
+    font: titleFont,
+    color: valmontBlue
+  });
+  page.drawText(projectInfo.clientName || '[NOME DEL CLIENTE]', {
+    x: valueX,
+    y: currentY,
+    size: 12,
+    font: regularFont,
+    color: rgb(0.2, 0.2, 0.2)
+  });
+
+  currentY -= lineSpacing;
+
+  // DATA (usando approvedDate en formato DD/MM/YYYY)
+  page.drawText('DATA:', {
+    x: labelX,
+    y: currentY,
+    size: 12,
+    font: titleFont,
+    color: valmontBlue
+  });
+  
+  const formattedDate = projectInfo.approvedDate 
+    ? formatDateDDMMYYYY(projectInfo.approvedDate.toString())
+    : formatDateDDMMYYYY(new Date().toISOString().split('T')[0]);
+  
+  page.drawText(formattedDate, {
+    x: valueX,
+    y: currentY,
+    size: 12,
+    font: regularFont,
+    color: rgb(0.2, 0.2, 0.2)
+  });
+
+  // Texto del attestato (contenido principal)
+  currentY = infoBoxY - infoBoxHeight - 60;
+  const textMargin = 60;
+  const textWidth = width - (textMargin * 2);
+  const textSize = 11;
+  const textLineHeight = 18;
+
+  // Párrafo 1
+  const paragraph1 = "Con la presente si attesta che il materiale inviato in campo per il progetto sopra indicato è conforme alle specifiche, ai disegni e alla documentazione tecnica corrispondenti allo stesso.";
+  
+  const lines1 = wrapText(paragraph1, regularFont, textSize, textWidth);
+  lines1.forEach((line, index) => {
+    page.drawText(line, {
+      x: textMargin,
+      y: currentY - (index * textLineHeight),
+      size: textSize,
+      font: regularFont,
+      color: rgb(0.27, 0.27, 0.27)
+    });
+  });
+
+  currentY -= (lines1.length * textLineHeight) + 25;
+
+  // Párrafo 2
+  const paragraph2 = "Il materiale è stato verificato secondo gli standard di qualità stabiliti e corrisponde a quanto progettato per l'installazione dell'impianto.";
+  
+  const lines2 = wrapText(paragraph2, regularFont, textSize, textWidth);
+  lines2.forEach((line, index) => {
+    page.drawText(line, {
+      x: textMargin,
+      y: currentY - (index * textLineHeight),
+      size: textSize,
+      font: regularFont,
+      color: rgb(0.27, 0.27, 0.27)
+    });
+  });
+
+  return page;
+};
+
+// Función auxiliar para dividir texto en líneas
+const wrapText = (text, font, fontSize, maxWidth) => {
+  const words = text.split(' ');
+  const lines = [];
+  let currentLine = '';
+
+  for (const word of words) {
+    const testLine = currentLine ? `${currentLine} ${word}` : word;
+    const testWidth = font.widthOfTextAtSize(testLine, fontSize);
+
+    if (testWidth > maxWidth && currentLine) {
+      lines.push(currentLine);
+      currentLine = word;
+    } else {
+      currentLine = testLine;
+    }
+  }
+
+  if (currentLine) {
+    lines.push(currentLine);
+  }
+
+  return lines;
+};
+
   // MEJORA #3: FUNCIÓN DE INDEX CORREGIDA CON VALIDACIONES Y ESTRUCTURA DEL PDF
   const createIndexPage = async (pdfDoc, realStructure) => {
     const page = pdfDoc.addPage(PageSizes.A4);
@@ -1007,7 +1208,7 @@ const QualityBookGenerator = ({ onBackClick }) => {
         totalRealPages: 0
       };
 
-      let currentRealPage = 4; // Cover + Doc Info + Index + primera sección
+      let currentRealPage = 5;  // Cover + Doc Info + Attestato + INDEX + primera sección
 
       // FILTRAR SOLO SECCIONES CON DOCUMENTOS Y VALIDAR (INCLUYE LAS NUEVAS CATEGORÍAS)
       const activeSections = documentCategories.filter(cat => 
@@ -1114,8 +1315,12 @@ const QualityBookGenerator = ({ onBackClick }) => {
       console.log('✓ Clean cover page created');
 
       // 2. Create document information page - CON FECHAS CORREGIDAS
-      await createDocumentInfoPage(pdfDoc, validatedProjectInfo);
-      console.log('✓ Document info page created with DD/MM/YYYY format');
+     await createDocumentInfoPage(pdfDoc, validatedProjectInfo);
+console.log('✓ Document info page created with DD/MM/YYYY format');
+
+// 🆕 2.5 Create Attestato di Conformità
+await createAttestatoConformita(pdfDoc, validatedProjectInfo);
+console.log('✓ Attestato di Conformità created');
 
       // 3. PROCESAR SECCIONES PRIMERO SIN INDEX - SOLO SECCIONES CON DOCUMENTOS (INCLUYE NUEVAS CATEGORÍAS)
       const realStructure = {
@@ -1123,7 +1328,7 @@ const QualityBookGenerator = ({ onBackClick }) => {
         totalRealPages: 0
       };
 
-      let currentRealPage = 4; // Cover + Doc Info + INDEX (que crearemos después) + primera sección
+      let currentRealPage = 5; // Cover + Doc Info + INDEX (que crearemos después) + primera sección
 
       // FILTRAR SOLO SECCIONES CON DOCUMENTOS (INCLUYE LAS NUEVAS CATEGORÍAS)
       const activeSections = documentCategories.filter(cat => documents[cat.key].length > 0);
@@ -1177,7 +1382,7 @@ const QualityBookGenerator = ({ onBackClick }) => {
       console.log('PDF pages before index insertion:', pdfDoc.getPageCount());
       
       const realIndexPage = await createIndexPage(pdfDoc, realStructure);
-      pdfDoc.insertPage(2, realIndexPage); // Insertar en posición 2 (que será página 3: 0=pag1, 1=pag2, 2=pag3)
+      pdfDoc.insertPage(3, realIndexPage); // Insertar en posición 2 (que será página 3: 0=pag1, 1=pag2, 2=pag3)
       
       console.log('PDF pages after index insertion:', pdfDoc.getPageCount());
       console.log('✓ SINGLE index created and inserted at page 3');
@@ -2202,8 +2407,12 @@ return (
                           <span style={{ color: '#10b981', fontWeight: 'bold' }}>📄 Page 2:</span>
                           <span>Document Information</span>
                         </div>
+                         <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.5rem' }}>
+    <span style={{ color: '#10b981', fontWeight: 'bold' }}>📄 Page 3:</span>
+    <span>Attestato di Conformità</span>
+    </div>
                         <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '1rem' }}>
-                          <span style={{ color: '#10b981', fontWeight: 'bold' }}>📄 Page 3:</span>
+                          <span style={{ color: '#10b981', fontWeight: 'bold' }}>📄 Page 4:</span>
                           <span>Index with Page References</span>
                         </div>
                         {realPreviewStructure.sections.map((section, index) => (

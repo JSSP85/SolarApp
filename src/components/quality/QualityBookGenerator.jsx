@@ -646,168 +646,194 @@ const createAttestatoConformita = async (pdfDoc, projectInfo) => {
   const titleFont = await pdfDoc.embedFont(StandardFonts.HelveticaBold);
   const regularFont = await pdfDoc.embedFont(StandardFonts.Helvetica);
 
-  // Valmont Blue color
-  const valmontBlue = rgb(0.0, 0.235, 0.514); // #003d7a
+  // ✅ MISMO COLOR VALMONT BLUE QUE DOCUMENT INFORMATION
+  const valmontBlue = rgb(0.02, 0.37, 0.51);
 
-  // Logo VALMONT en la esquina superior izquierda
+  // ============================================================================
+  // HEADER CON MISMO ESTILO QUE DOCUMENT INFORMATION
+  // ============================================================================
   page.drawRectangle({
-    x: 40,
-    y: height - 80,
-    width: 140,
-    height: 35,
+    x: 0,
+    y: height - 100,
+    width: width,
+    height: 100,
     color: valmontBlue
   });
 
-  page.drawText('VALMONT', {
-    x: 55,
-    y: height - 65,
-    size: 20,
-    font: titleFont,
-    color: rgb(1, 1, 1),
-    letterSpacing: 2
-  });
-
-  // Línea horizontal decorativa debajo del logo
-  page.drawRectangle({
-    x: 40,
-    y: height - 85,
-    width: width - 80,
-    height: 3,
-    color: valmontBlue
-  });
-
-  // Título centrado: ATTESTATO DI CONFORMITÀ
-  const titleText = 'ATTESTATO DI CONFORMITÀ';
-  const titleWidth = titleFont.widthOfTextAtSize(titleText, 24);
-  page.drawText(titleText, {
-    x: (width - titleWidth) / 2,
-    y: height - 130,
+  page.drawText('ATTESTATO DI CONFORMITÀ', {
+    x: 50,
+    y: height - 60,
     size: 24,
     font: titleFont,
-    color: valmontBlue
+    color: rgb(1, 1, 1),
   });
 
-  // Rectángulo de información del proyecto
-  const infoBoxY = height - 220;
-  const infoBoxHeight = 120;
-  
-  // Fondo gris claro para el recuadro
+  // ✅ LOGO VALMONT (usando el logo real)
+  try {
+    const logoBytes = await loadImageFromUrl('/images/logo2.png');
+    if (logoBytes) {
+      const logo = await pdfDoc.embedPng(logoBytes);
+      const logoScale = 0.05;
+      const logoWidth = logo.width * logoScale;
+      const logoHeight = logo.height * logoScale;
+      
+      page.drawImage(logo, {
+        x: width - logoWidth - 40,
+        y: height - logoHeight - 40,
+        width: logoWidth,
+        height: logoHeight,
+      });
+    }
+  } catch (error) {
+    console.warn('Could not add logo to Attestato:', error);
+  }
+
+  // ============================================================================
+  // INFORMACIÓN DEL PROYECTO (Estilo tabla)
+  // ============================================================================
+  let yPosition = height - 150;
+
+  // Headers PROJECT y CLIENT
   page.drawRectangle({
-    x: 40,
-    y: infoBoxY - infoBoxHeight,
-    width: width - 80,
-    height: infoBoxHeight,
-    color: rgb(0.97, 0.97, 0.98),
-    borderColor: valmontBlue,
-    borderWidth: 0
+    x: 50,
+    y: yPosition - 30,
+    width: 200,
+    height: 30,
+    color: rgb(0.9, 0.9, 0.9)
   });
 
-  // Línea izquierda del recuadro (borde azul)
   page.drawRectangle({
-    x: 40,
-    y: infoBoxY - infoBoxHeight,
-    width: 5,
-    height: infoBoxHeight,
-    color: valmontBlue
+    x: 350,
+    y: yPosition - 30,
+    width: 200,
+    height: 30,
+    color: rgb(0.9, 0.9, 0.9)
   });
 
-  // Información del proyecto
-  let currentY = infoBoxY - 30;
-  const labelX = 60;
-  const valueX = 180;
-  const lineSpacing = 30;
-
-  // PROGETTO
-  page.drawText('PROGETTO:', {
-    x: labelX,
-    y: currentY,
+  page.drawText('PROJECT:', {
+    x: 60,
+    y: yPosition - 20,
     size: 12,
     font: titleFont,
-    color: valmontBlue
-  });
-  page.drawText(projectInfo.projectName || '[NOME DEL PROGETTO]', {
-    x: valueX,
-    y: currentY,
-    size: 12,
-    font: regularFont,
-    color: rgb(0.2, 0.2, 0.2)
+    color: rgb(0, 0, 0),
   });
 
-  currentY -= lineSpacing;
-
-  // CLIENTE
-  page.drawText('CLIENTE:', {
-    x: labelX,
-    y: currentY,
+  page.drawText('CLIENT:', {
+    x: 360,
+    y: yPosition - 20,
     size: 12,
     font: titleFont,
-    color: valmontBlue
-  });
-  page.drawText(projectInfo.clientName || '[NOME DEL CLIENTE]', {
-    x: valueX,
-    y: currentY,
-    size: 12,
-    font: regularFont,
-    color: rgb(0.2, 0.2, 0.2)
+    color: rgb(0, 0, 0),
   });
 
-  currentY -= lineSpacing;
+  yPosition -= 50;
 
-  // DATA (usando approvedDate en formato DD/MM/YYYY)
-  page.drawText('DATA:', {
-    x: labelX,
-    y: currentY,
-    size: 12,
-    font: titleFont,
-    color: valmontBlue
-  });
+  // Valores
+  const projectName = (projectInfo.projectName && projectInfo.projectName.toString().trim() !== '') 
+    ? projectInfo.projectName.toString() 
+    : 'Not specified';
   
+  const clientName = (projectInfo.clientName && projectInfo.clientName.toString().trim() !== '') 
+    ? projectInfo.clientName.toString() 
+    : 'Not specified';
+
+  page.drawText(projectName, {
+    x: 60,
+    y: yPosition,
+    size: 10,
+    font: regularFont,
+    color: rgb(0, 0, 0),
+  });
+
+  page.drawText(clientName, {
+    x: 360,
+    y: yPosition,
+    size: 10,
+    font: regularFont,
+    color: rgb(0, 0, 0),
+  });
+
+  yPosition -= 40;
+
+  // Header APPROVAL DATE (fila completa)
+  page.drawRectangle({
+    x: 50,
+    y: yPosition - 30,
+    width: 500,
+    height: 30,
+    color: rgb(0.9, 0.9, 0.9)
+  });
+
+  page.drawText('APPROVAL DATE:', {
+    x: 60,
+    y: yPosition - 20,
+    size: 12,
+    font: titleFont,
+    color: rgb(0, 0, 0),
+  });
+
+  yPosition -= 50;
+
   const formattedDate = projectInfo.approvedDate 
     ? formatDateDDMMYYYY(projectInfo.approvedDate.toString())
     : formatDateDDMMYYYY(new Date().toISOString().split('T')[0]);
-  
+
   page.drawText(formattedDate, {
-    x: valueX,
-    y: currentY,
-    size: 12,
+    x: 60,
+    y: yPosition,
+    size: 10,
     font: regularFont,
-    color: rgb(0.2, 0.2, 0.2)
+    color: rgb(0, 0, 0),
   });
 
-  // Texto del attestato (contenido principal)
-  currentY = infoBoxY - infoBoxHeight - 60;
-  const textMargin = 60;
+  // ============================================================================
+  // SECCIÓN DE CERTIFICACIÓN
+  // ============================================================================
+  yPosition -= 60;
+
+  page.drawText('CERTIFICATION', {
+    x: 50,
+    y: yPosition,
+    size: 18,
+    font: titleFont,
+    color: rgb(0, 0, 0),
+  });
+
+  yPosition -= 40;
+
+  // ============================================================================
+  // TEXTO DE CERTIFICACIÓN
+  // ============================================================================
+  const textMargin = 50;
   const textWidth = width - (textMargin * 2);
   const textSize = 11;
   const textLineHeight = 18;
 
-  // Párrafo 1
   const paragraph1 = "Con la presente si attesta che il materiale inviato in campo per il progetto sopra indicato è conforme alle specifiche, ai disegni e alla documentazione tecnica corrispondenti allo stesso.";
   
   const lines1 = wrapText(paragraph1, regularFont, textSize, textWidth);
   lines1.forEach((line, index) => {
     page.drawText(line, {
       x: textMargin,
-      y: currentY - (index * textLineHeight),
+      y: yPosition - (index * textLineHeight),
       size: textSize,
       font: regularFont,
-      color: rgb(0.27, 0.27, 0.27)
+      color: rgb(0, 0, 0),
     });
   });
 
-  currentY -= (lines1.length * textLineHeight) + 25;
+  yPosition -= (lines1.length * textLineHeight) + 25;
 
-  // Párrafo 2
   const paragraph2 = "Il materiale è stato verificato secondo gli standard di qualità stabiliti e corrisponde a quanto progettato per l'installazione dell'impianto.";
   
   const lines2 = wrapText(paragraph2, regularFont, textSize, textWidth);
   lines2.forEach((line, index) => {
     page.drawText(line, {
       x: textMargin,
-      y: currentY - (index * textLineHeight),
+      y: yPosition - (index * textLineHeight),
       size: textSize,
       font: regularFont,
-      color: rgb(0.27, 0.27, 0.27)
+      color: rgb(0, 0, 0),
     });
   });
 

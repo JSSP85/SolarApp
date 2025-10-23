@@ -38,6 +38,8 @@ import NCRegistrySystem from './components/non-conformity/NCRegistrySystem';
 
 import SupplierEvaluationWrapper from './components/supplier-evaluation/SupplierEvaluationWrapper';
 
+import InspectionDashboard from './components/inspection-dashboard/InspectionDashboard';
+
 // Custom SVG para hardware components
 const ScrewIcon = () => (
   <svg 

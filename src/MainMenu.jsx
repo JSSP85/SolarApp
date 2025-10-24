@@ -199,7 +199,7 @@ const MainMenu = () => {
     }
   };
 
-  // Si no hay opción seleccionada, mostrar el menú principal
+  // Si no hay opción seleccionada, mostrar el menú principalf
   if (!selectedOption) {
     return (
       <div className={styles.mainMenuContainer}>

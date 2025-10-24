@@ -1,11 +1,13 @@
 import React, { useState, useEffect } from 'react';
-import { collection, addDoc, getDocs, query, orderBy, doc, updateDoc, deleteDoc } from 'firebase/firestore';
+import { collection, addDoc, getDocs, query, orderBy, doc, updateDoc, deleteDoc, where } from 'firebase/firestore';
 import { db } from '../../firebase/config';
-import { X, Plus, Save, AlertCircle, Eye, Trash2 } from 'lucide-react';
+import { X, Plus, Save, AlertCircle, Eye, Trash2, ChevronDown, ChevronRight } from 'lucide-react';
 import '../../styles/inspection-dashboard.css';
 
 const InspectionDashboard = () => {
   const [inspections, setInspections] = useState([]);
+  const [groupedInspections, setGroupedInspections] = useState([]);
+  const [expandedRows, setExpandedRows] = useState({});
   const [showForm, setShowForm] = useState(false);
   const [editingInspection, setEditingInspection] = useState(null);
   const [loading, setLoading] = useState(false);
@@ -16,8 +18,8 @@ const InspectionDashboard = () => {
     inspectionDate: '',
     supplier: '',
     inspectionLocation: '',
-    inspectorType: '', // 'INTERNO' or 'EXTERNO'
-    externalInspectorName: '', // Only if inspectorType is 'EXTERNO'
+    inspectorType: '',
+    externalInspectorName: '',
     cost: '',
     inspectionRemark: '',
     purchaseOrder: '',
@@ -27,8 +29,8 @@ const InspectionDashboard = () => {
       componentCode: '',
       componentDescription: '',
       quantity: '',
-      inspectionOutcome: '', // Moved to component level
-      nonConformityNumber: '' // Only shows if inspectionOutcome is 'negative'
+      inspectionOutcome: '',
+      nonConformityNumber: ''
     }]
   });
 
@@ -51,6 +53,72 @@ const InspectionDashboard = () => {
     };
   };
 
+  // Calculate overall inspection outcome based on component outcomes
+  const calculateOverallOutcome = (components) => {
+    if (!components || components.length === 0) return 'N/A';
+    
+    const outcomes = components.map(c => c.inspectionOutcome).filter(Boolean);
+    if (outcomes.length === 0) return 'N/A';
+    
+    // If any component is negative, overall is negative
+    if (outcomes.some(o => o === 'negative')) return 'negative';
+    
+    // If any component has comments, overall has comments
+    if (outcomes.some(o => o === 'positive with comments')) return 'positive with comments';
+    
+    // If all are positive, overall is positive
+    if (outcomes.every(o => o === 'positive')) return 'positive';
+    
+    return 'N/A';
+  };
+
+  // Group inspections by general data (date, supplier, location, etc.)
+  const groupInspectionsByGeneral = (inspectionsList) => {
+    const grouped = {};
+    
+    inspectionsList.forEach(inspection => {
+      // Create a unique key based on general inspection data
+      const key = `${inspection.inspectionDate}_${inspection.supplier}_${inspection.inspectionLocation}_${inspection.inspectorType}_${inspection.purchaseOrder}`;
+      
+      if (!grouped[key]) {
+        grouped[key] = {
+          id: inspection.id, // Use first component's ID as group ID
+          inspectionDate: inspection.inspectionDate,
+          quarter: inspection.quarter,
+          supplier: inspection.supplier,
+          inspectionLocation: inspection.inspectionLocation,
+          inspectorType: inspection.inspectorType,
+          externalInspectorName: inspection.externalInspectorName,
+          cost: inspection.cost,
+          purchaseOrder: inspection.purchaseOrder,
+          inspectionRemark: inspection.inspectionRemark,
+          createdAt: inspection.createdAt,
+          components: []
+        };
+      }
+      
+      // Add component to this inspection group
+      grouped[key].components.push({
+        id: inspection.id,
+        client: inspection.client,
+        projectName: inspection.projectName,
+        componentCode: inspection.componentCode,
+        componentDescription: inspection.componentDescription,
+        quantity: inspection.quantity,
+        inspectionOutcome: inspection.inspectionOutcome,
+        nonConformityNumber: inspection.nonConformityNumber
+      });
+    });
+    
+    // Convert to array and calculate overall outcomes
+    const groupedArray = Object.values(grouped).map(group => ({
+      ...group,
+      overallOutcome: calculateOverallOutcome(group.components)
+    }));
+    
+    return groupedArray;
+  };
+
   const loadInspections = async () => {
     try {
       setLoading(true);
@@ -60,7 +128,18 @@ const InspectionDashboard = () => {
         id: doc.id,
         ...doc.data()
       }));
-      setInspections(inspectionData);
+      
+      // Filter out empty inspections (no date or supplier)
+      const validInspections = inspectionData.filter(
+        inspection => inspection.inspectionDate && inspection.supplier
+      );
+      
+      setInspections(validInspections);
+      
+      // Group inspections by general data
+      const grouped = groupInspectionsByGeneral(validInspections);
+      setGroupedInspections(grouped);
+      
     } catch (err) {
       console.error('Error loading inspections:', err);
       setError('Error loading inspections');
@@ -69,9 +148,53 @@ const InspectionDashboard = () => {
     }
   };
 
+  // Clean empty inspections from database
+  const cleanEmptyInspections = async () => {
+    if (!window.confirm('This will delete all empty inspection records. Continue?')) {
+      return;
+    }
+    
+    try {
+      setLoading(true);
+      const q = query(collection(db, 'inspections'));
+      const querySnapshot = await getDocs(q);
+      
+      let deletedCount = 0;
+      const deletePromises = [];
+      
+      querySnapshot.docs.forEach(docSnapshot => {
+        const data = docSnapshot.data();
+        // Delete if missing critical fields
+        if (!data.inspectionDate || !data.supplier) {
+          deletePromises.push(deleteDoc(doc(db, 'inspections', docSnapshot.id)));
+          deletedCount++;
+        }
+      });
+      
+      await Promise.all(deletePromises);
+      
+      setSuccess(`Deleted ${deletedCount} empty inspection records`);
+      loadInspections();
+      
+      setTimeout(() => setSuccess(''), 3000);
+    } catch (err) {
+      console.error('Error cleaning empty inspections:', err);
+      setError('Error cleaning empty inspections');
+    } finally {
+      setLoading(false);
+    }
+  };
+
   useEffect(() => {
     loadInspections();
   }, []);
+
+  const toggleRow = (inspectionId) => {
+    setExpandedRows(prev => ({
+      ...prev,
+      [inspectionId]: !prev[inspectionId]
+    }));
+  };
 
   const addComponent = () => {
     setFormData({
@@ -97,7 +220,6 @@ const InspectionDashboard = () => {
     const newComponents = [...formData.components];
     newComponents[index][field] = value;
     
-    // If changing inspectionOutcome and it's not 'negative', clear nonConformityNumber
     if (field === 'inspectionOutcome' && value !== 'negative') {
       newComponents[index].nonConformityNumber = '';
     }
@@ -109,7 +231,6 @@ const InspectionDashboard = () => {
     const { name, value } = e.target;
     setFormData({ ...formData, [name]: value });
     
-    // If changing inspectorType to 'INTERNO', clear externalInspectorName
     if (name === 'inspectorType' && value === 'INTERNO') {
       setFormData({ ...formData, [name]: value, externalInspectorName: '' });
     }
@@ -173,36 +294,59 @@ const InspectionDashboard = () => {
       const { quarter, month } = getQuarterAndMonth(formData.inspectionDate);
 
       if (editingInspection) {
-        // UPDATE existing inspection
-        const inspectionRef = doc(db, 'inspections', editingInspection);
-        
-        // Find the component data for this inspection
-        const componentToUpdate = formData.components[0]; // Assuming we're updating the first component
-        
-        await updateDoc(inspectionRef, {
-          quarter,
-          month,
-          inspectionDate: formData.inspectionDate,
-          supplier: formData.supplier,
-          inspectionLocation: formData.inspectionLocation,
-          inspectorType: formData.inspectorType,
-          externalInspectorName: formData.inspectorType === 'EXTERNO' ? formData.externalInspectorName : '',
-          cost: formData.cost ? `€${formData.cost}` : '',
-          inspectionRemark: formData.inspectionRemark,
-          purchaseOrder: formData.purchaseOrder,
-          client: componentToUpdate.client,
-          projectName: componentToUpdate.projectName,
-          componentCode: componentToUpdate.componentCode,
-          componentDescription: componentToUpdate.componentDescription,
-          quantity: componentToUpdate.quantity,
-          inspectionOutcome: componentToUpdate.inspectionOutcome,
-          nonConformityNumber: componentToUpdate.inspectionOutcome === 'negative' ? componentToUpdate.nonConformityNumber : '',
-          updatedAt: new Date().toISOString()
+        // UPDATE: Update all components of this inspection
+        const updatePromises = formData.components.map((component, index) => {
+          if (editingInspection.components[index]) {
+            return updateDoc(doc(db, 'inspections', editingInspection.components[index].id), {
+              quarter,
+              month,
+              inspectionDate: formData.inspectionDate,
+              supplier: formData.supplier,
+              inspectionLocation: formData.inspectionLocation,
+              inspectorType: formData.inspectorType,
+              externalInspectorName: formData.inspectorType === 'EXTERNO' ? formData.externalInspectorName : '',
+              cost: formData.cost ? `€${formData.cost}` : '',
+              inspectionRemark: formData.inspectionRemark,
+              purchaseOrder: formData.purchaseOrder,
+              client: component.client,
+              projectName: component.projectName,
+              componentCode: component.componentCode,
+              componentDescription: component.componentDescription,
+              quantity: component.quantity,
+              inspectionOutcome: component.inspectionOutcome,
+              nonConformityNumber: component.inspectionOutcome === 'negative' ? component.nonConformityNumber : '',
+              updatedAt: new Date().toISOString()
+            });
+          } else {
+            // New component added to existing inspection
+            return addDoc(collection(db, 'inspections'), {
+              quarter,
+              month,
+              inspectionDate: formData.inspectionDate,
+              supplier: formData.supplier,
+              inspectionLocation: formData.inspectionLocation,
+              inspectorType: formData.inspectorType,
+              externalInspectorName: formData.inspectorType === 'EXTERNO' ? formData.externalInspectorName : '',
+              cost: formData.cost ? `€${formData.cost}` : '',
+              inspectionRemark: formData.inspectionRemark,
+              purchaseOrder: formData.purchaseOrder,
+              client: component.client,
+              projectName: component.projectName,
+              componentCode: component.componentCode,
+              componentDescription: component.componentDescription,
+              quantity: component.quantity,
+              inspectionOutcome: component.inspectionOutcome,
+              nonConformityNumber: component.inspectionOutcome === 'negative' ? component.nonConformityNumber : '',
+              createdAt: new Date().toISOString(),
+              updatedAt: new Date().toISOString()
+            });
+          }
         });
 
+        await Promise.all(updatePromises);
         setSuccess('Inspection updated successfully!');
       } else {
-        // CREATE new inspections
+        // CREATE: Create one record per component
         const promises = formData.components
           .filter(comp => comp.client || comp.projectName || comp.componentCode)
           .map(component => {
@@ -230,7 +374,6 @@ const InspectionDashboard = () => {
           });
 
         await Promise.all(promises);
-        
         setSuccess(`Inspection registered successfully! (${promises.length} component(s))`);
       }
       
@@ -246,39 +389,46 @@ const InspectionDashboard = () => {
     }
   };
 
-  const handleView = (inspection) => {
-    // Populate form with inspection data for viewing/editing
+  const handleView = (groupedInspection) => {
+    // Populate form with grouped inspection data
     setFormData({
-      inspectionDate: inspection.inspectionDate || '',
-      supplier: inspection.supplier || '',
-      inspectionLocation: inspection.inspectionLocation || '',
-      inspectorType: inspection.inspectorType || '',
-      externalInspectorName: inspection.externalInspectorName || '',
-      cost: inspection.cost ? inspection.cost.replace('€', '') : '',
-      inspectionRemark: inspection.inspectionRemark || '',
-      purchaseOrder: inspection.purchaseOrder || '',
-      components: [{
-        client: inspection.client || '',
-        projectName: inspection.projectName || '',
-        componentCode: inspection.componentCode || '',
-        componentDescription: inspection.componentDescription || '',
-        quantity: inspection.quantity || '',
-        inspectionOutcome: inspection.inspectionOutcome || '',
-        nonConformityNumber: inspection.nonConformityNumber || ''
-      }]
+      inspectionDate: groupedInspection.inspectionDate || '',
+      supplier: groupedInspection.supplier || '',
+      inspectionLocation: groupedInspection.inspectionLocation || '',
+      inspectorType: groupedInspection.inspectorType || '',
+      externalInspectorName: groupedInspection.externalInspectorName || '',
+      cost: groupedInspection.cost ? groupedInspection.cost.replace('€', '') : '',
+      inspectionRemark: groupedInspection.inspectionRemark || '',
+      purchaseOrder: groupedInspection.purchaseOrder || '',
+      components: groupedInspection.components.map(comp => ({
+        client: comp.client || '',
+        projectName: comp.projectName || '',
+        componentCode: comp.componentCode || '',
+        componentDescription: comp.componentDescription || '',
+        quantity: comp.quantity || '',
+        inspectionOutcome: comp.inspectionOutcome || '',
+        nonConformityNumber: comp.nonConformityNumber || ''
+      }))
     });
-    setEditingInspection(inspection.id);
+    setEditingInspection(groupedInspection);
     setShowForm(true);
   };
 
-  const handleDelete = async (id) => {
-    if (!window.confirm('Are you sure you want to delete this inspection?')) {
+  const handleDelete = async (groupedInspection) => {
+    if (!window.confirm('Are you sure you want to delete this inspection and all its components?')) {
       return;
     }
 
     try {
       setLoading(true);
-      await deleteDoc(doc(db, 'inspections', id));
+      
+      // Delete all components of this inspection
+      const deletePromises = groupedInspection.components.map(comp => 
+        deleteDoc(doc(db, 'inspections', comp.id))
+      );
+      
+      await Promise.all(deletePromises);
+      
       setSuccess('Inspection deleted successfully');
       loadInspections();
       setTimeout(() => setSuccess(''), 3000);
@@ -336,9 +486,19 @@ const InspectionDashboard = () => {
           <div className="id-sidebar-footer">
             <div className="id-stats-box">
               <h3 className="id-stats-title">Statistics</h3>
-              <p className="id-stats-value">{inspections.length}</p>
-              <p className="id-stats-label">Total Records</p>
+              <p className="id-stats-value">{groupedInspections.length}</p>
+              <p className="id-stats-label">Total Inspections</p>
             </div>
+            
+            {/* Admin: Clean empty records button */}
+            <button
+              onClick={cleanEmptyInspections}
+              className="id-btn id-btn-danger"
+              style={{ width: '100%', marginTop: '1rem', fontSize: '0.8rem' }}
+            >
+              <Trash2 size={16} />
+              <span>Clean Empty Records</span>
+            </button>
           </div>
         </div>
 
@@ -483,23 +643,21 @@ const InspectionDashboard = () => {
                 <div className="id-form-section">
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
                     <h3 className="id-section-title" style={{ marginBottom: 0 }}>Inspected Components</h3>
-                    {!editingInspection && (
-                      <button
-                        type="button"
-                        onClick={addComponent}
-                        className="id-btn id-btn-success"
-                      >
-                        <Plus size={18} />
-                        <span>Add Component</span>
-                      </button>
-                    )}
+                    <button
+                      type="button"
+                      onClick={addComponent}
+                      className="id-btn id-btn-success"
+                    >
+                      <Plus size={18} />
+                      <span>Add Component</span>
+                    </button>
                   </div>
 
                   {formData.components.map((component, index) => (
                     <div key={index} className="id-component-card">
                       <div className="id-component-header">
                         <h4 className="id-component-title">Component {index + 1}</h4>
-                        {formData.components.length > 1 && !editingInspection && (
+                        {formData.components.length > 1 && (
                           <button
                             type="button"
                             onClick={() => removeComponent(index)}
@@ -619,7 +777,7 @@ const InspectionDashboard = () => {
                   <div className="id-spinner"></div>
                   <p className="id-loading-text">Loading inspections...</p>
                 </div>
-              ) : inspections.length === 0 ? (
+              ) : groupedInspections.length === 0 ? (
                 <div className="id-empty-state">
                   <div className="id-empty-icon">📋</div>
                   <h3 className="id-empty-title">No Inspections Registered</h3>
@@ -637,56 +795,120 @@ const InspectionDashboard = () => {
                   <table className="id-table">
                     <thead>
                       <tr>
+                        <th style={{ width: '30px' }}></th>
                         <th>Date</th>
                         <th>Quarter</th>
-                        <th>Client</th>
                         <th>Supplier</th>
-                        <th>Component</th>
+                        <th>Location</th>
+                        <th>Inspector</th>
+                        <th>PO</th>
                         <th>Outcome</th>
                         <th>Cost</th>
                         <th>Actions</th>
                       </tr>
                     </thead>
                     <tbody>
-                      {inspections.map((inspection) => (
-                        <tr key={inspection.id}>
-                          <td>{inspection.inspectionDate}</td>
-                          <td>{inspection.quarter}</td>
-                          <td>{inspection.client}</td>
-                          <td>{inspection.supplier}</td>
-                          <td>
-                            <div>
-                              <div style={{ fontWeight: '500' }}>{inspection.componentCode}</div>
-                              <div style={{ fontSize: '0.75rem', color: '#6b7280' }}>{inspection.componentDescription}</div>
-                            </div>
-                          </td>
-                          <td>
-                            <span className={getBadgeClass(inspection.inspectionOutcome)}>
-                              {inspection.inspectionOutcome || 'N/A'}
-                            </span>
-                          </td>
-                          <td>{inspection.cost || '-'}</td>
-                          <td>
-                            <div style={{ display: 'flex', gap: '0.5rem' }}>
+                      {groupedInspections.map((inspection) => (
+                        <React.Fragment key={inspection.id}>
+                          {/* Main row */}
+                          <tr>
+                            <td>
                               <button
-                                onClick={() => handleView(inspection)}
-                                className="id-btn id-btn-secondary"
-                                style={{ padding: '0.4rem 0.8rem', fontSize: '0.8rem' }}
-                                title="View/Edit"
+                                onClick={() => toggleRow(inspection.id)}
+                                style={{ background: 'none', border: 'none', cursor: 'pointer', padding: '0.25rem' }}
                               >
-                                <Eye size={16} />
+                                {expandedRows[inspection.id] ? 
+                                  <ChevronDown size={18} color="#4b5563" /> : 
+                                  <ChevronRight size={18} color="#4b5563" />
+                                }
                               </button>
-                              <button
-                                onClick={() => handleDelete(inspection.id)}
-                                className="id-btn id-btn-danger"
-                                style={{ padding: '0.4rem 0.8rem', fontSize: '0.8rem' }}
-                                title="Delete"
-                              >
-                                <Trash2 size={16} />
-                              </button>
-                            </div>
-                          </td>
-                        </tr>
+                            </td>
+                            <td>{inspection.inspectionDate}</td>
+                            <td>{inspection.quarter}</td>
+                            <td>{inspection.supplier}</td>
+                            <td>{inspection.inspectionLocation || '-'}</td>
+                            <td>
+                              <div style={{ fontSize: '0.85rem' }}>
+                                <div style={{ fontWeight: '500' }}>{inspection.inspectorType}</div>
+                                {inspection.inspectorType === 'EXTERNO' && (
+                                  <div style={{ fontSize: '0.75rem', color: '#6b7280' }}>
+                                    {inspection.externalInspectorName}
+                                  </div>
+                                )}
+                              </div>
+                            </td>
+                            <td>{inspection.purchaseOrder || '-'}</td>
+                            <td>
+                              <span className={getBadgeClass(inspection.overallOutcome)}>
+                                {inspection.overallOutcome}
+                              </span>
+                            </td>
+                            <td>{inspection.cost || '-'}</td>
+                            <td>
+                              <div style={{ display: 'flex', gap: '0.5rem' }}>
+                                <button
+                                  onClick={() => handleView(inspection)}
+                                  className="id-btn id-btn-secondary"
+                                  style={{ padding: '0.4rem 0.8rem', fontSize: '0.8rem' }}
+                                  title="View/Edit"
+                                >
+                                  <Eye size={16} />
+                                </button>
+                                <button
+                                  onClick={() => handleDelete(inspection)}
+                                  className="id-btn id-btn-danger"
+                                  style={{ padding: '0.4rem 0.8rem', fontSize: '0.8rem' }}
+                                  title="Delete"
+                                >
+                                  <Trash2 size={16} />
+                                </button>
+                              </div>
+                            </td>
+                          </tr>
+                          
+                          {/* Expanded components detail row */}
+                          {expandedRows[inspection.id] && (
+                            <tr>
+                              <td colSpan="10" style={{ backgroundColor: '#f9fafb', padding: '1rem' }}>
+                                <div style={{ marginLeft: '2rem' }}>
+                                  <h4 style={{ fontWeight: '600', marginBottom: '0.75rem', color: '#374151' }}>
+                                    Inspected Components ({inspection.components.length})
+                                  </h4>
+                                  <table style={{ width: '100%', fontSize: '0.85rem' }}>
+                                    <thead>
+                                      <tr style={{ borderBottom: '1px solid #e5e7eb' }}>
+                                        <th style={{ textAlign: 'left', padding: '0.5rem', color: '#6b7280' }}>Client</th>
+                                        <th style={{ textAlign: 'left', padding: '0.5rem', color: '#6b7280' }}>Project</th>
+                                        <th style={{ textAlign: 'left', padding: '0.5rem', color: '#6b7280' }}>Code</th>
+                                        <th style={{ textAlign: 'left', padding: '0.5rem', color: '#6b7280' }}>Description</th>
+                                        <th style={{ textAlign: 'left', padding: '0.5rem', color: '#6b7280' }}>Qty</th>
+                                        <th style={{ textAlign: 'left', padding: '0.5rem', color: '#6b7280' }}>Outcome</th>
+                                        <th style={{ textAlign: 'left', padding: '0.5rem', color: '#6b7280' }}>NC Number</th>
+                                      </tr>
+                                    </thead>
+                                    <tbody>
+                                      {inspection.components.map((comp, idx) => (
+                                        <tr key={idx} style={{ borderBottom: '1px solid #f3f4f6' }}>
+                                          <td style={{ padding: '0.5rem' }}>{comp.client}</td>
+                                          <td style={{ padding: '0.5rem' }}>{comp.projectName}</td>
+                                          <td style={{ padding: '0.5rem' }}>{comp.componentCode}</td>
+                                          <td style={{ padding: '0.5rem' }}>{comp.componentDescription}</td>
+                                          <td style={{ padding: '0.5rem' }}>{comp.quantity}</td>
+                                          <td style={{ padding: '0.5rem' }}>
+                                            <span className={getBadgeClass(comp.inspectionOutcome)}>
+                                              {comp.inspectionOutcome || 'N/A'}
+                                            </span>
+                                          </td>
+                                          <td style={{ padding: '0.5rem' }}>{comp.nonConformityNumber || '-'}</td>
+                                        </tr>
+                                      ))}
+                                    </tbody>
+                                  </table>
+                                </div>
+                              </td>
+                            </tr>
+                          )}
+                        </React.Fragment>
                       ))}
                     </tbody>
                   </table>

@@ -415,7 +415,7 @@ const InspectionDashboard = ({ onBackToMenu }) => {
             zIndex: 150
           }}>
             <img 
-              src="/images/valmont_logo.png" 
+              src="/images/logo.png"
               alt="Valmont Logo" 
               style={{
                 height: '50px',
@@ -848,19 +848,27 @@ const InspectionDashboard = ({ onBackToMenu }) => {
                                       <div className="id-component-detail-grid">
                                         <div className="id-detail-item">
                                           <span className="id-detail-label">Client</span>
-                                          <span className="id-detail-value">{comp.client || 'N/A'}</span>
+                                          <span className="id-detail-value" title={comp.client || 'N/A'}>
+                                            {comp.client || 'N/A'}
+                                          </span>
                                         </div>
                                         <div className="id-detail-item">
                                           <span className="id-detail-label">Project</span>
-                                          <span className="id-detail-value">{comp.projectName || 'N/A'}</span>
+                                          <span className="id-detail-value" title={comp.projectName || 'N/A'}>
+                                            {comp.projectName || 'N/A'}
+                                          </span>
                                         </div>
                                         <div className="id-detail-item">
                                           <span className="id-detail-label">Code</span>
-                                          <span className="id-detail-value">{comp.componentCode || 'N/A'}</span>
+                                          <span className="id-detail-value" title={comp.componentCode || 'N/A'}>
+                                            {comp.componentCode || 'N/A'}
+                                          </span>
                                         </div>
                                         <div className="id-detail-item">
                                           <span className="id-detail-label">Description</span>
-                                          <span className="id-detail-value">{comp.componentDescription || 'N/A'}</span>
+                                          <span className="id-detail-value" title={comp.componentDescription || 'N/A'}>
+                                            {comp.componentDescription || 'N/A'}
+                                          </span>
                                         </div>
                                         <div className="id-detail-item">
                                           <span className="id-detail-label">Quantity</span>
@@ -872,13 +880,28 @@ const InspectionDashboard = ({ onBackToMenu }) => {
                                             {comp.inspectionOutcome || 'N/A'}
                                           </span>
                                         </div>
-                                        {comp.inspectionOutcome === 'negative' && (
-                                          <div className="id-detail-item">
-                                            <span className="id-detail-label">NC Number</span>
-                                            <span className="id-detail-value">{comp.nonConformityNumber || 'N/A'}</span>
-                                          </div>
-                                        )}
                                       </div>
+                                      {comp.inspectionOutcome === 'negative' && comp.nonConformityNumber && (
+                                        <div style={{ 
+                                          marginTop: '0.75rem', 
+                                          paddingTop: '0.75rem', 
+                                          borderTop: '1px dashed rgba(220, 38, 38, 0.2)',
+                                          display: 'flex',
+                                          alignItems: 'center',
+                                          gap: '0.5rem'
+                                        }}>
+                                          <span className="id-detail-label" style={{ color: '#dc2626', margin: 0 }}>
+                                            NC NUMBER:
+                                          </span>
+                                          <span className="id-detail-value" style={{ 
+                                            color: '#dc2626', 
+                                            fontWeight: '700',
+                                            fontSize: '0.9rem'
+                                          }}>
+                                            {comp.nonConformityNumber}
+                                          </span>
+                                        </div>
+                                      )}
                                     </div>
                                   ))}
                                 </div>

@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { collection, addDoc, getDocs, query, orderBy } from 'firebase/firestore';
 import { db } from '../../firebase/config';
 import { X, Plus, Save, AlertCircle } from 'lucide-react';
+import '../../styles/inspection-dashboard.css';
 
 const InspectionDashboard = () => {
   const [inspections, setInspections] = useState([]);
@@ -10,7 +11,6 @@ const InspectionDashboard = () => {
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
 
-  // Estado del formulario
   const [formData, setFormData] = useState({
     inspectionDate: '',
     supplier: '',
@@ -30,12 +30,11 @@ const InspectionDashboard = () => {
     }]
   });
 
-  // Función para calcular Quarter y Month desde una fecha
   const getQuarterAndMonth = (dateString) => {
     if (!dateString) return { quarter: '', month: '' };
     
     const date = new Date(dateString);
-    const month = date.getMonth() + 1; // 0-11 -> 1-12
+    const month = date.getMonth() + 1;
     const quarter = Math.ceil(month / 3);
     
     const monthNames = {
@@ -50,7 +49,6 @@ const InspectionDashboard = () => {
     };
   };
 
-  // Cargar inspecciones
   const loadInspections = async () => {
     try {
       setLoading(true);
@@ -73,7 +71,6 @@ const InspectionDashboard = () => {
     loadInspections();
   }, []);
 
-  // Agregar nuevo componente al formulario
   const addComponent = () => {
     setFormData({
       ...formData,
@@ -88,38 +85,32 @@ const InspectionDashboard = () => {
     });
   };
 
-  // Eliminar componente
   const removeComponent = (index) => {
     const newComponents = formData.components.filter((_, i) => i !== index);
     setFormData({ ...formData, components: newComponents });
   };
 
-  // Actualizar datos del componente
   const updateComponent = (index, field, value) => {
     const newComponents = [...formData.components];
     newComponents[index][field] = value;
     setFormData({ ...formData, components: newComponents });
   };
 
-  // Manejar cambios en campos generales
   const handleChange = (e) => {
     const { name, value } = e.target;
     setFormData({ ...formData, [name]: value });
   };
 
-  // Guardar inspección
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
     setSuccess('');
     
-    // Validación básica
     if (!formData.inspectionDate || !formData.supplier || formData.components.length === 0) {
       setError('Por favor completa los campos obligatorios');
       return;
     }
 
-    // Validar que al menos haya un componente con datos
     const hasValidComponent = formData.components.some(comp => 
       comp.client || comp.projectName || comp.componentCode
     );
@@ -133,12 +124,10 @@ const InspectionDashboard = () => {
       setLoading(true);
       const { quarter, month } = getQuarterAndMonth(formData.inspectionDate);
 
-      // Crear un registro por cada componente
       const promises = formData.components
-        .filter(comp => comp.client || comp.projectName || comp.componentCode) // Solo componentes con datos
+        .filter(comp => comp.client || comp.projectName || comp.componentCode)
         .map(component => {
           return addDoc(collection(db, 'inspections'), {
-            // Datos generales
             quarter,
             month,
             inspectionDate: formData.inspectionDate,
@@ -149,14 +138,12 @@ const InspectionDashboard = () => {
             inspectionRemark: formData.inspectionRemark,
             inspectionOutcome: formData.inspectionOutcome,
             purchaseOrder: formData.purchaseOrder,
-            // Datos del componente
             client: component.client,
             projectName: component.projectName,
             componentCode: component.componentCode,
             componentDescription: component.componentDescription,
             quantity: component.quantity,
             nonConformity: component.nonConformity,
-            // Metadata
             createdAt: new Date().toISOString(),
             updatedAt: new Date().toISOString()
           });
@@ -166,7 +153,6 @@ const InspectionDashboard = () => {
       
       setSuccess(`¡Inspección registrada exitosamente! (${promises.length} componente(s))`);
       
-      // Resetear formulario
       setFormData({
         inspectionDate: '',
         supplier: '',
@@ -198,140 +184,134 @@ const InspectionDashboard = () => {
     }
   };
 
+  const getBadgeClass = (outcome) => {
+    if (outcome === 'positive') return 'id-badge id-badge-success';
+    if (outcome === 'positive with comments') return 'id-badge id-badge-warning';
+    if (outcome === 'negative') return 'id-badge id-badge-danger';
+    return 'id-badge id-badge-default';
+  };
+
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-blue-900 to-slate-900">
-      {/* Background pattern */}
-      <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNjAiIGhlaWdodD0iNjAiIHZpZXdCb3g9IjAgMCA2MCA2MCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48ZyBmaWxsPSJub25lIiBmaWxsLXJ1bGU9ImV2ZW5vZGQiPjxwYXRoIGQ9Ik0zNiAxOGMzLjMxNCAwIDYgMi42ODYgNiA2cy0yLjY4NiA2LTYgNi02LTIuNjg2LTYtNiAyLjY4Ni02IDYtNnoiIHN0cm9rZT0iIzFmMjkzNyIgc3Ryb2tlLXdpZHRoPSIyIi8+PC9nPjwvc3ZnPg==')] opacity-10"></div>
-      
-      <div className="flex min-h-screen">
+    <div className="inspection-dashboard-wrapper">
+      <div className="id-app-container">
         {/* Sidebar */}
-        <div className="w-64 bg-slate-800/50 backdrop-blur-sm border-r border-slate-700/50 p-6">
-          <div className="mb-8">
-            <h2 className="text-2xl font-bold text-white mb-2">Inspection Dashboard</h2>
-            <p className="text-slate-400 text-sm">Sistema de Gestión de Inspecciones</p>
+        <div className="id-sidebar">
+          <div className="id-sidebar-header">
+            <h2 className="id-sidebar-title">Inspection Dashboard</h2>
+            <p className="id-sidebar-subtitle">Sistema de Gestión de Inspecciones</p>
           </div>
           
-          <nav className="space-y-2">
-            <button
+          <div className="id-sidebar-divider"></div>
+          
+          <nav className="id-sidebar-nav">
+            <div 
+              className={`id-nav-item ${showForm ? 'id-active' : ''}`}
               onClick={() => setShowForm(true)}
-              className="w-full flex items-center space-x-3 px-4 py-3 rounded-lg bg-blue-600 hover:bg-blue-700 text-white transition-colors"
             >
-              <Plus size={20} />
-              <span>Nueva Inspección</span>
-            </button>
+              <Plus className="id-nav-icon" size={20} />
+              <span className="id-nav-text">Nueva Inspección</span>
+            </div>
             
-            <button
+            <div 
+              className={`id-nav-item ${!showForm ? 'id-active' : ''}`}
               onClick={() => setShowForm(false)}
-              className="w-full flex items-center space-x-3 px-4 py-3 rounded-lg hover:bg-slate-700/50 text-slate-300 transition-colors"
             >
-              <AlertCircle size={20} />
-              <span>Ver Inspecciones</span>
-            </button>
+              <AlertCircle className="id-nav-icon" size={20} />
+              <span className="id-nav-text">Ver Inspecciones</span>
+            </div>
           </nav>
 
-          <div className="mt-8 p-4 bg-slate-700/30 rounded-lg">
-            <h3 className="text-sm font-semibold text-slate-300 mb-2">Estadísticas</h3>
-            <p className="text-2xl font-bold text-white">{inspections.length}</p>
-            <p className="text-xs text-slate-400">Total de registros</p>
+          <div className="id-sidebar-footer">
+            <div className="id-stats-box">
+              <h3 className="id-stats-title">Estadísticas</h3>
+              <p className="id-stats-value">{inspections.length}</p>
+              <p className="id-stats-label">Total de registros</p>
+            </div>
           </div>
         </div>
 
         {/* Main Content */}
-        <div className="flex-1 p-8 relative z-10">
-          {/* Header */}
-          <div className="mb-8">
-            <h1 className="text-4xl font-bold text-white mb-2">
-              {showForm ? 'Registrar Nueva Inspección' : 'Inspecciones Registradas'}
-            </h1>
-            <p className="text-slate-400">
-              {showForm ? 'Completa los datos de la inspección y componentes' : 'Historial de inspecciones realizadas'}
-            </p>
+        <div className="id-main-content">
+          <div className="id-content-header">
+            <div className="id-header-info">
+              <h1 className="id-main-title">
+                {showForm ? 'Registrar Nueva Inspección' : 'Inspecciones Registradas'}
+              </h1>
+              <p className="id-breadcrumb">
+                Quality Management → Inspections → {showForm ? 'New' : 'List'}
+              </p>
+            </div>
           </div>
 
-          {/* Mensajes de estado */}
           {error && (
-            <div className="mb-6 bg-red-500/10 border border-red-500/50 rounded-lg p-4 flex items-center space-x-3">
-              <AlertCircle className="text-red-500" size={20} />
-              <span className="text-red-300">{error}</span>
+            <div className="id-alert id-alert-error">
+              <AlertCircle size={20} />
+              <span>{error}</span>
             </div>
           )}
 
           {success && (
-            <div className="mb-6 bg-green-500/10 border border-green-500/50 rounded-lg p-4 flex items-center space-x-3">
-              <Save className="text-green-500" size={20} />
-              <span className="text-green-300">{success}</span>
+            <div className="id-alert id-alert-success">
+              <Save size={20} />
+              <span>{success}</span>
             </div>
           )}
 
-          {/* Formulario */}
           {showForm ? (
-            <div className="bg-slate-800/50 backdrop-blur-sm rounded-xl p-6 border border-slate-700/50">
-              <form onSubmit={handleSubmit} className="space-y-6">
-                {/* Sección: Datos Generales de la Inspección */}
-                <div>
-                  <h3 className="text-xl font-semibold text-white mb-4 pb-2 border-b border-slate-700">
-                    Datos Generales de la Inspección
-                  </h3>
+            <div className="id-panel">
+              <form onSubmit={handleSubmit}>
+                <div className="id-form-section">
+                  <h3 className="id-section-title">Datos Generales de la Inspección</h3>
                   
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div>
-                      <label className="block text-sm font-medium text-slate-300 mb-2">
-                        Fecha de Inspección (FAT/PreShipment) *
-                      </label>
+                  <div className="id-form-grid">
+                    <div className="id-form-group">
+                      <label className="id-form-label id-form-label-required">Fecha de Inspección</label>
                       <input
                         type="date"
                         name="inspectionDate"
                         value={formData.inspectionDate}
                         onChange={handleChange}
                         required
-                        className="w-full px-4 py-2 bg-slate-700/50 border border-slate-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        className="id-form-input"
                       />
                     </div>
 
-                    <div>
-                      <label className="block text-sm font-medium text-slate-300 mb-2">
-                        Proveedor (Supplier) *
-                      </label>
+                    <div className="id-form-group">
+                      <label className="id-form-label id-form-label-required">Proveedor</label>
                       <input
                         type="text"
                         name="supplier"
                         value={formData.supplier}
                         onChange={handleChange}
                         required
-                        className="w-full px-4 py-2 bg-slate-700/50 border border-slate-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        className="id-form-input"
                       />
                     </div>
 
-                    <div>
-                      <label className="block text-sm font-medium text-slate-300 mb-2">
-                        Ubicación de Inspección
-                      </label>
+                    <div className="id-form-group">
+                      <label className="id-form-label">Ubicación de Inspección</label>
                       <input
                         type="text"
                         name="inspectionLocation"
                         value={formData.inspectionLocation}
                         onChange={handleChange}
-                        className="w-full px-4 py-2 bg-slate-700/50 border border-slate-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        className="id-form-input"
                       />
                     </div>
 
-                    <div>
-                      <label className="block text-sm font-medium text-slate-300 mb-2">
-                        Inspector Externo
-                      </label>
+                    <div className="id-form-group">
+                      <label className="id-form-label">Inspector Externo</label>
                       <input
                         type="text"
                         name="externalInspector"
                         value={formData.externalInspector}
                         onChange={handleChange}
-                        className="w-full px-4 py-2 bg-slate-700/50 border border-slate-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        className="id-form-input"
                       />
                     </div>
 
-                    <div>
-                      <label className="block text-sm font-medium text-slate-300 mb-2">
-                        Costo (se agregará el símbolo €)
-                      </label>
+                    <div className="id-form-group">
+                      <label className="id-form-label">Costo (€)</label>
                       <input
                         type="number"
                         step="0.01"
@@ -339,32 +319,28 @@ const InspectionDashboard = () => {
                         value={formData.cost}
                         onChange={handleChange}
                         placeholder="Ej: 500"
-                        className="w-full px-4 py-2 bg-slate-700/50 border border-slate-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        className="id-form-input"
                       />
                     </div>
 
-                    <div>
-                      <label className="block text-sm font-medium text-slate-300 mb-2">
-                        Orden de Compra (Purchase Order)
-                      </label>
+                    <div className="id-form-group">
+                      <label className="id-form-label">Orden de Compra</label>
                       <input
                         type="text"
                         name="purchaseOrder"
                         value={formData.purchaseOrder}
                         onChange={handleChange}
-                        className="w-full px-4 py-2 bg-slate-700/50 border border-slate-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        className="id-form-input"
                       />
                     </div>
 
-                    <div className="md:col-span-2">
-                      <label className="block text-sm font-medium text-slate-300 mb-2">
-                        Resultado de Inspección (Inspection Outcome)
-                      </label>
+                    <div className="id-form-group">
+                      <label className="id-form-label">Resultado de Inspección</label>
                       <select
                         name="inspectionOutcome"
                         value={formData.inspectionOutcome}
                         onChange={handleChange}
-                        className="w-full px-4 py-2 bg-slate-700/50 border border-slate-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        className="id-form-select"
                       >
                         <option value="">Seleccionar...</option>
                         <option value="positive">Positive</option>
@@ -372,140 +348,117 @@ const InspectionDashboard = () => {
                         <option value="negative">Negative</option>
                       </select>
                     </div>
+                  </div>
 
-                    <div className="md:col-span-2">
-                      <label className="block text-sm font-medium text-slate-300 mb-2">
-                        Observaciones de Inspección (Inspection Remark)
-                      </label>
-                      <textarea
-                        name="inspectionRemark"
-                        value={formData.inspectionRemark}
-                        onChange={handleChange}
-                        rows="3"
-                        className="w-full px-4 py-2 bg-slate-700/50 border border-slate-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
-                      />
-                    </div>
+                  <div className="id-form-group" style={{ marginTop: '1rem' }}>
+                    <label className="id-form-label">Observaciones</label>
+                    <textarea
+                      name="inspectionRemark"
+                      value={formData.inspectionRemark}
+                      onChange={handleChange}
+                      className="id-form-textarea"
+                    />
                   </div>
                 </div>
 
-                {/* Sección: Componentes */}
-                <div>
-                  <div className="flex items-center justify-between mb-4">
-                    <h3 className="text-xl font-semibold text-white pb-2 border-b border-slate-700">
-                      Componentes Inspeccionados
-                    </h3>
+                <div className="id-form-section">
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
+                    <h3 className="id-section-title" style={{ marginBottom: 0 }}>Componentes Inspeccionados</h3>
                     <button
                       type="button"
                       onClick={addComponent}
-                      className="flex items-center space-x-2 px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg transition-colors"
+                      className="id-btn id-btn-success"
                     >
                       <Plus size={18} />
                       <span>Agregar Componente</span>
                     </button>
                   </div>
 
-                  <div className="space-y-4">
-                    {formData.components.map((component, index) => (
-                      <div key={index} className="bg-slate-700/30 rounded-lg p-4 border border-slate-600/50">
-                        <div className="flex items-center justify-between mb-4">
-                          <h4 className="text-lg font-medium text-slate-200">
-                            Componente {index + 1}
-                          </h4>
-                          {formData.components.length > 1 && (
-                            <button
-                              type="button"
-                              onClick={() => removeComponent(index)}
-                              className="text-red-400 hover:text-red-300 transition-colors"
-                            >
-                              <X size={20} />
-                            </button>
-                          )}
+                  {formData.components.map((component, index) => (
+                    <div key={index} className="id-component-card">
+                      <div className="id-component-header">
+                        <h4 className="id-component-title">Componente {index + 1}</h4>
+                        {formData.components.length > 1 && (
+                          <button
+                            type="button"
+                            onClick={() => removeComponent(index)}
+                            className="id-btn-remove"
+                          >
+                            <X size={20} />
+                          </button>
+                        )}
+                      </div>
+
+                      <div className="id-form-grid">
+                        <div className="id-form-group">
+                          <label className="id-form-label">Cliente</label>
+                          <input
+                            type="text"
+                            value={component.client}
+                            onChange={(e) => updateComponent(index, 'client', e.target.value)}
+                            className="id-form-input"
+                          />
                         </div>
 
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                          <div>
-                            <label className="block text-sm font-medium text-slate-300 mb-2">
-                              Cliente (Client)
-                            </label>
-                            <input
-                              type="text"
-                              value={component.client}
-                              onChange={(e) => updateComponent(index, 'client', e.target.value)}
-                              className="w-full px-4 py-2 bg-slate-700/50 border border-slate-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
-                            />
-                          </div>
+                        <div className="id-form-group">
+                          <label className="id-form-label">Nombre del Proyecto</label>
+                          <input
+                            type="text"
+                            value={component.projectName}
+                            onChange={(e) => updateComponent(index, 'projectName', e.target.value)}
+                            className="id-form-input"
+                          />
+                        </div>
 
-                          <div>
-                            <label className="block text-sm font-medium text-slate-300 mb-2">
-                              Nombre del Proyecto (Project Name)
-                            </label>
-                            <input
-                              type="text"
-                              value={component.projectName}
-                              onChange={(e) => updateComponent(index, 'projectName', e.target.value)}
-                              className="w-full px-4 py-2 bg-slate-700/50 border border-slate-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
-                            />
-                          </div>
+                        <div className="id-form-group">
+                          <label className="id-form-label">Código de Componente</label>
+                          <input
+                            type="text"
+                            value={component.componentCode}
+                            onChange={(e) => updateComponent(index, 'componentCode', e.target.value)}
+                            className="id-form-input"
+                          />
+                        </div>
 
-                          <div>
-                            <label className="block text-sm font-medium text-slate-300 mb-2">
-                              Código de Componente
-                            </label>
-                            <input
-                              type="text"
-                              value={component.componentCode}
-                              onChange={(e) => updateComponent(index, 'componentCode', e.target.value)}
-                              className="w-full px-4 py-2 bg-slate-700/50 border border-slate-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
-                            />
-                          </div>
+                        <div className="id-form-group">
+                          <label className="id-form-label">Descripción</label>
+                          <input
+                            type="text"
+                            value={component.componentDescription}
+                            onChange={(e) => updateComponent(index, 'componentDescription', e.target.value)}
+                            className="id-form-input"
+                          />
+                        </div>
 
-                          <div>
-                            <label className="block text-sm font-medium text-slate-300 mb-2">
-                              Descripción del Componente
-                            </label>
-                            <input
-                              type="text"
-                              value={component.componentDescription}
-                              onChange={(e) => updateComponent(index, 'componentDescription', e.target.value)}
-                              className="w-full px-4 py-2 bg-slate-700/50 border border-slate-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
-                            />
-                          </div>
+                        <div className="id-form-group">
+                          <label className="id-form-label">Cantidad</label>
+                          <input
+                            type="text"
+                            value={component.quantity}
+                            onChange={(e) => updateComponent(index, 'quantity', e.target.value)}
+                            className="id-form-input"
+                          />
+                        </div>
 
-                          <div>
-                            <label className="block text-sm font-medium text-slate-300 mb-2">
-                              Cantidad (Quantity)
-                            </label>
-                            <input
-                              type="text"
-                              value={component.quantity}
-                              onChange={(e) => updateComponent(index, 'quantity', e.target.value)}
-                              className="w-full px-4 py-2 bg-slate-700/50 border border-slate-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
-                            />
-                          </div>
-
-                          <div>
-                            <label className="block text-sm font-medium text-slate-300 mb-2">
-                              No Conformidad (Non-Conformity)
-                            </label>
-                            <input
-                              type="text"
-                              value={component.nonConformity}
-                              onChange={(e) => updateComponent(index, 'nonConformity', e.target.value)}
-                              className="w-full px-4 py-2 bg-slate-700/50 border border-slate-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
-                            />
-                          </div>
+                        <div className="id-form-group">
+                          <label className="id-form-label">No Conformidad</label>
+                          <input
+                            type="text"
+                            value={component.nonConformity}
+                            onChange={(e) => updateComponent(index, 'nonConformity', e.target.value)}
+                            className="id-form-input"
+                          />
                         </div>
                       </div>
-                    ))}
-                  </div>
+                    </div>
+                  ))}
                 </div>
 
-                {/* Botones de acción */}
-                <div className="flex items-center space-x-4 pt-4">
+                <div className="id-form-actions">
                   <button
                     type="submit"
                     disabled={loading}
-                    className="flex items-center space-x-2 px-6 py-3 bg-blue-600 hover:bg-blue-700 disabled:bg-slate-600 text-white rounded-lg transition-colors"
+                    className="id-btn id-btn-primary"
                   >
                     <Save size={20} />
                     <span>{loading ? 'Guardando...' : 'Guardar Inspección'}</span>
@@ -514,7 +467,7 @@ const InspectionDashboard = () => {
                   <button
                     type="button"
                     onClick={() => setShowForm(false)}
-                    className="px-6 py-3 bg-slate-700 hover:bg-slate-600 text-white rounded-lg transition-colors"
+                    className="id-btn id-btn-secondary"
                   >
                     Cancelar
                   </button>
@@ -522,62 +475,58 @@ const InspectionDashboard = () => {
               </form>
             </div>
           ) : (
-            /* Lista de inspecciones */
-            <div className="bg-slate-800/50 backdrop-blur-sm rounded-xl p-6 border border-slate-700/50">
+            <div className="id-panel">
               {loading ? (
-                <div className="text-center py-12">
-                  <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500 mx-auto"></div>
-                  <p className="text-slate-400 mt-4">Cargando inspecciones...</p>
+                <div className="id-loading-container">
+                  <div className="id-spinner"></div>
+                  <p className="id-loading-text">Cargando inspecciones...</p>
                 </div>
               ) : inspections.length === 0 ? (
-                <div className="text-center py-12">
-                  <AlertCircle className="mx-auto text-slate-600" size={48} />
-                  <p className="text-slate-400 mt-4">No hay inspecciones registradas aún</p>
+                <div className="id-empty-state">
+                  <div className="id-empty-icon">📋</div>
+                  <h3 className="id-empty-title">No hay inspecciones registradas</h3>
+                  <p className="id-empty-message">Comienza registrando tu primera inspección</p>
                   <button
                     onClick={() => setShowForm(true)}
-                    className="mt-4 px-6 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors"
+                    className="id-btn id-btn-primary"
                   >
-                    Registrar Primera Inspección
+                    <Plus size={18} />
+                    <span>Registrar Primera Inspección</span>
                   </button>
                 </div>
               ) : (
-                <div className="overflow-x-auto">
-                  <table className="w-full">
+                <div className="id-table-container">
+                  <table className="id-table">
                     <thead>
-                      <tr className="border-b border-slate-700">
-                        <th className="text-left py-3 px-4 text-slate-300 font-semibold">Fecha</th>
-                        <th className="text-left py-3 px-4 text-slate-300 font-semibold">Quarter</th>
-                        <th className="text-left py-3 px-4 text-slate-300 font-semibold">Cliente</th>
-                        <th className="text-left py-3 px-4 text-slate-300 font-semibold">Proveedor</th>
-                        <th className="text-left py-3 px-4 text-slate-300 font-semibold">Componente</th>
-                        <th className="text-left py-3 px-4 text-slate-300 font-semibold">Resultado</th>
-                        <th className="text-left py-3 px-4 text-slate-300 font-semibold">Costo</th>
+                      <tr>
+                        <th>Fecha</th>
+                        <th>Quarter</th>
+                        <th>Cliente</th>
+                        <th>Proveedor</th>
+                        <th>Componente</th>
+                        <th>Resultado</th>
+                        <th>Costo</th>
                       </tr>
                     </thead>
                     <tbody>
                       {inspections.map((inspection) => (
-                        <tr key={inspection.id} className="border-b border-slate-700/50 hover:bg-slate-700/30 transition-colors">
-                          <td className="py-3 px-4 text-slate-300">{inspection.inspectionDate}</td>
-                          <td className="py-3 px-4 text-slate-300">{inspection.quarter}</td>
-                          <td className="py-3 px-4 text-slate-300">{inspection.client}</td>
-                          <td className="py-3 px-4 text-slate-300">{inspection.supplier}</td>
-                          <td className="py-3 px-4 text-slate-300">
-                            <div className="text-sm">
-                              <div className="font-medium">{inspection.componentCode}</div>
-                              <div className="text-slate-400 text-xs">{inspection.componentDescription}</div>
+                        <tr key={inspection.id}>
+                          <td>{inspection.inspectionDate}</td>
+                          <td>{inspection.quarter}</td>
+                          <td>{inspection.client}</td>
+                          <td>{inspection.supplier}</td>
+                          <td>
+                            <div>
+                              <div style={{ fontWeight: '500' }}>{inspection.componentCode}</div>
+                              <div style={{ fontSize: '0.75rem', color: '#6b7280' }}>{inspection.componentDescription}</div>
                             </div>
                           </td>
-                          <td className="py-3 px-4">
-                            <span className={`px-2 py-1 rounded-full text-xs font-medium ${
-                              inspection.inspectionOutcome === 'positive' ? 'bg-green-500/20 text-green-400' :
-                              inspection.inspectionOutcome === 'positive with comments' ? 'bg-yellow-500/20 text-yellow-400' :
-                              inspection.inspectionOutcome === 'negative' ? 'bg-red-500/20 text-red-400' :
-                              'bg-slate-500/20 text-slate-400'
-                            }`}>
+                          <td>
+                            <span className={getBadgeClass(inspection.inspectionOutcome)}>
                               {inspection.inspectionOutcome || 'N/A'}
                             </span>
                           </td>
-                          <td className="py-3 px-4 text-slate-300">{inspection.cost || '-'}</td>
+                          <td>{inspection.cost || '-'}</td>
                         </tr>
                       ))}
                     </tbody>

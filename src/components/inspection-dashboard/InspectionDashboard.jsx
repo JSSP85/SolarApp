@@ -1,12 +1,13 @@
 import React, { useState, useEffect } from 'react';
-import { collection, addDoc, getDocs, query, orderBy } from 'firebase/firestore';
+import { collection, addDoc, getDocs, query, orderBy, doc, updateDoc, deleteDoc } from 'firebase/firestore';
 import { db } from '../../firebase/config';
-import { X, Plus, Save, AlertCircle } from 'lucide-react';
+import { X, Plus, Save, AlertCircle, Eye, Trash2 } from 'lucide-react';
 import '../../styles/inspection-dashboard.css';
 
 const InspectionDashboard = () => {
   const [inspections, setInspections] = useState([]);
   const [showForm, setShowForm] = useState(false);
+  const [editingInspection, setEditingInspection] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
@@ -15,10 +16,10 @@ const InspectionDashboard = () => {
     inspectionDate: '',
     supplier: '',
     inspectionLocation: '',
-    externalInspector: '',
+    inspectorType: '', // 'INTERNO' or 'EXTERNO'
+    externalInspectorName: '', // Only if inspectorType is 'EXTERNO'
     cost: '',
     inspectionRemark: '',
-    inspectionOutcome: '',
     purchaseOrder: '',
     components: [{
       client: '',
@@ -26,7 +27,8 @@ const InspectionDashboard = () => {
       componentCode: '',
       componentDescription: '',
       quantity: '',
-      nonConformity: ''
+      inspectionOutcome: '', // Moved to component level
+      nonConformityNumber: '' // Only shows if inspectionOutcome is 'negative'
     }]
   });
 
@@ -61,7 +63,7 @@ const InspectionDashboard = () => {
       setInspections(inspectionData);
     } catch (err) {
       console.error('Error loading inspections:', err);
-      setError('Error al cargar las inspecciones');
+      setError('Error loading inspections');
     } finally {
       setLoading(false);
     }
@@ -80,7 +82,8 @@ const InspectionDashboard = () => {
         componentCode: '',
         componentDescription: '',
         quantity: '',
-        nonConformity: ''
+        inspectionOutcome: '',
+        nonConformityNumber: ''
       }]
     });
   };
@@ -93,12 +96,47 @@ const InspectionDashboard = () => {
   const updateComponent = (index, field, value) => {
     const newComponents = [...formData.components];
     newComponents[index][field] = value;
+    
+    // If changing inspectionOutcome and it's not 'negative', clear nonConformityNumber
+    if (field === 'inspectionOutcome' && value !== 'negative') {
+      newComponents[index].nonConformityNumber = '';
+    }
+    
     setFormData({ ...formData, components: newComponents });
   };
 
   const handleChange = (e) => {
     const { name, value } = e.target;
     setFormData({ ...formData, [name]: value });
+    
+    // If changing inspectorType to 'INTERNO', clear externalInspectorName
+    if (name === 'inspectorType' && value === 'INTERNO') {
+      setFormData({ ...formData, [name]: value, externalInspectorName: '' });
+    }
+  };
+
+  const resetForm = () => {
+    setFormData({
+      inspectionDate: '',
+      supplier: '',
+      inspectionLocation: '',
+      inspectorType: '',
+      externalInspectorName: '',
+      cost: '',
+      inspectionRemark: '',
+      purchaseOrder: '',
+      components: [{
+        client: '',
+        projectName: '',
+        componentCode: '',
+        componentDescription: '',
+        quantity: '',
+        inspectionOutcome: '',
+        nonConformityNumber: ''
+      }]
+    });
+    setEditingInspection(null);
+    setShowForm(false);
   };
 
   const handleSubmit = async (e) => {
@@ -107,7 +145,17 @@ const InspectionDashboard = () => {
     setSuccess('');
     
     if (!formData.inspectionDate || !formData.supplier || formData.components.length === 0) {
-      setError('Por favor completa los campos obligatorios');
+      setError('Please complete all required fields');
+      return;
+    }
+
+    if (!formData.inspectorType) {
+      setError('Please select inspector type');
+      return;
+    }
+
+    if (formData.inspectorType === 'EXTERNO' && !formData.externalInspectorName) {
+      setError('Please enter external inspector name');
       return;
     }
 
@@ -116,7 +164,7 @@ const InspectionDashboard = () => {
     );
 
     if (!hasValidComponent) {
-      setError('Debes agregar al menos un componente con datos');
+      setError('Please add at least one component with data');
       return;
     }
 
@@ -124,61 +172,119 @@ const InspectionDashboard = () => {
       setLoading(true);
       const { quarter, month } = getQuarterAndMonth(formData.inspectionDate);
 
-      const promises = formData.components
-        .filter(comp => comp.client || comp.projectName || comp.componentCode)
-        .map(component => {
-          return addDoc(collection(db, 'inspections'), {
-            quarter,
-            month,
-            inspectionDate: formData.inspectionDate,
-            supplier: formData.supplier,
-            inspectionLocation: formData.inspectionLocation,
-            externalInspector: formData.externalInspector,
-            cost: formData.cost ? `€${formData.cost}` : '',
-            inspectionRemark: formData.inspectionRemark,
-            inspectionOutcome: formData.inspectionOutcome,
-            purchaseOrder: formData.purchaseOrder,
-            client: component.client,
-            projectName: component.projectName,
-            componentCode: component.componentCode,
-            componentDescription: component.componentDescription,
-            quantity: component.quantity,
-            nonConformity: component.nonConformity,
-            createdAt: new Date().toISOString(),
-            updatedAt: new Date().toISOString()
-          });
+      if (editingInspection) {
+        // UPDATE existing inspection
+        const inspectionRef = doc(db, 'inspections', editingInspection);
+        
+        // Find the component data for this inspection
+        const componentToUpdate = formData.components[0]; // Assuming we're updating the first component
+        
+        await updateDoc(inspectionRef, {
+          quarter,
+          month,
+          inspectionDate: formData.inspectionDate,
+          supplier: formData.supplier,
+          inspectionLocation: formData.inspectionLocation,
+          inspectorType: formData.inspectorType,
+          externalInspectorName: formData.inspectorType === 'EXTERNO' ? formData.externalInspectorName : '',
+          cost: formData.cost ? `€${formData.cost}` : '',
+          inspectionRemark: formData.inspectionRemark,
+          purchaseOrder: formData.purchaseOrder,
+          client: componentToUpdate.client,
+          projectName: componentToUpdate.projectName,
+          componentCode: componentToUpdate.componentCode,
+          componentDescription: componentToUpdate.componentDescription,
+          quantity: componentToUpdate.quantity,
+          inspectionOutcome: componentToUpdate.inspectionOutcome,
+          nonConformityNumber: componentToUpdate.inspectionOutcome === 'negative' ? componentToUpdate.nonConformityNumber : '',
+          updatedAt: new Date().toISOString()
         });
 
-      await Promise.all(promises);
+        setSuccess('Inspection updated successfully!');
+      } else {
+        // CREATE new inspections
+        const promises = formData.components
+          .filter(comp => comp.client || comp.projectName || comp.componentCode)
+          .map(component => {
+            return addDoc(collection(db, 'inspections'), {
+              quarter,
+              month,
+              inspectionDate: formData.inspectionDate,
+              supplier: formData.supplier,
+              inspectionLocation: formData.inspectionLocation,
+              inspectorType: formData.inspectorType,
+              externalInspectorName: formData.inspectorType === 'EXTERNO' ? formData.externalInspectorName : '',
+              cost: formData.cost ? `€${formData.cost}` : '',
+              inspectionRemark: formData.inspectionRemark,
+              purchaseOrder: formData.purchaseOrder,
+              client: component.client,
+              projectName: component.projectName,
+              componentCode: component.componentCode,
+              componentDescription: component.componentDescription,
+              quantity: component.quantity,
+              inspectionOutcome: component.inspectionOutcome,
+              nonConformityNumber: component.inspectionOutcome === 'negative' ? component.nonConformityNumber : '',
+              createdAt: new Date().toISOString(),
+              updatedAt: new Date().toISOString()
+            });
+          });
+
+        await Promise.all(promises);
+        
+        setSuccess(`Inspection registered successfully! (${promises.length} component(s))`);
+      }
       
-      setSuccess(`¡Inspección registrada exitosamente! (${promises.length} componente(s))`);
-      
-      setFormData({
-        inspectionDate: '',
-        supplier: '',
-        inspectionLocation: '',
-        externalInspector: '',
-        cost: '',
-        inspectionRemark: '',
-        inspectionOutcome: '',
-        purchaseOrder: '',
-        components: [{
-          client: '',
-          projectName: '',
-          componentCode: '',
-          componentDescription: '',
-          quantity: '',
-          nonConformity: ''
-        }]
-      });
-      
-      setShowForm(false);
+      resetForm();
       loadInspections();
       
       setTimeout(() => setSuccess(''), 3000);
     } catch (err) {
       console.error('Error saving inspection:', err);
-      setError('Error al guardar la inspección');
+      setError('Error saving inspection');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleView = (inspection) => {
+    // Populate form with inspection data for viewing/editing
+    setFormData({
+      inspectionDate: inspection.inspectionDate || '',
+      supplier: inspection.supplier || '',
+      inspectionLocation: inspection.inspectionLocation || '',
+      inspectorType: inspection.inspectorType || '',
+      externalInspectorName: inspection.externalInspectorName || '',
+      cost: inspection.cost ? inspection.cost.replace('€', '') : '',
+      inspectionRemark: inspection.inspectionRemark || '',
+      purchaseOrder: inspection.purchaseOrder || '',
+      components: [{
+        client: inspection.client || '',
+        projectName: inspection.projectName || '',
+        componentCode: inspection.componentCode || '',
+        componentDescription: inspection.componentDescription || '',
+        quantity: inspection.quantity || '',
+        inspectionOutcome: inspection.inspectionOutcome || '',
+        nonConformityNumber: inspection.nonConformityNumber || ''
+      }]
+    });
+    setEditingInspection(inspection.id);
+    setShowForm(true);
+  };
+
+  const handleDelete = async (id) => {
+    if (!window.confirm('Are you sure you want to delete this inspection?')) {
+      return;
+    }
+
+    try {
+      setLoading(true);
+      await deleteDoc(doc(db, 'inspections', id));
+      setSuccess('Inspection deleted successfully');
+      loadInspections();
+      setTimeout(() => setSuccess(''), 3000);
+    } catch (err) {
+      console.error('Error deleting inspection:', err);
+      setError('Error deleting inspection');
     } finally {
       setLoading(false);
     }
@@ -198,7 +304,7 @@ const InspectionDashboard = () => {
         <div className="id-sidebar">
           <div className="id-sidebar-header">
             <h2 className="id-sidebar-title">Inspection Dashboard</h2>
-            <p className="id-sidebar-subtitle">Sistema de Gestión de Inspecciones</p>
+            <p className="id-sidebar-subtitle">Inspection Management System</p>
           </div>
           
           <div className="id-sidebar-divider"></div>
@@ -206,26 +312,32 @@ const InspectionDashboard = () => {
           <nav className="id-sidebar-nav">
             <div 
               className={`id-nav-item ${showForm ? 'id-active' : ''}`}
-              onClick={() => setShowForm(true)}
+              onClick={() => {
+                resetForm();
+                setShowForm(true);
+              }}
             >
               <Plus className="id-nav-icon" size={20} />
-              <span className="id-nav-text">Nueva Inspección</span>
+              <span className="id-nav-text">New Inspection</span>
             </div>
             
             <div 
               className={`id-nav-item ${!showForm ? 'id-active' : ''}`}
-              onClick={() => setShowForm(false)}
+              onClick={() => {
+                resetForm();
+                setShowForm(false);
+              }}
             >
               <AlertCircle className="id-nav-icon" size={20} />
-              <span className="id-nav-text">Ver Inspecciones</span>
+              <span className="id-nav-text">View Inspections</span>
             </div>
           </nav>
 
           <div className="id-sidebar-footer">
             <div className="id-stats-box">
-              <h3 className="id-stats-title">Estadísticas</h3>
+              <h3 className="id-stats-title">Statistics</h3>
               <p className="id-stats-value">{inspections.length}</p>
-              <p className="id-stats-label">Total de registros</p>
+              <p className="id-stats-label">Total Records</p>
             </div>
           </div>
         </div>
@@ -235,10 +347,12 @@ const InspectionDashboard = () => {
           <div className="id-content-header">
             <div className="id-header-info">
               <h1 className="id-main-title">
-                {showForm ? 'Registrar Nueva Inspección' : 'Inspecciones Registradas'}
+                {showForm 
+                  ? (editingInspection ? 'Edit Inspection' : 'Register New Inspection')
+                  : 'Registered Inspections'}
               </h1>
               <p className="id-breadcrumb">
-                Quality Management → Inspections → {showForm ? 'New' : 'List'}
+                Quality Management → Inspections → {showForm ? (editingInspection ? 'Edit' : 'New') : 'List'}
               </p>
             </div>
           </div>
@@ -261,11 +375,11 @@ const InspectionDashboard = () => {
             <div className="id-panel">
               <form onSubmit={handleSubmit}>
                 <div className="id-form-section">
-                  <h3 className="id-section-title">Datos Generales de la Inspección</h3>
+                  <h3 className="id-section-title">General Inspection Data</h3>
                   
                   <div className="id-form-grid">
                     <div className="id-form-group">
-                      <label className="id-form-label id-form-label-required">Fecha de Inspección</label>
+                      <label className="id-form-label id-form-label-required">Inspection Date (FAT/PreShipment)</label>
                       <input
                         type="date"
                         name="inspectionDate"
@@ -277,7 +391,7 @@ const InspectionDashboard = () => {
                     </div>
 
                     <div className="id-form-group">
-                      <label className="id-form-label id-form-label-required">Proveedor</label>
+                      <label className="id-form-label id-form-label-required">Supplier</label>
                       <input
                         type="text"
                         name="supplier"
@@ -289,7 +403,7 @@ const InspectionDashboard = () => {
                     </div>
 
                     <div className="id-form-group">
-                      <label className="id-form-label">Ubicación de Inspección</label>
+                      <label className="id-form-label">Inspection Location</label>
                       <input
                         type="text"
                         name="inspectionLocation"
@@ -300,31 +414,50 @@ const InspectionDashboard = () => {
                     </div>
 
                     <div className="id-form-group">
-                      <label className="id-form-label">Inspector Externo</label>
-                      <input
-                        type="text"
-                        name="externalInspector"
-                        value={formData.externalInspector}
+                      <label className="id-form-label id-form-label-required">Inspector Type</label>
+                      <select
+                        name="inspectorType"
+                        value={formData.inspectorType}
                         onChange={handleChange}
-                        className="id-form-input"
-                      />
+                        required
+                        className="id-form-select"
+                      >
+                        <option value="">Select...</option>
+                        <option value="INTERNO">INTERNO</option>
+                        <option value="EXTERNO">EXTERNO</option>
+                      </select>
                     </div>
 
+                    {formData.inspectorType === 'EXTERNO' && (
+                      <div className="id-form-group">
+                        <label className="id-form-label id-form-label-required">External Inspector Name</label>
+                        <input
+                          type="text"
+                          name="externalInspectorName"
+                          value={formData.externalInspectorName}
+                          onChange={handleChange}
+                          required
+                          placeholder="Enter inspector or company name"
+                          className="id-form-input"
+                        />
+                      </div>
+                    )}
+
                     <div className="id-form-group">
-                      <label className="id-form-label">Costo (€)</label>
+                      <label className="id-form-label">Cost (€)</label>
                       <input
                         type="number"
                         step="0.01"
                         name="cost"
                         value={formData.cost}
                         onChange={handleChange}
-                        placeholder="Ej: 500"
+                        placeholder="e.g. 500"
                         className="id-form-input"
                       />
                     </div>
 
                     <div className="id-form-group">
-                      <label className="id-form-label">Orden de Compra</label>
+                      <label className="id-form-label">Purchase Order</label>
                       <input
                         type="text"
                         name="purchaseOrder"
@@ -333,52 +466,40 @@ const InspectionDashboard = () => {
                         className="id-form-input"
                       />
                     </div>
-
-                    <div className="id-form-group">
-                      <label className="id-form-label">Resultado de Inspección</label>
-                      <select
-                        name="inspectionOutcome"
-                        value={formData.inspectionOutcome}
-                        onChange={handleChange}
-                        className="id-form-select"
-                      >
-                        <option value="">Seleccionar...</option>
-                        <option value="positive">Positive</option>
-                        <option value="positive with comments">Positive with comments</option>
-                        <option value="negative">Negative</option>
-                      </select>
-                    </div>
                   </div>
 
                   <div className="id-form-group" style={{ marginTop: '1rem' }}>
-                    <label className="id-form-label">Observaciones</label>
+                    <label className="id-form-label">Inspection Remarks</label>
                     <textarea
                       name="inspectionRemark"
                       value={formData.inspectionRemark}
                       onChange={handleChange}
                       className="id-form-textarea"
+                      placeholder="General observations about the inspection..."
                     />
                   </div>
                 </div>
 
                 <div className="id-form-section">
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
-                    <h3 className="id-section-title" style={{ marginBottom: 0 }}>Componentes Inspeccionados</h3>
-                    <button
-                      type="button"
-                      onClick={addComponent}
-                      className="id-btn id-btn-success"
-                    >
-                      <Plus size={18} />
-                      <span>Agregar Componente</span>
-                    </button>
+                    <h3 className="id-section-title" style={{ marginBottom: 0 }}>Inspected Components</h3>
+                    {!editingInspection && (
+                      <button
+                        type="button"
+                        onClick={addComponent}
+                        className="id-btn id-btn-success"
+                      >
+                        <Plus size={18} />
+                        <span>Add Component</span>
+                      </button>
+                    )}
                   </div>
 
                   {formData.components.map((component, index) => (
                     <div key={index} className="id-component-card">
                       <div className="id-component-header">
-                        <h4 className="id-component-title">Componente {index + 1}</h4>
-                        {formData.components.length > 1 && (
+                        <h4 className="id-component-title">Component {index + 1}</h4>
+                        {formData.components.length > 1 && !editingInspection && (
                           <button
                             type="button"
                             onClick={() => removeComponent(index)}
@@ -391,7 +512,7 @@ const InspectionDashboard = () => {
 
                       <div className="id-form-grid">
                         <div className="id-form-group">
-                          <label className="id-form-label">Cliente</label>
+                          <label className="id-form-label">Client</label>
                           <input
                             type="text"
                             value={component.client}
@@ -401,7 +522,7 @@ const InspectionDashboard = () => {
                         </div>
 
                         <div className="id-form-group">
-                          <label className="id-form-label">Nombre del Proyecto</label>
+                          <label className="id-form-label">Project Name</label>
                           <input
                             type="text"
                             value={component.projectName}
@@ -411,7 +532,7 @@ const InspectionDashboard = () => {
                         </div>
 
                         <div className="id-form-group">
-                          <label className="id-form-label">Código de Componente</label>
+                          <label className="id-form-label">Component Code</label>
                           <input
                             type="text"
                             value={component.componentCode}
@@ -421,7 +542,7 @@ const InspectionDashboard = () => {
                         </div>
 
                         <div className="id-form-group">
-                          <label className="id-form-label">Descripción</label>
+                          <label className="id-form-label">Component Description</label>
                           <input
                             type="text"
                             value={component.componentDescription}
@@ -431,7 +552,7 @@ const InspectionDashboard = () => {
                         </div>
 
                         <div className="id-form-group">
-                          <label className="id-form-label">Cantidad</label>
+                          <label className="id-form-label">Quantity</label>
                           <input
                             type="text"
                             value={component.quantity}
@@ -441,14 +562,31 @@ const InspectionDashboard = () => {
                         </div>
 
                         <div className="id-form-group">
-                          <label className="id-form-label">No Conformidad</label>
-                          <input
-                            type="text"
-                            value={component.nonConformity}
-                            onChange={(e) => updateComponent(index, 'nonConformity', e.target.value)}
-                            className="id-form-input"
-                          />
+                          <label className="id-form-label">Inspection Outcome</label>
+                          <select
+                            value={component.inspectionOutcome}
+                            onChange={(e) => updateComponent(index, 'inspectionOutcome', e.target.value)}
+                            className="id-form-select"
+                          >
+                            <option value="">Select...</option>
+                            <option value="positive">Positive</option>
+                            <option value="positive with comments">Positive with Comments</option>
+                            <option value="negative">Negative</option>
+                          </select>
                         </div>
+
+                        {component.inspectionOutcome === 'negative' && (
+                          <div className="id-form-group">
+                            <label className="id-form-label">Non-Conformity Number</label>
+                            <input
+                              type="text"
+                              value={component.nonConformityNumber}
+                              onChange={(e) => updateComponent(index, 'nonConformityNumber', e.target.value)}
+                              placeholder="e.g. NC-2025-001"
+                              className="id-form-input"
+                            />
+                          </div>
+                        )}
                       </div>
                     </div>
                   ))}
@@ -461,15 +599,15 @@ const InspectionDashboard = () => {
                     className="id-btn id-btn-primary"
                   >
                     <Save size={20} />
-                    <span>{loading ? 'Guardando...' : 'Guardar Inspección'}</span>
+                    <span>{loading ? 'Saving...' : (editingInspection ? 'Update Inspection' : 'Save Inspection')}</span>
                   </button>
                   
                   <button
                     type="button"
-                    onClick={() => setShowForm(false)}
+                    onClick={resetForm}
                     className="id-btn id-btn-secondary"
                   >
-                    Cancelar
+                    Cancel
                   </button>
                 </div>
               </form>
@@ -479,19 +617,19 @@ const InspectionDashboard = () => {
               {loading ? (
                 <div className="id-loading-container">
                   <div className="id-spinner"></div>
-                  <p className="id-loading-text">Cargando inspecciones...</p>
+                  <p className="id-loading-text">Loading inspections...</p>
                 </div>
               ) : inspections.length === 0 ? (
                 <div className="id-empty-state">
                   <div className="id-empty-icon">📋</div>
-                  <h3 className="id-empty-title">No hay inspecciones registradas</h3>
-                  <p className="id-empty-message">Comienza registrando tu primera inspección</p>
+                  <h3 className="id-empty-title">No Inspections Registered</h3>
+                  <p className="id-empty-message">Start by registering your first inspection</p>
                   <button
                     onClick={() => setShowForm(true)}
                     className="id-btn id-btn-primary"
                   >
                     <Plus size={18} />
-                    <span>Registrar Primera Inspección</span>
+                    <span>Register First Inspection</span>
                   </button>
                 </div>
               ) : (
@@ -499,13 +637,14 @@ const InspectionDashboard = () => {
                   <table className="id-table">
                     <thead>
                       <tr>
-                        <th>Fecha</th>
+                        <th>Date</th>
                         <th>Quarter</th>
-                        <th>Cliente</th>
-                        <th>Proveedor</th>
-                        <th>Componente</th>
-                        <th>Resultado</th>
-                        <th>Costo</th>
+                        <th>Client</th>
+                        <th>Supplier</th>
+                        <th>Component</th>
+                        <th>Outcome</th>
+                        <th>Cost</th>
+                        <th>Actions</th>
                       </tr>
                     </thead>
                     <tbody>
@@ -527,6 +666,26 @@ const InspectionDashboard = () => {
                             </span>
                           </td>
                           <td>{inspection.cost || '-'}</td>
+                          <td>
+                            <div style={{ display: 'flex', gap: '0.5rem' }}>
+                              <button
+                                onClick={() => handleView(inspection)}
+                                className="id-btn id-btn-secondary"
+                                style={{ padding: '0.4rem 0.8rem', fontSize: '0.8rem' }}
+                                title="View/Edit"
+                              >
+                                <Eye size={16} />
+                              </button>
+                              <button
+                                onClick={() => handleDelete(inspection.id)}
+                                className="id-btn id-btn-danger"
+                                style={{ padding: '0.4rem 0.8rem', fontSize: '0.8rem' }}
+                                title="Delete"
+                              >
+                                <Trash2 size={16} />
+                              </button>
+                            </div>
+                          </td>
                         </tr>
                       ))}
                     </tbody>

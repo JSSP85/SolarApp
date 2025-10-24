@@ -1,10 +1,12 @@
+// src/components/inspection-dashboard/InspectionDashboard.jsx
 import React, { useState, useEffect } from 'react';
 import { collection, addDoc, getDocs, query, orderBy, doc, updateDoc, deleteDoc, where } from 'firebase/firestore';
 import { db } from '../../firebase/config';
 import { X, Plus, Save, AlertCircle, Eye, Trash2, ChevronDown, ChevronRight } from 'lucide-react';
+import BackButton from '../common/BackButton';
 import '../../styles/inspection-dashboard.css';
 
-const InspectionDashboard = () => {
+const InspectionDashboard = ({ onBackToMenu }) => {
   const [inspections, setInspections] = useState([]);
   const [groupedInspections, setGroupedInspections] = useState([]);
   const [expandedRows, setExpandedRows] = useState({});
@@ -148,43 +150,6 @@ const InspectionDashboard = () => {
     }
   };
 
-  // Clean empty inspections from database
-  const cleanEmptyInspections = async () => {
-    if (!window.confirm('This will delete all empty inspection records. Continue?')) {
-      return;
-    }
-    
-    try {
-      setLoading(true);
-      const q = query(collection(db, 'inspections'));
-      const querySnapshot = await getDocs(q);
-      
-      let deletedCount = 0;
-      const deletePromises = [];
-      
-      querySnapshot.docs.forEach(docSnapshot => {
-        const data = docSnapshot.data();
-        // Delete if missing critical fields
-        if (!data.inspectionDate || !data.supplier) {
-          deletePromises.push(deleteDoc(doc(db, 'inspections', docSnapshot.id)));
-          deletedCount++;
-        }
-      });
-      
-      await Promise.all(deletePromises);
-      
-      setSuccess(`Deleted ${deletedCount} empty inspection records`);
-      loadInspections();
-      
-      setTimeout(() => setSuccess(''), 3000);
-    } catch (err) {
-      console.error('Error cleaning empty inspections:', err);
-      setError('Error cleaning empty inspections');
-    } finally {
-      setLoading(false);
-    }
-  };
-
   useEffect(() => {
     loadInspections();
   }, []);
@@ -265,68 +230,54 @@ const InspectionDashboard = () => {
     setError('');
     setSuccess('');
     
-    if (!formData.inspectionDate || !formData.supplier || formData.components.length === 0) {
-      setError('Please complete all required fields');
-      return;
-    }
-
-    if (!formData.inspectorType) {
-      setError('Please select inspector type');
-      return;
-    }
-
-    if (formData.inspectorType === 'EXTERNO' && !formData.externalInspectorName) {
-      setError('Please enter external inspector name');
-      return;
-    }
-
-    const hasValidComponent = formData.components.some(comp => 
-      comp.client || comp.projectName || comp.componentCode
-    );
-
-    if (!hasValidComponent) {
-      setError('Please add at least one component with data');
-      return;
-    }
-
+    const { quarter, month } = getQuarterAndMonth(formData.inspectionDate);
+    
     try {
       setLoading(true);
-      const { quarter, month } = getQuarterAndMonth(formData.inspectionDate);
-
+      
       if (editingInspection) {
         // UPDATE: Update all components of this inspection
-        const updatePromises = formData.components.map((component, index) => {
-          if (editingInspection.components[index]) {
-            return updateDoc(doc(db, 'inspections', editingInspection.components[index].id), {
+        const updatePromises = [];
+        
+        editingInspection.components.forEach((component, index) => {
+          if (formData.components[index]) {
+            updatePromises.push(updateDoc(doc(db, 'inspections', component.id), {
               quarter,
               month,
               inspectionDate: formData.inspectionDate,
               supplier: formData.supplier,
               inspectionLocation: formData.inspectionLocation,
               inspectorType: formData.inspectorType,
-              externalInspectorName: formData.inspectorType === 'EXTERNO' ? formData.externalInspectorName : '',
+              externalInspectorName: formData.inspectorType === 'EXTERNO' ? 
+                formData.externalInspectorName : '',
               cost: formData.cost ? `€${formData.cost}` : '',
               inspectionRemark: formData.inspectionRemark,
               purchaseOrder: formData.purchaseOrder,
-              client: component.client,
-              projectName: component.projectName,
-              componentCode: component.componentCode,
-              componentDescription: component.componentDescription,
-              quantity: component.quantity,
-              inspectionOutcome: component.inspectionOutcome,
-              nonConformityNumber: component.inspectionOutcome === 'negative' ? component.nonConformityNumber : '',
+              client: formData.components[index].client,
+              projectName: formData.components[index].projectName,
+              componentCode: formData.components[index].componentCode,
+              componentDescription: formData.components[index].componentDescription,
+              quantity: formData.components[index].quantity,
+              inspectionOutcome: formData.components[index].inspectionOutcome,
+              nonConformityNumber: formData.components[index].inspectionOutcome === 'negative' ? 
+                formData.components[index].nonConformityNumber : '',
               updatedAt: new Date().toISOString()
-            });
-          } else {
-            // New component added to existing inspection
-            return addDoc(collection(db, 'inspections'), {
+            }));
+          }
+        });
+
+        // If new components were added
+        if (formData.components.length > editingInspection.components.length) {
+          formData.components.slice(editingInspection.components.length).forEach(component => {
+            updatePromises.push(addDoc(collection(db, 'inspections'), {
               quarter,
               month,
               inspectionDate: formData.inspectionDate,
               supplier: formData.supplier,
               inspectionLocation: formData.inspectionLocation,
               inspectorType: formData.inspectorType,
-              externalInspectorName: formData.inspectorType === 'EXTERNO' ? formData.externalInspectorName : '',
+              externalInspectorName: formData.inspectorType === 'EXTERNO' ? 
+                formData.externalInspectorName : '',
               cost: formData.cost ? `€${formData.cost}` : '',
               inspectionRemark: formData.inspectionRemark,
               purchaseOrder: formData.purchaseOrder,
@@ -336,10 +287,11 @@ const InspectionDashboard = () => {
               componentDescription: component.componentDescription,
               quantity: component.quantity,
               inspectionOutcome: component.inspectionOutcome,
-              nonConformityNumber: component.inspectionOutcome === 'negative' ? component.nonConformityNumber : '',
+              nonConformityNumber: component.inspectionOutcome === 'negative' ? 
+                component.nonConformityNumber : '',
               createdAt: new Date().toISOString(),
               updatedAt: new Date().toISOString()
-            });
+            }));
           }
         });
 
@@ -452,6 +404,32 @@ const InspectionDashboard = () => {
       <div className="id-app-container">
         {/* Sidebar */}
         <div className="id-sidebar">
+          {/* Logo de Valmont */}
+          <div style={{
+            position: 'absolute',
+            top: '1rem',
+            left: '1rem',
+            right: '1rem',
+            display: 'flex',
+            justifyContent: 'center',
+            zIndex: 150
+          }}>
+            <img 
+              src="/images/valmont_logo.png" 
+              alt="Valmont Logo" 
+              style={{
+                height: '50px',
+                objectFit: 'contain',
+                filter: 'brightness(0) invert(1)'
+              }}
+            />
+          </div>
+
+          {/* Botón Back - dentro del wrapper específico */}
+          <div className="id-back-button-wrapper">
+            <BackButton onClick={onBackToMenu} />
+          </div>
+
           <div className="id-sidebar-header">
             <h2 className="id-sidebar-title">Inspection Dashboard</h2>
             <p className="id-sidebar-subtitle">Inspection Management System</p>
@@ -490,15 +468,7 @@ const InspectionDashboard = () => {
               <p className="id-stats-label">Total Inspections</p>
             </div>
             
-            {/* Admin: Clean empty records button */}
-            <button
-              onClick={cleanEmptyInspections}
-              className="id-btn id-btn-danger"
-              style={{ width: '100%', marginTop: '1rem', fontSize: '0.8rem' }}
-            >
-              <Trash2 size={16} />
-              <span>Clean Empty Records</span>
-            </button>
+            {/* BOTÓN "Clean Empty Records" ELIMINADO */}
           </div>
         </div>
 
@@ -532,246 +502,244 @@ const InspectionDashboard = () => {
           )}
 
           {showForm ? (
-            <div className="id-panel">
-              <form onSubmit={handleSubmit}>
-                <div className="id-form-section">
-                  <h3 className="id-section-title">General Inspection Data</h3>
-                  
-                  <div className="id-form-grid">
-                    <div className="id-form-group">
-                      <label className="id-form-label id-form-label-required">Inspection Date (FAT/PreShipment)</label>
-                      <input
-                        type="date"
-                        name="inspectionDate"
-                        value={formData.inspectionDate}
-                        onChange={handleChange}
-                        required
-                        className="id-form-input"
-                      />
-                    </div>
-
-                    <div className="id-form-group">
-                      <label className="id-form-label id-form-label-required">Supplier</label>
-                      <input
-                        type="text"
-                        name="supplier"
-                        value={formData.supplier}
-                        onChange={handleChange}
-                        required
-                        className="id-form-input"
-                      />
-                    </div>
-
-                    <div className="id-form-group">
-                      <label className="id-form-label">Inspection Location</label>
-                      <input
-                        type="text"
-                        name="inspectionLocation"
-                        value={formData.inspectionLocation}
-                        onChange={handleChange}
-                        className="id-form-input"
-                      />
-                    </div>
-
-                    <div className="id-form-group">
-                      <label className="id-form-label id-form-label-required">Inspector Type</label>
-                      <select
-                        name="inspectorType"
-                        value={formData.inspectorType}
-                        onChange={handleChange}
-                        required
-                        className="id-form-select"
-                      >
-                        <option value="">Select...</option>
-                        <option value="INTERNO">INTERNO</option>
-                        <option value="EXTERNO">EXTERNO</option>
-                      </select>
-                    </div>
-
-                    {formData.inspectorType === 'EXTERNO' && (
-                      <div className="id-form-group">
-                        <label className="id-form-label id-form-label-required">External Inspector Name</label>
-                        <input
-                          type="text"
-                          name="externalInspectorName"
-                          value={formData.externalInspectorName}
-                          onChange={handleChange}
-                          required
-                          placeholder="Enter inspector or company name"
-                          className="id-form-input"
-                        />
-                      </div>
-                    )}
-
-                    <div className="id-form-group">
-                      <label className="id-form-label">Cost (€)</label>
-                      <input
-                        type="number"
-                        step="0.01"
-                        name="cost"
-                        value={formData.cost}
-                        onChange={handleChange}
-                        placeholder="e.g. 500"
-                        className="id-form-input"
-                      />
-                    </div>
-
-                    <div className="id-form-group">
-                      <label className="id-form-label">Purchase Order</label>
-                      <input
-                        type="text"
-                        name="purchaseOrder"
-                        value={formData.purchaseOrder}
-                        onChange={handleChange}
-                        className="id-form-input"
-                      />
-                    </div>
-                  </div>
-
-                  <div className="id-form-group" style={{ marginTop: '1rem' }}>
-                    <label className="id-form-label">Inspection Remarks</label>
-                    <textarea
-                      name="inspectionRemark"
-                      value={formData.inspectionRemark}
+            <form onSubmit={handleSubmit} className="id-form-container">
+              <div className="id-form-section">
+                <h3 className="id-section-title">General Information</h3>
+                <div className="id-form-grid">
+                  <div className="id-form-group">
+                    <label className="id-form-label">Inspection Date *</label>
+                    <input
+                      type="date"
+                      name="inspectionDate"
+                      value={formData.inspectionDate}
                       onChange={handleChange}
-                      className="id-form-textarea"
-                      placeholder="General observations about the inspection..."
+                      className="id-form-input"
+                      required
+                    />
+                  </div>
+                  
+                  <div className="id-form-group">
+                    <label className="id-form-label">Supplier *</label>
+                    <input
+                      type="text"
+                      name="supplier"
+                      value={formData.supplier}
+                      onChange={handleChange}
+                      className="id-form-input"
+                      required
+                    />
+                  </div>
+                  
+                  <div className="id-form-group">
+                    <label className="id-form-label">Inspection Location *</label>
+                    <input
+                      type="text"
+                      name="inspectionLocation"
+                      value={formData.inspectionLocation}
+                      onChange={handleChange}
+                      className="id-form-input"
+                      required
+                    />
+                  </div>
+                  
+                  <div className="id-form-group">
+                    <label className="id-form-label">Inspector Type *</label>
+                    <select
+                      name="inspectorType"
+                      value={formData.inspectorType}
+                      onChange={handleChange}
+                      className="id-form-select"
+                      required
+                    >
+                      <option value="">Select Type</option>
+                      <option value="INTERNO">INTERNO</option>
+                      <option value="EXTERNO">EXTERNO</option>
+                    </select>
+                  </div>
+                  
+                  {formData.inspectorType === 'EXTERNO' && (
+                    <div className="id-form-group">
+                      <label className="id-form-label">External Inspector Name</label>
+                      <input
+                        type="text"
+                        name="externalInspectorName"
+                        value={formData.externalInspectorName}
+                        onChange={handleChange}
+                        className="id-form-input"
+                      />
+                    </div>
+                  )}
+                  
+                  <div className="id-form-group">
+                    <label className="id-form-label">Cost (€)</label>
+                    <input
+                      type="number"
+                      name="cost"
+                      value={formData.cost}
+                      onChange={handleChange}
+                      className="id-form-input"
+                      min="0"
+                      step="0.01"
+                    />
+                  </div>
+                  
+                  <div className="id-form-group">
+                    <label className="id-form-label">Purchase Order</label>
+                    <input
+                      type="text"
+                      name="purchaseOrder"
+                      value={formData.purchaseOrder}
+                      onChange={handleChange}
+                      className="id-form-input"
                     />
                   </div>
                 </div>
-
-                <div className="id-form-section">
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
-                    <h3 className="id-section-title" style={{ marginBottom: 0 }}>Inspected Components</h3>
-                    <button
-                      type="button"
-                      onClick={addComponent}
-                      className="id-btn id-btn-success"
-                    >
-                      <Plus size={18} />
-                      <span>Add Component</span>
-                    </button>
-                  </div>
-
-                  {formData.components.map((component, index) => (
-                    <div key={index} className="id-component-card">
-                      <div className="id-component-header">
-                        <h4 className="id-component-title">Component {index + 1}</h4>
-                        {formData.components.length > 1 && (
-                          <button
-                            type="button"
-                            onClick={() => removeComponent(index)}
-                            className="id-btn-remove"
-                          >
-                            <X size={20} />
-                          </button>
-                        )}
-                      </div>
-
-                      <div className="id-form-grid">
-                        <div className="id-form-group">
-                          <label className="id-form-label">Client</label>
-                          <input
-                            type="text"
-                            value={component.client}
-                            onChange={(e) => updateComponent(index, 'client', e.target.value)}
-                            className="id-form-input"
-                          />
-                        </div>
-
-                        <div className="id-form-group">
-                          <label className="id-form-label">Project Name</label>
-                          <input
-                            type="text"
-                            value={component.projectName}
-                            onChange={(e) => updateComponent(index, 'projectName', e.target.value)}
-                            className="id-form-input"
-                          />
-                        </div>
-
-                        <div className="id-form-group">
-                          <label className="id-form-label">Component Code</label>
-                          <input
-                            type="text"
-                            value={component.componentCode}
-                            onChange={(e) => updateComponent(index, 'componentCode', e.target.value)}
-                            className="id-form-input"
-                          />
-                        </div>
-
-                        <div className="id-form-group">
-                          <label className="id-form-label">Component Description</label>
-                          <input
-                            type="text"
-                            value={component.componentDescription}
-                            onChange={(e) => updateComponent(index, 'componentDescription', e.target.value)}
-                            className="id-form-input"
-                          />
-                        </div>
-
-                        <div className="id-form-group">
-                          <label className="id-form-label">Quantity</label>
-                          <input
-                            type="text"
-                            value={component.quantity}
-                            onChange={(e) => updateComponent(index, 'quantity', e.target.value)}
-                            className="id-form-input"
-                          />
-                        </div>
-
-                        <div className="id-form-group">
-                          <label className="id-form-label">Inspection Outcome</label>
-                          <select
-                            value={component.inspectionOutcome}
-                            onChange={(e) => updateComponent(index, 'inspectionOutcome', e.target.value)}
-                            className="id-form-select"
-                          >
-                            <option value="">Select...</option>
-                            <option value="positive">Positive</option>
-                            <option value="positive with comments">Positive with Comments</option>
-                            <option value="negative">Negative</option>
-                          </select>
-                        </div>
-
-                        {component.inspectionOutcome === 'negative' && (
-                          <div className="id-form-group">
-                            <label className="id-form-label">Non-Conformity Number</label>
-                            <input
-                              type="text"
-                              value={component.nonConformityNumber}
-                              onChange={(e) => updateComponent(index, 'nonConformityNumber', e.target.value)}
-                              placeholder="e.g. NC-2025-001"
-                              className="id-form-input"
-                            />
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                  ))}
+                
+                <div className="id-form-group" style={{ marginTop: '1rem' }}>
+                  <label className="id-form-label">Inspection Remarks</label>
+                  <textarea
+                    name="inspectionRemark"
+                    value={formData.inspectionRemark}
+                    onChange={handleChange}
+                    className="id-form-textarea"
+                    rows="3"
+                  />
                 </div>
+              </div>
 
-                <div className="id-form-actions">
-                  <button
-                    type="submit"
-                    disabled={loading}
-                    className="id-btn id-btn-primary"
-                  >
-                    <Save size={20} />
-                    <span>{loading ? 'Saving...' : (editingInspection ? 'Update Inspection' : 'Save Inspection')}</span>
-                  </button>
-                  
+              <div className="id-form-section">
+                <div className="id-component-header">
+                  <h3 className="id-section-title" style={{ marginBottom: 0 }}>Components</h3>
                   <button
                     type="button"
-                    onClick={resetForm}
-                    className="id-btn id-btn-secondary"
+                    onClick={addComponent}
+                    className="id-btn id-btn-primary"
+                    style={{ padding: '0.5rem 1rem' }}
                   >
-                    Cancel
+                    <Plus size={16} />
+                    <span>Add Component</span>
                   </button>
                 </div>
-              </form>
-            </div>
+                
+                {formData.components.map((component, index) => (
+                  <div key={index} className="id-component-card">
+                    <div className="id-component-header">
+                      <h4 className="id-component-title">Component {index + 1}</h4>
+                      {formData.components.length > 1 && (
+                        <button
+                          type="button"
+                          onClick={() => removeComponent(index)}
+                          className="id-btn id-btn-danger id-btn-icon"
+                        >
+                          <X size={16} />
+                        </button>
+                      )}
+                    </div>
+                    
+                    <div className="id-form-grid">
+                      <div className="id-form-group">
+                        <label className="id-form-label">Client</label>
+                        <input
+                          type="text"
+                          value={component.client}
+                          onChange={(e) => updateComponent(index, 'client', e.target.value)}
+                          className="id-form-input"
+                        />
+                      </div>
+                      
+                      <div className="id-form-group">
+                        <label className="id-form-label">Project Name</label>
+                        <input
+                          type="text"
+                          value={component.projectName}
+                          onChange={(e) => updateComponent(index, 'projectName', e.target.value)}
+                          className="id-form-input"
+                        />
+                      </div>
+                      
+                      <div className="id-form-group">
+                        <label className="id-form-label">Component Code</label>
+                        <input
+                          type="text"
+                          value={component.componentCode}
+                          onChange={(e) => updateComponent(index, 'componentCode', e.target.value)}
+                          className="id-form-input"
+                        />
+                      </div>
+                      
+                      <div className="id-form-group">
+                        <label className="id-form-label">Component Description</label>
+                        <input
+                          type="text"
+                          value={component.componentDescription}
+                          onChange={(e) => updateComponent(index, 'componentDescription', e.target.value)}
+                          className="id-form-input"
+                        />
+                      </div>
+                      
+                      <div className="id-form-group">
+                        <label className="id-form-label">Quantity</label>
+                        <input
+                          type="number"
+                          value={component.quantity}
+                          onChange={(e) => updateComponent(index, 'quantity', e.target.value)}
+                          className="id-form-input"
+                          min="0"
+                        />
+                      </div>
+                      
+                      <div className="id-form-group">
+                        <label className="id-form-label">Inspection Outcome</label>
+                        <select
+                          value={component.inspectionOutcome}
+                          onChange={(e) => updateComponent(index, 'inspectionOutcome', e.target.value)}
+                          className="id-form-select"
+                        >
+                          <option value="">Select Outcome</option>
+                          <option value="positive">Positive</option>
+                          <option value="positive with comments">Positive with Comments</option>
+                          <option value="negative">Negative</option>
+                        </select>
+                      </div>
+                      
+                      {component.inspectionOutcome === 'negative' && (
+                        <div className="id-form-group">
+                          <label className="id-form-label">Non-Conformity Number</label>
+                          <input
+                            type="text"
+                            value={component.nonConformityNumber}
+                            onChange={(e) => updateComponent(index, 'nonConformityNumber', e.target.value)}
+                            className="id-form-input"
+                          />
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              <div className="id-form-actions">
+                <button
+                  type="button"
+                  onClick={resetForm}
+                  className="id-btn id-btn-secondary"
+                  disabled={loading}
+                >
+                  <X size={18} />
+                  <span>Cancel</span>
+                </button>
+                <button
+                  type="submit"
+                  className="id-btn id-btn-primary"
+                  disabled={loading}
+                >
+                  <Save size={18} />
+                  <span>{editingInspection ? 'Update' : 'Register'} Inspection</span>
+                </button>
+              </div>
+            </form>
           ) : (
-            <div className="id-panel">
+            <>
               {loading ? (
                 <div className="id-loading-container">
                   <div className="id-spinner"></div>
@@ -818,46 +786,39 @@ const InspectionDashboard = () => {
                                 style={{ background: 'none', border: 'none', cursor: 'pointer', padding: '0.25rem' }}
                               >
                                 {expandedRows[inspection.id] ? 
-                                  <ChevronDown size={18} color="#4b5563" /> : 
-                                  <ChevronRight size={18} color="#4b5563" />
+                                  <ChevronDown size={20} /> : 
+                                  <ChevronRight size={20} />
                                 }
                               </button>
                             </td>
                             <td>{inspection.inspectionDate}</td>
                             <td>{inspection.quarter}</td>
                             <td>{inspection.supplier}</td>
-                            <td>{inspection.inspectionLocation || '-'}</td>
+                            <td>{inspection.inspectionLocation}</td>
                             <td>
-                              <div style={{ fontSize: '0.85rem' }}>
-                                <div style={{ fontWeight: '500' }}>{inspection.inspectorType}</div>
-                                {inspection.inspectorType === 'EXTERNO' && (
-                                  <div style={{ fontSize: '0.75rem', color: '#6b7280' }}>
-                                    {inspection.externalInspectorName}
-                                  </div>
-                                )}
-                              </div>
+                              {inspection.inspectorType === 'EXTERNO' 
+                                ? `EXT: ${inspection.externalInspectorName || 'N/A'}` 
+                                : 'INTERNAL'}
                             </td>
-                            <td>{inspection.purchaseOrder || '-'}</td>
+                            <td>{inspection.purchaseOrder || 'N/A'}</td>
                             <td>
                               <span className={getBadgeClass(inspection.overallOutcome)}>
                                 {inspection.overallOutcome}
                               </span>
                             </td>
-                            <td>{inspection.cost || '-'}</td>
+                            <td>{inspection.cost || 'N/A'}</td>
                             <td>
-                              <div style={{ display: 'flex', gap: '0.5rem' }}>
+                              <div className="id-action-buttons">
                                 <button
                                   onClick={() => handleView(inspection)}
-                                  className="id-btn id-btn-secondary"
-                                  style={{ padding: '0.4rem 0.8rem', fontSize: '0.8rem' }}
+                                  className="id-action-btn id-action-btn-view"
                                   title="View/Edit"
                                 >
                                   <Eye size={16} />
                                 </button>
                                 <button
                                   onClick={() => handleDelete(inspection)}
-                                  className="id-btn id-btn-danger"
-                                  style={{ padding: '0.4rem 0.8rem', fontSize: '0.8rem' }}
+                                  className="id-action-btn id-action-btn-delete"
                                   title="Delete"
                                 >
                                   <Trash2 size={16} />
@@ -866,44 +827,60 @@ const InspectionDashboard = () => {
                             </td>
                           </tr>
                           
-                          {/* Expanded components detail row */}
+                          {/* Expanded component details row */}
                           {expandedRows[inspection.id] && (
-                            <tr>
-                              <td colSpan="10" style={{ backgroundColor: '#f9fafb', padding: '1rem' }}>
-                                <div style={{ marginLeft: '2rem' }}>
-                                  <h4 style={{ fontWeight: '600', marginBottom: '0.75rem', color: '#374151' }}>
-                                    Inspected Components ({inspection.components.length})
+                            <tr className="id-expanded-row">
+                              <td colSpan="10" className="id-expanded-content">
+                                <div className="id-component-detail-card">
+                                  <h4 style={{ 
+                                    color: '#005F83', 
+                                    marginBottom: '1rem',
+                                    fontWeight: '600'
+                                  }}>
+                                    Components ({inspection.components.length})
                                   </h4>
-                                  <table style={{ width: '100%', fontSize: '0.85rem' }}>
-                                    <thead>
-                                      <tr style={{ borderBottom: '1px solid #e5e7eb' }}>
-                                        <th style={{ textAlign: 'left', padding: '0.5rem', color: '#6b7280' }}>Client</th>
-                                        <th style={{ textAlign: 'left', padding: '0.5rem', color: '#6b7280' }}>Project</th>
-                                        <th style={{ textAlign: 'left', padding: '0.5rem', color: '#6b7280' }}>Code</th>
-                                        <th style={{ textAlign: 'left', padding: '0.5rem', color: '#6b7280' }}>Description</th>
-                                        <th style={{ textAlign: 'left', padding: '0.5rem', color: '#6b7280' }}>Qty</th>
-                                        <th style={{ textAlign: 'left', padding: '0.5rem', color: '#6b7280' }}>Outcome</th>
-                                        <th style={{ textAlign: 'left', padding: '0.5rem', color: '#6b7280' }}>NC Number</th>
-                                      </tr>
-                                    </thead>
-                                    <tbody>
-                                      {inspection.components.map((comp, idx) => (
-                                        <tr key={idx} style={{ borderBottom: '1px solid #f3f4f6' }}>
-                                          <td style={{ padding: '0.5rem' }}>{comp.client}</td>
-                                          <td style={{ padding: '0.5rem' }}>{comp.projectName}</td>
-                                          <td style={{ padding: '0.5rem' }}>{comp.componentCode}</td>
-                                          <td style={{ padding: '0.5rem' }}>{comp.componentDescription}</td>
-                                          <td style={{ padding: '0.5rem' }}>{comp.quantity}</td>
-                                          <td style={{ padding: '0.5rem' }}>
-                                            <span className={getBadgeClass(comp.inspectionOutcome)}>
-                                              {comp.inspectionOutcome || 'N/A'}
-                                            </span>
-                                          </td>
-                                          <td style={{ padding: '0.5rem' }}>{comp.nonConformityNumber || '-'}</td>
-                                        </tr>
-                                      ))}
-                                    </tbody>
-                                  </table>
+                                  {inspection.components.map((comp, idx) => (
+                                    <div key={idx} style={{ 
+                                      borderTop: idx > 0 ? '1px solid rgba(0, 95, 131, 0.1)' : 'none',
+                                      paddingTop: idx > 0 ? '1rem' : '0',
+                                      marginTop: idx > 0 ? '1rem' : '0'
+                                    }}>
+                                      <div className="id-component-detail-grid">
+                                        <div className="id-detail-item">
+                                          <span className="id-detail-label">Client</span>
+                                          <span className="id-detail-value">{comp.client || 'N/A'}</span>
+                                        </div>
+                                        <div className="id-detail-item">
+                                          <span className="id-detail-label">Project</span>
+                                          <span className="id-detail-value">{comp.projectName || 'N/A'}</span>
+                                        </div>
+                                        <div className="id-detail-item">
+                                          <span className="id-detail-label">Code</span>
+                                          <span className="id-detail-value">{comp.componentCode || 'N/A'}</span>
+                                        </div>
+                                        <div className="id-detail-item">
+                                          <span className="id-detail-label">Description</span>
+                                          <span className="id-detail-value">{comp.componentDescription || 'N/A'}</span>
+                                        </div>
+                                        <div className="id-detail-item">
+                                          <span className="id-detail-label">Quantity</span>
+                                          <span className="id-detail-value">{comp.quantity || 'N/A'}</span>
+                                        </div>
+                                        <div className="id-detail-item">
+                                          <span className="id-detail-label">Outcome</span>
+                                          <span className={getBadgeClass(comp.inspectionOutcome)}>
+                                            {comp.inspectionOutcome || 'N/A'}
+                                          </span>
+                                        </div>
+                                        {comp.inspectionOutcome === 'negative' && (
+                                          <div className="id-detail-item">
+                                            <span className="id-detail-label">NC Number</span>
+                                            <span className="id-detail-value">{comp.nonConformityNumber || 'N/A'}</span>
+                                          </div>
+                                        )}
+                                      </div>
+                                    </div>
+                                  ))}
                                 </div>
                               </td>
                             </tr>
@@ -914,7 +891,7 @@ const InspectionDashboard = () => {
                   </table>
                 </div>
               )}
-            </div>
+            </>
           )}
         </div>
       </div>

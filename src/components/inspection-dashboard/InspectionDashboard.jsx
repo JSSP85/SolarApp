@@ -292,8 +292,8 @@ const InspectionDashboard = ({ onBackToMenu }) => {
               createdAt: new Date().toISOString(),
               updatedAt: new Date().toISOString()
             }));
-          }
-        });
+          });
+        }
 
         await Promise.all(updatePromises);
         setSuccess('Inspection updated successfully!');

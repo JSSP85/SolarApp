@@ -149,10 +149,17 @@ const MainMenu = () => {
       onBack={() => setSelectedOption(null)}
     />
   );
-      case 'hardware':
-      case 'electrical':
-      case 'free-inspection':
-      case 'inspection-dashboard':
+
+    case 'inspection-dashboard':
+     return (
+       <div className="inspection-dashboard-wrapper">
+         <BackButton onClick={() => setSelectedOption(null)} />
+         <InspectionDashboard />
+       </div>
+     );
+    case 'hardware':
+    case 'electrical':
+    case 'free-inspection':
         return (
           <div className={styles.mainMenuContainer}>
             <div className={styles.mainMenuContent}>

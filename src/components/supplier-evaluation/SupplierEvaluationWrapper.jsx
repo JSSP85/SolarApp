@@ -6,6 +6,7 @@ import { saveSupplierEvaluation, updateSupplierEvaluation, getAllSupplierEvaluat
 import { generateSupplierEvaluationPDF } from '../../services/supplierEvaluationPDFService';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, Radar, PieChart, Pie, Cell, ScatterChart, Scatter } from 'recharts';
 import styles from '../../styles/SupplierEvaluation.module.css';
+import EvaluationGuide from './EvaluationGuide';
 
 const SUPPLIER_CATEGORIES = [
   'Metal Carpentry',
@@ -2479,22 +2480,33 @@ const prepareKPIComparisonData = (categoryFilter = 'All Categories') => {
           <span className={styles.navText}>Analytics</span>
           {activeTab === 'analytics' && <div className={styles.navIndicator}></div>}
         </div>
+
+        <div 
+          className={`${styles.navItem} ${activeTab === 'guide' ? styles.active : ''}`}
+          onClick={() => handleTabChange('guide')}
+        >
+          <span className={styles.navIcon}>📖</span>
+          <span className={styles.navText}>Evaluation Guide</span>
+          {activeTab === 'guide' && <div className={styles.navIndicator}></div>}
+        </div>
       </div>
     </div>
   );
 
-  const renderContent = () => {
-    switch (activeTab) {
-      case 'dashboard':
-        return renderDashboard();
-      case 'newChecklist':
-        return renderNewChecklistForm();
-      case 'analytics':
-        return renderAnalytics();
-      default:
-        return renderDashboard();
-    }
-  };
+ const renderContent = () => {
+  switch (activeTab) {
+    case 'dashboard':
+      return renderDashboard();
+    case 'newChecklist':
+      return renderNewChecklistForm();
+    case 'analytics':
+      return renderAnalytics();
+    case 'guide':  // NUEVO CASO
+      return <EvaluationGuide />;
+    default:
+      return renderDashboard();
+  }
+};
 
   return (
     <div className={styles.wrapper}>
@@ -2509,6 +2521,7 @@ const prepareKPIComparisonData = (categoryFilter = 'All Categories') => {
                 Quality Control → Supplier Management → {
                   activeTab === 'dashboard' ? 'Dashboard' : 
                   activeTab === 'analytics' ? 'Analytics' : 
+                  activeTab === 'guide' ? 'Evaluation Guide' :  // NUEVA LÍNEA
                   'New Evaluation'
                 }
               </div>

@@ -1,0 +1,547 @@
+/* EvaluationGuide.module.css */
+
+.guideContainer {
+  padding: 2rem;
+  max-width: 1400px;
+  margin: 0 auto;
+  background: #ffffff;
+  min-height: 100vh;
+}
+
+/* Header Section */
+.guideHeader {
+  background: linear-gradient(135deg, #1f4e78 0%, #2d5f8d 100%);
+  color: white;
+  padding: 2.5rem;
+  border-radius: 12px;
+  margin-bottom: 2rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.headerContent {
+  flex: 1;
+}
+
+.guideTitle {
+  font-size: 2.25rem;
+  font-weight: 700;
+  margin: 0 0 0.5rem 0;
+  text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+.guideSubtitle {
+  font-size: 1.125rem;
+  margin: 0;
+  opacity: 0.95;
+  font-style: italic;
+}
+
+/* Language Selector */
+.languageSelector {
+  display: flex;
+  gap: 0.75rem;
+}
+
+.langButton {
+  background: rgba(255, 255, 255, 0.15);
+  color: white;
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  padding: 0.75rem 1.5rem;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 1rem;
+  font-weight: 600;
+  transition: all 0.3s ease;
+  backdrop-filter: blur(10px);
+}
+
+.langButton:hover {
+  background: rgba(255, 255, 255, 0.25);
+  transform: translateY(-2px);
+}
+
+.langButton.active {
+  background: white;
+  color: #1f4e78;
+  border-color: white;
+}
+
+/* Section Styles */
+.section {
+  background: white;
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  padding: 2rem;
+  margin-bottom: 2rem;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+}
+
+.sectionTitle {
+  font-size: 1.75rem;
+  font-weight: 700;
+  color: #1f4e78;
+  margin: 0 0 1.5rem 0;
+  padding-bottom: 0.75rem;
+  border-bottom: 3px solid #1f4e78;
+}
+
+.subsectionTitle {
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: #374151;
+  margin: 1.5rem 0 1rem 0;
+}
+
+.instructionText {
+  font-size: 1rem;
+  line-height: 1.7;
+  color: #4b5563;
+  margin-bottom: 1.5rem;
+}
+
+/* Scoring Scale Grid */
+.scoringScale {
+  margin-top: 2rem;
+}
+
+.scaleGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 1.25rem;
+  margin-top: 1rem;
+}
+
+.scaleCard {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 1.25rem;
+  background: #f8fafc;
+  border: 2px solid #e2e8f0;
+  border-radius: 10px;
+  transition: all 0.3s ease;
+}
+
+.scaleCard:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.scoreNumber {
+  font-size: 2.5rem;
+  font-weight: 700;
+  color: #1f4e78;
+  min-width: 60px;
+  text-align: center;
+}
+
+.scoreContent {
+  flex: 1;
+}
+
+.scoreLabel {
+  font-weight: 600;
+  color: #1f2937;
+  font-size: 1rem;
+  margin-bottom: 0.25rem;
+}
+
+.scoreDescription {
+  font-size: 0.875rem;
+  color: #6b7280;
+  line-height: 1.5;
+}
+
+/* Quick Controls */
+.quickControls {
+  display: flex;
+  gap: 1rem;
+  margin-bottom: 2rem;
+  justify-content: flex-end;
+}
+
+.controlButton {
+  background: #3b82f6;
+  color: white;
+  border: none;
+  padding: 0.75rem 1.5rem;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 0.95rem;
+  font-weight: 600;
+  transition: all 0.3s ease;
+  box-shadow: 0 2px 6px rgba(59, 130, 246, 0.3);
+}
+
+.controlButton:hover {
+  background: #2563eb;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(59, 130, 246, 0.4);
+}
+
+/* KPIs Container */
+.kpisContainer {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+  margin-bottom: 2rem;
+}
+
+.kpiSection {
+  background: white;
+  border: 2px solid #e5e7eb;
+  border-radius: 12px;
+  overflow: hidden;
+  transition: all 0.3s ease;
+}
+
+.kpiSection:hover {
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+}
+
+.kpiHeader {
+  background: #1f4e78;
+  color: white;
+  padding: 1.5rem 2rem;
+  cursor: pointer;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  transition: background 0.3s ease;
+}
+
+.kpiHeader:hover {
+  background: #2d5f8d;
+}
+
+.kpiTitle {
+  font-size: 1.5rem;
+  font-weight: 700;
+  margin: 0;
+}
+
+.expandIcon {
+  background: rgba(255, 255, 255, 0.2);
+  color: white;
+  border: none;
+  width: 40px;
+  height: 40px;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 1.25rem;
+  transition: all 0.3s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.expandIcon:hover {
+  background: rgba(255, 255, 255, 0.3);
+  transform: scale(1.1);
+}
+
+/* KPI Content */
+.kpiContent {
+  padding: 2rem;
+  background: #f9fafb;
+}
+
+.levelCard {
+  background: white;
+  border: 2px solid #e5e7eb;
+  border-radius: 10px;
+  padding: 1.5rem;
+  margin-bottom: 1.5rem;
+  transition: all 0.3s ease;
+}
+
+.levelCard:last-child {
+  margin-bottom: 0;
+}
+
+.levelCard:hover {
+  border-color: #3b82f6;
+  box-shadow: 0 3px 10px rgba(59, 130, 246, 0.1);
+}
+
+.levelHeader {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  margin-bottom: 1rem;
+  padding-bottom: 0.75rem;
+  border-bottom: 2px solid #e5e7eb;
+}
+
+.levelScore {
+  background: #1f4e78;
+  color: white;
+  padding: 0.5rem 1rem;
+  border-radius: 6px;
+  font-weight: 700;
+  font-size: 1rem;
+}
+
+.levelLabel {
+  font-size: 1.125rem;
+  font-weight: 600;
+  color: #1f2937;
+}
+
+/* Criteria List */
+.criteriaList {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.criterionItem {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.75rem;
+  padding: 0.75rem;
+  margin-bottom: 0.5rem;
+  background: #f8fafc;
+  border-radius: 6px;
+  transition: all 0.2s ease;
+}
+
+.criterionItem:hover {
+  background: #e5e7eb;
+}
+
+.checkBox {
+  font-size: 1.25rem;
+  color: #6b7280;
+  min-width: 24px;
+}
+
+/* Methodology Section */
+.methodologyGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 1.5rem;
+  margin-top: 1.5rem;
+}
+
+.methodologyCard {
+  background: #f8fafc;
+  border-left: 4px solid #3b82f6;
+  padding: 1.5rem;
+  border-radius: 8px;
+  transition: all 0.3s ease;
+}
+
+.methodologyCard:hover {
+  background: #e5e7eb;
+  transform: translateX(5px);
+}
+
+.methodologyTitle {
+  font-size: 1.125rem;
+  font-weight: 700;
+  color: #1f4e78;
+  margin: 0 0 1rem 0;
+}
+
+.methodologyList {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.methodologyList li {
+  padding: 0.5rem 0;
+  padding-left: 1.5rem;
+  position: relative;
+  color: #4b5563;
+  line-height: 1.6;
+}
+
+.methodologyList li:before {
+  content: "✓";
+  position: absolute;
+  left: 0;
+  color: #10b981;
+  font-weight: bold;
+}
+
+/* Decision Matrix */
+.decisionGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+  gap: 2rem;
+  margin-top: 1.5rem;
+}
+
+.decisionCard {
+  background: #f8fafc;
+  padding: 1.5rem;
+  border-radius: 10px;
+}
+
+.decisionTitle {
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: #1f2937;
+  margin: 0 0 0.5rem 0;
+}
+
+.decisionSubtitle {
+  font-style: italic;
+  color: #6b7280;
+  margin: 0 0 1rem 0;
+}
+
+.decisionList {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.decisionList li {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.75rem;
+  padding: 0.75rem;
+  margin-bottom: 0.5rem;
+  background: white;
+  border-radius: 6px;
+  border: 1px solid #e5e7eb;
+}
+
+/* Global Score Section */
+.globalScoreSubtitle {
+  font-size: 1.125rem;
+  font-weight: 600;
+  color: #4b5563;
+  margin-bottom: 1.5rem;
+}
+
+.scoreRangesTable {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.scoreRangeRow {
+  display: flex;
+  align-items: center;
+  gap: 1.5rem;
+  background: white;
+  padding: 1.25rem;
+  border-radius: 8px;
+  border: 1px solid #e5e7eb;
+  transition: all 0.3s ease;
+}
+
+.scoreRangeRow:hover {
+  transform: translateX(10px);
+  box-shadow: 0 3px 10px rgba(0, 0, 0, 0.1);
+}
+
+.rangeValue {
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: #1f2937;
+  min-width: 100px;
+  text-align: center;
+}
+
+.rangeContent {
+  flex: 1;
+}
+
+.rangeClass {
+  font-size: 1.125rem;
+  font-weight: 700;
+  margin-bottom: 0.25rem;
+}
+
+.rangeDescription {
+  color: #6b7280;
+  line-height: 1.5;
+}
+
+/* Notes Section */
+.notesList {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.noteItem {
+  display: flex;
+  align-items: flex-start;
+  gap: 1rem;
+  padding: 1rem;
+  margin-bottom: 0.75rem;
+  background: #f8fafc;
+  border-radius: 8px;
+  border-left: 4px solid #3b82f6;
+}
+
+.bulletPoint {
+  color: #3b82f6;
+  font-size: 1.5rem;
+  font-weight: bold;
+  min-width: 20px;
+}
+
+/* Footer */
+.guideFooter {
+  margin-top: 3rem;
+  padding-top: 2rem;
+  text-align: center;
+}
+
+.footerDivider {
+  height: 2px;
+  background: linear-gradient(to right, transparent, #e5e7eb, transparent);
+  margin-bottom: 1.5rem;
+}
+
+.footerText {
+  color: #6b7280;
+  font-size: 0.875rem;
+  font-style: italic;
+  margin: 0;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .guideHeader {
+    flex-direction: column;
+    gap: 1.5rem;
+  }
+  
+  .languageSelector {
+    width: 100%;
+    justify-content: center;
+  }
+  
+  .langButton {
+    flex: 1;
+  }
+  
+  .guideTitle {
+    font-size: 1.75rem;
+  }
+  
+  .scaleGrid,
+  .methodologyGrid,
+  .decisionGrid {
+    grid-template-columns: 1fr;
+  }
+  
+  .quickControls {
+    flex-direction: column;
+  }
+  
+  .controlButton {
+    width: 100%;
+  }
+}

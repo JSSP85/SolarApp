@@ -16,6 +16,17 @@ const InspectionDashboard = ({ onBackToMenu }) => {
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
 
+  // Búsqueda y filtros
+  const [searchTerm, setSearchTerm] = useState('');
+  const [filters, setFilters] = useState({
+    supplier: '',
+    location: '',
+    inspector: '',
+    purchaseOrder: '',
+    outcome: ''
+  });
+  const [sortOrder, setSortOrder] = useState('desc'); // 'desc' = más nuevo primero
+
   const [formData, setFormData] = useState({
     inspectionDate: '',
     supplier: '',
@@ -53,6 +64,112 @@ const InspectionDashboard = ({ onBackToMenu }) => {
       quarter: `Q${quarter}`,
       month: monthNames[month]
     };
+  };
+
+  const formatDateDisplay = (dateString) => {
+    if (!dateString) return 'N/A';
+    
+    const months = {
+      '01': 'JAN', '02': 'FEB', '03': 'MAR', '04': 'APR',
+      '05': 'MAY', '06': 'JUN', '07': 'JUL', '08': 'AUG',
+      '09': 'SEP', '10': 'OCT', '11': 'NOV', '12': 'DEC'
+    };
+    
+    try {
+      const [year, month, day] = dateString.split('-');
+      return `${parseInt(day)} ${months[month]} ${year}`;
+    } catch (error) {
+      return dateString;
+    }
+  };
+
+  // Obtener valores únicos para los filtros
+  const getUniqueValues = (key) => {
+    const values = groupedInspections.map(inspection => {
+      if (key === 'inspector') {
+        return inspection.inspectorType === 'EXTERNO' 
+          ? `EXT: ${inspection.externalInspectorName || 'N/A'}`
+          : 'INTERNAL';
+      }
+      if (key === 'outcome') {
+        return inspection.overallOutcome;
+      }
+      return inspection[key] || 'N/A';
+    });
+    
+    return [...new Set(values)].sort();
+  };
+
+  // Filtrar y ordenar inspecciones
+  const getFilteredAndSortedInspections = () => {
+    let filtered = [...groupedInspections];
+    
+    // Búsqueda por texto
+    if (searchTerm.trim()) {
+      const search = searchTerm.toLowerCase();
+      filtered = filtered.filter(inspection => {
+        // Buscar en componentes
+        const componentMatch = inspection.components.some(comp => 
+          (comp.client && comp.client.toLowerCase().includes(search)) ||
+          (comp.projectName && comp.projectName.toLowerCase().includes(search))
+        );
+        
+        // Buscar en datos generales
+        const generalMatch = 
+          (inspection.supplier && inspection.supplier.toLowerCase().includes(search)) ||
+          (inspection.inspectionLocation && inspection.inspectionLocation.toLowerCase().includes(search)) ||
+          (inspection.purchaseOrder && inspection.purchaseOrder.toLowerCase().includes(search));
+        
+        return componentMatch || generalMatch;
+      });
+    }
+    
+    // Aplicar filtros
+    if (filters.supplier) {
+      filtered = filtered.filter(i => i.supplier === filters.supplier);
+    }
+    
+    if (filters.location) {
+      filtered = filtered.filter(i => i.inspectionLocation === filters.location);
+    }
+    
+    if (filters.inspector) {
+      filtered = filtered.filter(i => {
+        const inspectorValue = i.inspectorType === 'EXTERNO' 
+          ? `EXT: ${i.externalInspectorName || 'N/A'}`
+          : 'INTERNAL';
+        return inspectorValue === filters.inspector;
+      });
+    }
+    
+    if (filters.purchaseOrder) {
+      filtered = filtered.filter(i => (i.purchaseOrder || 'N/A') === filters.purchaseOrder);
+    }
+    
+    if (filters.outcome) {
+      filtered = filtered.filter(i => i.overallOutcome === filters.outcome);
+    }
+    
+    // Ordenar por fecha
+    filtered.sort((a, b) => {
+      const dateA = new Date(a.inspectionDate);
+      const dateB = new Date(b.inspectionDate);
+      return sortOrder === 'desc' ? dateB - dateA : dateA - dateB;
+    });
+    
+    return filtered;
+  };
+
+  // Limpiar filtros
+  const clearFilters = () => {
+    setSearchTerm('');
+    setFilters({
+      supplier: '',
+      location: '',
+      inspector: '',
+      purchaseOrder: '',
+      outcome: ''
+    });
   };
 
   // Calculate overall inspection outcome based on component outcomes
@@ -247,7 +364,7 @@ const loadInspections = async () => {
     }
   };
 
-  const handleView = (groupedInspection) => {
+   const handleView = (groupedInspection) => {
     // Populate form with grouped inspection data
     setFormData({
       inspectionDate: groupedInspection.inspectionDate || '',
@@ -272,7 +389,7 @@ const loadInspections = async () => {
     setShowForm(true);
   };
 
-const handleDelete = async (inspection) => {
+  const handleDelete = async (inspection) => {
     if (!window.confirm('Are you sure you want to delete this inspection and all its components?'))
       return;
     
@@ -300,7 +417,7 @@ const handleDelete = async (inspection) => {
     return 'id-badge id-badge-default';
   };
 
-  return (
+   return (
     <div className="inspection-dashboard-wrapper">
       <div className="id-app-container">
         {/* Sidebar */}
@@ -332,7 +449,7 @@ const handleDelete = async (inspection) => {
           </div>
 
           <div className="id-sidebar-header">
-            <h2 className="id-sidebar-title">Inspection Dashboard</h2>
+            <h2 className="id-sidebar-title"></h2>
             <p className="id-sidebar-subtitle">Inspection Management System</p>
           </div>
           
@@ -659,7 +776,162 @@ const handleDelete = async (inspection) => {
                     <span>Register First Inspection</span>
                   </button>
                 </div>
-              ) : (
+             ) : (
+  <>
+  {/* Search & Filters Section */}
+  <div className="id-filters-section">
+    <div className="id-filters-header">
+      <h3 className="id-filters-title">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+          <circle cx="11" cy="11" r="8"></circle>
+          <path d="m21 21-4.35-4.35"></path>
+        </svg>
+        Search & Filters
+      </h3>
+      
+      <div className="id-sort-controls">
+        <span className="id-sort-label">Sort by Date:</span>
+        <button 
+          onClick={() => setSortOrder(sortOrder === 'desc' ? 'asc' : 'desc')}
+          className="id-sort-btn"
+        >
+          {sortOrder === 'desc' ? (
+            <>
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <path d="m3 16 4 4 4-4M7 20V4m10 4 4-4 4 4m-4-4v16"/>
+              </svg>
+              Newest First
+            </>
+          ) : (
+            <>
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <path d="m3 8 4-4 4 4M7 4v16m10-4 4 4 4-4m-4 4V4"/>
+              </svg>
+              Oldest First
+            </>
+          )}
+        </button>
+      </div>
+    </div>
+    
+    {/* Search Box */}
+    <div className="id-search-container">
+      <div className="id-search-box">
+        <svg className="id-search-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+          <circle cx="11" cy="11" r="8"></circle>
+          <path d="m21 21-4.35-4.35"></path>
+        </svg>
+        <input
+          type="text"
+          className="id-search-input"
+          placeholder="Search by client, project, supplier, location, PO..."
+          value={searchTerm}
+          onChange={(e) => setSearchTerm(e.target.value)}
+        />
+        {searchTerm && (
+          <button 
+            className="id-search-clear"
+            onClick={() => setSearchTerm('')}
+          >
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <line x1="18" y1="6" x2="6" y2="18"></line>
+              <line x1="6" y1="6" x2="18" y2="18"></line>
+            </svg>
+          </button>
+        )}
+      </div>
+    </div>
+    
+    {/* Filters Grid */}
+    <div className="id-filters-grid">
+      <div className="id-filter-item">
+        <label className="id-filter-label">Supplier</label>
+        <select
+          className="id-filter-select"
+          value={filters.supplier}
+          onChange={(e) => setFilters({...filters, supplier: e.target.value})}
+        >
+          <option value="">All Suppliers</option>
+          {getUniqueValues('supplier').map(value => (
+            <option key={value} value={value}>{value}</option>
+          ))}
+        </select>
+      </div>
+      
+      <div className="id-filter-item">
+        <label className="id-filter-label">Location</label>
+        <select
+          className="id-filter-select"
+          value={filters.location}
+          onChange={(e) => setFilters({...filters, location: e.target.value})}
+        >
+          <option value="">All Locations</option>
+          {getUniqueValues('inspectionLocation').map(value => (
+            <option key={value} value={value}>{value}</option>
+          ))}
+        </select>
+      </div>
+      
+      <div className="id-filter-item">
+        <label className="id-filter-label">Inspector</label>
+        <select
+          className="id-filter-select"
+          value={filters.inspector}
+          onChange={(e) => setFilters({...filters, inspector: e.target.value})}
+        >
+          <option value="">All Inspectors</option>
+          {getUniqueValues('inspector').map(value => (
+            <option key={value} value={value}>{value}</option>
+          ))}
+        </select>
+      </div>
+      
+      <div className="id-filter-item">
+        <label className="id-filter-label">Purchase Order</label>
+        <select
+          className="id-filter-select"
+          value={filters.purchaseOrder}
+          onChange={(e) => setFilters({...filters, purchaseOrder: e.target.value})}
+        >
+          <option value="">All POs</option>
+          {getUniqueValues('purchaseOrder').map(value => (
+            <option key={value} value={value}>{value}</option>
+          ))}
+        </select>
+      </div>
+      
+      <div className="id-filter-item">
+        <label className="id-filter-label">Outcome</label>
+        <select
+          className="id-filter-select"
+          value={filters.outcome}
+          onChange={(e) => setFilters({...filters, outcome: e.target.value})}
+        >
+          <option value="">All Outcomes</option>
+          {getUniqueValues('outcome').map(value => (
+            <option key={value} value={value}>{value}</option>
+          ))}
+        </select>
+      </div>
+    </div>
+    
+    {/* Clear Filters */}
+    {(searchTerm || Object.values(filters).some(f => f)) && (
+      <div className="id-filters-actions">
+        <button onClick={clearFilters} className="id-clear-filters-btn">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+            <line x1="18" y1="6" x2="6" y2="18"></line>
+            <line x1="6" y1="6" x2="18" y2="18"></line>
+          </svg>
+          Clear All Filters
+        </button>
+        <span className="id-filters-count">
+          Showing {getFilteredAndSortedInspections().length} of {groupedInspections.length} inspections
+        </span>
+      </div>
+    )}
+  </div>
+
                 <div className="id-table-container">
                   <table className="id-table">
                     <thead>
@@ -677,7 +949,7 @@ const handleDelete = async (inspection) => {
                       </tr>
                     </thead>
                     <tbody>
-                      {groupedInspections.map((inspection) => (
+                      {getFilteredAndSortedInspections().map((inspection) => (
                         <React.Fragment key={inspection.id}>
                           {/* Main row */}
                           <tr>
@@ -814,9 +1086,10 @@ const handleDelete = async (inspection) => {
                     </tbody>
                   </table>
                 </div>
-              )}
             </>
           )}
+        </>
+      )}
         </div>
       </div>
     </div>

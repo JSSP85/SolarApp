@@ -428,7 +428,7 @@
 }
 
 /* ============================================
-   FILTERS & SEARCH SECTION (NUEVO - Estilos de NC)
+   FILTERS & SEARCH SECTION (ACTUALIZADO - Barra de búsqueda ajustada)
    ============================================ */
 
 .id-filters-section {
@@ -502,14 +502,17 @@
   flex-shrink: 0;
 }
 
-/* Search Box */
+/* Search Box - AJUSTADO */
 .id-search-container {
   margin-bottom: 1.5rem;
+  max-width: 100%;
+  overflow: hidden;
 }
 
 .id-search-box {
   position: relative;
   width: 100%;
+  max-width: 100%;
 }
 
 .id-search-icon {
@@ -523,12 +526,14 @@
 
 .id-search-input {
   width: 100%;
+  max-width: 100%;
   padding: 0.875rem 3rem 0.875rem 3rem;
   border: 2px solid #d1d5db;
   border-radius: 8px;
-  font-size: 0.95rem;
+  font-size: 0.875rem;
   transition: all 0.2s ease;
   background: white;
+  box-sizing: border-box;
 }
 
 .id-search-input:focus {
@@ -539,6 +544,7 @@
 
 .id-search-input::placeholder {
   color: #9ca3af;
+  font-size: 0.875rem;
 }
 
 .id-search-clear {
@@ -588,7 +594,7 @@
   padding: 0.75rem;
   border: 2px solid #d1d5db;
   border-radius: 8px;
-  font-size: 0.95rem;
+  font-size: 0.875rem;
   transition: all 0.2s ease;
   background: white;
   color: #374151;
@@ -666,6 +672,10 @@
 
   .id-clear-filters-btn {
     justify-content: center;
+  }
+  
+  .id-search-input {
+    font-size: 0.8rem;
   }
 }
 

@@ -74,62 +74,19 @@ const InspectionDashboard = ({ onBackToMenu }) => {
     return 'N/A';
   };
 
-  // Group inspections by general data (date, supplier, location, etc.)
-  const groupInspectionsByGeneral = (inspectionsList) => {
-    const grouped = {};
-    
-    inspectionsList.forEach(inspection => {
-      // Create a unique key based on general inspection data
-      const key = `${inspection.inspectionDate}_${inspection.supplier}_${inspection.inspectionLocation}_${inspection.inspectorType}_${inspection.purchaseOrder}`;
-      
-      if (!grouped[key]) {
-        grouped[key] = {
-          id: inspection.id, // Use first component's ID as group ID
-          inspectionDate: inspection.inspectionDate,
-          quarter: inspection.quarter,
-          supplier: inspection.supplier,
-          inspectionLocation: inspection.inspectionLocation,
-          inspectorType: inspection.inspectorType,
-          externalInspectorName: inspection.externalInspectorName,
-          cost: inspection.cost,
-          purchaseOrder: inspection.purchaseOrder,
-          inspectionRemark: inspection.inspectionRemark,
-          createdAt: inspection.createdAt,
-          components: []
-        };
-      }
-      
-      // Add component to this inspection group
-      grouped[key].components.push({
-        id: inspection.id,
-        client: inspection.client,
-        projectName: inspection.projectName,
-        componentCode: inspection.componentCode,
-        componentDescription: inspection.componentDescription,
-        quantity: inspection.quantity,
-        inspectionOutcome: inspection.inspectionOutcome,
-        nonConformityNumber: inspection.nonConformityNumber
-      });
-    });
-    
-    // Convert to array and calculate overall outcomes
-    const groupedArray = Object.values(grouped).map(group => ({
-      ...group,
-      overallOutcome: calculateOverallOutcome(group.components)
-    }));
-    
-    return groupedArray;
-  };
-
-  const loadInspections = async () => {
+const loadInspections = async () => {
     try {
       setLoading(true);
       const q = query(collection(db, 'inspections'), orderBy('createdAt', 'desc'));
       const querySnapshot = await getDocs(q);
-      const inspectionData = querySnapshot.docs.map(doc => ({
-        id: doc.id,
-        ...doc.data()
-      }));
+      const inspectionData = querySnapshot.docs.map(doc => {
+        const data = doc.data();
+        return {
+          id: doc.id,
+          ...data,
+          components: data.components || []
+        };
+      });
       
       // Filter out empty inspections (no date or supplier)
       const validInspections = inspectionData.filter(
@@ -138,9 +95,15 @@ const InspectionDashboard = ({ onBackToMenu }) => {
       
       setInspections(validInspections);
       
-      // Group inspections by general data
-      const grouped = groupInspectionsByGeneral(validInspections);
-      setGroupedInspections(grouped);
+      // Process inspections and calculate overall outcome
+      const processedInspections = validInspections.map(inspection => ({
+        ...inspection,
+        overallOutcome: calculateOverallOutcome(inspection.components),
+        quarter: inspection.quarter || getQuarterAndMonth(inspection.inspectionDate).quarter,
+        month: inspection.month || getQuarterAndMonth(inspection.inspectionDate).month
+      }));
+      
+      setGroupedInspections(processedInspections);
       
     } catch (err) {
       console.error('Error loading inspections:', err);
@@ -232,101 +195,44 @@ const InspectionDashboard = ({ onBackToMenu }) => {
     
     const { quarter, month } = getQuarterAndMonth(formData.inspectionDate);
     
-    try {
+   try {
       setLoading(true);
       
+      const inspectionDoc = {
+        inspectionDate: formData.inspectionDate,
+        quarter,
+        month,
+        supplier: formData.supplier,
+        inspectionLocation: formData.inspectionLocation,
+        inspectorType: formData.inspectorType,
+        externalInspectorName: formData.inspectorType === 'EXTERNO' ? formData.externalInspectorName : '',
+        cost: formData.cost ? `€${formData.cost}` : '',
+        inspectionRemark: formData.inspectionRemark,
+        purchaseOrder: formData.purchaseOrder,
+        components: formData.components.map(comp => ({
+          client: comp.client,
+          projectName: comp.projectName,
+          componentCode: comp.componentCode,
+          componentDescription: comp.componentDescription,
+          quantity: comp.quantity,
+          inspectionOutcome: comp.inspectionOutcome,
+          nonConformityNumber: comp.inspectionOutcome === 'negative' ? comp.nonConformityNumber : ''
+        })),
+        inspectionOutcome: calculateOverallOutcome(formData.components),
+        updatedAt: new Date().toISOString()
+      };
+      
       if (editingInspection) {
-        // UPDATE: Update all components of this inspection
-        const updatePromises = [];
-        
-        editingInspection.components.forEach((component, index) => {
-          if (formData.components[index]) {
-            updatePromises.push(updateDoc(doc(db, 'inspections', component.id), {
-              quarter,
-              month,
-              inspectionDate: formData.inspectionDate,
-              supplier: formData.supplier,
-              inspectionLocation: formData.inspectionLocation,
-              inspectorType: formData.inspectorType,
-              externalInspectorName: formData.inspectorType === 'EXTERNO' ? 
-                formData.externalInspectorName : '',
-              cost: formData.cost ? `€${formData.cost}` : '',
-              inspectionRemark: formData.inspectionRemark,
-              purchaseOrder: formData.purchaseOrder,
-              client: formData.components[index].client,
-              projectName: formData.components[index].projectName,
-              componentCode: formData.components[index].componentCode,
-              componentDescription: formData.components[index].componentDescription,
-              quantity: formData.components[index].quantity,
-              inspectionOutcome: formData.components[index].inspectionOutcome,
-              nonConformityNumber: formData.components[index].inspectionOutcome === 'negative' ? 
-                formData.components[index].nonConformityNumber : '',
-              updatedAt: new Date().toISOString()
-            }));
-          }
-        });
-
-        // If new components were added
-        if (formData.components.length > editingInspection.components.length) {
-          formData.components.slice(editingInspection.components.length).forEach(component => {
-            updatePromises.push(addDoc(collection(db, 'inspections'), {
-              quarter,
-              month,
-              inspectionDate: formData.inspectionDate,
-              supplier: formData.supplier,
-              inspectionLocation: formData.inspectionLocation,
-              inspectorType: formData.inspectorType,
-              externalInspectorName: formData.inspectorType === 'EXTERNO' ? 
-                formData.externalInspectorName : '',
-              cost: formData.cost ? `€${formData.cost}` : '',
-              inspectionRemark: formData.inspectionRemark,
-              purchaseOrder: formData.purchaseOrder,
-              client: component.client,
-              projectName: component.projectName,
-              componentCode: component.componentCode,
-              componentDescription: component.componentDescription,
-              quantity: component.quantity,
-              inspectionOutcome: component.inspectionOutcome,
-              nonConformityNumber: component.inspectionOutcome === 'negative' ? 
-                component.nonConformityNumber : '',
-              createdAt: new Date().toISOString(),
-              updatedAt: new Date().toISOString()
-            }));
-          });
-        }
-
-        await Promise.all(updatePromises);
-        setSuccess('Inspection updated successfully!');
+        // Update existing inspection
+        await updateDoc(doc(db, 'inspections', editingInspection.id), inspectionDoc);
+        setSuccess(`Inspection updated successfully! (${formData.components.length} component(s))`);
       } else {
-        // CREATE: Create one record per component
-        const promises = formData.components
-          .filter(comp => comp.client || comp.projectName || comp.componentCode)
-          .map(component => {
-            return addDoc(collection(db, 'inspections'), {
-              quarter,
-              month,
-              inspectionDate: formData.inspectionDate,
-              supplier: formData.supplier,
-              inspectionLocation: formData.inspectionLocation,
-              inspectorType: formData.inspectorType,
-              externalInspectorName: formData.inspectorType === 'EXTERNO' ? formData.externalInspectorName : '',
-              cost: formData.cost ? `€${formData.cost}` : '',
-              inspectionRemark: formData.inspectionRemark,
-              purchaseOrder: formData.purchaseOrder,
-              client: component.client,
-              projectName: component.projectName,
-              componentCode: component.componentCode,
-              componentDescription: component.componentDescription,
-              quantity: component.quantity,
-              inspectionOutcome: component.inspectionOutcome,
-              nonConformityNumber: component.inspectionOutcome === 'negative' ? component.nonConformityNumber : '',
-              createdAt: new Date().toISOString(),
-              updatedAt: new Date().toISOString()
-            });
-          });
-
-        await Promise.all(promises);
-        setSuccess(`Inspection registered successfully! (${promises.length} component(s))`);
+        // Create new inspection
+        await addDoc(collection(db, 'inspections'), {
+          ...inspectionDoc,
+          createdAt: new Date().toISOString()
+        });
+        setSuccess(`Inspection registered successfully! (${formData.components.length} component(s))`);
       }
       
       resetForm();
@@ -366,22 +272,17 @@ const InspectionDashboard = ({ onBackToMenu }) => {
     setShowForm(true);
   };
 
-  const handleDelete = async (groupedInspection) => {
-    if (!window.confirm('Are you sure you want to delete this inspection and all its components?')) {
+const handleDelete = async (inspection) => {
+    if (!window.confirm('Are you sure you want to delete this inspection and all its components?'))
       return;
-    }
-
+    
     try {
       setLoading(true);
       
-      // Delete all components of this inspection
-      const deletePromises = groupedInspection.components.map(comp => 
-        deleteDoc(doc(db, 'inspections', comp.id))
-      );
+      // Delete the single document (which contains all components)
+      await deleteDoc(doc(db, 'inspections', inspection.id));
       
-      await Promise.all(deletePromises);
-      
-      setSuccess('Inspection deleted successfully');
+      setSuccess('Inspection deleted successfully!');
       loadInspections();
       setTimeout(() => setSuccess(''), 3000);
     } catch (err) {

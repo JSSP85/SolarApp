@@ -2,17 +2,17 @@
 import React, { useState, useEffect } from 'react';
 import { collection, addDoc, getDocs, query, orderBy, doc, updateDoc, deleteDoc, where } from 'firebase/firestore';
 import { db } from '../../firebase/config';
-import { X, Plus, Save, AlertCircle, Eye, Trash2, ChevronDown, ChevronRight } from 'lucide-react';
+import { X, Plus, Save, AlertCircle, Eye, Trash2, ChevronDown, ChevronRight, BarChart2 } from 'lucide-react';
 import BackButton from '../common/BackButton';
-import '../../styles/inspection-dashboard.css';
 import InspectionAnalytics from './InspectionAnalytics';
+import '../../styles/inspection-dashboard.css';
 import '../../styles/inspection-analytics.css';
 
 const InspectionDashboard = ({ onBackToMenu }) => {
   const [inspections, setInspections] = useState([]);
   const [groupedInspections, setGroupedInspections] = useState([]);
   const [expandedRows, setExpandedRows] = useState({});
-  const [showForm, setShowForm] = useState(false);
+  const [activeView, setActiveView] = useState('list'); // 'form', 'list', 'analytics'
   const [editingInspection, setEditingInspection] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -193,7 +193,7 @@ const InspectionDashboard = ({ onBackToMenu }) => {
     return 'N/A';
   };
 
-const loadInspections = async () => {
+  const loadInspections = async () => {
     try {
       setLoading(true);
       const q = query(collection(db, 'inspections'), orderBy('createdAt', 'desc'));
@@ -304,7 +304,7 @@ const loadInspections = async () => {
       }]
     });
     setEditingInspection(null);
-    setShowForm(false);
+    setActiveView('list');
   };
 
   const handleSubmit = async (e) => {
@@ -314,7 +314,7 @@ const loadInspections = async () => {
     
     const { quarter, month } = getQuarterAndMonth(formData.inspectionDate);
     
-   try {
+    try {
       setLoading(true);
       
       const inspectionDoc = {
@@ -366,7 +366,7 @@ const loadInspections = async () => {
     }
   };
 
-   const handleView = (groupedInspection) => {
+  const handleView = (groupedInspection) => {
     // Populate form with grouped inspection data
     setFormData({
       inspectionDate: groupedInspection.inspectionDate || '',
@@ -388,7 +388,7 @@ const loadInspections = async () => {
       }))
     });
     setEditingInspection(groupedInspection);
-    setShowForm(true);
+    setActiveView('form');
   };
 
   const handleDelete = async (inspection) => {
@@ -419,7 +419,7 @@ const loadInspections = async () => {
     return 'id-badge id-badge-default';
   };
 
-   return (
+  return (
     <div className="inspection-dashboard-wrapper">
       <div className="id-app-container">
         {/* Sidebar */}
@@ -459,10 +459,10 @@ const loadInspections = async () => {
           
           <nav className="id-sidebar-nav">
             <div 
-              className={`id-nav-item ${showForm ? 'id-active' : ''}`}
+              className={`id-nav-item ${activeView === 'form' ? 'id-active' : ''}`}
               onClick={() => {
                 resetForm();
-                setShowForm(true);
+                setActiveView('form');
               }}
             >
               <Plus className="id-nav-icon" size={20} />
@@ -470,14 +470,22 @@ const loadInspections = async () => {
             </div>
             
             <div 
-              className={`id-nav-item ${!showForm ? 'id-active' : ''}`}
+              className={`id-nav-item ${activeView === 'list' ? 'id-active' : ''}`}
               onClick={() => {
                 resetForm();
-                setShowForm(false);
+                setActiveView('list');
               }}
             >
               <AlertCircle className="id-nav-icon" size={20} />
               <span className="id-nav-text">View Inspections</span>
+            </div>
+
+            <div 
+              className={`id-nav-item ${activeView === 'analytics' ? 'id-active' : ''}`}
+              onClick={() => setActiveView('analytics')}
+            >
+              <BarChart2 className="id-nav-icon" size={20} />
+              <span className="id-nav-text">Analytics</span>
             </div>
           </nav>
 
@@ -487,8 +495,6 @@ const loadInspections = async () => {
               <p className="id-stats-value">{groupedInspections.length}</p>
               <p className="id-stats-label">Total Inspections</p>
             </div>
-            
-            {/* BOTÓN "Clean Empty Records" ELIMINADO */}
           </div>
         </div>
 
@@ -497,12 +503,19 @@ const loadInspections = async () => {
           <div className="id-content-header">
             <div className="id-header-info">
               <h1 className="id-main-title">
-                {showForm 
+                {activeView === 'form' 
                   ? (editingInspection ? 'Edit Inspection' : 'Register New Inspection')
+                  : activeView === 'analytics'
+                  ? 'Inspection Analytics'
                   : 'Registered Inspections'}
               </h1>
               <p className="id-breadcrumb">
-                Quality Management → Inspections → {showForm ? (editingInspection ? 'Edit' : 'New') : 'List'}
+                Quality Management → Inspections → 
+                {activeView === 'form' 
+                  ? (editingInspection ? ' Edit' : ' New')
+                  : activeView === 'analytics'
+                  ? ' Analytics'
+                  : ' List'}
               </p>
             </div>
           </div>
@@ -521,13 +534,7 @@ const loadInspections = async () => {
             </div>
           )}
 
-             {/* 👇 AGREGAR ESTAS LÍNEAS AQUÍ 👇 */}
-          {!showForm && groupedInspections.length > 0 && (
-            <InspectionAnalytics inspections={groupedInspections} />
-          )}
-          {/* 👆 FIN DE LAS LÍNEAS NUEVAS 👆 */}
-
-          {showForm ? (
+          {activeView === 'form' ? (
             <form onSubmit={handleSubmit} className="id-form-container">
               <div className="id-form-section">
                 <h3 className="id-section-title">General Information</h3>
@@ -634,19 +641,19 @@ const loadInspections = async () => {
               </div>
 
               <div className="id-form-section">
-                <div className="id-component-header">
-                  <h3 className="id-section-title" style={{ marginBottom: 0 }}>Components</h3>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
+                  <h3 className="id-section-title" style={{ margin: 0 }}>Components</h3>
                   <button
                     type="button"
                     onClick={addComponent}
-                    className="id-btn id-btn-primary"
-                    style={{ padding: '0.5rem 1rem' }}
+                    className="id-btn id-btn-secondary"
+                    style={{ fontSize: '0.875rem', padding: '0.5rem 1rem' }}
                   >
                     <Plus size={16} />
                     <span>Add Component</span>
                   </button>
                 </div>
-                
+
                 {formData.components.map((component, index) => (
                   <div key={index} className="id-component-card">
                     <div className="id-component-header">
@@ -655,46 +662,49 @@ const loadInspections = async () => {
                         <button
                           type="button"
                           onClick={() => removeComponent(index)}
-                          className="id-btn id-btn-danger id-btn-icon"
+                          className="id-btn-remove"
                         >
                           <X size={16} />
                         </button>
                       )}
                     </div>
-                    
+
                     <div className="id-form-grid">
                       <div className="id-form-group">
-                        <label className="id-form-label">Client</label>
+                        <label className="id-form-label">Client *</label>
                         <input
                           type="text"
                           value={component.client}
                           onChange={(e) => updateComponent(index, 'client', e.target.value)}
                           className="id-form-input"
+                          required
                         />
                       </div>
-                      
+
                       <div className="id-form-group">
-                        <label className="id-form-label">Project Name</label>
+                        <label className="id-form-label">Project Name *</label>
                         <input
                           type="text"
                           value={component.projectName}
                           onChange={(e) => updateComponent(index, 'projectName', e.target.value)}
                           className="id-form-input"
+                          required
                         />
                       </div>
-                      
+
                       <div className="id-form-group">
-                        <label className="id-form-label">Component Code</label>
+                        <label className="id-form-label">Component Code *</label>
                         <input
                           type="text"
                           value={component.componentCode}
                           onChange={(e) => updateComponent(index, 'componentCode', e.target.value)}
                           className="id-form-input"
+                          required
                         />
                       </div>
-                      
+
                       <div className="id-form-group">
-                        <label className="id-form-label">Component Description</label>
+                        <label className="id-form-label">Description</label>
                         <input
                           type="text"
                           value={component.componentDescription}
@@ -702,18 +712,19 @@ const loadInspections = async () => {
                           className="id-form-input"
                         />
                       </div>
-                      
+
                       <div className="id-form-group">
-                        <label className="id-form-label">Quantity</label>
+                        <label className="id-form-label">Quantity *</label>
                         <input
                           type="number"
                           value={component.quantity}
                           onChange={(e) => updateComponent(index, 'quantity', e.target.value)}
                           className="id-form-input"
-                          min="0"
+                          min="1"
+                          required
                         />
                       </div>
-                      
+
                       <div className="id-form-group">
                         <label className="id-form-label">Inspection Outcome</label>
                         <select
@@ -764,6 +775,8 @@ const loadInspections = async () => {
                 </button>
               </div>
             </form>
+          ) : activeView === 'analytics' ? (
+            <InspectionAnalytics inspections={groupedInspections} />
           ) : (
             <>
               {loading ? (
@@ -777,327 +790,301 @@ const loadInspections = async () => {
                   <h3 className="id-empty-title">No Inspections Registered</h3>
                   <p className="id-empty-message">Start by registering your first inspection</p>
                   <button
-                    onClick={() => setShowForm(true)}
+                    onClick={() => setActiveView('form')}
                     className="id-btn id-btn-primary"
                   >
                     <Plus size={18} />
                     <span>Register First Inspection</span>
                   </button>
                 </div>
-             ) : (
-  <>
-  {/* Search & Filters Section */}
-  <div className="id-filters-section">
-    <div className="id-filters-header">
-      <h3 className="id-filters-title">
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-          <circle cx="11" cy="11" r="8"></circle>
-          <path d="m21 21-4.35-4.35"></path>
-        </svg>
-        Search & Filters
-      </h3>
-      
-      <div className="id-sort-controls">
-        <span className="id-sort-label">Sort by Date:</span>
-        <button 
-          onClick={() => setSortOrder(sortOrder === 'desc' ? 'asc' : 'desc')}
-          className="id-sort-btn"
-        >
-          {sortOrder === 'desc' ? (
-            <>
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <path d="m3 16 4 4 4-4M7 20V4m10 4 4-4 4 4m-4-4v16"/>
-              </svg>
-              Newest First
-            </>
-          ) : (
-            <>
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <path d="m3 8 4-4 4 4M7 4v16m10-4 4 4 4-4m-4 4V4"/>
-              </svg>
-              Oldest First
-            </>
-          )}
-        </button>
-      </div>
-    </div>
-    
-    {/* Search Box */}
-    <div className="id-search-container">
-      <div className="id-search-box">
-        <svg className="id-search-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-          <circle cx="11" cy="11" r="8"></circle>
-          <path d="m21 21-4.35-4.35"></path>
-        </svg>
-        <input
-          type="text"
-          className="id-search-input"
-          placeholder="Search by client, project, supplier, location, PO..."
-          value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
-        />
-        {searchTerm && (
-          <button 
-            className="id-search-clear"
-            onClick={() => setSearchTerm('')}
-          >
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              <line x1="18" y1="6" x2="6" y2="18"></line>
-              <line x1="6" y1="6" x2="18" y2="18"></line>
-            </svg>
-          </button>
-        )}
-      </div>
-    </div>
-    
-    {/* Filters Grid */}
-    <div className="id-filters-grid">
-      <div className="id-filter-item">
-        <label className="id-filter-label">Supplier</label>
-        <select
-          className="id-filter-select"
-          value={filters.supplier}
-          onChange={(e) => setFilters({...filters, supplier: e.target.value})}
-        >
-          <option value="">All Suppliers</option>
-          {getUniqueValues('supplier').map(value => (
-            <option key={value} value={value}>{value}</option>
-          ))}
-        </select>
-      </div>
-      
-      <div className="id-filter-item">
-        <label className="id-filter-label">Location</label>
-        <select
-          className="id-filter-select"
-          value={filters.location}
-          onChange={(e) => setFilters({...filters, location: e.target.value})}
-        >
-          <option value="">All Locations</option>
-          {getUniqueValues('inspectionLocation').map(value => (
-            <option key={value} value={value}>{value}</option>
-          ))}
-        </select>
-      </div>
-      
-      <div className="id-filter-item">
-        <label className="id-filter-label">Inspector</label>
-        <select
-          className="id-filter-select"
-          value={filters.inspector}
-          onChange={(e) => setFilters({...filters, inspector: e.target.value})}
-        >
-          <option value="">All Inspectors</option>
-          {getUniqueValues('inspector').map(value => (
-            <option key={value} value={value}>{value}</option>
-          ))}
-        </select>
-      </div>
-      
-      <div className="id-filter-item">
-        <label className="id-filter-label">Purchase Order</label>
-        <select
-          className="id-filter-select"
-          value={filters.purchaseOrder}
-          onChange={(e) => setFilters({...filters, purchaseOrder: e.target.value})}
-        >
-          <option value="">All POs</option>
-          {getUniqueValues('purchaseOrder').map(value => (
-            <option key={value} value={value}>{value}</option>
-          ))}
-        </select>
-      </div>
-      
-      <div className="id-filter-item">
-        <label className="id-filter-label">Outcome</label>
-        <select
-          className="id-filter-select"
-          value={filters.outcome}
-          onChange={(e) => setFilters({...filters, outcome: e.target.value})}
-        >
-          <option value="">All Outcomes</option>
-          {getUniqueValues('outcome').map(value => (
-            <option key={value} value={value}>{value}</option>
-          ))}
-        </select>
-      </div>
-    </div>
-    
-    {/* Clear Filters */}
-    {(searchTerm || Object.values(filters).some(f => f)) && (
-      <div className="id-filters-actions">
-        <button onClick={clearFilters} className="id-clear-filters-btn">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-            <line x1="18" y1="6" x2="6" y2="18"></line>
-            <line x1="6" y1="6" x2="18" y2="18"></line>
-          </svg>
-          Clear All Filters
-        </button>
-        <span className="id-filters-count">
-          Showing {getFilteredAndSortedInspections().length} of {groupedInspections.length} inspections
-        </span>
-      </div>
-    )}
-  </div>
+              ) : (
+                <>
+                  {/* Search & Filters Section */}
+                  <div className="id-filters-section">
+                    <div className="id-filters-header">
+                      <h3 className="id-filters-title">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                          <circle cx="11" cy="11" r="8"></circle>
+                          <path d="m21 21-4.35-4.35"></path>
+                        </svg>
+                        Search & Filters
+                      </h3>
+                      
+                      <div className="id-sort-controls">
+                        <span className="id-sort-label">Sort by Date:</span>
+                        <button 
+                          onClick={() => setSortOrder(sortOrder === 'desc' ? 'asc' : 'desc')}
+                          className="id-sort-btn"
+                        >
+                          {sortOrder === 'desc' ? '↓ Newest First' : '↑ Oldest First'}
+                        </button>
+                      </div>
+                    </div>
+                    
+                    <div className="id-search-bar">
+                      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="id-search-icon">
+                        <circle cx="11" cy="11" r="8"></circle>
+                        <path d="m21 21-4.35-4.35"></path>
+                      </svg>
+                      <input
+                        type="text"
+                        placeholder="Search by client, project, supplier, location, or PO..."
+                        value={searchTerm}
+                        onChange={(e) => setSearchTerm(e.target.value)}
+                        className="id-search-input"
+                      />
+                      {searchTerm && (
+                        <button onClick={() => setSearchTerm('')} className="id-clear-search">
+                          <X size={16} />
+                        </button>
+                      )}
+                    </div>
+                    
+                    <div className="id-filters-grid">
+                      <div className="id-filter-item">
+                        <label className="id-filter-label">Supplier</label>
+                        <select
+                          className="id-filter-select"
+                          value={filters.supplier}
+                          onChange={(e) => setFilters({...filters, supplier: e.target.value})}
+                        >
+                          <option value="">All Suppliers</option>
+                          {getUniqueValues('supplier').map(value => (
+                            <option key={value} value={value}>{value}</option>
+                          ))}
+                        </select>
+                      </div>
+                      
+                      <div className="id-filter-item">
+                        <label className="id-filter-label">Location</label>
+                        <select
+                          className="id-filter-select"
+                          value={filters.location}
+                          onChange={(e) => setFilters({...filters, location: e.target.value})}
+                        >
+                          <option value="">All Locations</option>
+                          {getUniqueValues('inspectionLocation').map(value => (
+                            <option key={value} value={value}>{value}</option>
+                          ))}
+                        </select>
+                      </div>
+                      
+                      <div className="id-filter-item">
+                        <label className="id-filter-label">Inspector</label>
+                        <select
+                          className="id-filter-select"
+                          value={filters.inspector}
+                          onChange={(e) => setFilters({...filters, inspector: e.target.value})}
+                        >
+                          <option value="">All Inspectors</option>
+                          {getUniqueValues('inspector').map(value => (
+                            <option key={value} value={value}>{value}</option>
+                          ))}
+                        </select>
+                      </div>
+                      
+                      <div className="id-filter-item">
+                        <label className="id-filter-label">Purchase Order</label>
+                        <select
+                          className="id-filter-select"
+                          value={filters.purchaseOrder}
+                          onChange={(e) => setFilters({...filters, purchaseOrder: e.target.value})}
+                        >
+                          <option value="">All POs</option>
+                          {getUniqueValues('purchaseOrder').map(value => (
+                            <option key={value} value={value}>{value}</option>
+                          ))}
+                        </select>
+                      </div>
+                      
+                      <div className="id-filter-item">
+                        <label className="id-filter-label">Outcome</label>
+                        <select
+                          className="id-filter-select"
+                          value={filters.outcome}
+                          onChange={(e) => setFilters({...filters, outcome: e.target.value})}
+                        >
+                          <option value="">All Outcomes</option>
+                          {getUniqueValues('outcome').map(value => (
+                            <option key={value} value={value}>{value}</option>
+                          ))}
+                        </select>
+                      </div>
+                    </div>
+                    
+                    {/* Clear Filters */}
+                    {(searchTerm || Object.values(filters).some(f => f)) && (
+                      <div className="id-filters-actions">
+                        <button onClick={clearFilters} className="id-clear-filters-btn">
+                          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                            <line x1="18" y1="6" x2="6" y2="18"></line>
+                            <line x1="6" y1="6" x2="18" y2="18"></line>
+                          </svg>
+                          <span>Clear All Filters</span>
+                        </button>
+                      </div>
+                    )}
+                  </div>
 
-                <div className="id-table-container">
-                  <table className="id-table">
-                    <thead>
-                      <tr>
-                        <th style={{ width: '30px' }}></th>
-                        <th>Date</th>
-                        <th>Quarter</th>
-                        <th>Supplier</th>
-                        <th>Location</th>
-                        <th>Inspector</th>
-                        <th>PO</th>
-                        <th>Outcome</th>
-                        <th>Cost</th>
-                        <th>Actions</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {getFilteredAndSortedInspections().map((inspection) => (
-                        <React.Fragment key={inspection.id}>
-                          {/* Main row */}
-                          <tr>
-                            <td>
-                              <button
-                                onClick={() => toggleRow(inspection.id)}
-                                style={{ background: 'none', border: 'none', cursor: 'pointer', padding: '0.25rem' }}
-                              >
-                                {expandedRows[inspection.id] ? 
-                                  <ChevronDown size={20} /> : 
-                                  <ChevronRight size={20} />
-                                }
-                              </button>
-                            </td>
-                            <td>{inspection.inspectionDate}</td>
-                            <td>{inspection.quarter}</td>
-                            <td>{inspection.supplier}</td>
-                            <td>{inspection.inspectionLocation}</td>
-                            <td>
-                              {inspection.inspectorType === 'EXTERNO' 
-                                ? `EXT: ${inspection.externalInspectorName || 'N/A'}` 
-                                : 'INTERNAL'}
-                            </td>
-                            <td>{inspection.purchaseOrder || 'N/A'}</td>
-                            <td>
-                              <span className={getBadgeClass(inspection.overallOutcome)}>
-                                {inspection.overallOutcome}
-                              </span>
-                            </td>
-                            <td>{inspection.cost || 'N/A'}</td>
-                            <td>
-                              <div className="id-action-buttons">
+                  {/* Inspections Table */}
+                  <div className="id-table-container">
+                    <table className="id-table">
+                      <thead>
+                        <tr>
+                          <th style={{ width: '40px' }}></th>
+                          <th>Date</th>
+                          <th>Quarter</th>
+                          <th>Supplier</th>
+                          <th>Location</th>
+                          <th>Inspector</th>
+                          <th>PO</th>
+                          <th>Outcome</th>
+                          <th>Cost</th>
+                          <th>Actions</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {getFilteredAndSortedInspections().map((inspection) => (
+                          <React.Fragment key={inspection.id}>
+                            <tr>
+                              <td>
                                 <button
-                                  onClick={() => handleView(inspection)}
-                                  className="id-action-btn id-action-btn-view"
-                                  title="View/Edit"
+                                  onClick={() => toggleRow(inspection.id)}
+                                  className="id-expand-btn"
+                                  title={expandedRows[inspection.id] ? "Collapse" : "Expand"}
                                 >
-                                  <Eye size={16} />
+                                  {expandedRows[inspection.id] ? 
+                                    <ChevronDown size={20} /> : 
+                                    <ChevronRight size={20} />
+                                  }
                                 </button>
-                                <button
-                                  onClick={() => handleDelete(inspection)}
-                                  className="id-action-btn id-action-btn-delete"
-                                  title="Delete"
-                                >
-                                  <Trash2 size={16} />
-                                </button>
-                              </div>
-                            </td>
-                          </tr>
-                          
-                          {/* Expanded component details row */}
-                          {expandedRows[inspection.id] && (
-                            <tr className="id-expanded-row">
-                              <td colSpan="10" className="id-expanded-content">
-                                <div className="id-component-detail-card">
-                                  <h4 style={{ 
-                                    color: '#005F83', 
-                                    marginBottom: '1rem',
-                                    fontWeight: '600'
-                                  }}>
-                                    Components ({inspection.components.length})
-                                  </h4>
-                                  {inspection.components.map((comp, idx) => (
-                                    <div key={idx} style={{ 
-                                      borderTop: idx > 0 ? '1px solid rgba(0, 95, 131, 0.1)' : 'none',
-                                      paddingTop: idx > 0 ? '1rem' : '0',
-                                      marginTop: idx > 0 ? '1rem' : '0'
-                                    }}>
-                                      <div className="id-component-detail-grid">
-                                        <div className="id-detail-item">
-                                          <span className="id-detail-label">Client</span>
-                                          <span className="id-detail-value" title={comp.client || 'N/A'}>
-                                            {comp.client || 'N/A'}
-                                          </span>
-                                        </div>
-                                        <div className="id-detail-item">
-                                          <span className="id-detail-label">Project</span>
-                                          <span className="id-detail-value" title={comp.projectName || 'N/A'}>
-                                            {comp.projectName || 'N/A'}
-                                          </span>
-                                        </div>
-                                        <div className="id-detail-item">
-                                          <span className="id-detail-label">Code</span>
-                                          <span className="id-detail-value" title={comp.componentCode || 'N/A'}>
-                                            {comp.componentCode || 'N/A'}
-                                          </span>
-                                        </div>
-                                        <div className="id-detail-item">
-                                          <span className="id-detail-label">Description</span>
-                                          <span className="id-detail-value" title={comp.componentDescription || 'N/A'}>
-                                            {comp.componentDescription || 'N/A'}
-                                          </span>
-                                        </div>
-                                        <div className="id-detail-item">
-                                          <span className="id-detail-label">Quantity</span>
-                                          <span className="id-detail-value">{comp.quantity || 'N/A'}</span>
-                                        </div>
-                                        <div className="id-detail-item">
-                                          <span className="id-detail-label">Outcome</span>
-                                          <span className={getBadgeClass(comp.inspectionOutcome)}>
-                                            {comp.inspectionOutcome || 'N/A'}
-                                          </span>
-                                        </div>
-                                      </div>
-                                      {comp.inspectionOutcome === 'negative' && comp.nonConformityNumber && (
-                                        <div style={{ 
-                                          marginTop: '0.75rem', 
-                                          paddingTop: '0.75rem', 
-                                          borderTop: '1px dashed rgba(220, 38, 38, 0.2)',
-                                          display: 'flex',
-                                          alignItems: 'center',
-                                          gap: '0.5rem'
-                                        }}>
-                                          <span className="id-detail-label" style={{ color: '#dc2626', margin: 0 }}>
-                                            NC NUMBER:
-                                          </span>
-                                          <span className="id-detail-value" style={{ 
-                                            color: '#dc2626', 
-                                            fontWeight: '700',
-                                            fontSize: '0.9rem'
-                                          }}>
-                                            {comp.nonConformityNumber}
-                                          </span>
-                                        </div>
-                                      )}
-                                    </div>
-                                  ))}
+                              </td>
+                              <td>{inspection.inspectionDate}</td>
+                              <td>{inspection.quarter}</td>
+                              <td>{inspection.supplier}</td>
+                              <td>{inspection.inspectionLocation}</td>
+                              <td>
+                                {inspection.inspectorType === 'EXTERNO' 
+                                  ? `EXT: ${inspection.externalInspectorName || 'N/A'}` 
+                                  : 'INTERNAL'}
+                              </td>
+                              <td>{inspection.purchaseOrder || 'N/A'}</td>
+                              <td>
+                                <span className={getBadgeClass(inspection.overallOutcome)}>
+                                  {inspection.overallOutcome}
+                                </span>
+                              </td>
+                              <td>{inspection.cost || 'N/A'}</td>
+                              <td>
+                                <div className="id-action-buttons">
+                                  <button
+                                    onClick={() => handleView(inspection)}
+                                    className="id-action-btn id-action-btn-view"
+                                    title="View/Edit"
+                                  >
+                                    <Eye size={16} />
+                                  </button>
+                                  <button
+                                    onClick={() => handleDelete(inspection)}
+                                    className="id-action-btn id-action-btn-delete"
+                                    title="Delete"
+                                  >
+                                    <Trash2 size={16} />
+                                  </button>
                                 </div>
                               </td>
                             </tr>
-                          )}
-                        </React.Fragment>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
+                            
+                            {/* Expanded component details row */}
+                            {expandedRows[inspection.id] && (
+                              <tr className="id-expanded-row">
+                                <td colSpan="10" className="id-expanded-content">
+                                  <div className="id-component-detail-card">
+                                    <h4 style={{ 
+                                      color: '#005F83', 
+                                      marginBottom: '1rem',
+                                      fontWeight: '600'
+                                    }}>
+                                      Components ({inspection.components.length})
+                                    </h4>
+                                    {inspection.components.map((comp, idx) => (
+                                      <div key={idx} style={{ 
+                                        borderTop: idx > 0 ? '1px solid rgba(0, 95, 131, 0.1)' : 'none',
+                                        paddingTop: idx > 0 ? '1rem' : '0',
+                                        marginTop: idx > 0 ? '1rem' : '0'
+                                      }}>
+                                        <div className="id-component-detail-grid">
+                                          <div className="id-detail-item">
+                                            <span className="id-detail-label">Client</span>
+                                            <span className="id-detail-value" title={comp.client || 'N/A'}>
+                                              {comp.client || 'N/A'}
+                                            </span>
+                                          </div>
+                                          <div className="id-detail-item">
+                                            <span className="id-detail-label">Project</span>
+                                            <span className="id-detail-value" title={comp.projectName || 'N/A'}>
+                                              {comp.projectName || 'N/A'}
+                                            </span>
+                                          </div>
+                                          <div className="id-detail-item">
+                                            <span className="id-detail-label">Code</span>
+                                            <span className="id-detail-value" title={comp.componentCode || 'N/A'}>
+                                              {comp.componentCode || 'N/A'}
+                                            </span>
+                                          </div>
+                                          <div className="id-detail-item">
+                                            <span className="id-detail-label">Description</span>
+                                            <span className="id-detail-value" title={comp.componentDescription || 'N/A'}>
+                                              {comp.componentDescription || 'N/A'}
+                                            </span>
+                                          </div>
+                                          <div className="id-detail-item">
+                                            <span className="id-detail-label">Quantity</span>
+                                            <span className="id-detail-value">{comp.quantity || 'N/A'}</span>
+                                          </div>
+                                          <div className="id-detail-item">
+                                            <span className="id-detail-label">Outcome</span>
+                                            <span className={getBadgeClass(comp.inspectionOutcome)}>
+                                              {comp.inspectionOutcome || 'N/A'}
+                                            </span>
+                                          </div>
+                                        </div>
+                                        {comp.inspectionOutcome === 'negative' && comp.nonConformityNumber && (
+                                          <div style={{ 
+                                            marginTop: '0.75rem', 
+                                            paddingTop: '0.75rem', 
+                                            borderTop: '1px dashed rgba(220, 38, 38, 0.2)',
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            gap: '0.5rem'
+                                          }}>
+                                            <span className="id-detail-label" style={{ color: '#dc2626', margin: 0 }}>
+                                              NC NUMBER:
+                                            </span>
+                                            <span className="id-detail-value" style={{ 
+                                              color: '#dc2626', 
+                                              fontWeight: '700',
+                                              fontSize: '0.9rem'
+                                            }}>
+                                              {comp.nonConformityNumber}
+                                            </span>
+                                          </div>
+                                        )}
+                                      </div>
+                                    ))}
+                                  </div>
+                                </td>
+                              </tr>
+                            )}
+                          </React.Fragment>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </>
+              )}
             </>
           )}
-        </>
-      )}
         </div>
       </div>
     </div>

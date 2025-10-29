@@ -106,15 +106,29 @@ const InspectionAnalytics = ({ inspections }) => {
     inspections.forEach(insp => {
       const date = new Date(insp.inspectionDate);
       if (date.getFullYear() === selectedYear) {
-        const supplier = insp.supplier || 'Unknown';
-        supplierData[supplier] = (supplierData[supplier] || 0) + 1;
+        // Try multiple field names to get supplier
+        const supplier = insp.supplier || insp.supplierName || insp.inspectionSite || 'Unknown';
+        
+        if (supplierData[supplier]) {
+          supplierData[supplier]++;
+        } else {
+          supplierData[supplier] = 1;
+        }
       }
     });
 
-    return Object.entries(supplierData)
-      .map(([name, count]) => ({ name, count }))
+    // Convert to array and sort
+    const sortedData = Object.entries(supplierData)
+      .map(([name, count]) => ({ 
+        name: name.length > 20 ? name.substring(0, 20) + '...' : name, 
+        count 
+      }))
       .sort((a, b) => b.count - a.count)
       .slice(0, 10); // Top 10 suppliers
+
+    console.log('📊 Inspections by Supplier:', sortedData); // Para debug
+    
+    return sortedData;
   }, [inspections, selectedYear]);
 
   // Calculate rejection rate by supplier
@@ -122,7 +136,9 @@ const InspectionAnalytics = ({ inspections }) => {
     const supplierStats = {};
 
     inspections.forEach(insp => {
-      const supplier = insp.supplier || 'Unknown';
+      // Try multiple field names to get supplier
+      const supplier = insp.supplier || insp.supplierName || insp.inspectionSite || 'Unknown';
+      
       if (!supplierStats[supplier]) {
         supplierStats[supplier] = { total: 0, rejected: 0 };
       }
@@ -134,15 +150,19 @@ const InspectionAnalytics = ({ inspections }) => {
       }
     });
 
-    return Object.entries(supplierStats)
+    const sortedData = Object.entries(supplierStats)
       .map(([name, stats]) => ({
-        name,
+        name: name.length > 15 ? name.substring(0, 15) + '...' : name,
         rate: stats.total > 0 ? (stats.rejected / stats.total * 100) : 0,
         total: stats.total
       }))
       .filter(item => item.total >= 3) // Only suppliers with 3+ inspections
       .sort((a, b) => b.rate - a.rate)
       .slice(0, 8);
+
+    console.log('📊 Rejection by Supplier:', sortedData); // Para debug
+    
+    return sortedData;
   }, [inspections]);
 
   // ============================================
@@ -300,21 +320,39 @@ const InspectionAnalytics = ({ inspections }) => {
         {/* Chart 4: Inspections by Supplier */}
         <div className="id-chart-card">
           <h3 className="id-chart-title">Inspections by Supplier ({selectedYear})</h3>
-          <ResponsiveContainer width="100%" height={300}>
-            <BarChart data={inspectionsBySupplier} layout="horizontal">
-              <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
-              <XAxis type="number" stroke="#6b7280" />
-              <YAxis dataKey="name" type="category" width={100} stroke="#6b7280" />
-              <Tooltip 
-                contentStyle={{ 
-                  backgroundColor: '#fff', 
-                  border: '1px solid #e5e7eb',
-                  borderRadius: '8px'
-                }} 
-              />
-              <Bar dataKey="count" fill="#005f83" name="Inspections" radius={[0, 8, 8, 0]} />
-            </BarChart>
-          </ResponsiveContainer>
+          {inspectionsBySupplier.length > 0 ? (
+            <ResponsiveContainer width="100%" height={300}>
+              <BarChart data={inspectionsBySupplier} layout="horizontal">
+                <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
+                <XAxis type="number" stroke="#6b7280" />
+                <YAxis 
+                  dataKey="name" 
+                  type="category" 
+                  width={120} 
+                  stroke="#6b7280"
+                  style={{ fontSize: '0.85rem' }}
+                />
+                <Tooltip 
+                  contentStyle={{ 
+                    backgroundColor: '#fff', 
+                    border: '1px solid #e5e7eb',
+                    borderRadius: '8px'
+                  }} 
+                />
+                <Bar dataKey="count" fill="#005f83" name="Inspections" radius={[0, 8, 8, 0]} />
+              </BarChart>
+            </ResponsiveContainer>
+          ) : (
+            <div style={{ 
+              display: 'flex', 
+              alignItems: 'center', 
+              justifyContent: 'center', 
+              height: '300px',
+              color: '#6b7280'
+            }}>
+              No data available for {selectedYear}
+            </div>
+          )}
         </div>
 
         {/* Chart 5: Rejection Rate by Supplier */}

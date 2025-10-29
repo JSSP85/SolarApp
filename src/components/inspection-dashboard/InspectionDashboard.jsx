@@ -5,6 +5,8 @@ import { db } from '../../firebase/config';
 import { X, Plus, Save, AlertCircle, Eye, Trash2, ChevronDown, ChevronRight } from 'lucide-react';
 import BackButton from '../common/BackButton';
 import '../../styles/inspection-dashboard.css';
+import InspectionAnalytics from './InspectionAnalytics';
+import '../../styles/inspection-analytics.css';
 
 const InspectionDashboard = ({ onBackToMenu }) => {
   const [inspections, setInspections] = useState([]);
@@ -518,6 +520,12 @@ const loadInspections = async () => {
               <span>{success}</span>
             </div>
           )}
+
+             {/* 👇 AGREGAR ESTAS LÍNEAS AQUÍ 👇 */}
+          {!showForm && groupedInspections.length > 0 && (
+            <InspectionAnalytics inspections={groupedInspections} />
+          )}
+          {/* 👆 FIN DE LAS LÍNEAS NUEVAS 👆 */}
 
           {showForm ? (
             <form onSubmit={handleSubmit} className="id-form-container">

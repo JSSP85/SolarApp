@@ -1,0 +1,255 @@
+/* src/styles/inspection-analytics.css */
+
+/* ============================================
+   ANALYTICS SECTION
+   ============================================ */
+
+.id-analytics-section {
+  margin-bottom: 2rem;
+}
+
+/* ============================================
+   YEAR SELECTOR
+   ============================================ */
+
+.id-year-selector {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin-bottom: 1.5rem;
+  padding: 1rem;
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border-radius: 12px;
+  box-shadow: 0 2px 10px rgba(0, 95, 131, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.id-year-selector label {
+  font-weight: 600;
+  color: #005F83;
+  font-size: 0.95rem;
+}
+
+.id-year-select {
+  padding: 0.5rem 1rem;
+  border: 2px solid rgba(0, 95, 131, 0.2);
+  border-radius: 8px;
+  font-size: 0.95rem;
+  font-weight: 500;
+  color: #005F83;
+  background: white;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.id-year-select:hover {
+  border-color: #0077a2;
+}
+
+.id-year-select:focus {
+  outline: none;
+  border-color: #0077a2;
+  box-shadow: 0 0 0 3px rgba(0, 119, 162, 0.1);
+}
+
+/* ============================================
+   KPI CARDS
+   ============================================ */
+
+.id-kpi-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 1.25rem;
+  margin-bottom: 2rem;
+}
+
+.id-kpi-card {
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.95) 0%, rgba(255, 255, 255, 0.9) 100%);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border-radius: 12px;
+  padding: 1.5rem;
+  box-shadow: 0 4px 20px rgba(0, 95, 131, 0.15);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  transition: all 0.3s ease;
+}
+
+.id-kpi-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 6px 25px rgba(0, 95, 131, 0.2);
+}
+
+.id-kpi-icon {
+  width: 50px;
+  height: 50px;
+  border-radius: 12px;
+  background: linear-gradient(135deg, #005f83, #0077a2);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  flex-shrink: 0;
+}
+
+.id-kpi-content {
+  flex: 1;
+  min-width: 0;
+}
+
+.id-kpi-label {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: #6b7280;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: 0.25rem;
+}
+
+.id-kpi-value {
+  font-size: 1.75rem;
+  font-weight: 700;
+  color: #005F83;
+  line-height: 1;
+}
+
+.id-kpi-trend {
+  font-size: 0.75rem;
+  color: #10b981;
+  margin-top: 0.25rem;
+  font-weight: 500;
+}
+
+/* ============================================
+   CHARTS GRID
+   ============================================ */
+
+.id-charts-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(450px, 1fr));
+  gap: 1.5rem;
+}
+
+.id-chart-card {
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border-radius: 12px;
+  padding: 1.5rem;
+  box-shadow: 0 4px 20px rgba(0, 95, 131, 0.15);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  transition: all 0.3s ease;
+}
+
+.id-chart-card:hover {
+  box-shadow: 0 6px 25px rgba(0, 95, 131, 0.2);
+}
+
+/* Wide chart card for rejection rate */
+.id-chart-card-wide {
+  grid-column: span 2;
+}
+
+.id-chart-title {
+  font-size: 1rem;
+  font-weight: 700;
+  color: #005F83;
+  margin-bottom: 1rem;
+  padding-bottom: 0.75rem;
+  border-bottom: 2px solid rgba(0, 95, 131, 0.1);
+}
+
+/* ============================================
+   RECHARTS CUSTOMIZATION
+   ============================================ */
+
+.id-chart-card .recharts-wrapper {
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+}
+
+.id-chart-card .recharts-cartesian-axis-tick-value {
+  font-size: 0.875rem;
+  fill: #6b7280;
+}
+
+.id-chart-card .recharts-legend-item-text {
+  color: #374151 !important;
+  font-weight: 500;
+}
+
+.id-chart-card .recharts-tooltip-wrapper {
+  outline: none;
+}
+
+/* ============================================
+   RESPONSIVE DESIGN
+   ============================================ */
+
+@media (max-width: 1400px) {
+  .id-charts-grid {
+    grid-template-columns: 1fr;
+  }
+  
+  .id-chart-card-wide {
+    grid-column: span 1;
+  }
+}
+
+@media (max-width: 768px) {
+  .id-kpi-grid {
+    grid-template-columns: 1fr;
+  }
+  
+  .id-kpi-card {
+    padding: 1.25rem;
+  }
+  
+  .id-kpi-value {
+    font-size: 1.5rem;
+  }
+  
+  .id-chart-card {
+    padding: 1.25rem;
+  }
+  
+  .id-year-selector {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+}
+
+/* ============================================
+   LOADING & EMPTY STATES
+   ============================================ */
+
+.id-analytics-loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 3rem;
+  background: rgba(255, 255, 255, 0.9);
+  border-radius: 12px;
+  color: #6b7280;
+  font-size: 1rem;
+}
+
+.id-analytics-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 3rem;
+  background: rgba(255, 255, 255, 0.9);
+  border-radius: 12px;
+  color: #6b7280;
+  text-align: center;
+}
+
+.id-analytics-empty svg {
+  margin-bottom: 1rem;
+  opacity: 0.5;
+}

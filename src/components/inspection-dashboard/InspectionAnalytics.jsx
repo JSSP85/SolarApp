@@ -34,10 +34,10 @@ const InspectionAnalytics = ({ inspections }) => {
     }, 0);
 
     // Calculate approval rate
-    const positive = inspections.filter(i => 
-      i.inspectionOutcome === 'positive' || 
-      i.overallOutcome === 'positive'
-    ).length;
+    const positive = inspections.filter(i => {
+      const outcome = (i.inspectionOutcome || i.overallOutcome || '').toLowerCase();
+      return outcome === 'positive';
+    }).length;
     const approvalRate = total > 0 ? (positive / total * 100) : 0;
 
     // Count active suppliers
@@ -87,12 +87,12 @@ const InspectionAnalytics = ({ inspections }) => {
     };
 
     inspections.forEach(insp => {
-      const outcome = insp.inspectionOutcome || insp.overallOutcome || '';
-      if (outcome.toLowerCase() === 'positive') {
+      const outcome = (insp.inspectionOutcome || insp.overallOutcome || '').toLowerCase();
+      if (outcome === 'positive') {
         outcomes.positive++;
-      } else if (outcome.toLowerCase() === 'negative') {
+      } else if (outcome === 'negative') {
         outcomes.negative++;
-      } else if (outcome.toLowerCase().includes('positive with comments')) {
+      } else if (outcome.includes('positive with comments')) {
         outcomes.positiveWithComments++;
       }
     });
@@ -121,7 +121,7 @@ const InspectionAnalytics = ({ inspections }) => {
       .slice(0, 10); // Top 10 suppliers
   }, [inspections, selectedYear]);
 
-  // Calculate rejection rate by supplier
+  // Calculate rejection rate by supplier (FIXED)
   const rejectionBySupplier = useMemo(() => {
     const supplierStats = {};
     
@@ -176,15 +176,15 @@ const InspectionAnalytics = ({ inspections }) => {
     return Object.values(yearData).sort((a, b) => a.year.localeCompare(b.year));
   }, [inspections]);
 
-  // Process inspections by client
+  // Process inspections by client (FIXED)
   const inspectionsByClient = useMemo(() => {
     const clientCounts = {};
     
     inspections.forEach(insp => {
-      // Try to get client from components
-      if (insp.components && insp.components.length > 0) {
+      // Check if components array exists and has data
+      if (insp.components && Array.isArray(insp.components) && insp.components.length > 0) {
         insp.components.forEach(comp => {
-          if (comp.client) {
+          if (comp.client && comp.client.trim() !== '') {
             clientCounts[comp.client] = (clientCounts[comp.client] || 0) + 1;
           }
         });
@@ -197,15 +197,15 @@ const InspectionAnalytics = ({ inspections }) => {
       .slice(0, 10); // Top 10 clients
   }, [inspections]);
 
-  // Process inspections by project
+  // Process inspections by project (FIXED)
   const inspectionsByProject = useMemo(() => {
     const projectCounts = {};
     
     inspections.forEach(insp => {
-      // Try to get project from components
-      if (insp.components && insp.components.length > 0) {
+      // Check if components array exists and has data
+      if (insp.components && Array.isArray(insp.components) && insp.components.length > 0) {
         insp.components.forEach(comp => {
-          if (comp.projectName) {
+          if (comp.projectName && comp.projectName.trim() !== '') {
             projectCounts[comp.projectName] = (projectCounts[comp.projectName] || 0) + 1;
           }
         });
@@ -218,7 +218,7 @@ const InspectionAnalytics = ({ inspections }) => {
       .slice(0, 10); // Top 10 projects
   }, [inspections]);
 
-  // Analyze internal vs external inspections
+  // Analyze internal vs external inspections (FIXED)
   const inspectorAnalysis = useMemo(() => {
     let internal = 0;
     let external = 0;
@@ -228,8 +228,8 @@ const InspectionAnalytics = ({ inspections }) => {
     inspections.forEach(insp => {
       const cost = parseFloat(insp.cost?.replace('€', '').replace(',', '.') || 0);
       
-      // Check if inspector is external (has externalInspector field)
-      if (insp.externalInspector && insp.externalInspector.trim() !== '') {
+      // Check inspectorType field - FIXED LOGIC
+      if (insp.inspectorType === 'EXTERNO') {
         external++;
         externalCost += cost;
       } else {
@@ -254,15 +254,17 @@ const InspectionAnalytics = ({ inspections }) => {
   // FASE 3: ADVANCED DATA PROCESSING FUNCTIONS
   // ============================================
 
-  // Process most inspected components
+  // Process most inspected components (FIXED)
   const topComponents = useMemo(() => {
     const componentCounts = {};
     
     inspections.forEach(insp => {
-      if (insp.components && insp.components.length > 0) {
+      if (insp.components && Array.isArray(insp.components) && insp.components.length > 0) {
         insp.components.forEach(comp => {
-          if (comp.componentCode) {
-            const key = `${comp.componentCode} - ${comp.componentDescription || 'N/A'}`;
+          if (comp.componentCode && comp.componentCode.trim() !== '') {
+            const key = comp.componentDescription 
+              ? `${comp.componentCode} - ${comp.componentDescription}`
+              : comp.componentCode;
             componentCounts[key] = (componentCounts[key] || 0) + 1;
           }
         });
@@ -294,31 +296,6 @@ const InspectionAnalytics = ({ inspections }) => {
     });
 
     return Object.values(quarterData).sort((a, b) => a.quarter.localeCompare(b.quarter));
-  }, [inspections]);
-
-  // Create heatmap data (month x year)
-  const heatmapData = useMemo(() => {
-    const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-    const heatmap = {};
-    
-    inspections.forEach(insp => {
-      const date = new Date(insp.inspectionDate);
-      const year = date.getFullYear();
-      const month = date.getMonth();
-      
-      if (!heatmap[year]) {
-        heatmap[year] = monthNames.map((name, idx) => ({
-          month: name,
-          year: year,
-          count: 0
-        }));
-      }
-      
-      heatmap[year][month].count++;
-    });
-
-    // Flatten and filter to show only years with data
-    return Object.values(heatmap).flat();
   }, [inspections]);
 
   // Calculate quality trend over time (approval rate by month)
@@ -427,11 +404,11 @@ const InspectionAnalytics = ({ inspections }) => {
 
       {/* FASE 1: Core Charts */}
       <div className="id-charts-grid">
-        {/* Chart 1: Inspections by Month */}
+        {/* Chart 1: Inspections by Month - CHANGED TO BAR CHART */}
         <div className="id-chart-card">
           <h3 className="id-chart-title">Inspections by Month ({selectedYear})</h3>
           <ResponsiveContainer width="100%" height={300}>
-            <LineChart data={inspectionsByMonth}>
+            <BarChart data={inspectionsByMonth}>
               <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
               <XAxis dataKey="month" stroke="#6b7280" />
               <YAxis stroke="#6b7280" />
@@ -443,23 +420,21 @@ const InspectionAnalytics = ({ inspections }) => {
                 }}
               />
               <Legend />
-              <Line 
-                type="monotone" 
+              <Bar 
                 dataKey="inspections" 
-                stroke="#005f83" 
-                strokeWidth={3}
+                fill="#005f83" 
                 name="Inspections"
-                dot={{ fill: '#005f83', r: 5 }}
+                radius={[8, 8, 0, 0]}
               />
-            </LineChart>
+            </BarChart>
           </ResponsiveContainer>
         </div>
 
-        {/* Chart 2: Costs by Month */}
+        {/* Chart 2: Costs by Month - CHANGED TO BAR CHART */}
         <div className="id-chart-card">
           <h3 className="id-chart-title">Costs by Month ({selectedYear})</h3>
           <ResponsiveContainer width="100%" height={300}>
-            <LineChart data={inspectionsByMonth}>
+            <BarChart data={inspectionsByMonth}>
               <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
               <XAxis dataKey="month" stroke="#6b7280" />
               <YAxis stroke="#6b7280" />
@@ -472,15 +447,13 @@ const InspectionAnalytics = ({ inspections }) => {
                 formatter={(value) => `€${value.toFixed(2)}`}
               />
               <Legend />
-              <Line 
-                type="monotone" 
+              <Bar 
                 dataKey="cost" 
-                stroke="#f59e0b" 
-                strokeWidth={3}
+                fill="#f59e0b" 
                 name="Cost (€)"
-                dot={{ fill: '#f59e0b', r: 5 }}
+                radius={[8, 8, 0, 0]}
               />
-            </LineChart>
+            </BarChart>
           </ResponsiveContainer>
         </div>
 
@@ -549,22 +522,37 @@ const InspectionAnalytics = ({ inspections }) => {
         {/* Chart 5: Rejection Rate by Supplier */}
         <div className="id-chart-card id-chart-card-wide">
           <h3 className="id-chart-title">Rejection Rate by Supplier (Min. 3 inspections)</h3>
-          <ResponsiveContainer width="100%" height={300}>
-            <BarChart data={rejectionBySupplier}>
-              <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
-              <XAxis dataKey="name" stroke="#6b7280" angle={-45} textAnchor="end" height={100} />
-              <YAxis stroke="#6b7280" label={{ value: 'Rejection Rate (%)', angle: -90, position: 'insideLeft' }} />
-              <Tooltip 
-                contentStyle={{ 
-                  backgroundColor: '#fff', 
-                  border: '1px solid #e5e7eb',
-                  borderRadius: '8px'
-                }}
-                formatter={(value) => `${value.toFixed(1)}%`}
-              />
-              <Bar dataKey="rate" fill="#ef4444" name="Rejection Rate (%)" radius={[8, 8, 0, 0]} />
-            </BarChart>
-          </ResponsiveContainer>
+          {rejectionBySupplier.length > 0 ? (
+            <ResponsiveContainer width="100%" height={300}>
+              <BarChart data={rejectionBySupplier}>
+                <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
+                <XAxis dataKey="name" stroke="#6b7280" angle={-45} textAnchor="end" height={100} />
+                <YAxis stroke="#6b7280" label={{ value: 'Rejection Rate (%)', angle: -90, position: 'insideLeft' }} />
+                <Tooltip 
+                  contentStyle={{ 
+                    backgroundColor: '#fff', 
+                    border: '1px solid #e5e7eb',
+                    borderRadius: '8px'
+                  }}
+                  formatter={(value, name, props) => [
+                    `${value.toFixed(1)}% (${props.payload.rejected}/${props.payload.total})`,
+                    'Rejection Rate'
+                  ]}
+                />
+                <Bar dataKey="rate" fill="#ef4444" name="Rejection Rate (%)" radius={[8, 8, 0, 0]} />
+              </BarChart>
+            </ResponsiveContainer>
+          ) : (
+            <div style={{ 
+              display: 'flex', 
+              alignItems: 'center', 
+              justifyContent: 'center', 
+              height: '300px',
+              color: '#6b7280'
+            }}>
+              No suppliers with 3+ inspections found
+            </div>
+          )}
         </div>
       </div>
 

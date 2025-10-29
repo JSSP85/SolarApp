@@ -2,7 +2,8 @@
 import React, { useState, useMemo } from 'react';
 import { 
   BarChart, Bar, LineChart, Line, PieChart, Pie, Cell,
-  XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer 
+  XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer,
+  ComposedChart, Area
 } from 'recharts';
 import { TrendingUp, DollarSign, CheckCircle, Users, Package } from 'lucide-react';
 
@@ -77,177 +78,360 @@ const InspectionAnalytics = ({ inspections }) => {
     return monthlyData;
   }, [inspections, selectedYear]);
 
-  // Process outcomes for pie chart
+  // Process outcomes data
   const outcomesData = useMemo(() => {
     const outcomes = {
       positive: 0,
       negative: 0,
-      'positive with comments': 0
+      positiveWithComments: 0
     };
 
     inspections.forEach(insp => {
-      const outcome = insp.inspectionOutcome || insp.overallOutcome;
-      if (outcome && outcomes.hasOwnProperty(outcome)) {
-        outcomes[outcome]++;
+      const outcome = insp.inspectionOutcome || insp.overallOutcome || '';
+      if (outcome.toLowerCase() === 'positive') {
+        outcomes.positive++;
+      } else if (outcome.toLowerCase() === 'negative') {
+        outcomes.negative++;
+      } else if (outcome.toLowerCase().includes('positive with comments')) {
+        outcomes.positiveWithComments++;
       }
     });
 
     return [
       { name: 'Positive', value: outcomes.positive, color: '#10b981' },
       { name: 'Negative', value: outcomes.negative, color: '#ef4444' },
-      { name: 'With Comments', value: outcomes['positive with comments'], color: '#f59e0b' }
-    ].filter(item => item.value > 0);
+      { name: 'Positive w/ Comments', value: outcomes.positiveWithComments, color: '#f59e0b' }
+    ];
   }, [inspections]);
 
   // Process inspections by supplier for selected year
   const inspectionsBySupplier = useMemo(() => {
-    const supplierData = {};
-
+    const supplierCounts = {};
+    
     inspections.forEach(insp => {
       const date = new Date(insp.inspectionDate);
-      if (date.getFullYear() === selectedYear) {
-        // Try multiple field names to get supplier
-        const supplier = insp.supplier || insp.supplierName || insp.inspectionSite || 'Unknown';
-        
-        if (supplierData[supplier]) {
-          supplierData[supplier]++;
-        } else {
-          supplierData[supplier] = 1;
-        }
+      if (date.getFullYear() === selectedYear && insp.supplier) {
+        supplierCounts[insp.supplier] = (supplierCounts[insp.supplier] || 0) + 1;
       }
     });
 
-    // Convert to array and sort
-    const sortedData = Object.entries(supplierData)
-      .map(([name, count]) => ({ 
-        name: name.length > 20 ? name.substring(0, 20) + '...' : name, 
-        count 
-      }))
+    return Object.entries(supplierCounts)
+      .map(([name, count]) => ({ name, count }))
       .sort((a, b) => b.count - a.count)
       .slice(0, 10); // Top 10 suppliers
-
-    console.log('📊 Inspections by Supplier:', sortedData); // Para debug
-    
-    return sortedData;
   }, [inspections, selectedYear]);
 
   // Calculate rejection rate by supplier
   const rejectionBySupplier = useMemo(() => {
     const supplierStats = {};
-
+    
     inspections.forEach(insp => {
-      // Try multiple field names to get supplier
-      const supplier = insp.supplier || insp.supplierName || insp.inspectionSite || 'Unknown';
+      if (!insp.supplier) return;
       
-      if (!supplierStats[supplier]) {
-        supplierStats[supplier] = { total: 0, rejected: 0 };
+      if (!supplierStats[insp.supplier]) {
+        supplierStats[insp.supplier] = { total: 0, rejected: 0 };
       }
-      supplierStats[supplier].total++;
       
-      const outcome = insp.inspectionOutcome || insp.overallOutcome;
+      supplierStats[insp.supplier].total++;
+      
+      const outcome = (insp.inspectionOutcome || insp.overallOutcome || '').toLowerCase();
       if (outcome === 'negative') {
-        supplierStats[supplier].rejected++;
+        supplierStats[insp.supplier].rejected++;
       }
     });
 
-    const sortedData = Object.entries(supplierStats)
+    return Object.entries(supplierStats)
+      .filter(([_, stats]) => stats.total >= 3) // Only suppliers with 3+ inspections
       .map(([name, stats]) => ({
-        name: name.length > 15 ? name.substring(0, 15) + '...' : name,
-        rate: stats.total > 0 ? (stats.rejected / stats.total * 100) : 0,
+        name,
+        rate: (stats.rejected / stats.total) * 100,
+        rejected: stats.rejected,
         total: stats.total
       }))
-      .filter(item => item.total >= 3) // Only suppliers with 3+ inspections
       .sort((a, b) => b.rate - a.rate)
-      .slice(0, 8);
-
-    console.log('📊 Rejection by Supplier:', sortedData); // Para debug
-    
-    return sortedData;
+      .slice(0, 10); // Top 10 suppliers by rejection rate
   }, [inspections]);
 
   // ============================================
-  // RENDER FUNCTIONS
+  // FASE 2: NEW DATA PROCESSING FUNCTIONS
   // ============================================
 
-  const renderKPICard = (title, value, Icon, format = 'number', trend) => {
-    const formattedValue = format === 'currency' 
-      ? `€${value.toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ',')}`
-      : format === 'percentage'
-      ? `${value.toFixed(1)}%`
-      : value.toLocaleString();
+  // Process inspections by year (totals)
+  const inspectionsByYear = useMemo(() => {
+    const yearData = {};
+    
+    inspections.forEach(insp => {
+      const date = new Date(insp.inspectionDate);
+      const year = date.getFullYear();
+      
+      if (!yearData[year]) {
+        yearData[year] = { year: year.toString(), inspections: 0, cost: 0 };
+      }
+      
+      yearData[year].inspections++;
+      const cost = parseFloat(insp.cost?.replace('€', '').replace(',', '.') || 0);
+      yearData[year].cost += cost;
+    });
 
-    return (
-      <div className="id-kpi-card">
-        <div className="id-kpi-icon">
-          <Icon size={24} />
-        </div>
-        <div className="id-kpi-content">
-          <div className="id-kpi-label">{title}</div>
-          <div className="id-kpi-value">{formattedValue}</div>
-          {trend && <div className="id-kpi-trend">{trend}</div>}
-        </div>
-      </div>
-    );
-  };
+    return Object.values(yearData).sort((a, b) => a.year.localeCompare(b.year));
+  }, [inspections]);
+
+  // Process inspections by client
+  const inspectionsByClient = useMemo(() => {
+    const clientCounts = {};
+    
+    inspections.forEach(insp => {
+      // Try to get client from components
+      if (insp.components && insp.components.length > 0) {
+        insp.components.forEach(comp => {
+          if (comp.client) {
+            clientCounts[comp.client] = (clientCounts[comp.client] || 0) + 1;
+          }
+        });
+      }
+    });
+
+    return Object.entries(clientCounts)
+      .map(([name, count]) => ({ name, count }))
+      .sort((a, b) => b.count - a.count)
+      .slice(0, 10); // Top 10 clients
+  }, [inspections]);
+
+  // Process inspections by project
+  const inspectionsByProject = useMemo(() => {
+    const projectCounts = {};
+    
+    inspections.forEach(insp => {
+      // Try to get project from components
+      if (insp.components && insp.components.length > 0) {
+        insp.components.forEach(comp => {
+          if (comp.projectName) {
+            projectCounts[comp.projectName] = (projectCounts[comp.projectName] || 0) + 1;
+          }
+        });
+      }
+    });
+
+    return Object.entries(projectCounts)
+      .map(([name, count]) => ({ name, count }))
+      .sort((a, b) => b.count - a.count)
+      .slice(0, 10); // Top 10 projects
+  }, [inspections]);
+
+  // Analyze internal vs external inspections
+  const inspectorAnalysis = useMemo(() => {
+    let internal = 0;
+    let external = 0;
+    let internalCost = 0;
+    let externalCost = 0;
+
+    inspections.forEach(insp => {
+      const cost = parseFloat(insp.cost?.replace('€', '').replace(',', '.') || 0);
+      
+      // Check if inspector is external (has externalInspector field)
+      if (insp.externalInspector && insp.externalInspector.trim() !== '') {
+        external++;
+        externalCost += cost;
+      } else {
+        internal++;
+        internalCost += cost;
+      }
+    });
+
+    return {
+      distribution: [
+        { name: 'Internal', value: internal, color: '#005f83' },
+        { name: 'External', value: external, color: '#f59e0b' }
+      ],
+      costs: {
+        internal: internal > 0 ? internalCost / internal : 0,
+        external: external > 0 ? externalCost / external : 0
+      }
+    };
+  }, [inspections]);
+
+  // ============================================
+  // FASE 3: ADVANCED DATA PROCESSING FUNCTIONS
+  // ============================================
+
+  // Process most inspected components
+  const topComponents = useMemo(() => {
+    const componentCounts = {};
+    
+    inspections.forEach(insp => {
+      if (insp.components && insp.components.length > 0) {
+        insp.components.forEach(comp => {
+          if (comp.componentCode) {
+            const key = `${comp.componentCode} - ${comp.componentDescription || 'N/A'}`;
+            componentCounts[key] = (componentCounts[key] || 0) + 1;
+          }
+        });
+      }
+    });
+
+    return Object.entries(componentCounts)
+      .map(([name, count]) => ({ name, count }))
+      .sort((a, b) => b.count - a.count)
+      .slice(0, 10); // Top 10 components
+  }, [inspections]);
+
+  // Process inspections by quarter
+  const inspectionsByQuarter = useMemo(() => {
+    const quarterData = {};
+    
+    inspections.forEach(insp => {
+      const date = new Date(insp.inspectionDate);
+      const year = date.getFullYear();
+      const month = date.getMonth();
+      const quarter = Math.floor(month / 3) + 1;
+      const key = `${year} Q${quarter}`;
+      
+      if (!quarterData[key]) {
+        quarterData[key] = { quarter: key, inspections: 0 };
+      }
+      
+      quarterData[key].inspections++;
+    });
+
+    return Object.values(quarterData).sort((a, b) => a.quarter.localeCompare(b.quarter));
+  }, [inspections]);
+
+  // Create heatmap data (month x year)
+  const heatmapData = useMemo(() => {
+    const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+    const heatmap = {};
+    
+    inspections.forEach(insp => {
+      const date = new Date(insp.inspectionDate);
+      const year = date.getFullYear();
+      const month = date.getMonth();
+      
+      if (!heatmap[year]) {
+        heatmap[year] = monthNames.map((name, idx) => ({
+          month: name,
+          year: year,
+          count: 0
+        }));
+      }
+      
+      heatmap[year][month].count++;
+    });
+
+    // Flatten and filter to show only years with data
+    return Object.values(heatmap).flat();
+  }, [inspections]);
+
+  // Calculate quality trend over time (approval rate by month)
+  const qualityTrend = useMemo(() => {
+    const monthlyQuality = {};
+    
+    inspections.forEach(insp => {
+      const date = new Date(insp.inspectionDate);
+      const key = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
+      
+      if (!monthlyQuality[key]) {
+        monthlyQuality[key] = { total: 0, positive: 0 };
+      }
+      
+      monthlyQuality[key].total++;
+      
+      const outcome = (insp.inspectionOutcome || insp.overallOutcome || '').toLowerCase();
+      if (outcome === 'positive') {
+        monthlyQuality[key].positive++;
+      }
+    });
+
+    return Object.entries(monthlyQuality)
+      .map(([key, stats]) => ({
+        month: key,
+        rate: (stats.positive / stats.total) * 100
+      }))
+      .sort((a, b) => a.month.localeCompare(b.month))
+      .slice(-12); // Last 12 months
+  }, [inspections]);
+
+  // ============================================
+  // RENDER
+  // ============================================
 
   return (
-    <div className="id-analytics-section">
-      {/* Year Selector */}
-      <div className="id-year-selector">
-        <label>Select Year: </label>
-        <select 
-          value={selectedYear} 
-          onChange={(e) => setSelectedYear(parseInt(e.target.value))}
-          className="id-year-select"
-        >
-          {availableYears.map(year => (
-            <option key={year} value={year}>{year}</option>
-          ))}
-        </select>
-      </div>
-
+    <div className="id-analytics-container">
       {/* KPI Cards */}
       <div className="id-kpi-grid">
-        {renderKPICard(
-          'Total Inspections',
-          kpis.totalInspections,
-          Package,
-          'number'
-        )}
-        {renderKPICard(
-          'Total Cost',
-          kpis.totalCost,
-          DollarSign,
-          'currency'
-        )}
-        {renderKPICard(
-          'Approval Rate',
-          kpis.approvalRate,
-          CheckCircle,
-          'percentage'
-        )}
-        {renderKPICard(
-          'Active Suppliers',
-          kpis.activeSuppliers,
-          Users,
-          'number'
-        )}
-        {renderKPICard(
-          'Avg Cost/Inspection',
-          kpis.avgCost,
-          TrendingUp,
-          'currency'
-        )}
+        <div className="id-kpi-card">
+          <div className="id-kpi-icon" style={{ backgroundColor: '#dbeafe' }}>
+            <Package size={24} color="#005f83" />
+          </div>
+          <div className="id-kpi-content">
+            <div className="id-kpi-label">Total Inspections</div>
+            <div className="id-kpi-value">{kpis.totalInspections}</div>
+          </div>
+        </div>
+
+        <div className="id-kpi-card">
+          <div className="id-kpi-icon" style={{ backgroundColor: '#fef3c7' }}>
+            <DollarSign size={24} color="#f59e0b" />
+          </div>
+          <div className="id-kpi-content">
+            <div className="id-kpi-label">Total Cost</div>
+            <div className="id-kpi-value">€{kpis.totalCost.toFixed(2)}</div>
+          </div>
+        </div>
+
+        <div className="id-kpi-card">
+          <div className="id-kpi-icon" style={{ backgroundColor: '#d1fae5' }}>
+            <CheckCircle size={24} color="#10b981" />
+          </div>
+          <div className="id-kpi-content">
+            <div className="id-kpi-label">Approval Rate</div>
+            <div className="id-kpi-value">{kpis.approvalRate.toFixed(1)}%</div>
+          </div>
+        </div>
+
+        <div className="id-kpi-card">
+          <div className="id-kpi-icon" style={{ backgroundColor: '#e0e7ff' }}>
+            <Users size={24} color="#6366f1" />
+          </div>
+          <div className="id-kpi-content">
+            <div className="id-kpi-label">Active Suppliers</div>
+            <div className="id-kpi-value">{kpis.activeSuppliers}</div>
+          </div>
+        </div>
+
+        <div className="id-kpi-card">
+          <div className="id-kpi-icon" style={{ backgroundColor: '#fce7f3' }}>
+            <TrendingUp size={24} color="#ec4899" />
+          </div>
+          <div className="id-kpi-content">
+            <div className="id-kpi-label">Avg Cost</div>
+            <div className="id-kpi-value">€{kpis.avgCost.toFixed(2)}</div>
+          </div>
+        </div>
       </div>
 
-      {/* Charts Grid */}
+      {/* Year Selector */}
+      <div className="id-year-selector">
+        <span className="id-year-label">Select Year:</span>
+        <div className="id-year-buttons">
+          {availableYears.map(year => (
+            <button
+              key={year}
+              className={`id-year-btn ${selectedYear === year ? 'active' : ''}`}
+              onClick={() => setSelectedYear(year)}
+            >
+              {year}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {/* FASE 1: Core Charts */}
       <div className="id-charts-grid">
-        
         {/* Chart 1: Inspections by Month */}
         <div className="id-chart-card">
           <h3 className="id-chart-title">Inspections by Month ({selectedYear})</h3>
           <ResponsiveContainer width="100%" height={300}>
-            <BarChart data={inspectionsByMonth}>
+            <LineChart data={inspectionsByMonth}>
               <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
               <XAxis dataKey="month" stroke="#6b7280" />
               <YAxis stroke="#6b7280" />
@@ -256,11 +440,18 @@ const InspectionAnalytics = ({ inspections }) => {
                   backgroundColor: '#fff', 
                   border: '1px solid #e5e7eb',
                   borderRadius: '8px'
-                }} 
+                }}
               />
               <Legend />
-              <Bar dataKey="inspections" fill="#0077a2" name="Inspections" radius={[8, 8, 0, 0]} />
-            </BarChart>
+              <Line 
+                type="monotone" 
+                dataKey="inspections" 
+                stroke="#005f83" 
+                strokeWidth={3}
+                name="Inspections"
+                dot={{ fill: '#005f83', r: 5 }}
+              />
+            </LineChart>
           </ResponsiveContainer>
         </div>
 
@@ -375,8 +566,283 @@ const InspectionAnalytics = ({ inspections }) => {
             </BarChart>
           </ResponsiveContainer>
         </div>
-
       </div>
+
+      {/* FASE 2: Detailed Analysis Charts */}
+      <div className="id-section-divider">
+        <h2 className="id-section-title">📊 Detailed Analysis</h2>
+      </div>
+
+      <div className="id-charts-grid">
+        {/* Chart 6: Inspections by Year */}
+        <div className="id-chart-card">
+          <h3 className="id-chart-title">Total Inspections by Year</h3>
+          <ResponsiveContainer width="100%" height={300}>
+            <BarChart data={inspectionsByYear}>
+              <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
+              <XAxis dataKey="year" stroke="#6b7280" />
+              <YAxis stroke="#6b7280" />
+              <Tooltip 
+                contentStyle={{ 
+                  backgroundColor: '#fff', 
+                  border: '1px solid #e5e7eb',
+                  borderRadius: '8px'
+                }}
+              />
+              <Bar dataKey="inspections" fill="#005f83" name="Inspections" radius={[8, 8, 0, 0]} />
+            </BarChart>
+          </ResponsiveContainer>
+        </div>
+
+        {/* Chart 7: Costs by Year */}
+        <div className="id-chart-card">
+          <h3 className="id-chart-title">Total Costs by Year</h3>
+          <ResponsiveContainer width="100%" height={300}>
+            <BarChart data={inspectionsByYear}>
+              <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
+              <XAxis dataKey="year" stroke="#6b7280" />
+              <YAxis stroke="#6b7280" />
+              <Tooltip 
+                contentStyle={{ 
+                  backgroundColor: '#fff', 
+                  border: '1px solid #e5e7eb',
+                  borderRadius: '8px'
+                }}
+                formatter={(value) => `€${value.toFixed(2)}`}
+              />
+              <Bar dataKey="cost" fill="#f59e0b" name="Cost (€)" radius={[8, 8, 0, 0]} />
+            </BarChart>
+          </ResponsiveContainer>
+        </div>
+
+        {/* Chart 8: Inspections by Client */}
+        <div className="id-chart-card">
+          <h3 className="id-chart-title">Top 10 Clients by Inspections</h3>
+          {inspectionsByClient.length > 0 ? (
+            <ResponsiveContainer width="100%" height={300}>
+              <BarChart data={inspectionsByClient} layout="horizontal">
+                <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
+                <XAxis type="number" stroke="#6b7280" />
+                <YAxis 
+                  dataKey="name" 
+                  type="category" 
+                  width={120} 
+                  stroke="#6b7280"
+                  style={{ fontSize: '0.85rem' }}
+                />
+                <Tooltip 
+                  contentStyle={{ 
+                    backgroundColor: '#fff', 
+                    border: '1px solid #e5e7eb',
+                    borderRadius: '8px'
+                  }} 
+                />
+                <Bar dataKey="count" fill="#6366f1" name="Inspections" radius={[0, 8, 8, 0]} />
+              </BarChart>
+            </ResponsiveContainer>
+          ) : (
+            <div style={{ 
+              display: 'flex', 
+              alignItems: 'center', 
+              justifyContent: 'center', 
+              height: '300px',
+              color: '#6b7280'
+            }}>
+              No client data available
+            </div>
+          )}
+        </div>
+
+        {/* Chart 9: Inspections by Project */}
+        <div className="id-chart-card">
+          <h3 className="id-chart-title">Top 10 Projects by Inspections</h3>
+          {inspectionsByProject.length > 0 ? (
+            <ResponsiveContainer width="100%" height={300}>
+              <BarChart data={inspectionsByProject} layout="horizontal">
+                <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
+                <XAxis type="number" stroke="#6b7280" />
+                <YAxis 
+                  dataKey="name" 
+                  type="category" 
+                  width={120} 
+                  stroke="#6b7280"
+                  style={{ fontSize: '0.85rem' }}
+                />
+                <Tooltip 
+                  contentStyle={{ 
+                    backgroundColor: '#fff', 
+                    border: '1px solid #e5e7eb',
+                    borderRadius: '8px'
+                  }} 
+                />
+                <Bar dataKey="count" fill="#8b5cf6" name="Inspections" radius={[0, 8, 8, 0]} />
+              </BarChart>
+            </ResponsiveContainer>
+          ) : (
+            <div style={{ 
+              display: 'flex', 
+              alignItems: 'center', 
+              justifyContent: 'center', 
+              height: '300px',
+              color: '#6b7280'
+            }}>
+              No project data available
+            </div>
+          )}
+        </div>
+
+        {/* Chart 10: Internal vs External Distribution */}
+        <div className="id-chart-card">
+          <h3 className="id-chart-title">Inspector Distribution</h3>
+          <ResponsiveContainer width="100%" height={300}>
+            <PieChart>
+              <Pie
+                data={inspectorAnalysis.distribution}
+                cx="50%"
+                cy="50%"
+                labelLine={false}
+                label={({ name, percent }) => `${name}: ${(percent * 100).toFixed(0)}%`}
+                outerRadius={100}
+                fill="#8884d8"
+                dataKey="value"
+              >
+                {inspectorAnalysis.distribution.map((entry, index) => (
+                  <Cell key={`cell-${index}`} fill={entry.color} />
+                ))}
+              </Pie>
+              <Tooltip />
+            </PieChart>
+          </ResponsiveContainer>
+        </div>
+
+        {/* Chart 11: Average Cost Comparison */}
+        <div className="id-chart-card">
+          <h3 className="id-chart-title">Average Cost: Internal vs External</h3>
+          <ResponsiveContainer width="100%" height={300}>
+            <BarChart 
+              data={[
+                { name: 'Internal', cost: inspectorAnalysis.costs.internal },
+                { name: 'External', cost: inspectorAnalysis.costs.external }
+              ]}
+            >
+              <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
+              <XAxis dataKey="name" stroke="#6b7280" />
+              <YAxis stroke="#6b7280" />
+              <Tooltip 
+                contentStyle={{ 
+                  backgroundColor: '#fff', 
+                  border: '1px solid #e5e7eb',
+                  borderRadius: '8px'
+                }}
+                formatter={(value) => `€${value.toFixed(2)}`}
+              />
+              <Bar dataKey="cost" fill="#ec4899" name="Avg Cost (€)" radius={[8, 8, 0, 0]} />
+            </BarChart>
+          </ResponsiveContainer>
+        </div>
+      </div>
+
+      {/* FASE 3: Advanced Insights */}
+      <div className="id-section-divider">
+        <h2 className="id-section-title">🔍 Advanced Insights</h2>
+      </div>
+
+      <div className="id-charts-grid">
+        {/* Chart 12: Top Components */}
+        <div className="id-chart-card id-chart-card-wide">
+          <h3 className="id-chart-title">Top 10 Most Inspected Components</h3>
+          {topComponents.length > 0 ? (
+            <ResponsiveContainer width="100%" height={300}>
+              <BarChart data={topComponents} layout="horizontal">
+                <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
+                <XAxis type="number" stroke="#6b7280" />
+                <YAxis 
+                  dataKey="name" 
+                  type="category" 
+                  width={200} 
+                  stroke="#6b7280"
+                  style={{ fontSize: '0.75rem' }}
+                />
+                <Tooltip 
+                  contentStyle={{ 
+                    backgroundColor: '#fff', 
+                    border: '1px solid #e5e7eb',
+                    borderRadius: '8px'
+                  }} 
+                />
+                <Bar dataKey="count" fill="#14b8a6" name="Inspections" radius={[0, 8, 8, 0]} />
+              </BarChart>
+            </ResponsiveContainer>
+          ) : (
+            <div style={{ 
+              display: 'flex', 
+              alignItems: 'center', 
+              justifyContent: 'center', 
+              height: '300px',
+              color: '#6b7280'
+            }}>
+              No component data available
+            </div>
+          )}
+        </div>
+
+        {/* Chart 13: Inspections by Quarter */}
+        <div className="id-chart-card">
+          <h3 className="id-chart-title">Inspections by Quarter</h3>
+          <ResponsiveContainer width="100%" height={300}>
+            <BarChart data={inspectionsByQuarter}>
+              <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
+              <XAxis dataKey="quarter" stroke="#6b7280" angle={-45} textAnchor="end" height={80} />
+              <YAxis stroke="#6b7280" />
+              <Tooltip 
+                contentStyle={{ 
+                  backgroundColor: '#fff', 
+                  border: '1px solid #e5e7eb',
+                  borderRadius: '8px'
+                }}
+              />
+              <Bar dataKey="inspections" fill="#f97316" name="Inspections" radius={[8, 8, 0, 0]} />
+            </BarChart>
+          </ResponsiveContainer>
+        </div>
+
+        {/* Chart 14: Quality Trend */}
+        <div className="id-chart-card">
+          <h3 className="id-chart-title">Quality Trend (Last 12 Months)</h3>
+          <ResponsiveContainer width="100%" height={300}>
+            <ComposedChart data={qualityTrend}>
+              <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
+              <XAxis dataKey="month" stroke="#6b7280" angle={-45} textAnchor="end" height={80} />
+              <YAxis stroke="#6b7280" domain={[0, 100]} />
+              <Tooltip 
+                contentStyle={{ 
+                  backgroundColor: '#fff', 
+                  border: '1px solid #e5e7eb',
+                  borderRadius: '8px'
+                }}
+                formatter={(value) => `${value.toFixed(1)}%`}
+              />
+              <Legend />
+              <Area 
+                type="monotone" 
+                dataKey="rate" 
+                fill="#10b981" 
+                stroke="#10b981"
+                fillOpacity={0.3}
+                name="Approval Rate (%)"
+              />
+              <Line 
+                type="monotone" 
+                dataKey="rate" 
+                stroke="#059669" 
+                strokeWidth={2}
+                dot={{ fill: '#059669', r: 4 }}
+              />
+            </ComposedChart>
+          </ResponsiveContainer>
+        </div>
+      </div>
+
     </div>
   );
 };

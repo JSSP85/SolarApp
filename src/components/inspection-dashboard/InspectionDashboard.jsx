@@ -8,6 +8,35 @@ import InspectionAnalytics from './InspectionAnalytics';
 import '../../styles/inspection-dashboard.css';
 import '../../styles/inspection-analytics.css';
 
+// Íconos personalizados más atractivos
+const NewInspectionIcon = () => (
+  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <circle cx="12" cy="12" r="10" fill="currentColor" opacity="0.2"/>
+    <path d="M12 8V16M8 12H16" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"/>
+    <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="2" opacity="0.8"/>
+  </svg>
+);
+
+const ViewInspectionsIcon = () => (
+  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <rect x="3" y="5" width="18" height="14" rx="2" fill="currentColor" opacity="0.2"/>
+    <path d="M3 10H21M8 6V5M16 6V5" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
+    <rect x="3" y="5" width="18" height="14" rx="2" stroke="currentColor" strokeWidth="2"/>
+    <circle cx="7" cy="14" r="1" fill="currentColor"/>
+    <circle cx="12" cy="14" r="1" fill="currentColor"/>
+    <circle cx="17" cy="14" r="1" fill="currentColor"/>
+  </svg>
+);
+
+const AnalyticsIcon = () => (
+  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <rect x="3" y="3" width="18" height="18" rx="2" fill="currentColor" opacity="0.2"/>
+    <path d="M9 17V13M15 17V7M12 17V10" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"/>
+    <rect x="3" y="3" width="18" height="18" rx="2" stroke="currentColor" strokeWidth="2"/>
+    <path d="M6 8L8 6L10 8L12 5L14 8L16 6L18 8" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" opacity="0.5"/>
+  </svg>
+);
+
 const InspectionDashboard = ({ onBackToMenu }) => {
   const [inspections, setInspections] = useState([]);
   const [groupedInspections, setGroupedInspections] = useState([]);
@@ -457,37 +486,43 @@ const InspectionDashboard = ({ onBackToMenu }) => {
           
           <div className="id-sidebar-divider"></div>
           
-          <nav className="id-sidebar-nav">
-            <div 
-              className={`id-nav-item ${activeView === 'form' ? 'id-active' : ''}`}
-              onClick={() => {
-                resetForm();
-                setActiveView('form');
-              }}
-            >
-              <Plus className="id-nav-icon" size={20} />
-              <span className="id-nav-text">New Inspection</span>
-            </div>
-            
-            <div 
-              className={`id-nav-item ${activeView === 'list' ? 'id-active' : ''}`}
-              onClick={() => {
-                resetForm();
-                setActiveView('list');
-              }}
-            >
-              <AlertCircle className="id-nav-icon" size={20} />
-              <span className="id-nav-text">View Inspections</span>
-            </div>
+         <nav className="id-sidebar-nav">
+  <div 
+    className={`id-nav-item ${activeView === 'form' ? 'id-active' : ''}`}
+    onClick={() => {
+      resetForm();
+      setActiveView('form');
+    }}
+  >
+    <div className="id-nav-icon">
+      <NewInspectionIcon />
+    </div>
+    <span className="id-nav-text">New Inspection</span>
+  </div>
+  
+  <div 
+    className={`id-nav-item ${activeView === 'list' ? 'id-active' : ''}`}
+    onClick={() => {
+      resetForm();
+      setActiveView('list');
+    }}
+  >
+    <div className="id-nav-icon">
+      <ViewInspectionsIcon />
+    </div>
+    <span className="id-nav-text">View Inspections</span>
+  </div>
 
-            <div 
-              className={`id-nav-item ${activeView === 'analytics' ? 'id-active' : ''}`}
-              onClick={() => setActiveView('analytics')}
-            >
-              <BarChart2 className="id-nav-icon" size={20} />
-              <span className="id-nav-text">Analytics</span>
-            </div>
-          </nav>
+  <div 
+    className={`id-nav-item ${activeView === 'analytics' ? 'id-active' : ''}`}
+    onClick={() => setActiveView('analytics')}
+  >
+    <div className="id-nav-icon">
+      <AnalyticsIcon />
+    </div>
+    <span className="id-nav-text">Analytics</span>
+  </div>
+</nav>
 
           <div className="id-sidebar-footer">
             <div className="id-stats-box">

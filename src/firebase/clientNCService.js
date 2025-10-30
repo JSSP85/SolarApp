@@ -11,7 +11,7 @@ import {
   orderBy,
   where,
   Timestamp 
-} from 'firestore/firestore';
+} from 'firebase/firestore';
 import { db } from './config';
 
 const CLIENT_NC_COLLECTION = 'client_nc_registry';

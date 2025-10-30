@@ -1,6 +1,8 @@
 // src/components/non-conformity/NCRegistrySystem.jsx
 import React, { useState, useEffect, useCallback, memo } from 'react';
 import { useAuth } from '../../context/AuthContext';
+
+// Services
 import {
   addNCToRegistry,
   updateNCInRegistry,
@@ -8,12 +10,24 @@ import {
   getAllNCs,
   getNextNCNumber
 } from '../../firebase/ncRegistryService';
+
+import {
+  addClientNC,
+  updateClientNC,
+  deleteClientNC,
+  getAllClientNCs
+} from '../../firebase/clientNCService';
+
+// Components
 import NCStatisticsCharts from './NCStatisticsCharts';
 import BackButton from '../common/BackButton';
+import ClientNCForm from './ClientNCForm';
+
+// Styles
 import '../../styles/non-conformity.css';
 
 // ================================================================
-// ✅ OPTIONS - FUERA DEL COMPONENTE PRINCIPAL
+// OPTIONS
 // ================================================================
 const statusOptions = [
   { value: 'open', label: '🔴 Open' },
@@ -44,7 +58,7 @@ const monthOptions = [
 ];
 
 // ================================================================
-// ✅ NC FORM COMPONENT - FUERA Y ANTES DEL COMPONENTE PRINCIPAL
+// NC FORM COMPONENT (Original - para NC Registry)
 // ================================================================
 const NCForm = memo(({ nc, onChange }) => {
   return (
@@ -60,7 +74,17 @@ const NCForm = memo(({ nc, onChange }) => {
               value={nc.number || ''}
               onChange={(e) => onChange({ ...nc, number: e.target.value })}
               className="nc-form-input"
-              placeholder="562"
+              disabled
+            />
+          </div>
+
+          <div className="nc-form-group">
+            <label className="nc-form-label">NC Issuer</label>
+            <input
+              type="text"
+              value={nc.ncIssuer || ''}
+              onChange={(e) => onChange({ ...nc, ncIssuer: e.target.value })}
+              className="nc-form-input"
             />
           </div>
 
@@ -68,8 +92,8 @@ const NCForm = memo(({ nc, onChange }) => {
             <label className="nc-form-label">Year</label>
             <input
               type="number"
-              value={nc.year || ''}
-              onChange={(e) => onChange({ ...nc, year: parseInt(e.target.value) || 0 })}
+              value={nc.year || new Date().getFullYear()}
+              onChange={(e) => onChange({ ...nc, year: parseInt(e.target.value) })}
               className="nc-form-input"
             />
           </div>
@@ -82,16 +106,16 @@ const NCForm = memo(({ nc, onChange }) => {
               className="nc-form-select"
             >
               <option value="">Select...</option>
-              {monthOptions.map(opt => (
-                <option key={opt} value={opt}>{opt}</option>
+              {monthOptions.map(month => (
+                <option key={month} value={month}>{month}</option>
               ))}
             </select>
           </div>
 
           <div className="nc-form-group">
-            <label className="nc-form-label">Status *</label>
+            <label className="nc-form-label">Status</label>
             <select
-              value={nc.status || ''}
+              value={nc.status || 'open'}
               onChange={(e) => onChange({ ...nc, status: e.target.value })}
               className="nc-form-select"
             >
@@ -99,16 +123,6 @@ const NCForm = memo(({ nc, onChange }) => {
                 <option key={opt.value} value={opt.value}>{opt.label}</option>
               ))}
             </select>
-          </div>
-
-          <div className="nc-form-group">
-            <label className="nc-form-label">NC Issuer</label>
-            <input
-              type="text"
-              value={nc.ncIssuer || ''}
-              onChange={(e) => onChange({ ...nc, ncIssuer: e.target.value })}
-              className="nc-form-input"
-            />
           </div>
 
           <div className="nc-form-group">
@@ -267,16 +281,25 @@ const NCForm = memo(({ nc, onChange }) => {
 NCForm.displayName = 'NCForm';
 
 // ================================================================
-// ✅ COMPONENTE PRINCIPAL - AHORA SIN NCFORM DENTRO
+// MAIN COMPONENT
 // ================================================================
-const NCRegistrySystem = ({ onBack }) => {
+const NCRegistrySystemUpdated = ({ onBack }) => {
   const { currentUser } = useAuth();
+  
+  // View management: 'registry', 'client-nc', 'stats'
   const [activeView, setActiveView] = useState('registry');
+  
+  // Lists
   const [ncList, setNcList] = useState([]);
+  const [clientNCList, setClientNCList] = useState([]);
   const [loading, setLoading] = useState(true);
+  
+  // Modals
   const [showAddModal, setShowAddModal] = useState(false);
   const [selectedNC, setSelectedNC] = useState(null);
   const [showEditPanel, setShowEditPanel] = useState(false);
+  
+  // Filters
   const [filters, setFilters] = useState({
     search: '',
     status: '',
@@ -285,7 +308,7 @@ const NCRegistrySystem = ({ onBack }) => {
     year: ''
   });
 
-  // Empty NC template
+  // Empty templates
   const emptyNC = {
     number: '',
     year: new Date().getFullYear(),
@@ -307,35 +330,68 @@ const NCRegistrySystem = ({ onBack }) => {
     correctiveAction: ''
   };
 
+  const emptyClientNC = {
+    year: new Date().getFullYear(),
+    month: '',
+    status: 'open',
+    ncIssuer: '', // Client name
+    dateOfDetection: new Date().toISOString().split('T')[0],
+    detectionPhase: '',
+    orderNumber: '',
+    projectCode: '',
+    projectName: '',
+    ncClass: '',
+    ncMainSubject: '',
+    ncBriefSummary: '',
+    treatment: '',
+    dateOfClosure: '',
+    rootCauseAnalysis: '',
+    correctiveAction: ''
+  };
+
   const [currentNC, setCurrentNC] = useState(emptyNC);
   
-  // ✅ Estabilizar onChange
   const handleNCChange = useCallback((updatedNC) => {
     setCurrentNC(updatedNC);
   }, []);
 
+  // Load data
   useEffect(() => {
-    loadNCs();
+    loadAllData();
   }, []);
 
-  const loadNCs = async () => {
+  const loadAllData = async () => {
     try {
       setLoading(true);
-      const data = await getAllNCs();
-      setNcList(data);
+      const [ncs, clientNCs] = await Promise.all([
+        getAllNCs(),
+        getAllClientNCs()
+      ]);
+      setNcList(ncs);
+      setClientNCList(clientNCs);
     } catch (error) {
-      console.error('Error loading NCs:', error);
+      console.error('Error loading data:', error);
     } finally {
       setLoading(false);
     }
   };
 
-  const filteredNCList = ncList.filter(nc => {
-    if (filters.search && 
-        !nc.number.includes(filters.search) && 
-        !nc.projectName?.toLowerCase().includes(filters.search.toLowerCase()) &&
-        !nc.ncMainSubject?.toLowerCase().includes(filters.search.toLowerCase())) {
-      return false;
+  // Filtering logic
+  const getCurrentList = () => {
+    return activeView === 'client-nc' ? clientNCList : ncList;
+  };
+
+  const filteredList = getCurrentList().filter(nc => {
+    if (filters.search) {
+      const searchLower = filters.search.toLowerCase();
+      const matchesNumber = nc.number?.toLowerCase().includes(searchLower);
+      const matchesProject = nc.projectName?.toLowerCase().includes(searchLower);
+      const matchesSubject = nc.ncMainSubject?.toLowerCase().includes(searchLower);
+      const matchesClient = nc.ncIssuer?.toLowerCase().includes(searchLower);
+      
+      if (!matchesNumber && !matchesProject && !matchesSubject && !matchesClient) {
+        return false;
+      }
     }
     if (filters.status && nc.status !== filters.status) return false;
     if (filters.priority && nc.ncClass !== filters.priority) return false;
@@ -344,35 +400,63 @@ const NCRegistrySystem = ({ onBack }) => {
     return true;
   });
 
-  const uniqueYears = [...new Set(ncList.map(nc => nc.year))].sort((a, b) => b - a);
+  const uniqueYears = [...new Set([...ncList, ...clientNCList].map(nc => nc.year))].sort((a, b) => b - a);
 
-  // Handlers
+  // Handlers for NC Registry
   const handleAddNC = async () => {
     const nextNumber = await getNextNCNumber();
     setCurrentNC({ ...emptyNC, number: nextNumber });
     setShowAddModal(true);
   };
 
+  // Handlers for Client NC
+  const handleAddClientNC = () => {
+    setCurrentNC(emptyClientNC);
+    setShowAddModal(true);
+  };
+
   const handleSaveNC = async () => {
-    if (!currentNC.number || !currentNC.ncMainSubject || !currentNC.ncClass) {
-      alert('⚠️ Please complete required fields: Number, Subject, and NC Class');
-      return;
+    // Validation
+    if (activeView === 'registry') {
+      if (!currentNC.number || !currentNC.ncMainSubject || !currentNC.ncClass) {
+        alert('⚠️ Please complete required fields: Number, Subject, and NC Class');
+        return;
+      }
+    } else {
+      // Client NC validation (no number required)
+      if (!currentNC.ncIssuer || !currentNC.dateOfDetection || !currentNC.ncMainSubject || !currentNC.ncClass) {
+        alert('⚠️ Please complete required fields: Client, Date, Subject, and NC Class');
+        return;
+      }
     }
 
     try {
-      if (currentNC.id) {
-        const { id, ...updateData } = currentNC;
-        await updateNCInRegistry(id, updateData);
-        alert('✅ NC updated successfully');
+      if (activeView === 'registry') {
+        // NC Registry save
+        if (currentNC.id) {
+          const { id, ...updateData } = currentNC;
+          await updateNCInRegistry(id, updateData);
+          alert('✅ NC updated successfully');
+        } else {
+          await addNCToRegistry(currentNC);
+          alert('✅ NC created successfully');
+        }
       } else {
-        await addNCToRegistry(currentNC);
-        alert('✅ NC created successfully');
+        // Client NC save
+        if (currentNC.id) {
+          const { id, ...updateData } = currentNC;
+          await updateClientNC(id, updateData);
+          alert('✅ Client NC updated successfully');
+        } else {
+          await addClientNC(currentNC);
+          alert('✅ Client NC created successfully');
+        }
       }
 
-      await loadNCs();
+      await loadAllData();
       setShowAddModal(false);
       setShowEditPanel(false);
-      setCurrentNC(emptyNC);
+      setCurrentNC(activeView === 'registry' ? emptyNC : emptyClientNC);
     } catch (error) {
       console.error('Error saving NC:', error);
       alert('❌ Error saving NC');
@@ -388,8 +472,12 @@ const NCRegistrySystem = ({ onBack }) => {
     if (!window.confirm('Are you sure you want to delete this NC?')) return;
 
     try {
-      await deleteNCFromRegistry(id);
-      await loadNCs();
+      if (activeView === 'registry') {
+        await deleteNCFromRegistry(id);
+      } else {
+        await deleteClientNC(id);
+      }
+      await loadAllData();
       alert('✅ NC deleted successfully');
     } catch (error) {
       console.error('Error deleting NC:', error);
@@ -403,8 +491,12 @@ const NCRegistrySystem = ({ onBack }) => {
 
   const handleUpdateStatus = async (ncId, newStatus) => {
     try {
-      await updateNCInRegistry(ncId, { status: newStatus });
-      await loadNCs();
+      if (activeView === 'registry') {
+        await updateNCInRegistry(ncId, { status: newStatus });
+      } else {
+        await updateClientNC(ncId, { status: newStatus });
+      }
+      await loadAllData();
       if (selectedNC && selectedNC.id === ncId) {
         setSelectedNC({ ...selectedNC, status: newStatus });
       }
@@ -423,7 +515,6 @@ const NCRegistrySystem = ({ onBack }) => {
       <div className="nc-app-container">
         {/* Sidebar */}
         <div className="nc-sidebar">
-          {/* ✅ Back Button wrapper para NC */}
           {onBack && (
             <div className="nc-back-button-wrapper">
               <BackButton onClick={onBack} />
@@ -447,6 +538,7 @@ const NCRegistrySystem = ({ onBack }) => {
               📋 NC Management
             </div>
 
+            {/* NC Registry */}
             <div 
               className={`nc-nav-item ${activeView === 'registry' ? 'nc-active' : ''}`}
               onClick={() => setActiveView('registry')}
@@ -457,6 +549,18 @@ const NCRegistrySystem = ({ onBack }) => {
               {activeView === 'registry' && <div className="nc-nav-indicator"></div>}
             </div>
 
+            {/* Client NC */}
+            <div 
+              className={`nc-nav-item ${activeView === 'client-nc' ? 'nc-active' : ''}`}
+              onClick={() => setActiveView('client-nc')}
+            >
+              <span className="nc-nav-icon">👥</span>
+              <span className="nc-nav-text">NC de Clientes</span>
+              <span className="nc-nav-badge">{clientNCList.length}</span>
+              {activeView === 'client-nc' && <div className="nc-nav-indicator"></div>}
+            </div>
+
+            {/* Statistics */}
             <div 
               className={`nc-nav-item ${activeView === 'stats' ? 'nc-active' : ''}`}
               onClick={() => setActiveView('stats')}
@@ -484,19 +588,23 @@ const NCRegistrySystem = ({ onBack }) => {
 
               <div className="nc-quick-stats">
                 <div className="nc-stat-item">
-                  <span className="nc-stat-label">Total:</span>
+                  <span className="nc-stat-label">Total NC Registry:</span>
                   <span className="nc-stat-value">{ncList.length}</span>
+                </div>
+                <div className="nc-stat-item">
+                  <span className="nc-stat-label">Total Client NC:</span>
+                  <span className="nc-stat-value">{clientNCList.length}</span>
                 </div>
                 <div className="nc-stat-item nc-critical">
                   <span className="nc-stat-label">Open:</span>
                   <span className="nc-stat-value">
-                    {ncList.filter(nc => nc.status === 'open').length}
+                    {[...ncList, ...clientNCList].filter(nc => nc.status === 'open').length}
                   </span>
                 </div>
                 <div className="nc-stat-item">
                   <span className="nc-stat-label">Closed:</span>
                   <span className="nc-stat-value">
-                    {ncList.filter(nc => nc.status === 'closed').length}
+                    {[...ncList, ...clientNCList].filter(nc => nc.status === 'closed').length}
                   </span>
                 </div>
               </div>
@@ -508,16 +616,27 @@ const NCRegistrySystem = ({ onBack }) => {
         <div className="nc-main-content">
           <div className="nc-content-header">
             <div className="nc-header-info">
-              <h1 className="nc-main-title">Non-Conformity Registry</h1>
+              <h1 className="nc-main-title">
+                {activeView === 'registry' ? 'NC Registry' : 
+                 activeView === 'client-nc' ? 'NC de Clientes' : 
+                 'Statistics'}
+              </h1>
               <div className="nc-breadcrumb">
-                Quality Management → Non-Conformities → {activeView === 'registry' ? 'NC List' : 'Statistics'}
+                Quality Management → Non-Conformities → {
+                  activeView === 'registry' ? 'NC Registry' : 
+                  activeView === 'client-nc' ? 'NC de Clientes' : 
+                  'Statistics'
+                }
               </div>
             </div>
             <div className="nc-header-actions">
-              {activeView === 'registry' && (
-                <button className="nc-btn nc-btn-primary" onClick={handleAddNC}>
+              {(activeView === 'registry' || activeView === 'client-nc') && (
+                <button 
+                  className="nc-btn nc-btn-primary" 
+                  onClick={activeView === 'registry' ? handleAddNC : handleAddClientNC}
+                >
                   <span>➕</span>
-                  <span>New NC</span>
+                  <span>New {activeView === 'registry' ? 'NC' : 'Client NC'}</span>
                 </button>
               )}
               <div className="nc-user-role-indicator">
@@ -529,7 +648,7 @@ const NCRegistrySystem = ({ onBack }) => {
           </div>
 
           {/* Registry View */}
-          {activeView === 'registry' && (
+          {(activeView === 'registry' || activeView === 'client-nc') && (
             <div className="nc-panel-container">
               <div className="nc-panel-card">
                 <div className="nc-form-container">
@@ -542,7 +661,7 @@ const NCRegistrySystem = ({ onBack }) => {
                         <input
                           type="text"
                           className="nc-form-input"
-                          placeholder="NC number, project, subject..."
+                          placeholder={activeView === 'registry' ? "NC number, project, subject..." : "Client, project, subject..."}
                           value={filters.search}
                           onChange={(e) => setFilters({...filters, search: e.target.value})}
                         />
@@ -555,7 +674,7 @@ const NCRegistrySystem = ({ onBack }) => {
                           value={filters.status}
                           onChange={(e) => setFilters({...filters, status: e.target.value})}
                         >
-                          <option value="">All Status</option>
+                          <option value="">All</option>
                           {statusOptions.map(opt => (
                             <option key={opt.value} value={opt.value}>{opt.label}</option>
                           ))}
@@ -563,13 +682,13 @@ const NCRegistrySystem = ({ onBack }) => {
                       </div>
 
                       <div className="nc-form-group">
-                        <label className="nc-form-label">Class</label>
+                        <label className="nc-form-label">Priority</label>
                         <select
                           className="nc-form-select"
                           value={filters.priority}
                           onChange={(e) => setFilters({...filters, priority: e.target.value})}
                         >
-                          <option value="">All Classes</option>
+                          <option value="">All</option>
                           {ncClassOptions.map(opt => (
                             <option key={opt.value} value={opt.value}>{opt.label}</option>
                           ))}
@@ -577,13 +696,13 @@ const NCRegistrySystem = ({ onBack }) => {
                       </div>
 
                       <div className="nc-form-group">
-                        <label className="nc-form-label">Detection</label>
+                        <label className="nc-form-label">Detection Place</label>
                         <select
                           className="nc-form-select"
                           value={filters.detectionPlace}
                           onChange={(e) => setFilters({...filters, detectionPlace: e.target.value})}
                         >
-                          <option value="">All Phases</option>
+                          <option value="">All</option>
                           {detectionPhaseOptions.map(opt => (
                             <option key={opt.value} value={opt.value}>{opt.label}</option>
                           ))}
@@ -597,104 +716,89 @@ const NCRegistrySystem = ({ onBack }) => {
                           value={filters.year}
                           onChange={(e) => setFilters({...filters, year: e.target.value})}
                         >
-                          <option value="">All Years</option>
+                          <option value="">All</option>
                           {uniqueYears.map(year => (
                             <option key={year} value={year}>{year}</option>
                           ))}
                         </select>
                       </div>
                     </div>
-
-                    <div style={{ marginTop: '1rem', fontSize: '0.875rem', color: '#6b7280' }}>
-                      Showing {filteredNCList.length} of {ncList.length} NCs
-                    </div>
                   </div>
 
-                  <div className="nc-form-section">
-                    {loading ? (
-                      <div className="nc-empty-state">
-                        <span className="nc-empty-icon">⏳</span>
-                        <h3 className="nc-empty-title">Loading NCs...</h3>
-                      </div>
-                    ) : filteredNCList.length === 0 ? (
-                      <div className="nc-empty-state">
-                        <span className="nc-empty-icon">📋</span>
-                        <h3 className="nc-empty-title">No NCs Found</h3>
-                        <p className="nc-empty-description">
-                          {Object.values(filters).some(v => v) ? 'Try adjusting your filters' : 'Click "New NC" to register your first non-conformity'}
-                        </p>
-                      </div>
-                    ) : (
-                      <div className="nc-table-container">
-                        <table className="nc-table">
-                          <thead>
-                            <tr>
-                              <th>N°</th>
-                              <th>Year</th>
-                              <th>Status</th>
-                              <th>Class</th>
-                              <th>Subject</th>
-                              <th>Project</th>
-                              <th>Detection</th>
-                              <th>Accountable</th>
-                              <th>Actions</th>
-                            </tr>
-                          </thead>
-                          <tbody>
-                            {filteredNCList.map((nc) => (
-                              <tr key={nc.id}>
-                                <td style={{ fontWeight: 600, fontFamily: 'monospace' }}>{nc.number}</td>
-                                <td>{nc.year}</td>
-                                <td>
-                                  <span className={`nc-status-badge nc-status-${nc.status}`}>
-                                    {nc.status?.replace('_', ' ')}
-                                  </span>
-                                </td>
-                                <td>
-                                  <span className={`nc-status-badge nc-priority-${nc.ncClass}`}>
-                                    {nc.ncClass}
-                                  </span>
-                                </td>
-                                <td style={{ maxWidth: '200px' }}>{nc.ncMainSubject}</td>
-                                <td style={{ maxWidth: '150px' }}>{nc.projectName}</td>
-                                <td style={{ fontSize: '0.75rem' }}>
+                  {/* NC List Table */}
+                  <div className="nc-table-container">
+                    <table className="nc-table">
+                      <thead>
+                        <tr>
+                          {activeView === 'registry' && <th>NC Number</th>}
+                          {activeView === 'client-nc' && <th>Date</th>}
+                          <th>{activeView === 'client-nc' ? 'Client' : 'Issuer'}</th>
+                          <th>Subject</th>
+                          <th>Project</th>
+                          <th>Class</th>
+                          <th>Status</th>
+                          <th>Detection</th>
+                          <th>Actions</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {filteredList.length === 0 ? (
+                          <tr>
+                            <td colSpan={activeView === 'registry' ? "8" : "8"} style={{ textAlign: 'center' }}>
+                              No records found
+                            </td>
+                          </tr>
+                        ) : (
+                          filteredList.map(nc => (
+                            <tr key={nc.id}>
+                              {activeView === 'registry' && <td className="nc-table-number">{nc.number}</td>}
+                              {activeView === 'client-nc' && <td>{nc.dateOfDetection}</td>}
+                              <td>{nc.ncIssuer || '-'}</td>
+                              <td className="nc-table-subject">{nc.ncMainSubject || '-'}</td>
+                              <td>{nc.projectName || nc.projectCode || '-'}</td>
+                              <td>
+                                <span className={`nc-badge nc-badge-${nc.ncClass}`}>
+                                  {nc.ncClass?.toUpperCase() || '-'}
+                                </span>
+                              </td>
+                              <td>
+                                <span className={`nc-status nc-status-${nc.status}`}>
+                                  {statusOptions.find(s => s.value === nc.status)?.label || nc.status}
+                                </span>
+                              </td>
+                              <td>
+                                <span className="nc-detection-badge">
                                   {getDetectionPhaseLabel(nc.detectionPhase)}
-                                </td>
-                                <td style={{ fontSize: '0.75rem' }}>{nc.accountable}</td>
-                                <td>
-                                  <div style={{ display: 'flex', gap: '0.5rem', justifyContent: 'center' }}>
-                                    <button
-                                      onClick={() => handleViewNC(nc)}
-                                      className="nc-btn nc-btn-primary"
-                                      style={{ padding: '0.4rem 0.8rem', fontSize: '0.75rem' }}
-                                      title="View"
-                                    >
-                                      👁️
-                                    </button>
-                                    <button
-                                      onClick={() => handleEditNC(nc)}
-                                      className="nc-btn nc-btn-success"
-                                      style={{ padding: '0.4rem 0.8rem', fontSize: '0.75rem' }}
-                                      title="Edit"
-                                    >
-                                      ✏️
-                                    </button>
-                                    <button
-                                      onClick={() => handleDeleteNC(nc.id)}
-                                      className="nc-btn nc-btn-danger"
-                                      style={{ padding: '0.4rem 0.8rem', fontSize: '0.75rem' }}
-                                      title="Delete"
-                                    >
-                                      🗑️
-                                    </button>
-                                  </div>
-                                </td>
-                              </tr>
-                            ))}
-                          </tbody>
-                        </table>
-                      </div>
-                    )}
+                                </span>
+                              </td>
+                              <td className="nc-table-actions">
+                                <button
+                                  className="nc-btn-icon nc-btn-view"
+                                  onClick={() => handleViewNC(nc)}
+                                  title="View details"
+                                >
+                                  👁️
+                                </button>
+                                <button
+                                  className="nc-btn-icon nc-btn-edit"
+                                  onClick={() => handleEditNC(nc)}
+                                  title="Edit"
+                                >
+                                  ✏️
+                                </button>
+                                <button
+                                  className="nc-btn-icon nc-btn-delete"
+                                  onClick={() => handleDeleteNC(nc.id)}
+                                  title="Delete"
+                                >
+                                  🗑️
+                                </button>
+                              </td>
+                            </tr>
+                          ))
+                        )}
+                      </tbody>
+                    </table>
                   </div>
                 </div>
               </div>
@@ -703,211 +807,242 @@ const NCRegistrySystem = ({ onBack }) => {
 
           {/* Statistics View */}
           {activeView === 'stats' && (
-            <div className="nc-panel-container">
-              <NCStatisticsCharts ncList={ncList} />
+            <NCStatisticsCharts ncList={[...ncList, ...clientNCList]} />
+          )}
+
+          {/* Add/Edit Modal */}
+          {showAddModal && (
+            <div className="nc-modal-overlay">
+              <div className="nc-modal-content">
+                <div className="nc-modal-header">
+                  <h2 className="nc-modal-title">
+                    {currentNC.id ? 'Edit' : 'New'} {activeView === 'registry' ? 'NC' : 'Client NC'}
+                  </h2>
+                  <button 
+                    className="nc-modal-close"
+                    onClick={() => {
+                      setShowAddModal(false);
+                      setCurrentNC(activeView === 'registry' ? emptyNC : emptyClientNC);
+                    }}
+                  >
+                    ✕
+                  </button>
+                </div>
+                
+                <div className="nc-modal-body">
+                  {activeView === 'registry' ? (
+                    <NCForm nc={currentNC} onChange={handleNCChange} />
+                  ) : (
+                    <ClientNCForm nc={currentNC} onChange={handleNCChange} />
+                  )}
+                </div>
+
+                <div className="nc-modal-footer">
+                  <button
+                    className="nc-btn nc-btn-secondary"
+                    onClick={() => {
+                      setShowAddModal(false);
+                      setCurrentNC(activeView === 'registry' ? emptyNC : emptyClientNC);
+                    }}
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    className="nc-btn nc-btn-primary"
+                    onClick={handleSaveNC}
+                  >
+                    💾 Save
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Edit Panel */}
+          {showEditPanel && (
+            <div className="nc-panel-overlay">
+              <div className="nc-panel-content nc-panel-large">
+                <div className="nc-panel-header">
+                  <h2 className="nc-panel-title">
+                    Edit {activeView === 'registry' ? 'NC' : 'Client NC'}
+                  </h2>
+                  <button
+                    className="nc-panel-close"
+                    onClick={() => {
+                      setShowEditPanel(false);
+                      setCurrentNC(activeView === 'registry' ? emptyNC : emptyClientNC);
+                    }}
+                  >
+                    ✕
+                  </button>
+                </div>
+
+                <div className="nc-panel-body">
+                  {activeView === 'registry' ? (
+                    <NCForm nc={currentNC} onChange={handleNCChange} />
+                  ) : (
+                    <ClientNCForm nc={currentNC} onChange={handleNCChange} />
+                  )}
+                </div>
+
+                <div className="nc-panel-footer">
+                  <button
+                    className="nc-btn nc-btn-secondary"
+                    onClick={() => {
+                      setShowEditPanel(false);
+                      setCurrentNC(activeView === 'registry' ? emptyNC : emptyClientNC);
+                    }}
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    className="nc-btn nc-btn-primary"
+                    onClick={handleSaveNC}
+                  >
+                    💾 Save Changes
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* View Detail Panel */}
+          {selectedNC && (
+            <div className="nc-panel-overlay">
+              <div className="nc-panel-content">
+                <div className="nc-panel-header">
+                  <h2 className="nc-panel-title">
+                    {activeView === 'registry' ? `NC ${selectedNC.number}` : `Client NC - ${selectedNC.ncIssuer}`}
+                  </h2>
+                  <button
+                    className="nc-panel-close"
+                    onClick={() => setSelectedNC(null)}
+                  >
+                    ✕
+                  </button>
+                </div>
+
+                <div className="nc-panel-body">
+                  <div className="nc-detail-section">
+                    <h3 className="nc-section-title">Basic Information</h3>
+                    <div className="nc-detail-grid">
+                      {activeView === 'registry' && (
+                        <div className="nc-detail-item">
+                          <span className="nc-detail-label">NC Number:</span>
+                          <span className="nc-detail-value">{selectedNC.number}</span>
+                        </div>
+                      )}
+                      <div className="nc-detail-item">
+                        <span className="nc-detail-label">{activeView === 'client-nc' ? 'Client:' : 'Issuer:'}</span>
+                        <span className="nc-detail-value">{selectedNC.ncIssuer || '-'}</span>
+                      </div>
+                      <div className="nc-detail-item">
+                        <span className="nc-detail-label">Status:</span>
+                        <span className={`nc-status nc-status-${selectedNC.status}`}>
+                          {statusOptions.find(s => s.value === selectedNC.status)?.label || selectedNC.status}
+                        </span>
+                      </div>
+                      <div className="nc-detail-item">
+                        <span className="nc-detail-label">Class:</span>
+                        <span className={`nc-badge nc-badge-${selectedNC.ncClass}`}>
+                          {selectedNC.ncClass?.toUpperCase()}
+                        </span>
+                      </div>
+                      <div className="nc-detail-item">
+                        <span className="nc-detail-label">Date of Detection:</span>
+                        <span className="nc-detail-value">{selectedNC.dateOfDetection}</span>
+                      </div>
+                      <div className="nc-detail-item">
+                        <span className="nc-detail-label">Detection Phase:</span>
+                        <span className="nc-detail-value">{getDetectionPhaseLabel(selectedNC.detectionPhase)}</span>
+                      </div>
+                      <div className="nc-detail-item">
+                        <span className="nc-detail-label">Project:</span>
+                        <span className="nc-detail-value">{selectedNC.projectName || selectedNC.projectCode || '-'}</span>
+                      </div>
+                      {activeView === 'registry' && (
+                        <div className="nc-detail-item">
+                          <span className="nc-detail-label">Accountable:</span>
+                          <span className="nc-detail-value">{selectedNC.accountable || '-'}</span>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+
+                  <div className="nc-detail-section">
+                    <h3 className="nc-section-title">NC Details</h3>
+                    <div className="nc-detail-item-full">
+                      <span className="nc-detail-label">Subject:</span>
+                      <span className="nc-detail-value">{selectedNC.ncMainSubject}</span>
+                    </div>
+                    <div className="nc-detail-item-full">
+                      <span className="nc-detail-label">Summary:</span>
+                      <p className="nc-detail-text">{selectedNC.ncBriefSummary || '-'}</p>
+                    </div>
+                    <div className="nc-detail-item-full">
+                      <span className="nc-detail-label">Treatment:</span>
+                      <p className="nc-detail-text">{selectedNC.treatment || '-'}</p>
+                    </div>
+                    <div className="nc-detail-item-full">
+                      <span className="nc-detail-label">Root Cause Analysis:</span>
+                      <p className="nc-detail-text">{selectedNC.rootCauseAnalysis || '-'}</p>
+                    </div>
+                    <div className="nc-detail-item-full">
+                      <span className="nc-detail-label">Corrective Action:</span>
+                      <p className="nc-detail-text">{selectedNC.correctiveAction || '-'}</p>
+                    </div>
+                  </div>
+
+                  <div className="nc-detail-section">
+                    <h3 className="nc-section-title">Status Management</h3>
+                    <div className="nc-status-buttons">
+                      <button
+                        className="nc-btn nc-btn-status nc-btn-status-open"
+                        onClick={() => handleUpdateStatus(selectedNC.id, 'open')}
+                        disabled={selectedNC.status === 'open'}
+                      >
+                        🔴 Open
+                      </button>
+                      <button
+                        className="nc-btn nc-btn-status nc-btn-status-progress"
+                        onClick={() => handleUpdateStatus(selectedNC.id, 'in_progress')}
+                        disabled={selectedNC.status === 'in_progress'}
+                      >
+                        🟡 In Progress
+                      </button>
+                      <button
+                        className="nc-btn nc-btn-status nc-btn-status-closed"
+                        onClick={() => handleUpdateStatus(selectedNC.id, 'closed')}
+                        disabled={selectedNC.status === 'closed'}
+                      >
+                        🟢 Closed
+                      </button>
+                      <button
+                        className="nc-btn nc-btn-status nc-btn-status-cancelled"
+                        onClick={() => handleUpdateStatus(selectedNC.id, 'cancelled')}
+                        disabled={selectedNC.status === 'cancelled'}
+                      >
+                        ⚫ Cancelled
+                      </button>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="nc-panel-footer">
+                  <button
+                    className="nc-btn nc-btn-secondary"
+                    onClick={() => setSelectedNC(null)}
+                  >
+                    Close
+                  </button>
+                </div>
+              </div>
             </div>
           )}
         </div>
       </div>
-
-      {/* Add/Edit Modal */}
-      {(showAddModal || showEditPanel) && (
-        <div style={{
-          position: 'fixed',
-          top: 0,
-          left: 0,
-          right: 0,
-          bottom: 0,
-          background: 'rgba(0, 0, 0, 0.7)',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          zIndex: 1000,
-          padding: '2rem'
-        }}>
-          <div className="nc-panel-card" style={{
-            maxWidth: '1200px',
-            width: '100%',
-            maxHeight: '90vh',
-            overflow: 'auto'
-          }}>
-            <div className="nc-panel-header">
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <h2 className="nc-panel-title">
-                  {currentNC.id ? `✏️ Edit NC #${currentNC.number}` : '➕ Register New NC'}
-                </h2>
-                <button
-                  onClick={() => {
-                    setShowAddModal(false);
-                    setShowEditPanel(false);
-                    setCurrentNC(emptyNC);
-                  }}
-                  className="nc-btn nc-btn-secondary"
-                  style={{ padding: '0.5rem' }}
-                >
-                  ✕
-                </button>
-              </div>
-            </div>
-
-            <NCForm nc={currentNC} onChange={handleNCChange} />
-
-            <div className="nc-form-actions">
-              <button
-                onClick={() => {
-                  setShowAddModal(false);
-                  setShowEditPanel(false);
-                  setCurrentNC(emptyNC);
-                }}
-                className="nc-btn nc-btn-secondary"
-              >
-                Cancel
-              </button>
-              <button
-                onClick={handleSaveNC}
-                className="nc-btn nc-btn-success"
-              >
-                💾 Save NC
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* View Details Modal */}
-      {selectedNC && (
-        <div style={{
-          position: 'fixed',
-          top: 0,
-          left: 0,
-          right: 0,
-          bottom: 0,
-          background: 'rgba(0, 0, 0, 0.7)',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          zIndex: 1000,
-          padding: '2rem'
-        }}>
-          <div className="nc-panel-card" style={{
-            maxWidth: '900px',
-            width: '100%',
-            maxHeight: '90vh',
-            overflow: 'auto'
-          }}>
-            <div className="nc-panel-header">
-              <h2 className="nc-panel-title">
-                NC #{selectedNC.number} - {selectedNC.year}
-              </h2>
-              <div style={{ display: 'flex', gap: '1rem', marginTop: '1rem' }}>
-                <span className={`nc-status-badge nc-status-${selectedNC.status}`}>
-                  {selectedNC.status?.replace('_', ' ')}
-                </span>
-                <span className={`nc-status-badge nc-priority-${selectedNC.ncClass}`}>
-                  {selectedNC.ncClass}
-                </span>
-              </div>
-            </div>
-
-            <div className="nc-form-container">
-              <div className="nc-details-grid">
-                <div className="nc-detail-item">
-                  <span className="nc-detail-label">Project:</span>
-                  <span className="nc-detail-value">{selectedNC.projectName || '-'}</span>
-                </div>
-                <div className="nc-detail-item">
-                  <span className="nc-detail-label">Detection:</span>
-                  <span className="nc-detail-value">{getDetectionPhaseLabel(selectedNC.detectionPhase)}</span>
-                </div>
-                <div className="nc-detail-item">
-                  <span className="nc-detail-label">Date:</span>
-                  <span className="nc-detail-value">{selectedNC.dateOfDetection}</span>
-                </div>
-                <div className="nc-detail-item">
-                  <span className="nc-detail-label">Accountable:</span>
-                  <span className="nc-detail-value">{selectedNC.accountable || '-'}</span>
-                </div>
-              </div>
-
-              {selectedNC.ncMainSubject && (
-                <div className="nc-description-section">
-                  <h4 className="nc-subsection-title">NC Main Subject</h4>
-                  <p className="nc-description-text">{selectedNC.ncMainSubject}</p>
-                </div>
-              )}
-
-              {selectedNC.ncBriefSummary && (
-                <div className="nc-description-section">
-                  <h4 className="nc-subsection-title">Brief Summary</h4>
-                  <p className="nc-description-text">{selectedNC.ncBriefSummary}</p>
-                </div>
-              )}
-
-              {selectedNC.treatment && (
-                <div className="nc-description-section">
-                  <h4 className="nc-subsection-title">Treatment</h4>
-                  <p className="nc-description-text">{selectedNC.treatment}</p>
-                </div>
-              )}
-
-              {selectedNC.rootCauseAnalysis && (
-                <div className="nc-description-section">
-                  <h4 className="nc-subsection-title">Root Cause Analysis</h4>
-                  <p className="nc-description-text">{selectedNC.rootCauseAnalysis}</p>
-                </div>
-              )}
-
-              {selectedNC.correctiveAction && (
-                <div className="nc-description-section">
-                  <h4 className="nc-subsection-title">Corrective Action</h4>
-                  <p className="nc-description-text">{selectedNC.correctiveAction}</p>
-                </div>
-              )}
-
-              <div className="nc-form-section">
-                <h4 className="nc-subsection-title">🔄 Quick Status Update</h4>
-                <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
-                  {statusOptions.map(opt => (
-                    <button
-                      key={opt.value}
-                      onClick={() => handleUpdateStatus(selectedNC.id, opt.value)}
-                      className={`nc-btn ${
-                        selectedNC.status === opt.value 
-                          ? opt.value === 'open' ? 'nc-btn-danger'
-                          : opt.value === 'closed' ? 'nc-btn-success'
-                          : 'nc-btn-primary'
-                          : 'nc-btn-secondary'
-                      }`}
-                    >
-                      {opt.label}
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              <div className="nc-form-actions">
-                <button
-                  onClick={() => setSelectedNC(null)}
-                  className="nc-btn nc-btn-secondary"
-                >
-                  Close
-                </button>
-                <button
-                  onClick={() => {
-                    handleEditNC(selectedNC);
-                    setSelectedNC(null);
-                  }}
-                  className="nc-btn nc-btn-primary"
-                >
-                  ✏️ Edit NC
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 };
 
-export default NCRegistrySystem;
+export default NCRegistrySystemUpdated;

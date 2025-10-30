@@ -552,7 +552,7 @@ const handleUpdateStatus = async (ncId, newStatus) => {
   onClick={() => setActiveView('client-nc')}
 >
   <span className="nc-nav-icon">👥</span>
-  <span className="nc-nav-text">NC de Clientes</span>
+  <span className="nc-nav-text">Customer NC</span>
   <span className="nc-nav-badge">{clientNCList.length}</span>
   {activeView === 'client-nc' && <div className="nc-nav-indicator"></div>}
 </div>
@@ -613,13 +613,13 @@ const handleUpdateStatus = async (ncId, newStatus) => {
     <div className="nc-header-info">
       <h1 className="nc-main-title">
         {activeView === 'registry' ? 'NC Registry' : 
-         activeView === 'client-nc' ? 'NC de Clientes' : 
+         activeView === 'client-nc' ? 'Customer NC' : 
          'Statistics'}
       </h1>
       <div className="nc-breadcrumb">
         Quality Management → Non-Conformities → {
           activeView === 'registry' ? 'NC Registry' : 
-          activeView === 'client-nc' ? 'NC de Clientes' : 
+          activeView === 'client-nc' ? 'Customer NC' : 
           'Statistics'
         }
       </div>

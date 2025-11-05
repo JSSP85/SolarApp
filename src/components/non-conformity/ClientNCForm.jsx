@@ -24,14 +24,14 @@ const detectionPhaseOptions = [
 ];
 
 const responsibleSectorOptions = [
-  { value: 'quality_control', label: 'Control de Calidad' },
-  { value: 'engineering', label: 'Ingenieria' },
-  { value: 'logistics', label: 'Logistica' },
+  { value: 'quality_control', label: 'Quality Control' },
+  { value: 'engineering', label: 'Engineering' },
+  { value: 'logistics', label: 'logistics' },
   { value: 'project_management', label: 'Project Management' },
-  { value: 'production', label: 'Produccion' },
-  { value: 'scada', label: 'Area SCADA' },
-  { value: 'electrical_electronic', label: 'Area Electronica/Electrica' },
-  { value: 'other', label: 'Otros' }
+  { value: 'Production', label: 'Production' },
+  { value: 'scada', label: 'SCADA' },
+  { value: 'electrical_electronic', label: 'Electrical_electronic' },
+  { value: 'Other', label: 'Other' }
 ];
 
 /**

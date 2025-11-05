@@ -321,8 +321,11 @@ const emptyClientNC = {
   month: '',
   status: 'open',
   ncIssuer: '', // Client name
+  issuerName: '',  // ✅ NUEVO
   dateOfDetection: new Date().toISOString().split('T')[0],
   detectionPhase: '',
+  responsibleSector: '',  // ✅ NUEVO
+  responsibleSectorOther: '',  // ✅ NUEVO
   orderNumber: '',
   projectCode: '',
   projectName: '',
@@ -416,14 +419,24 @@ const filteredList = getCurrentList().filter(nc => {
 const handleSaveNC = async () => {
   // Validation
   if (activeView === 'registry') {
+    // Validación para NC REGISTRY (NO CAMBIA)
     if (!currentNC.number || !currentNC.ncMainSubject || !currentNC.ncClass) {
       alert('⚠️ Please complete required fields: Number, Subject, and NC Class');
       return;
     }
   } else if (activeView === 'client-nc') {
-    if (!currentNC.ncIssuer || !currentNC.dateOfDetection || !currentNC.ncMainSubject || !currentNC.ncClass) {
-      alert('⚠️ Please complete required fields: Client, Date, Subject, and NC Class');
-      return;
+    // ✅ VALIDACIÓN ACTUALIZADA PARA CUSTOMER NC
+    
+    // Paso 1: Validar campos básicos obligatorios
+    if (!currentNC.ncIssuer || !currentNC.dateOfDetection || !currentNC.ncMainSubject || !currentNC.ncClass || !currentNC.responsibleSector) {
+      alert('⚠️ Please complete required fields: Client, Date, Subject, NC Class, and Responsible Sector');
+      return;  // ← DETIENE la ejecución aquí si falta algún campo
+    }
+    
+    // Paso 2: Validación condicional para "Otros"
+    if (currentNC.responsibleSector === 'other' && !currentNC.responsibleSectorOther) {
+      alert('⚠️ Please specify the other responsible sector');
+      return;  // ← DETIENE la ejecución si falta especificar "Otros"
     }
   }
 
@@ -739,10 +752,14 @@ const handleUpdateStatus = async (ncId, newStatus) => {
       </p>
     </div>
   ) : (
-    <div className="nc-table-container">
-      <table className="nc-table">
-        <thead>
-          <tr>
+   <div className="nc-table-container">
+  <table className="nc-table">
+    <thead>
+      <tr>
+        {/* ✅ COLUMNAS DIFERENTES SEGÚN LA VISTA */}
+        {activeView === 'registry' ? (
+          // 📋 NC REGISTRY - NO SE MODIFICA
+          <>
             <th>N°</th>
             <th>Year</th>
             <th>Status</th>
@@ -752,11 +769,29 @@ const handleUpdateStatus = async (ncId, newStatus) => {
             <th>Detection</th>
             <th>Accountable</th>
             <th>Actions</th>
-          </tr>
-        </thead>
-        <tbody>
-          {filteredList.map((nc) => (
-            <tr key={nc.id}>
+          </>
+        ) : (
+          // 👥 CUSTOMER NC - NUEVAS COLUMNAS
+          <>
+            <th>Date of Detection</th>
+            <th>Client</th>
+            <th>Status</th>
+            <th>Class</th>
+            <th>Subject</th>
+            <th>Project</th>
+            <th>Detection</th>
+            <th>Actions</th>
+          </>
+        )}
+      </tr>
+    </thead>
+    <tbody>
+      {filteredList.map((nc) => (
+        <tr key={nc.id}>
+          {/* ✅ CELDAS DIFERENTES SEGÚN LA VISTA */}
+          {activeView === 'registry' ? (
+            // 📋 NC REGISTRY - NO SE MODIFICA
+            <>
               <td style={{ fontWeight: 600, fontFamily: 'monospace' }}>{nc.number}</td>
               <td>{nc.year}</td>
               <td>
@@ -803,11 +838,62 @@ const handleUpdateStatus = async (ncId, newStatus) => {
                   </button>
                 </div>
               </td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
-    </div>
+            </>
+          ) : (
+            // 👥 CUSTOMER NC - NUEVAS COLUMNAS
+            <>
+              <td style={{ fontWeight: 600 }}>{nc.dateOfDetection || '-'}</td>
+              <td style={{ fontWeight: 600, maxWidth: '150px' }}>{nc.ncIssuer || '-'}</td>
+              <td>
+                <span className={`nc-status-badge nc-status-${nc.status}`}>
+                  {nc.status?.replace('_', ' ')}
+                </span>
+              </td>
+              <td>
+                <span className={`nc-status-badge nc-priority-${nc.ncClass}`}>
+                  {nc.ncClass}
+                </span>
+              </td>
+              <td style={{ maxWidth: '200px' }}>{nc.ncMainSubject}</td>
+              <td style={{ maxWidth: '150px' }}>{nc.projectName}</td>
+              <td style={{ fontSize: '0.75rem' }}>
+                {getDetectionPhaseLabel(nc.detectionPhase)}
+              </td>
+              <td>
+                <div style={{ display: 'flex', gap: '0.5rem', justifyContent: 'center' }}>
+                  <button
+                    onClick={() => handleViewNC(nc)}
+                    className="nc-btn nc-btn-primary"
+                    style={{ padding: '0.4rem 0.8rem', fontSize: '0.75rem' }}
+                    title="View"
+                  >
+                    👁️
+                  </button>
+                  <button
+                    onClick={() => handleEditNC(nc)}
+                    className="nc-btn nc-btn-success"
+                    style={{ padding: '0.4rem 0.8rem', fontSize: '0.75rem' }}
+                    title="Edit"
+                  >
+                    ✏️
+                  </button>
+                  <button
+                    onClick={() => handleDeleteNC(nc.id)}
+                    className="nc-btn nc-btn-danger"
+                    style={{ padding: '0.4rem 0.8rem', fontSize: '0.75rem' }}
+                    title="Delete"
+                  >
+                    🗑️
+                  </button>
+                </div>
+              </td>
+            </>
+          )}
+        </tr>
+      ))}
+    </tbody>
+  </table>
+</div>
   )}
 </div>
                 </div>

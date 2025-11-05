@@ -17,16 +17,21 @@ const ncClassOptions = [
 const detectionPhaseOptions = [
   { value: 'production', label: 'Production' },
   { value: 'on_site', label: 'On Site' },
-  { value: 'by_client', label: 'NC BY CLIENT' },
   { value: 'incoming_goods', label: 'Incoming Goods' },
   { value: 'installation', label: 'Installation' },
   { value: 'malpractice', label: 'Malpractice' },
   { value: 'logistics', label: 'Logistics' }
 ];
 
-const monthOptions = [
-  'JAN', 'FEB', 'MAR', 'APR', 'MAY', 'JUN',
-  'JUL', 'AUG', 'SEP', 'OCT', 'NOV', 'DEC'
+const responsibleSectorOptions = [
+  { value: 'quality_control', label: 'Control de Calidad' },
+  { value: 'engineering', label: 'Ingenieria' },
+  { value: 'logistics', label: 'Logistica' },
+  { value: 'project_management', label: 'Project Management' },
+  { value: 'production', label: 'Produccion' },
+  { value: 'scada', label: 'Area SCADA' },
+  { value: 'electrical_electronic', label: 'Area Electronica/Electrica' },
+  { value: 'other', label: 'Otros' }
 ];
 
 /**
@@ -53,32 +58,20 @@ const ClientNCForm = memo(({ nc, onChange }) => {
             />
           </div>
 
+          {/* Nombre del responsable que abrió la NC (opcional) */}
           <div className="nc-form-group">
-            <label className="nc-form-label">Year</label>
+            <label className="nc-form-label">NC Issuer Name (Optional)</label>
             <input
-              type="number"
-              value={nc.year || new Date().getFullYear()}
-              onChange={(e) => onChange({ ...nc, year: parseInt(e.target.value) })}
+              type="text"
+              value={nc.issuerName || ''}
+              onChange={(e) => onChange({ ...nc, issuerName: e.target.value })}
               className="nc-form-input"
+              placeholder="Name of person who issued the NC..."
             />
           </div>
 
           <div className="nc-form-group">
-            <label className="nc-form-label">Month</label>
-            <select
-              value={nc.month || ''}
-              onChange={(e) => onChange({ ...nc, month: e.target.value })}
-              className="nc-form-select"
-            >
-              <option value="">Select...</option>
-              {monthOptions.map(month => (
-                <option key={month} value={month}>{month}</option>
-              ))}
-            </select>
-          </div>
-
-          <div className="nc-form-group">
-            <label className="nc-form-label">Status</label>
+            <label className="nc-form-label">Status *</label>
             <select
               value={nc.status || 'open'}
               onChange={(e) => onChange({ ...nc, status: e.target.value })}
@@ -101,7 +94,7 @@ const ClientNCForm = memo(({ nc, onChange }) => {
           </div>
 
           <div className="nc-form-group">
-            <label className="nc-form-label">Detection Phase</label>
+            <label className="nc-form-label">Detection Phase *</label>
             <select
               value={nc.detectionPhase || ''}
               onChange={(e) => onChange({ ...nc, detectionPhase: e.target.value })}
@@ -113,6 +106,35 @@ const ClientNCForm = memo(({ nc, onChange }) => {
               ))}
             </select>
           </div>
+
+          {/* Sector Responsable */}
+          <div className="nc-form-group">
+            <label className="nc-form-label">Responsible Sector *</label>
+            <select
+              value={nc.responsibleSector || ''}
+              onChange={(e) => onChange({ ...nc, responsibleSector: e.target.value })}
+              className="nc-form-select"
+            >
+              <option value="">Select...</option>
+              {responsibleSectorOptions.map(opt => (
+                <option key={opt.value} value={opt.value}>{opt.label}</option>
+              ))}
+            </select>
+          </div>
+
+          {/* Campo adicional si se selecciona "Otros" */}
+          {nc.responsibleSector === 'other' && (
+            <div className="nc-form-group">
+              <label className="nc-form-label">Specify Other Sector *</label>
+              <input
+                type="text"
+                value={nc.responsibleSectorOther || ''}
+                onChange={(e) => onChange({ ...nc, responsibleSectorOther: e.target.value })}
+                className="nc-form-input"
+                placeholder="Specify the sector..."
+              />
+            </div>
+          )}
 
           <div className="nc-form-group">
             <label className="nc-form-label">Order Number</label>

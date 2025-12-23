@@ -1,16 +1,17 @@
 // src/components/magazzino/MovimentiRegistry.jsx
 import React, { useState, useEffect } from 'react';
-import { 
-  List, 
-  Search, 
-  Calendar, 
-  User, 
-  Package, 
-  TrendingUp, 
+import {
+  List,
+  Search,
+  Calendar,
+  User,
+  Package,
+  TrendingUp,
   TrendingDown,
   Filter,
   RefreshCw,
-  Clock
+  Clock,
+  Activity
 } from 'lucide-react';
 import { getMovimenti, getMovimentiStats } from '../../firebase/magazzinoService';
 

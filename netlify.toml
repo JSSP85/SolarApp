@@ -1,0 +1,31 @@
+# Netlify configuration for SolarApp
+
+[build]
+  # Comando para construir la aplicación
+  command = "npm run build"
+
+  # Directorio que contiene los archivos estáticos compilados
+  publish = "dist"
+
+  # Variables de entorno para el build
+  [build.environment]
+    NODE_VERSION = "18"
+
+# Configuración para instalar dependencias limpias
+[build.processing]
+  skip_processing = false
+
+# Reglas de redirección para SPA (Single Page Application)
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200
+
+# Headers de seguridad
+[[headers]]
+  for = "/*"
+  [headers.values]
+    X-Frame-Options = "DENY"
+    X-XSS-Protection = "1; mode=block"
+    X-Content-Type-Options = "nosniff"
+    Referrer-Policy = "strict-origin-when-cross-origin"

@@ -11,7 +11,38 @@ El paquete `lucide-react` (que contiene el icono Activity) está listado en `pac
 
 ## ✅ Solución
 
-### Si ejecutas la aplicación LOCALMENTE:
+### 🚀 PARA TU FLUJO DE TRABAJO (GitHub Codespaces → Netlify):
+
+**OPCIÓN 1: Clear Cache and Deploy (RECOMENDADO)**
+
+1. Ve a **Netlify Dashboard** (https://app.netlify.com)
+2. Selecciona tu sitio "SolarApp"
+3. Ve a **Deploys** en el menú lateral
+4. Haz clic en **"Trigger deploy"** (botón verde)
+5. Selecciona **"Clear cache and deploy site"**
+
+Esto forzará a Netlify a:
+- Limpiar el cache de `node_modules`
+- Reinstalar todas las dependencias desde cero
+- Construir la aplicación con las dependencias correctas
+
+**OPCIÓN 2: Desde GitHub Codespaces**
+
+Si la Opción 1 no funciona, haz un commit dummy para forzar rebuild:
+
+```bash
+# En tu Codespace
+echo "# $(date)" >> .netlify-rebuild
+git add .netlify-rebuild
+git commit -m "Force Netlify rebuild to fix dependencies"
+git push
+```
+
+Netlify detectará el push y hará un nuevo build.
+
+---
+
+### Si ejecutas la aplicación LOCALMENTE (en tu PC):
 
 1. **Elimina node_modules y reinstala dependencias:**
    ```bash
@@ -30,15 +61,13 @@ El paquete `lucide-react` (que contiene el icono Activity) está listado en `pac
    npm run preview
    ```
 
-### Si la aplicación está DESPLEGADA en un servidor:
+---
+
+### Si la aplicación está DESPLEGADA en otros servidores:
 
 #### Para Vercel:
 1. Ve a tu proyecto en Vercel Dashboard
 2. Haz clic en "Redeploy" (esto forzará una reinstalación de dependencias)
-
-#### Para Netlify:
-1. Ve a tu sitio en Netlify Dashboard
-2. Haz clic en "Trigger deploy" → "Clear cache and deploy site"
 
 #### Para Firebase Hosting:
 ```bash

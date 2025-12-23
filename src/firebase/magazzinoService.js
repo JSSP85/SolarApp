@@ -33,20 +33,32 @@ import { db } from './config';
  */
 export const importArticoliFromExcel = async (excelData) => {
   try {
+    console.log('🚀 OPTIMIZED: Loading ALL existing articles in ONE query...');
+    
     const batch = writeBatch(db);
     const articoliRef = collection(db, 'articoli');
     const importTimestamp = Timestamp.now();
     
+    // ⚡ OPTIMIZATION: Get ALL existing articles in ONE query
+    const existingSnapshot = await getDocs(articoliRef);
+    const existingArticlesMap = new Map();
+    
+    existingSnapshot.docs.forEach(doc => {
+      existingArticlesMap.set(doc.id, doc.data());
+    });
+    
+    console.log(`✅ Loaded ${existingArticlesMap.size} existing articles from Firebase`);
+    
     let nuovi = 0;
     let aggiornati = 0;
     
+    // Now process without await in loop
     for (const row of excelData) {
       const articoloRef = doc(articoliRef, row.codice);
-      const articoloSnap = await getDoc(articoloRef);
       
-      // Check if article exists
-      const exists = articoloSnap.exists();
-      const existingData = exists ? articoloSnap.data() : {};
+      // Check if article exists in Map (NO AWAIT!)
+      const existingData = existingArticlesMap.get(row.codice) || {};
+      const exists = existingArticlesMap.has(row.codice);
       
       // Prepare data - KEEP movimenti_totali from existing
       const articleData = {
@@ -85,8 +97,12 @@ export const importArticoliFromExcel = async (excelData) => {
       }
     }
     
+    console.log('💾 Writing batch to Firebase...');
+    
     // Commit batch
     await batch.commit();
+    
+    console.log('📝 Logging import record...');
     
     // Log import in importazioni_sap collection
     const importRef = collection(db, 'importazioni_sap');

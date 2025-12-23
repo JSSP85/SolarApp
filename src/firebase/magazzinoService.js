@@ -8,6 +8,7 @@ import {
   updateDoc, 
   getDoc, 
   getDocs,
+  deleteDoc,
   query,
   where,
   orderBy,
@@ -112,6 +113,35 @@ export const importArticoliFromExcel = async (excelData) => {
 };
 
 // ============================================================================
+// GET LAST IMPORT (NEW)
+// ============================================================================
+
+/**
+ * Get last SAP import record
+ * 
+ * @returns {Object|null} - Last import data or null
+ */
+export const getLastImport = async () => {
+  try {
+    const importRef = collection(db, 'importazioni_sap');
+    const q = query(importRef, orderBy('data_importazione', 'desc'), limit(1));
+    const snapshot = await getDocs(q);
+    
+    if (snapshot.empty) {
+      return null;
+    }
+    
+    return {
+      id: snapshot.docs[0].id,
+      ...snapshot.docs[0].data()
+    };
+  } catch (error) {
+    console.error('Error getting last import:', error);
+    throw error;
+  }
+};
+
+// ============================================================================
 // GET ARTICLE BY CODE (For QR Scan)
 // ============================================================================
 
@@ -190,12 +220,6 @@ export const getAllArticoli = async (filters = {}) => {
     // Filter by category
     if (filters.categoria) {
       q = query(q, where('categoria', '==', filters.categoria));
-    }
-    
-    // Filter by low stock
-    if (filters.stockBasso) {
-      // This requires composite index in Firebase
-      q = query(q, where('giacenza_attuale_magazino', '<=', filters.stockBasso));
     }
     
     // Order by code
@@ -491,13 +515,16 @@ export const getDashboardStats = async () => {
     // Get low stock articles
     const stockBasso = await getArticoliStockBasso();
     
+    // Get last import
+    const lastImport = await getLastImport();
+    
     // Calculate stats
     const stats = {
       totale_articoli: articoli.length,
       movimenti_oggi: movimentiOggi.length,
-      allarmi_attivi: stockBasso.length,
+      allarmi_attivi: stockBasso.filter(a => a.giacenza_attuale_magazino > 0).length,
       articoli_zero_stock: articoli.filter(a => a.giacenza_attuale_magazino === 0).length,
-      ultima_sincronizzazione: new Date(), // You can get this from a config doc
+      ultima_sincronizzazione: lastImport?.data_importazione || null,
       categorie: [...new Set(articoli.map(a => a.categoria))].length
     };
     

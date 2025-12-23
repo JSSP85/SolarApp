@@ -6,7 +6,7 @@ const USER_CREDENTIALS = {
   'Admin': {
     password: 'valm2025',
     role: 'admin',
-    permissions: ['steel', 'hardware', 'electrical', 'free-inspection', 'non-conformity-manager', 'inspection-dashboard','quality-book', 'supplier-evaluation'],
+    permissions: ['warehouse-management', 'steel', 'hardware', 'electrical', 'free-inspection', 'non-conformity-manager', 'inspection-dashboard','quality-book', 'supplier-evaluation'],
     displayName: 'Administrator'
   },
   'Manager': {

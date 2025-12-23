@@ -3,7 +3,6 @@ import React, { useState, useEffect } from 'react';
 import { 
   Package, 
   Upload, 
-  Download, 
   List, 
   AlertCircle, 
   Smartphone,
@@ -14,7 +13,6 @@ import {
 } from 'lucide-react';
 import ImportExcel from './ImportExcel';
 import MovimentiRegistry from './MovimentiRegistry';
-import LoadHistory from './LoadHistory';
 import DashboardTable from './DashboardTable';
 import { getDashboardStats, getArticoliStockBasso } from '../../firebase/magazzinoService';
 import BackButton from '../common/BackButton';
@@ -70,9 +68,7 @@ const MagazzinoSystem = ({ onBack }) => {
     switch (activeView) {
       case 'dashboard': return 'Dashboard';
       case 'import': return 'Import from SAP';
-      case 'history': return 'Load History';
       case 'movements': return 'Movement Registry';
-      case 'export': return 'Export for SAP';
       case 'mobile': return 'Mobile App';
       default: return 'Dashboard';
     }
@@ -125,15 +121,6 @@ const MagazzinoSystem = ({ onBack }) => {
             </div>
 
             <div 
-              className={`wms-nav-item ${activeView === 'history' ? 'wms-active' : ''}`}
-              onClick={() => handleViewChange('history')}
-            >
-              <span className="wms-nav-icon">🕐</span>
-              <span className="wms-nav-text">Load History</span>
-              {activeView === 'history' && <div className="wms-nav-indicator"></div>}
-            </div>
-
-            <div 
               className={`wms-nav-item ${activeView === 'movements' ? 'wms-active' : ''}`}
               onClick={() => handleViewChange('movements')}
             >
@@ -147,15 +134,6 @@ const MagazzinoSystem = ({ onBack }) => {
 
             <div className="wms-sidebar-section-title">
               🔧 Tools
-            </div>
-
-            <div 
-              className={`wms-nav-item ${activeView === 'export' ? 'wms-active' : ''}`}
-              onClick={() => handleViewChange('export')}
-            >
-              <span className="wms-nav-icon">⬇️</span>
-              <span className="wms-nav-text">Export for SAP</span>
-              {activeView === 'export' && <div className="wms-nav-indicator"></div>}
             </div>
 
             <div 
@@ -304,30 +282,14 @@ const MagazzinoSystem = ({ onBack }) => {
               </>
             )}
 
-            {/* Import View */}
+            {/* Import View (includes LoadHistory inside) */}
             {activeView === 'import' && (
               <ImportExcel onImportComplete={handleImportComplete} />
-            )}
-
-            {/* Load History View */}
-            {activeView === 'history' && (
-              <LoadHistory />
             )}
 
             {/* Movement Registry View */}
             {activeView === 'movements' && (
               <MovimentiRegistry />
-            )}
-
-            {/* Export View */}
-            {activeView === 'export' && (
-              <div className="wms-panel-card">
-                <div className="wms-empty-state">
-                  <Download size={64} />
-                  <h3>Export for SAP Update</h3>
-                  <p>This feature will be available soon</p>
-                </div>
-              </div>
             )}
 
             {/* Mobile App View */}

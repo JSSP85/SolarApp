@@ -3,7 +3,6 @@ import React, { useState } from 'react';
 import { Upload, CheckCircle, AlertCircle, FileText, Database, Loader, Tag } from 'lucide-react';
 import * as XLSX from 'xlsx';
 import { importArticoliFromExcel } from '../../firebase/magazzinoService';
-import './ImportExcel.css';
 
 const ImportExcel = ({ onImportComplete }) => {
   const [file, setFile] = useState(null);
@@ -12,61 +11,50 @@ const ImportExcel = ({ onImportComplete }) => {
   const [error, setError] = useState(null);
   const [preview, setPreview] = useState([]);
 
-  // Auto-classification logic based on keywords
+  // Auto-classification logic
   const classifyArticle = (description) => {
     if (!description) return 'Others';
     
     const desc = description.toUpperCase();
     
-    // Hardware (Screws, nuts, washers, bolts)
     if (desc.includes('SCREW') || desc.includes('NUT') || desc.includes('BOLT') || 
         desc.includes('WASHER') || /M\d{1,2}/.test(desc) || desc.includes('DIN')) {
       return 'Hardware';
     }
     
-    // Cables
     if (desc.includes('CABLE') || desc.includes('CAVO') || desc.includes('COAXIAL') || 
         desc.includes('WIRE')) {
       return 'Cables';
     }
     
-    // Bearings
     if (desc.includes('BEARING') || desc.includes('SPHERICAL')) {
       return 'Bearings';
     }
     
-    // Motors & Actuators
     if (desc.includes('ACTUATOR') || desc.includes('DRIVE') || desc.includes('MOTOR') || 
         desc.includes('CAPACITOR')) {
       return 'Motors & Actuators';
     }
     
-    // Electronics & Sensors
     if (desc.includes('BOARD') || desc.includes('SENSOR') || desc.includes('ANEMOMETER') || 
         desc.includes('ELECTRONIC') || desc.includes('SWITCH') || desc.includes('CONVERTITORE') ||
         desc.includes('ALIMENT') || desc.includes('UPS') || desc.includes('FILTER')) {
       return 'Electronics & Sensors';
     }
     
-    // Mechanical Components
     if (desc.includes('PLATE') || desc.includes('BRACKET') || desc.includes('SPACER') || 
         desc.includes('MOUNTING') || desc.includes('SUPPORT')) {
       return 'Mechanical Components';
     }
     
-    // Default
     return 'Others';
   };
 
-  // Handle file selection
   const handleFileChange = (e) => {
     const selectedFile = e.target.files[0];
     
-    if (!selectedFile) {
-      return;
-    }
+    if (!selectedFile) return;
 
-    // Validate file type
     const validTypes = [
       'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
       'application/vnd.ms-excel'
@@ -80,12 +68,9 @@ const ImportExcel = ({ onImportComplete }) => {
     setFile(selectedFile);
     setError(null);
     setImportResult(null);
-    
-    // Preview first 5 rows
     previewExcel(selectedFile);
   };
 
-  // Preview Excel data
   const previewExcel = (file) => {
     const reader = new FileReader();
     
@@ -93,12 +78,9 @@ const ImportExcel = ({ onImportComplete }) => {
       try {
         const data = new Uint8Array(e.target.result);
         const workbook = XLSX.read(data, { type: 'array' });
-        
-        // Get first sheet (SAP exports to 'Data' sheet)
         const firstSheet = workbook.Sheets[workbook.SheetNames[0]];
         const jsonData = XLSX.utils.sheet_to_json(firstSheet);
         
-        // Show first 5 rows with auto-classification
         const previewData = jsonData.slice(0, 5).map(row => ({
           ...row,
           auto_category: classifyArticle(row['Material Description'])
@@ -114,7 +96,6 @@ const ImportExcel = ({ onImportComplete }) => {
     reader.readAsArrayBuffer(file);
   };
 
-  // Process and import Excel (SAP FORMAT)
   const handleImport = async () => {
     if (!file) {
       setError('Please select a file first');
@@ -128,11 +109,9 @@ const ImportExcel = ({ onImportComplete }) => {
     
     reader.onload = async (e) => {
       try {
-        // Read Excel
         const data = new Uint8Array(e.target.result);
         const workbook = XLSX.read(data, { type: 'array' });
         
-        // Get 'Data' sheet (SAP default) or first sheet
         let sheetName = workbook.SheetNames[0];
         if (workbook.SheetNames.includes('Data')) {
           sheetName = 'Data';
@@ -143,32 +122,24 @@ const ImportExcel = ({ onImportComplete }) => {
         
         console.log('Excel data loaded:', jsonData.length, 'rows');
 
-        // Transform SAP data to our structure
         const transformedData = jsonData
-          .filter(row => row['Material']) // Only rows with Material code
+          .filter(row => row['Material'])
           .map(row => {
             const descrizione = String(row['Material Description'] || '').trim();
             const giacenza = parseFloat(row['Stock Quantity on Period End']) || 0;
             
             return {
-              // Basic info from SAP
               codice: String(row['Material'] || '').trim(),
               codice_vecchio: String(row['Old material number'] || '').trim(),
               descrizione: descrizione,
               giacenza_attuale: giacenza,
-              
-              // Auto-generated fields
               categoria: classifyArticle(descrizione),
               unita_misura: 'pz',
-              
-              // Default values (hidden from user, used internally)
               giacenza_minima: 10,
               giacenza_massima: Math.max(100, giacenza * 2),
               ubicazione: '',
               fornitore_principale: '',
               prezzo_unitario: 0,
-              
-              // Generate QR code data
               codice_qr: JSON.stringify({
                 codigo: String(row['Material'] || '').trim(),
                 descripcion: descrizione.substring(0, 50),
@@ -184,23 +155,18 @@ const ImportExcel = ({ onImportComplete }) => {
           throw new Error('No valid articles found in Excel. Please check if SAP export contains "Material" column.');
         }
 
-        // Show category distribution
         const categorias = {};
         transformedData.forEach(art => {
           categorias[art.categoria] = (categorias[art.categoria] || 0) + 1;
         });
         console.log('Category distribution:', categorias);
 
-        // Import to Firebase
         const result = await importArticoliFromExcel(transformedData);
-        
-        // Add category stats to result
         result.categorias = categorias;
         
         setImportResult(result);
         setImporting(false);
         
-        // Notify parent component
         if (onImportComplete) {
           onImportComplete(result);
         }
@@ -215,7 +181,6 @@ const ImportExcel = ({ onImportComplete }) => {
     reader.readAsArrayBuffer(file);
   };
 
-  // Clear selection
   const handleClear = () => {
     setFile(null);
     setPreview([]);
@@ -224,180 +189,311 @@ const ImportExcel = ({ onImportComplete }) => {
   };
 
   return (
-    <div className="import-excel-container">
-      <div className="import-header">
-        <Database size={32} />
-        <div>
-          <h2>Import from SAP Excel</h2>
-          <p>Upload your Excel file exported from SAP to update the warehouse database</p>
+    <>
+      {/* Upload Card */}
+      <div className="wms-panel-card" style={{ marginBottom: '2rem' }}>
+        <div className="wms-panel-header">
+          <h2 className="wms-panel-title">
+            <Database size={24} />
+            Upload SAP Excel File
+          </h2>
+          <p className="wms-panel-subtitle">
+            Import warehouse inventory data from SAP export
+          </p>
+        </div>
+
+        <div style={{ padding: '2rem' }}>
+          <label style={{
+            display: 'block',
+            border: '3px dashed #d1d5db',
+            borderRadius: '12px',
+            padding: '3rem 2rem',
+            textAlign: 'center',
+            cursor: 'pointer',
+            transition: 'all 0.3s ease',
+            background: 'rgba(249, 250, 251, 0.8)'
+          }}
+          onMouseOver={(e) => {
+            e.currentTarget.style.borderColor = '#0077a2';
+            e.currentTarget.style.background = 'rgba(240, 249, 255, 0.8)';
+          }}
+          onMouseOut={(e) => {
+            e.currentTarget.style.borderColor = '#d1d5db';
+            e.currentTarget.style.background = 'rgba(249, 250, 251, 0.8)';
+          }}>
+            <input
+              type="file"
+              accept=".xlsx,.xls"
+              onChange={handleFileChange}
+              style={{ display: 'none' }}
+              disabled={importing}
+            />
+            <Upload size={48} style={{ color: '#0077a2', marginBottom: '1rem' }} />
+            <p style={{ fontSize: '1.1rem', fontWeight: 600, color: '#374151', marginBottom: '0.5rem' }}>
+              {file ? file.name : 'Click to select SAP Excel file or drag and drop'}
+            </p>
+            <p style={{ fontSize: '0.9rem', color: '#6b7280' }}>
+              Expected columns: Material, Material Description, Stock Quantity on Period End
+            </p>
+          </label>
+
+          {file && !importing && !importResult && (
+            <div style={{ display: 'flex', gap: '1rem', justifyContent: 'center', marginTop: '1.5rem' }}>
+              <button onClick={handleImport} className="wms-btn wms-btn-primary">
+                <Upload size={18} />
+                Import to Database
+              </button>
+              <button onClick={handleClear} className="wms-btn wms-btn-secondary">
+                Clear
+              </button>
+            </div>
+          )}
         </div>
       </div>
 
-      {/* File Upload Section */}
-      <div className="upload-section">
-        <label className="file-input-label">
-          <input
-            type="file"
-            accept=".xlsx,.xls"
-            onChange={handleFileChange}
-            className="file-input"
-            disabled={importing}
-          />
-          <div className="file-input-visual">
-            <Upload size={48} />
-            <p className="file-input-text">
-              {file ? file.name : 'Click to select SAP Excel file or drag and drop'}
-            </p>
-            <p className="file-input-hint">
-              Expected columns: Material, Material Description, Stock Quantity on Period End
-            </p>
-          </div>
-        </label>
-
-        {file && !importing && !importResult && (
-          <div className="file-actions">
-            <button onClick={handleImport} className="btn btn-primary">
-              <Upload size={18} />
-              Import to Database
-            </button>
-            <button onClick={handleClear} className="btn btn-secondary">
-              Clear
-            </button>
-          </div>
-        )}
-      </div>
-
-      {/* Preview Section */}
+      {/* Preview Card */}
       {preview.length > 0 && !importing && !importResult && (
-        <div className="preview-section">
-          <h3>
-            <FileText size={20} />
-            Preview (First 5 rows) - Auto-classification enabled
-          </h3>
-          <div className="preview-table-wrapper">
-            <table className="preview-table">
-              <thead>
-                <tr>
-                  <th>Material Code</th>
-                  <th>Old Code</th>
-                  <th>Description</th>
-                  <th>Stock SAP</th>
-                  <th>Auto Category</th>
-                </tr>
-              </thead>
-              <tbody>
-                {preview.map((row, idx) => (
-                  <tr key={idx}>
-                    <td><code>{row['Material'] || '-'}</code></td>
-                    <td><code>{row['Old material number'] || '-'}</code></td>
-                    <td className="desc-col">{row['Material Description'] || '-'}</td>
-                    <td><strong>{row['Stock Quantity on Period End'] || 0}</strong></td>
-                    <td>
-                      <span className="category-badge">
-                        <Tag size={14} />
-                        {row.auto_category}
-                      </span>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+        <div className="wms-panel-card" style={{ marginBottom: '2rem' }}>
+          <div className="wms-panel-header">
+            <h2 className="wms-panel-title">
+              <FileText size={24} />
+              Preview (First 5 rows)
+            </h2>
+            <p className="wms-panel-subtitle">Auto-classification enabled</p>
           </div>
-          <p className="preview-note">
-            Categories are automatically assigned based on keywords in descriptions
-          </p>
+
+          <div style={{ padding: '2rem' }}>
+            <div className="wms-table-container">
+              <table className="wms-table">
+                <thead>
+                  <tr>
+                    <th>Material Code</th>
+                    <th>Old Code</th>
+                    <th>Description</th>
+                    <th>Stock SAP</th>
+                    <th>Auto Category</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {preview.map((row, idx) => (
+                    <tr key={idx}>
+                      <td><code className="wms-article-code">{row['Material'] || '-'}</code></td>
+                      <td><code style={{ background: '#f9fafb', padding: '0.2rem 0.4rem', borderRadius: '4px' }}>{row['Old material number'] || '-'}</code></td>
+                      <td style={{ maxWidth: '300px' }}>{row['Material Description'] || '-'}</td>
+                      <td><strong>{row['Stock Quantity on Period End'] || 0}</strong></td>
+                      <td>
+                        <span style={{
+                          display: 'inline-flex',
+                          alignItems: 'center',
+                          gap: '0.25rem',
+                          background: '#eff6ff',
+                          color: '#1e40af',
+                          padding: '0.25rem 0.5rem',
+                          borderRadius: '6px',
+                          fontSize: '0.85rem',
+                          fontWeight: 500,
+                          border: '1px solid #bfdbfe'
+                        }}>
+                          <Tag size={14} />
+                          {row.auto_category}
+                        </span>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+            <p style={{ textAlign: 'center', color: '#6b7280', fontSize: '0.9rem', marginTop: '1rem' }}>
+              Categories are automatically assigned based on keywords in descriptions
+            </p>
+          </div>
         </div>
       )}
 
       {/* Loading State */}
       {importing && (
-        <div className="import-status importing">
-          <Loader size={48} className="spinner" />
-          <h3>Importing SAP data...</h3>
-          <p>Processing articles and auto-classifying categories</p>
+        <div className="wms-panel-card">
+          <div className="wms-loading-state" style={{ padding: '4rem' }}>
+            <div className="wms-spinner"></div>
+            <h3 style={{ margin: '1rem 0 0.5rem 0', color: '#1f2937' }}>Importing SAP data...</h3>
+            <p style={{ color: '#6b7280', margin: 0 }}>Processing articles and auto-classifying categories</p>
+          </div>
         </div>
       )}
 
       {/* Success Result */}
       {importResult && !importing && (
-        <div className="import-status success">
-          <CheckCircle size={48} />
-          <h3>Import Completed Successfully!</h3>
-          <div className="import-stats">
-            <div className="stat-item">
-              <span className="stat-label">Total Articles:</span>
-              <span className="stat-value">{importResult.totale}</span>
-            </div>
-            <div className="stat-item">
-              <span className="stat-label">New Articles:</span>
-              <span className="stat-value success-text">{importResult.nuovi}</span>
-            </div>
-            <div className="stat-item">
-              <span className="stat-label">Updated Articles:</span>
-              <span className="stat-value warning-text">{importResult.aggiornati}</span>
-            </div>
-          </div>
+        <div className="wms-panel-card">
+          <div style={{ padding: '3rem 2rem', textAlign: 'center' }}>
+            <CheckCircle size={64} style={{ color: '#10b981', marginBottom: '1.5rem' }} />
+            <h3 style={{ fontSize: '1.5rem', fontWeight: 700, color: '#1f2937', margin: '0 0 1rem 0' }}>
+              Import Completed Successfully!
+            </h3>
+            
+            <div style={{
+              display: 'grid',
+              gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
+              gap: '1.5rem',
+              margin: '2rem 0',
+              textAlign: 'left'
+            }}>
+              <div style={{
+                background: '#f9fafb',
+                padding: '1.5rem',
+                borderRadius: '8px',
+                border: '1px solid #e5e7eb'
+              }}>
+                <div style={{ fontSize: '0.9rem', color: '#6b7280', fontWeight: 500, marginBottom: '0.5rem' }}>
+                  Total Articles:
+                </div>
+                <div style={{ fontSize: '2rem', fontWeight: 700, color: '#1f2937' }}>
+                  {importResult.totale}
+                </div>
+              </div>
 
-          {/* Category Distribution */}
-          {importResult.categorias && (
-            <div className="category-distribution">
-              <h4>Category Distribution:</h4>
-              <div className="category-grid">
-                {Object.entries(importResult.categorias).map(([cat, count]) => (
-                  <div key={cat} className="category-item">
-                    <span className="category-name">{cat}</span>
-                    <span className="category-count">{count}</span>
-                  </div>
-                ))}
+              <div style={{
+                background: '#f0fdf4',
+                padding: '1.5rem',
+                borderRadius: '8px',
+                border: '1px solid #bbf7d0'
+              }}>
+                <div style={{ fontSize: '0.9rem', color: '#6b7280', fontWeight: 500, marginBottom: '0.5rem' }}>
+                  New Articles:
+                </div>
+                <div style={{ fontSize: '2rem', fontWeight: 700, color: '#10b981' }}>
+                  {importResult.nuovi}
+                </div>
+              </div>
+
+              <div style={{
+                background: '#fef3c7',
+                padding: '1.5rem',
+                borderRadius: '8px',
+                border: '1px solid #fde68a'
+              }}>
+                <div style={{ fontSize: '0.9rem', color: '#6b7280', fontWeight: 500, marginBottom: '0.5rem' }}>
+                  Updated Articles:
+                </div>
+                <div style={{ fontSize: '2rem', fontWeight: 700, color: '#f59e0b' }}>
+                  {importResult.aggiornati}
+                </div>
               </div>
             </div>
-          )}
 
-          <button onClick={handleClear} className="btn btn-primary">
-            Import Another File
-          </button>
+            {/* Category Distribution */}
+            {importResult.categorias && (
+              <div style={{
+                background: '#f9fafb',
+                padding: '1.5rem',
+                borderRadius: '8px',
+                marginTop: '2rem',
+                textAlign: 'left'
+              }}>
+                <h4 style={{ margin: '0 0 1rem 0', color: '#1f2937', fontSize: '1.1rem' }}>
+                  Category Distribution:
+                </h4>
+                <div style={{
+                  display: 'grid',
+                  gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
+                  gap: '0.75rem'
+                }}>
+                  {Object.entries(importResult.categorias).map(([cat, count]) => (
+                    <div key={cat} style={{
+                      display: 'flex',
+                      justifyContent: 'space-between',
+                      alignItems: 'center',
+                      background: 'white',
+                      padding: '0.75rem 1rem',
+                      borderRadius: '6px',
+                      border: '1px solid #e5e7eb'
+                    }}>
+                      <span style={{ fontWeight: 500, color: '#374151' }}>{cat}</span>
+                      <span style={{
+                        background: '#0077a2',
+                        color: 'white',
+                        padding: '0.25rem 0.75rem',
+                        borderRadius: '12px',
+                        fontWeight: 600,
+                        fontSize: '0.9rem'
+                      }}>
+                        {count}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            <button onClick={handleClear} className="wms-btn wms-btn-primary" style={{ marginTop: '2rem' }}>
+              Import Another File
+            </button>
+          </div>
         </div>
       )}
 
       {/* Error State */}
       {error && (
-        <div className="import-status error">
-          <AlertCircle size={48} />
-          <h3>Import Error</h3>
-          <p>{error}</p>
-          <button onClick={handleClear} className="btn btn-secondary">
-            Try Again
-          </button>
+        <div className="wms-panel-card">
+          <div style={{ padding: '3rem 2rem', textAlign: 'center' }}>
+            <AlertCircle size={64} style={{ color: '#ef4444', marginBottom: '1.5rem' }} />
+            <h3 style={{ fontSize: '1.5rem', fontWeight: 700, color: '#1f2937', margin: '0 0 1rem 0' }}>
+              Import Error
+            </h3>
+            <p style={{ color: '#6b7280', marginBottom: '2rem' }}>{error}</p>
+            <button onClick={handleClear} className="wms-btn wms-btn-secondary">
+              Try Again
+            </button>
+          </div>
         </div>
       )}
 
-      {/* Instructions */}
-      <div className="import-instructions">
-        <h4>📋 SAP Export Instructions:</h4>
-        <ol>
-          <li>Export your warehouse inventory from SAP</li>
-          <li>Ensure the Excel contains these columns:
-            <ul>
-              <li><code>Material</code> - Article code (700xxx)</li>
-              <li><code>Material Description</code> - Component name</li>
-              <li><code>Stock Quantity on Period End</code> - Current stock</li>
-              <li><code>Old material number</code> - Legacy code (optional)</li>
-            </ul>
-          </li>
-          <li>Upload the file using the button above</li>
-          <li>Review the preview with auto-assigned categories</li>
-          <li>Click "Import to Database"</li>
-        </ol>
-        
-        <div className="import-note">
-          <strong>🤖 Auto-Classification:</strong> Articles are automatically categorized based on keywords in descriptions.
+      {/* Instructions Card */}
+      <div className="wms-panel-card">
+        <div className="wms-panel-header">
+          <h2 className="wms-panel-title">📋 SAP Export Instructions</h2>
         </div>
-        
-        <div className="import-note">
-          <strong>⚠️ Important:</strong> This updates SAP stock values but preserves all warehouse movements.
+        <div style={{ padding: '2rem' }}>
+          <ol style={{ color: '#4b5563', lineHeight: '1.8', paddingLeft: '1.5rem' }}>
+            <li>Export your warehouse inventory from SAP</li>
+            <li>Ensure the Excel contains these columns:
+              <ul style={{ marginTop: '0.5rem' }}>
+                <li><code style={{ background: '#f3f4f6', padding: '0.2rem 0.4rem', borderRadius: '4px' }}>Material</code> - Article code (700xxx)</li>
+                <li><code style={{ background: '#f3f4f6', padding: '0.2rem 0.4rem', borderRadius: '4px' }}>Material Description</code> - Component name</li>
+                <li><code style={{ background: '#f3f4f6', padding: '0.2rem 0.4rem', borderRadius: '4px' }}>Stock Quantity on Period End</code> - Current stock</li>
+                <li><code style={{ background: '#f3f4f6', padding: '0.2rem 0.4rem', borderRadius: '4px' }}>Old material number</code> - Legacy code (optional)</li>
+              </ul>
+            </li>
+            <li>Upload the file using the button above</li>
+            <li>Review the preview with auto-assigned categories</li>
+            <li>Click "Import to Database"</li>
+          </ol>
+          
+          <div style={{
+            background: '#eff6ff',
+            padding: '1rem',
+            borderRadius: '6px',
+            marginTop: '1.5rem',
+            borderLeft: '4px solid #0077a2'
+          }}>
+            <p style={{ margin: 0, fontSize: '0.9rem', color: '#1e40af' }}>
+              <strong>🤖 Auto-Classification:</strong> Articles are automatically categorized based on keywords in descriptions.
+            </p>
+          </div>
+          
+          <div style={{
+            background: '#fef3c7',
+            padding: '1rem',
+            borderRadius: '6px',
+            marginTop: '1rem',
+            borderLeft: '4px solid #f59e0b'
+          }}>
+            <p style={{ margin: 0, fontSize: '0.9rem', color: '#92400e' }}>
+              <strong>⚠️ Important:</strong> This updates SAP stock values but preserves all warehouse movements.
+            </p>
+          </div>
         </div>
       </div>
-    </div>
+    </>
   );
 };
 

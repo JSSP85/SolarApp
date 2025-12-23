@@ -13,7 +13,6 @@ import {
   Clock
 } from 'lucide-react';
 import { getMovimenti, getMovimentiStats } from '../../firebase/magazzinoService';
-import './MovimentiRegistry.css';
 
 const MovimentiRegistry = () => {
   const [movements, setMovements] = useState([]);
@@ -164,206 +163,312 @@ const MovimentiRegistry = () => {
   };
 
   return (
-    <div className="movimenti-registry">
-      {/* Header with Stats */}
-      <div className="registry-header">
-        <div className="header-title">
-          <List size={32} />
-          <div>
-            <h2>Movement Registry</h2>
-            <p>Real-time warehouse activity tracking</p>
-          </div>
-        </div>
-        
-        <div className="header-actions">
-          <button 
-            className="btn-refresh" 
-            onClick={() => loadMovements()}
-            disabled={loading}
-          >
-            <RefreshCw size={18} className={loading ? 'spinning' : ''} />
-            Refresh
-          </button>
-          <div className="last-update">
-            <Clock size={14} />
-            Updated: {formatTime(lastUpdate)}
-          </div>
-        </div>
-      </div>
-
-      {/* Stats Bar */}
+    <>
+      {/* Stats Header Card */}
       {stats && (
-        <div className="stats-bar">
-          <div className="stat-item">
-            <span className="stat-label">Total Movements:</span>
-            <span className="stat-value">{stats.totale}</span>
+        <div className="wms-panel-card" style={{ marginBottom: '2rem' }}>
+          <div className="wms-panel-header">
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%' }}>
+              <div>
+                <h2 className="wms-panel-title">
+                  <Activity size={24} />
+                  Movement Statistics
+                </h2>
+                <p className="wms-panel-subtitle">Real-time warehouse activity overview</p>
+              </div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+                <button 
+                  className="wms-btn wms-btn-primary" 
+                  onClick={() => loadMovements()}
+                  disabled={loading}
+                  style={{ padding: '0.5rem 1rem', fontSize: '0.875rem' }}
+                >
+                  <RefreshCw size={16} className={loading ? 'wms-spinner' : ''} />
+                  Refresh
+                </button>
+                <div style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '0.5rem',
+                  fontSize: '0.85rem',
+                  color: '#6b7280'
+                }}>
+                  <Clock size={14} />
+                  {formatTime(lastUpdate)}
+                </div>
+              </div>
+            </div>
           </div>
-          <div className="stat-item success">
-            <TrendingUp size={16} />
-            <span className="stat-label">Entries:</span>
-            <span className="stat-value">{stats.entrate}</span>
-          </div>
-          <div className="stat-item warning">
-            <TrendingDown size={16} />
-            <span className="stat-label">Exits:</span>
-            <span className="stat-value">{stats.uscite}</span>
-          </div>
-          <div className="stat-item info">
-            <User size={16} />
-            <span className="stat-label">Operators:</span>
-            <span className="stat-value">{stats.operatori.length}</span>
-          </div>
-          <div className="stat-item">
-            <Package size={16} />
-            <span className="stat-label">Articles Modified:</span>
-            <span className="stat-value">{stats.articoli_modificati}</span>
+          
+          <div style={{ padding: '1.5rem 2rem', display: 'flex', gap: '2rem', flexWrap: 'wrap' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+              <div style={{
+                width: '40px',
+                height: '40px',
+                borderRadius: '8px',
+                background: 'linear-gradient(135deg, #3b82f6 0%, #2563eb 100%)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                color: 'white'
+              }}>
+                <List size={20} />
+              </div>
+              <div>
+                <div style={{ fontSize: '0.75rem', color: '#6b7280', fontWeight: 500 }}>Total Movements</div>
+                <div style={{ fontSize: '1.5rem', fontWeight: 700, color: '#1f2937' }}>{stats.totale}</div>
+              </div>
+            </div>
+
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+              <div style={{
+                width: '40px',
+                height: '40px',
+                borderRadius: '8px',
+                background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                color: 'white'
+              }}>
+                <TrendingUp size={20} />
+              </div>
+              <div>
+                <div style={{ fontSize: '0.75rem', color: '#6b7280', fontWeight: 500 }}>Entries</div>
+                <div style={{ fontSize: '1.5rem', fontWeight: 700, color: '#10b981' }}>{stats.entrate}</div>
+              </div>
+            </div>
+
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+              <div style={{
+                width: '40px',
+                height: '40px',
+                borderRadius: '8px',
+                background: 'linear-gradient(135deg, #ef4444 0%, #dc2626 100%)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                color: 'white'
+              }}>
+                <TrendingDown size={20} />
+              </div>
+              <div>
+                <div style={{ fontSize: '0.75rem', color: '#6b7280', fontWeight: 500 }}>Exits</div>
+                <div style={{ fontSize: '1.5rem', fontWeight: 700, color: '#ef4444' }}>{stats.uscite}</div>
+              </div>
+            </div>
+
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+              <div style={{
+                width: '40px',
+                height: '40px',
+                borderRadius: '8px',
+                background: 'linear-gradient(135deg, #f59e0b 0%, #d97706 100%)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                color: 'white'
+              }}>
+                <User size={20} />
+              </div>
+              <div>
+                <div style={{ fontSize: '0.75rem', color: '#6b7280', fontWeight: 500 }}>Operators</div>
+                <div style={{ fontSize: '1.5rem', fontWeight: 700, color: '#1f2937' }}>{stats.operatori.length}</div>
+              </div>
+            </div>
+
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+              <div style={{
+                width: '40px',
+                height: '40px',
+                borderRadius: '8px',
+                background: 'linear-gradient(135deg, #06b6d4 0%, #0891b2 100%)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                color: 'white'
+              }}>
+                <Package size={20} />
+              </div>
+              <div>
+                <div style={{ fontSize: '0.75rem', color: '#6b7280', fontWeight: 500 }}>Articles Modified</div>
+                <div style={{ fontSize: '1.5rem', fontWeight: 700, color: '#1f2937' }}>{stats.articoli_modificati}</div>
+              </div>
+            </div>
           </div>
         </div>
       )}
 
-      {/* Filters */}
-      <div className="filters-section">
-        <div className="filter-group">
-          <div className="search-box">
-            <Search size={18} />
+      {/* Filters Card */}
+      <div className="wms-panel-card" style={{ marginBottom: '2rem' }}>
+        <div className="wms-panel-header">
+          <h2 className="wms-panel-title">
+            <Filter size={24} />
+            Search & Filters
+          </h2>
+        </div>
+        
+        <div style={{ padding: '2rem' }}>
+          {/* Search Box */}
+          <div className="wms-search-box">
+            <Search size={18} className="wms-search-icon" />
             <input
               type="text"
               placeholder="Search by code, operator, or reason..."
               value={filters.searchTerm}
               onChange={(e) => setFilters({ ...filters, searchTerm: e.target.value })}
+              className="wms-search-input"
             />
           </div>
-        </div>
 
-        <div className="filter-row">
-          <div className="filter-item">
-            <Calendar size={16} />
-            <select
-              value={filters.dateRange}
-              onChange={(e) => {
-                setFilters({ ...filters, dateRange: e.target.value });
-                setTimeout(() => loadMovements(), 100);
-              }}
-            >
-              <option value="today">Today</option>
-              <option value="week">Last 7 Days</option>
-              <option value="month">Last Month</option>
-              <option value="all">All Time</option>
-            </select>
-          </div>
+          {/* Filter Row */}
+          <div className="wms-filter-row">
+            <div className="wms-filter-item">
+              <Calendar size={16} />
+              <select
+                value={filters.dateRange}
+                onChange={(e) => {
+                  setFilters({ ...filters, dateRange: e.target.value });
+                  setTimeout(() => loadMovements(), 100);
+                }}
+              >
+                <option value="today">Today</option>
+                <option value="week">Last 7 Days</option>
+                <option value="month">Last Month</option>
+                <option value="all">All Time</option>
+              </select>
+            </div>
 
-          <div className="filter-item">
-            <User size={16} />
-            <select
-              value={filters.operatore}
-              onChange={(e) => setFilters({ ...filters, operatore: e.target.value })}
-            >
-              <option value="">All Operators</option>
-              {getOperators().map(op => (
-                <option key={op} value={op}>{op}</option>
-              ))}
-            </select>
-          </div>
+            <div className="wms-filter-item">
+              <User size={16} />
+              <select
+                value={filters.operatore}
+                onChange={(e) => setFilters({ ...filters, operatore: e.target.value })}
+              >
+                <option value="">All Operators</option>
+                {getOperators().map(op => (
+                  <option key={op} value={op}>{op}</option>
+                ))}
+              </select>
+            </div>
 
-          <div className="filter-item">
-            <Filter size={16} />
-            <select
-              value={filters.tipo}
-              onChange={(e) => setFilters({ ...filters, tipo: e.target.value })}
-            >
-              <option value="">All Types</option>
-              <option value="ENTRATA">Entry</option>
-              <option value="USCITA">Exit</option>
-              <option value="AGGIUSTAMENTO">Adjustment</option>
-            </select>
+            <div className="wms-filter-item">
+              <Filter size={16} />
+              <select
+                value={filters.tipo}
+                onChange={(e) => setFilters({ ...filters, tipo: e.target.value })}
+              >
+                <option value="">All Types</option>
+                <option value="ENTRATA">Entry</option>
+                <option value="USCITA">Exit</option>
+                <option value="AGGIUSTAMENTO">Adjustment</option>
+              </select>
+            </div>
           </div>
         </div>
       </div>
 
       {/* Movements List */}
-      <div className="movements-list">
-        {loading ? (
-          <div className="loading-state">
-            <div className="spinner"></div>
-            <p>Loading movements...</p>
-          </div>
-        ) : filteredMovements.length === 0 ? (
-          <div className="empty-state">
-            <List size={64} />
-            <h3>No Movements Found</h3>
-            <p>No warehouse activity matches your current filters</p>
-          </div>
-        ) : (
-          <div className="movements-grid">
-            {filteredMovements.map((mov, idx) => (
-              <div key={mov.firebaseId || idx} className="movement-card">
-                <div className="movement-header">
-                  <div className="movement-type">
-                    {mov.tipo === 'ENTRATA' ? (
-                      <div className="type-badge entry">
-                        <TrendingUp size={16} />
-                        ENTRY
-                      </div>
-                    ) : mov.tipo === 'USCITA' ? (
-                      <div className="type-badge exit">
-                        <TrendingDown size={16} />
-                        EXIT
-                      </div>
-                    ) : (
-                      <div className="type-badge adjustment">
-                        <RefreshCw size={16} />
-                        ADJUSTMENT
-                      </div>
-                    )}
-                  </div>
-                  <div className="movement-time">{formatTime(mov.timestamp)}</div>
-                </div>
+      <div className="wms-panel-card">
+        <div className="wms-panel-header">
+          <h2 className="wms-panel-title">
+            <List size={24} />
+            Movement History
+          </h2>
+          <p className="wms-panel-subtitle">
+            Showing {filteredMovements.length} movement{filteredMovements.length !== 1 ? 's' : ''}
+          </p>
+        </div>
 
-                <div className="movement-body">
-                  <div className="movement-article">
-                    <code className="article-code">{mov.codice_articolo}</code>
-                    <div className="movement-quantity">
-                      <span className={`quantity-value ${mov.quantita > 0 ? 'positive' : 'negative'}`}>
-                        {mov.quantita > 0 ? '+' : ''}{mov.quantita}
-                      </span>
-                      <span className="quantity-label">units</span>
+        <div style={{ padding: '2rem' }}>
+          {loading ? (
+            <div className="wms-loading-state">
+              <div className="wms-spinner"></div>
+              <p>Loading movements...</p>
+            </div>
+          ) : filteredMovements.length === 0 ? (
+            <div className="wms-empty-state">
+              <List size={64} />
+              <h3>No Movements Found</h3>
+              <p>No warehouse activity matches your current filters</p>
+            </div>
+          ) : (
+            <div className="wms-movements-grid">
+              {filteredMovements.map((mov, idx) => (
+                <div key={mov.firebaseId || idx} className="wms-movement-card">
+                  <div className="wms-movement-header">
+                    <div>
+                      {mov.tipo === 'ENTRATA' ? (
+                        <span className="wms-type-badge entry">
+                          <TrendingUp size={14} />
+                          ENTRY
+                        </span>
+                      ) : mov.tipo === 'USCITA' ? (
+                        <span className="wms-type-badge exit">
+                          <TrendingDown size={14} />
+                          EXIT
+                        </span>
+                      ) : (
+                        <span className="wms-type-badge adjustment">
+                          <RefreshCw size={14} />
+                          ADJUSTMENT
+                        </span>
+                      )}
+                    </div>
+                    <div className="wms-movement-time">{formatTime(mov.timestamp)}</div>
+                  </div>
+
+                  <div style={{ marginBottom: '1rem' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                      <code className="wms-article-code">{mov.codice_articolo}</code>
+                      <div style={{ textAlign: 'right' }}>
+                        <div className={`wms-quantity-value ${mov.quantita > 0 ? 'positive' : 'negative'}`}>
+                          {mov.quantita > 0 ? '+' : ''}{mov.quantita}
+                        </div>
+                        <div style={{ fontSize: '0.75rem', color: '#6b7280', textTransform: 'uppercase' }}>units</div>
+                      </div>
                     </div>
                   </div>
 
-                  <div className="movement-details">
-                    <div className="detail-row">
-                      <User size={14} />
+                  <div style={{ fontSize: '0.875rem', color: '#4b5563', marginBottom: '0.75rem' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.5rem' }}>
+                      <User size={14} style={{ color: '#6b7280' }} />
                       <span>{mov.operatore || 'Unknown'}</span>
                     </div>
                     {mov.motivo && (
-                      <div className="detail-row">
-                        <span className="detail-label">Reason:</span>
+                      <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '0.5rem' }}>
+                        <span style={{ color: '#9ca3af', fontWeight: 500 }}>Reason:</span>
                         <span>{mov.motivo}</span>
                       </div>
                     )}
                     {mov.riferimento && (
-                      <div className="detail-row">
-                        <span className="detail-label">Ref:</span>
+                      <div style={{ display: 'flex', gap: '0.5rem' }}>
+                        <span style={{ color: '#9ca3af', fontWeight: 500 }}>Ref:</span>
                         <span>{mov.riferimento}</span>
                       </div>
                     )}
                   </div>
 
-                  <div className="movement-stock">
-                    <div className="stock-change">
-                      <span className="stock-label">Stock:</span>
-                      <span className="stock-value">{mov.giacenza_precedente_magazino}</span>
-                      <span className="stock-arrow">→</span>
-                      <span className="stock-value new">{mov.giacenza_nuova_magazino}</span>
-                    </div>
+                  <div style={{ 
+                    paddingTop: '0.75rem', 
+                    borderTop: '1px solid #f3f4f6',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '0.5rem',
+                    fontSize: '0.875rem'
+                  }}>
+                    <span style={{ color: '#6b7280', fontWeight: 500 }}>Stock:</span>
+                    <span style={{ fontWeight: 600, color: '#4b5563' }}>{mov.giacenza_precedente_magazino}</span>
+                    <span style={{ color: '#9ca3af' }}>→</span>
+                    <span style={{ fontWeight: 600, color: '#0077a2' }}>{mov.giacenza_nuova_magazino}</span>
                   </div>
                 </div>
-              </div>
-            ))}
-          </div>
-        )}
+              ))}
+            </div>
+          )}
+        </div>
       </div>
-    </div>
+    </>
   );
 };
 

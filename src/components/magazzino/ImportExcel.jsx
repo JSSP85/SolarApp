@@ -1,6 +1,6 @@
 // src/components/magazzino/ImportExcel.jsx
 import React, { useState } from 'react';
-import { Upload, CheckCircle, AlertCircle, FileText, Database, Loader, Tag } from 'lucide-react';
+import { Upload, CheckCircle, AlertCircle, FileText, Database, Tag } from 'lucide-react';
 import * as XLSX from 'xlsx';
 import { importArticoliFromExcel } from '../../firebase/magazzinoService';
 
@@ -11,7 +11,6 @@ const ImportExcel = ({ onImportComplete }) => {
   const [error, setError] = useState(null);
   const [preview, setPreview] = useState([]);
 
-  // Auto-classification logic
   const classifyArticle = (description) => {
     if (!description) return 'Others';
     
@@ -120,7 +119,7 @@ const ImportExcel = ({ onImportComplete }) => {
         const worksheet = workbook.Sheets[sheetName];
         const jsonData = XLSX.utils.sheet_to_json(worksheet);
         
-        console.log('Excel data loaded:', jsonData.length, 'rows');
+        console.log('📊 Excel data loaded:', jsonData.length, 'rows');
 
         const transformedData = jsonData
           .filter(row => row['Material'])
@@ -149,7 +148,7 @@ const ImportExcel = ({ onImportComplete }) => {
             };
           });
 
-        console.log('Transformed data:', transformedData.length, 'articles');
+        console.log('✅ Transformed data:', transformedData.length, 'articles');
 
         if (transformedData.length === 0) {
           throw new Error('No valid articles found in Excel. Please check if SAP export contains "Material" column.');
@@ -159,9 +158,13 @@ const ImportExcel = ({ onImportComplete }) => {
         transformedData.forEach(art => {
           categorias[art.categoria] = (categorias[art.categoria] || 0) + 1;
         });
-        console.log('Category distribution:', categorias);
+        console.log('📂 Category distribution:', categorias);
 
+        // CALL FIREBASE IMPORT
+        console.log('🔥 Starting Firebase import...');
         const result = await importArticoliFromExcel(transformedData);
+        console.log('✅ Firebase import completed:', result);
+        
         result.categorias = categorias;
         
         setImportResult(result);
@@ -172,10 +175,15 @@ const ImportExcel = ({ onImportComplete }) => {
         }
         
       } catch (err) {
-        console.error('Import error:', err);
-        setError(err.message || 'Error importing data. Please check the Excel format.');
+        console.error('❌ Import error:', err);
+        setError(err.message || 'Error importing data. Please check the Excel format and Firebase connection.');
         setImporting(false);
       }
+    };
+    
+    reader.onerror = () => {
+      setError('Error reading file. Please try again.');
+      setImporting(false);
     };
     
     reader.readAsArrayBuffer(file);
@@ -203,6 +211,22 @@ const ImportExcel = ({ onImportComplete }) => {
         </div>
 
         <div style={{ padding: '2rem' }}>
+          {error && (
+            <div style={{
+              background: '#fee2e2',
+              border: '1px solid #fca5a5',
+              borderRadius: '8px',
+              padding: '1rem',
+              marginBottom: '1.5rem',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '0.75rem'
+            }}>
+              <AlertCircle size={24} style={{ color: '#dc2626', flexShrink: 0 }} />
+              <div style={{ color: '#991b1b', fontSize: '0.95rem' }}>{error}</div>
+            </div>
+          )}
+
           <label style={{
             display: 'block',
             border: '3px dashed #d1d5db',
@@ -268,7 +292,6 @@ const ImportExcel = ({ onImportComplete }) => {
                 <thead>
                   <tr>
                     <th>Material Code</th>
-                    <th>Old Code</th>
                     <th>Description</th>
                     <th>Stock SAP</th>
                     <th>Auto Category</th>
@@ -278,7 +301,6 @@ const ImportExcel = ({ onImportComplete }) => {
                   {preview.map((row, idx) => (
                     <tr key={idx}>
                       <td><code className="wms-article-code">{row['Material'] || '-'}</code></td>
-                      <td><code style={{ background: '#f9fafb', padding: '0.2rem 0.4rem', borderRadius: '4px' }}>{row['Old material number'] || '-'}</code></td>
                       <td style={{ maxWidth: '300px' }}>{row['Material Description'] || '-'}</td>
                       <td><strong>{row['Stock Quantity on Period End'] || 0}</strong></td>
                       <td>
@@ -303,9 +325,6 @@ const ImportExcel = ({ onImportComplete }) => {
                 </tbody>
               </table>
             </div>
-            <p style={{ textAlign: 'center', color: '#6b7280', fontSize: '0.9rem', marginTop: '1rem' }}>
-              Categories are automatically assigned based on keywords in descriptions
-            </p>
           </div>
         </div>
       )}
@@ -316,7 +335,7 @@ const ImportExcel = ({ onImportComplete }) => {
           <div className="wms-loading-state" style={{ padding: '4rem' }}>
             <div className="wms-spinner"></div>
             <h3 style={{ margin: '1rem 0 0.5rem 0', color: '#1f2937' }}>Importing SAP data...</h3>
-            <p style={{ color: '#6b7280', margin: 0 }}>Processing articles and auto-classifying categories</p>
+            <p style={{ color: '#6b7280', margin: 0 }}>Processing articles and saving to Firebase</p>
           </div>
         </div>
       )}
@@ -380,7 +399,6 @@ const ImportExcel = ({ onImportComplete }) => {
               </div>
             </div>
 
-            {/* Category Distribution */}
             {importResult.categorias && (
               <div style={{
                 background: '#f9fafb',
@@ -408,91 +426,15 @@ const ImportExcel = ({ onImportComplete }) => {
                       border: '1px solid #e5e7eb'
                     }}>
                       <span style={{ fontWeight: 500, color: '#374151' }}>{cat}</span>
-                      <span style={{
-                        background: '#0077a2',
-                        color: 'white',
-                        padding: '0.25rem 0.75rem',
-                        borderRadius: '12px',
-                        fontWeight: 600,
-                        fontSize: '0.9rem'
-                      }}>
-                        {count}
-                      </span>
+                      <span style={{ fontWeight: 700, color: '#0077a2' }}>{count}</span>
                     </div>
                   ))}
                 </div>
               </div>
             )}
-
-            <button onClick={handleClear} className="wms-btn wms-btn-primary" style={{ marginTop: '2rem' }}>
-              Import Another File
-            </button>
           </div>
         </div>
       )}
-
-      {/* Error State */}
-      {error && (
-        <div className="wms-panel-card">
-          <div style={{ padding: '3rem 2rem', textAlign: 'center' }}>
-            <AlertCircle size={64} style={{ color: '#ef4444', marginBottom: '1.5rem' }} />
-            <h3 style={{ fontSize: '1.5rem', fontWeight: 700, color: '#1f2937', margin: '0 0 1rem 0' }}>
-              Import Error
-            </h3>
-            <p style={{ color: '#6b7280', marginBottom: '2rem' }}>{error}</p>
-            <button onClick={handleClear} className="wms-btn wms-btn-secondary">
-              Try Again
-            </button>
-          </div>
-        </div>
-      )}
-
-      {/* Instructions Card */}
-      <div className="wms-panel-card">
-        <div className="wms-panel-header">
-          <h2 className="wms-panel-title">📋 SAP Export Instructions</h2>
-        </div>
-        <div style={{ padding: '2rem' }}>
-          <ol style={{ color: '#4b5563', lineHeight: '1.8', paddingLeft: '1.5rem' }}>
-            <li>Export your warehouse inventory from SAP</li>
-            <li>Ensure the Excel contains these columns:
-              <ul style={{ marginTop: '0.5rem' }}>
-                <li><code style={{ background: '#f3f4f6', padding: '0.2rem 0.4rem', borderRadius: '4px' }}>Material</code> - Article code (700xxx)</li>
-                <li><code style={{ background: '#f3f4f6', padding: '0.2rem 0.4rem', borderRadius: '4px' }}>Material Description</code> - Component name</li>
-                <li><code style={{ background: '#f3f4f6', padding: '0.2rem 0.4rem', borderRadius: '4px' }}>Stock Quantity on Period End</code> - Current stock</li>
-                <li><code style={{ background: '#f3f4f6', padding: '0.2rem 0.4rem', borderRadius: '4px' }}>Old material number</code> - Legacy code (optional)</li>
-              </ul>
-            </li>
-            <li>Upload the file using the button above</li>
-            <li>Review the preview with auto-assigned categories</li>
-            <li>Click "Import to Database"</li>
-          </ol>
-          
-          <div style={{
-            background: '#eff6ff',
-            padding: '1rem',
-            borderRadius: '6px',
-            marginTop: '1.5rem',
-            borderLeft: '4px solid #0077a2'
-          }}>
-            <p style={{ margin: 0, fontSize: '0.9rem', color: '#1e40af' }}>
-              <strong>🤖 Auto-Classification:</strong> Articles are automatically categorized based on keywords in descriptions.
-            </p>
-          </div>
-          
-          <div style={{
-            background: '#fef3c7',
-            padding: '1rem',
-            borderRadius: '6px',
-            marginTop: '1rem',
-            borderLeft: '4px solid #f59e0b'
-          }}>
-            <p style={{ margin: 0, fontSize: '0.9rem', color: '#92400e' }}>
-              <strong>⚠️ Important:</strong> This updates SAP stock values but preserves all warehouse movements.
-            </p>
-          </div>
-        </div>
-      </div>
     </>
   );
 };

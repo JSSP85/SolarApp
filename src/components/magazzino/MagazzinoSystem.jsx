@@ -33,7 +33,6 @@ const MagazzinoSystem = ({ onBack }) => {
   const [lowStockArticles, setLowStockArticles] = useState([]);
   const [loading, setLoading] = useState(true);
 
-  // Load dashboard stats
   useEffect(() => {
     loadStats();
   }, []);
@@ -63,32 +62,20 @@ const MagazzinoSystem = ({ onBack }) => {
   const handleImportComplete = (result) => {
     console.log('Import completed:', result);
     loadStats();
-    // Automatically switch to dashboard to see results
-    setTimeout(() => setActiveView('dashboard'), 1000);
+    // Auto switch to dashboard after 2 seconds
+    setTimeout(() => setActiveView('dashboard'), 2000);
   };
 
   const getViewTitle = () => {
     switch (activeView) {
       case 'dashboard': return 'Dashboard';
       case 'import': return 'Import from SAP';
-      case 'movements': return 'Movement Registry';
       case 'history': return 'Load History';
+      case 'movements': return 'Movement Registry';
       case 'export': return 'Export for SAP';
       case 'mobile': return 'Mobile App';
       default: return 'Dashboard';
     }
-  };
-
-  const formatDateTime = (timestamp) => {
-    if (!timestamp) return 'Never';
-    const date = timestamp.toDate ? timestamp.toDate() : new Date(timestamp);
-    return new Intl.DateTimeFormat('en-US', {
-      month: 'short',
-      day: 'numeric',
-      year: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit'
-    }).format(date);
   };
 
   return (
@@ -96,7 +83,6 @@ const MagazzinoSystem = ({ onBack }) => {
       <div className="wms-app-container">
         {/* Sidebar */}
         <div className="wms-sidebar">
-          {/* Back Button */}
           {onBack && (
             <div className="wms-back-button-wrapper">
               <BackButton onClick={onBack} />
@@ -121,35 +107,40 @@ const MagazzinoSystem = ({ onBack }) => {
             </div>
 
             <div 
-              className={`wms-nav-item ${activeView === 'dashboard' ? 'active' : ''}`}
+              className={`wms-nav-item ${activeView === 'dashboard' ? 'wms-active' : ''}`}
               onClick={() => handleViewChange('dashboard')}
             >
-              <Package size={20} />
-              <span>Dashboard</span>
+              <span className="wms-nav-icon">📊</span>
+              <span className="wms-nav-text">Dashboard</span>
+              {activeView === 'dashboard' && <div className="wms-nav-indicator"></div>}
             </div>
 
             <div 
-              className={`wms-nav-item ${activeView === 'import' ? 'active' : ''}`}
+              className={`wms-nav-item ${activeView === 'import' ? 'wms-active' : ''}`}
               onClick={() => handleViewChange('import')}
             >
-              <Upload size={20} />
-              <span>Import from SAP</span>
+              <span className="wms-nav-icon">⬆️</span>
+              <span className="wms-nav-text">Import from SAP</span>
+              {activeView === 'import' && <div className="wms-nav-indicator"></div>}
             </div>
 
             <div 
-              className={`wms-nav-item ${activeView === 'history' ? 'active' : ''}`}
+              className={`wms-nav-item ${activeView === 'history' ? 'wms-active' : ''}`}
               onClick={() => handleViewChange('history')}
             >
-              <Clock size={20} />
-              <span>Load History</span>
+              <span className="wms-nav-icon">🕐</span>
+              <span className="wms-nav-text">Load History</span>
+              {activeView === 'history' && <div className="wms-nav-indicator"></div>}
             </div>
 
             <div 
-              className={`wms-nav-item ${activeView === 'movements' ? 'active' : ''}`}
+              className={`wms-nav-item ${activeView === 'movements' ? 'wms-active' : ''}`}
               onClick={() => handleViewChange('movements')}
             >
-              <List size={20} />
-              <span>Movement Registry</span>
+              <span className="wms-nav-icon">📋</span>
+              <span className="wms-nav-text">Movement Registry</span>
+              <span className="wms-nav-badge">{stats.movimenti_oggi}</span>
+              {activeView === 'movements' && <div className="wms-nav-indicator"></div>}
             </div>
 
             <div className="wms-sidebar-divider"></div>
@@ -159,61 +150,60 @@ const MagazzinoSystem = ({ onBack }) => {
             </div>
 
             <div 
-              className={`wms-nav-item ${activeView === 'mobile' ? 'active' : ''}`}
+              className={`wms-nav-item ${activeView === 'export' ? 'wms-active' : ''}`}
+              onClick={() => handleViewChange('export')}
+            >
+              <span className="wms-nav-icon">⬇️</span>
+              <span className="wms-nav-text">Export for SAP</span>
+              {activeView === 'export' && <div className="wms-nav-indicator"></div>}
+            </div>
+
+            <div 
+              className={`wms-nav-item ${activeView === 'mobile' ? 'wms-active' : ''}`}
               onClick={() => handleViewChange('mobile')}
             >
-              <Smartphone size={20} />
-              <span>Mobile App</span>
+              <span className="wms-nav-icon">📱</span>
+              <span className="wms-nav-text">Mobile App</span>
+              {activeView === 'mobile' && <div className="wms-nav-indicator"></div>}
             </div>
           </nav>
-
-          {/* Stats Summary in Sidebar */}
-          <div className="wms-sidebar-stats">
-            <div className="wms-stat-card">
-              <Database size={16} />
-              <div>
-                <div className="wms-stat-value">{stats.totale_articoli.toLocaleString()}</div>
-                <div className="wms-stat-label">Total Articles</div>
-              </div>
-            </div>
-
-            <div className="wms-stat-card">
-              <Activity size={16} />
-              <div>
-                <div className="wms-stat-value">{stats.movimenti_oggi}</div>
-                <div className="wms-stat-label">Today's Movements</div>
-              </div>
-            </div>
-
-            <div className="wms-stat-card alert">
-              <AlertCircle size={16} />
-              <div>
-                <div className="wms-stat-value">{stats.allarmi_attivi + stats.articoli_zero_stock}</div>
-                <div className="wms-stat-label">Stock Alerts</div>
-              </div>
-            </div>
-          </div>
         </div>
 
         {/* Main Content */}
         <div className="wms-main-content">
           <div className="wms-content-header">
-            <h1 className="wms-content-title">{getViewTitle()}</h1>
-            {stats.ultima_sincronizzazione && (
-              <div className="wms-last-sync">
-                <Clock size={14} />
-                <span>Last sync: {formatDateTime(stats.ultima_sincronizzazione)}</span>
+            <div className="wms-header-info">
+              <h1 className="wms-main-title">Warehouse Management System</h1>
+              <div className="wms-breadcrumb">
+                Quality Management → Warehouse → {getViewTitle()}
               </div>
-            )}
+            </div>
+            <div className="wms-header-actions">
+              {stats.ultima_sincronizzazione && (
+                <div style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '0.5rem',
+                  background: 'rgba(255, 255, 255, 0.2)',
+                  padding: '0.5rem 1rem',
+                  borderRadius: '6px',
+                  fontSize: '0.85rem',
+                  color: 'white'
+                }}>
+                  <Clock size={16} />
+                  Last sync: {new Date(stats.ultima_sincronizzazione.toDate()).toLocaleString()}
+                </div>
+              )}
+            </div>
           </div>
 
-          <div className="wms-content-body">
+          <div className="wms-panel-container">
             {/* Dashboard View */}
             {activeView === 'dashboard' && (
               <>
                 {loading ? (
                   <div className="wms-panel-card">
-                    <div className="wms-empty-state">
+                    <div className="wms-loading-state">
                       <Activity size={64} />
                       <h3>Loading Dashboard...</h3>
                     </div>
@@ -221,44 +211,44 @@ const MagazzinoSystem = ({ onBack }) => {
                 ) : (
                   <>
                     {/* Stats Cards */}
-                    <div className="wms-stats-grid">
-                      <div className="wms-stat-card-large">
+                    <div className="wms-stats-container">
+                      <div className="wms-stat-card">
                         <div className="wms-stat-icon" style={{ background: 'rgba(59, 130, 246, 0.1)' }}>
                           <Database size={32} style={{ color: '#0077a2' }} />
                         </div>
-                        <div className="wms-stat-content">
-                          <div className="wms-stat-value-large">{stats.totale_articoli.toLocaleString()}</div>
-                          <div className="wms-stat-label-large">Total Articles in Database</div>
+                        <div>
+                          <div className="wms-stat-value">{stats.totale_articoli}</div>
+                          <div className="wms-stat-label">Total Articles</div>
                         </div>
                       </div>
 
-                      <div className="wms-stat-card-large">
+                      <div className="wms-stat-card">
                         <div className="wms-stat-icon" style={{ background: 'rgba(16, 185, 129, 0.1)' }}>
                           <Activity size={32} style={{ color: '#10b981' }} />
                         </div>
-                        <div className="wms-stat-content">
-                          <div className="wms-stat-value-large">{stats.movimenti_oggi}</div>
-                          <div className="wms-stat-label-large">Movements Today</div>
+                        <div>
+                          <div className="wms-stat-value">{stats.movimenti_oggi}</div>
+                          <div className="wms-stat-label">Movements Today</div>
                         </div>
                       </div>
 
-                      <div className="wms-stat-card-large">
+                      <div className="wms-stat-card">
                         <div className="wms-stat-icon" style={{ background: 'rgba(245, 158, 11, 0.1)' }}>
                           <AlertCircle size={32} style={{ color: '#f59e0b' }} />
                         </div>
-                        <div className="wms-stat-content">
-                          <div className="wms-stat-value-large">{stats.allarmi_attivi}</div>
-                          <div className="wms-stat-label-large">Low Stock Warnings</div>
+                        <div>
+                          <div className="wms-stat-value">{stats.allarmi_attivi}</div>
+                          <div className="wms-stat-label">Low Stock</div>
                         </div>
                       </div>
 
-                      <div className="wms-stat-card-large">
+                      <div className="wms-stat-card">
                         <div className="wms-stat-icon" style={{ background: 'rgba(239, 68, 68, 0.1)' }}>
                           <TrendingUp size={32} style={{ color: '#ef4444' }} />
                         </div>
-                        <div className="wms-stat-content">
-                          <div className="wms-stat-value-large">{stats.articoli_zero_stock}</div>
-                          <div className="wms-stat-label-large">Out of Stock</div>
+                        <div>
+                          <div className="wms-stat-value">{stats.articoli_zero_stock}</div>
+                          <div className="wms-stat-label">Out of Stock</div>
                         </div>
                       </div>
                     </div>
@@ -266,17 +256,14 @@ const MagazzinoSystem = ({ onBack }) => {
                     {/* Full Inventory Table */}
                     <DashboardTable />
 
-                    {/* Low Stock Alert (if any) */}
+                    {/* Low Stock Alert */}
                     {lowStockArticles.length > 0 && (
-                      <div className="wms-panel-card" style={{ marginTop: '2rem' }}>
+                      <div className="wms-panel-card">
                         <div className="wms-panel-header">
                           <h2 className="wms-panel-title">
                             <AlertCircle size={24} />
                             Critical Stock Alerts
                           </h2>
-                          <p className="wms-panel-subtitle">
-                            Articles requiring immediate attention
-                          </p>
                         </div>
                         <div style={{ padding: '2rem' }}>
                           <div className="wms-table-container">
@@ -285,32 +272,22 @@ const MagazzinoSystem = ({ onBack }) => {
                                 <tr>
                                   <th>Code</th>
                                   <th>Description</th>
-                                  <th>Category</th>
                                   <th>Current Stock</th>
-                                  <th>Min Required</th>
+                                  <th>Minimum</th>
                                   <th>Status</th>
                                 </tr>
                               </thead>
                               <tbody>
-                                {lowStockArticles.map(article => (
-                                  <tr key={article.codice}>
-                                    <td style={{ fontFamily: 'monospace', fontWeight: 600 }}>
-                                      {article.codice}
-                                    </td>
+                                {lowStockArticles.map((article, idx) => (
+                                  <tr key={idx}>
+                                    <td><code className="wms-article-code">{article.codice}</code></td>
                                     <td>{article.descrizione}</td>
-                                    <td>
-                                      <span className="wms-badge">{article.categoria}</span>
-                                    </td>
-                                    <td style={{ textAlign: 'center', fontFamily: 'monospace', fontSize: '1.1rem', fontWeight: 700 }}>
+                                    <td><strong style={{ color: article.giacenza_attuale_magazino === 0 ? '#ef4444' : '#f59e0b' }}>
                                       {article.giacenza_attuale_magazino}
-                                    </td>
-                                    <td style={{ textAlign: 'center', fontFamily: 'monospace' }}>
-                                      {article.giacenza_minima}
-                                    </td>
-                                    <td style={{ textAlign: 'center' }}>
-                                      <span className={`wms-badge ${
-                                        article.giacenza_attuale_magazino === 0 ? 'critical' : 'warning'
-                                      }`}>
+                                    </strong></td>
+                                    <td>{article.giacenza_minima}</td>
+                                    <td>
+                                      <span className={`wms-alert-badge ${article.giacenza_attuale_magazino === 0 ? 'critical' : 'warning'}`}>
                                         {article.giacenza_attuale_magazino === 0 ? 'OUT OF STOCK' : 'LOW'}
                                       </span>
                                     </td>
@@ -342,6 +319,17 @@ const MagazzinoSystem = ({ onBack }) => {
               <MovimentiRegistry />
             )}
 
+            {/* Export View */}
+            {activeView === 'export' && (
+              <div className="wms-panel-card">
+                <div className="wms-empty-state">
+                  <Download size={64} />
+                  <h3>Export for SAP Update</h3>
+                  <p>This feature will be available soon</p>
+                </div>
+              </div>
+            )}
+
             {/* Mobile App View */}
             {activeView === 'mobile' && (
               <div className="wms-panel-card">
@@ -349,17 +337,6 @@ const MagazzinoSystem = ({ onBack }) => {
                   <Smartphone size={64} />
                   <h3>Mobile App Download</h3>
                   <p>Download the Android app to manage inventory with QR scanner</p>
-                  <div style={{ 
-                    marginTop: '2rem', 
-                    padding: '1.5rem', 
-                    background: '#f0f9ff',
-                    borderRadius: '12px',
-                    border: '2px solid #0077a2'
-                  }}>
-                    <p style={{ margin: 0, color: '#1e40af', fontSize: '0.95rem' }}>
-                      <strong>📱 Coming Soon:</strong> React Native mobile app with QR code scanning capabilities for real-time inventory management
-                    </p>
-                  </div>
                 </div>
               </div>
             )}

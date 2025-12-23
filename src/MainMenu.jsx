@@ -21,7 +21,8 @@ import {
   Book,
   LogOut,
   User,
-  Building2
+  Building2,
+  Package  // ← AÑADIDO: Ícono para Warehouse Management
 } from 'lucide-react';
 
 // Importar el contexto de autenticación
@@ -39,6 +40,9 @@ import NCRegistrySystem from './components/non-conformity/NCRegistrySystem';
 import SupplierEvaluationWrapper from './components/supplier-evaluation/SupplierEvaluationWrapper';
 
 import InspectionDashboard from './components/inspection-dashboard/InspectionDashboard';
+
+// ← AÑADIDO: Import Warehouse Management System
+import MagazzinoSystem from './components/magazzino/MagazzinoSystem';
 
 // Custom SVG para hardware components
 const ScrewIcon = () => (
@@ -157,6 +161,15 @@ const MainMenu = () => {
          <InspectionDashboard />
        </div>
      );
+
+    // ← AÑADIDO: Case para Warehouse Management
+    case 'warehouse-management':
+      return (
+        <div className="warehouse-management-wrapper">
+          <MagazzinoSystem onBack={() => setSelectedOption(null)} />
+        </div>
+      );
+
     case 'hardware':
     case 'electrical':
     case 'free-inspection':
@@ -395,7 +408,7 @@ const MainMenu = () => {
           </div>
 
           {/* Sección Manager module - Solo visible si el usuario tiene permisos */}
-          {(hasPermission('non-conformity-manager') || hasPermission('inspection-dashboard') || hasPermission('quality-database') || hasPermission('quality-book')) && (
+          {(hasPermission('non-conformity-manager') || hasPermission('inspection-dashboard') || hasPermission('quality-database') || hasPermission('quality-book') || hasPermission('warehouse-management')) && (
             <div className={`${styles.mainMenuSection} ${styles.mainMenuStagger2}`} style={{ marginTop: '2rem' }}>
               <div className={styles.mainMenuSectionHeader} style={{ background: 'rgba(0, 80, 120, 0.8)' }}>
                 <h2 className={styles.mainMenuSectionTitle}>
@@ -484,6 +497,31 @@ const MainMenu = () => {
                         <h3 className={styles.mainMenuCardTitle}>Quality Book Generator</h3>
                         <p className={styles.mainMenuCardDescription}>
                           Automated traceability documentation system for quality control books
+                        </p>
+                        <div className={styles.mainMenuCardFooter}>
+                          <div className={`${styles.mainMenuBadge} ${styles.mainMenuBadgeInfo}`}>Available</div>
+                          <ChevronRight className={styles.mainMenuCardArrow} size={20} />
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* ← AÑADIDO: Warehouse Management Card */}
+                  {hasPermission('warehouse-management') && (
+                    <div 
+                      className={`${styles.mainMenuCard} ${styles.mainMenuStagger5}`}
+                      onClick={() => handleOptionSelect('warehouse-management')}
+                    >
+                      <div className={styles.mainMenuCardBody}>
+                        <div 
+                          className={styles.mainMenuCardIconContainer} 
+                          style={{ background: 'rgba(251, 146, 60, 0.1)', border: '1px solid rgba(251, 146, 60, 0.2)' }}
+                        >
+                          <Package size={32} className={styles.mainMenuCardIcon} />
+                        </div>
+                        <h3 className={styles.mainMenuCardTitle}>Warehouse Management</h3>
+                        <p className={styles.mainMenuCardDescription}>
+                          Real-time inventory control system with mobile integration and QR scanner
                         </p>
                         <div className={styles.mainMenuCardFooter}>
                           <div className={`${styles.mainMenuBadge} ${styles.mainMenuBadgeInfo}`}>Available</div>

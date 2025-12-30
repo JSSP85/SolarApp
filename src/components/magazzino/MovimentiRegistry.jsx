@@ -13,11 +13,13 @@ import {
   Clock,
   Activity
 } from 'lucide-react';
-import { getMovimenti, getMovimentiStats } from '../../firebase/magazzinoService';
+import { getMovimenti, getMovimentiStats, getAllArticoli } from '../../firebase/magazzinoService';
 
 const MovimentiRegistry = () => {
   const [movements, setMovements] = useState([]);
   const [filteredMovements, setFilteredMovements] = useState([]);
+  const [articoli, setArticoli] = useState([]);
+  const [articoliMap, setArticoliMap] = useState(new Map());
   const [loading, setLoading] = useState(true);
   const [stats, setStats] = useState(null);
   const [lastUpdate, setLastUpdate] = useState(new Date());
@@ -32,10 +34,10 @@ const MovimentiRegistry = () => {
 
   // Auto-refresh every 30 seconds
   useEffect(() => {
-    loadMovements();
+    loadData();
     
     const interval = setInterval(() => {
-      loadMovements(true); // Silent refresh
+      loadData(true); // Silent refresh
     }, 30000); // 30 seconds
     
     return () => clearInterval(interval);
@@ -46,11 +48,35 @@ const MovimentiRegistry = () => {
     applyFilters();
   }, [movements, filters]);
 
-  // Load movements from Firebase
-  const loadMovements = async (silent = false) => {
+  // Load movements and articles from Firebase
+  const loadData = async (silent = false) => {
     try {
       if (!silent) setLoading(true);
       
+      // Load articles first (for descriptions)
+      const articlesData = await getAllArticoli();
+      setArticoli(articlesData);
+      
+      // Create Map for fast lookup: codice -> articolo
+      const map = new Map();
+      articlesData.forEach(art => {
+        map.set(art.codice, art);
+      });
+      setArticoliMap(map);
+      
+      // Then load movements
+      await loadMovements(true);
+      
+      if (!silent) setLoading(false);
+    } catch (error) {
+      console.error('Error loading data:', error);
+      setLoading(false);
+    }
+  };
+
+  // Load movements from Firebase
+  const loadMovements = async (skipLoading = false) => {
+    try {
       // Calculate date range
       const now = new Date();
       let dataInizio = new Date();
@@ -88,10 +114,8 @@ const MovimentiRegistry = () => {
       setMovements(movData);
       setStats(statsData);
       setLastUpdate(new Date());
-      setLoading(false);
     } catch (error) {
       console.error('Error loading movements:', error);
-      setLoading(false);
     }
   };
 
@@ -102,11 +126,15 @@ const MovimentiRegistry = () => {
     // Search filter
     if (filters.searchTerm) {
       const term = filters.searchTerm.toLowerCase();
-      filtered = filtered.filter(mov => 
-        mov.codice_articolo?.toLowerCase().includes(term) ||
-        mov.operatore?.toLowerCase().includes(term) ||
-        mov.motivo?.toLowerCase().includes(term)
-      );
+      filtered = filtered.filter(mov => {
+        const articolo = articoliMap.get(mov.codice_articolo);
+        const descrizione = articolo?.descrizione || '';
+        
+        return mov.codice_articolo?.toLowerCase().includes(term) ||
+               descrizione.toLowerCase().includes(term) ||
+               mov.operatore?.toLowerCase().includes(term) ||
+               mov.motivo?.toLowerCase().includes(term);
+      });
     }
     
     // Operator filter
@@ -163,6 +191,12 @@ const MovimentiRegistry = () => {
     });
   };
 
+  // Get article description
+  const getArticleDescription = (codice) => {
+    const articolo = articoliMap.get(codice);
+    return articolo?.descrizione || 'No description';
+  };
+
   return (
     <>
       {/* Stats Header Card */}
@@ -180,7 +214,7 @@ const MovimentiRegistry = () => {
               <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
                 <button 
                   className="wms-btn wms-btn-primary" 
-                  onClick={() => loadMovements()}
+                  onClick={() => loadData()}
                   disabled={loading}
                   style={{ padding: '0.5rem 1rem', fontSize: '0.875rem' }}
                 >
@@ -315,7 +349,7 @@ const MovimentiRegistry = () => {
             <Search size={18} className="wms-search-icon" />
             <input
               type="text"
-              placeholder="Search by code, operator, or reason..."
+              placeholder="Search by code, description, operator, or reason..."
               value={filters.searchTerm}
               onChange={(e) => setFilters({ ...filters, searchTerm: e.target.value })}
               className="wms-search-input"
@@ -420,7 +454,7 @@ const MovimentiRegistry = () => {
                   </div>
 
                   <div style={{ marginBottom: '1rem' }}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.5rem' }}>
                       <code className="wms-article-code">{mov.codice_articolo}</code>
                       <div style={{ textAlign: 'right' }}>
                         <div className={`wms-quantity-value ${mov.quantita > 0 ? 'positive' : 'negative'}`}>
@@ -428,6 +462,20 @@ const MovimentiRegistry = () => {
                         </div>
                         <div style={{ fontSize: '0.75rem', color: '#6b7280', textTransform: 'uppercase' }}>units</div>
                       </div>
+                    </div>
+                    
+                    {/* COMPONENT DESCRIPTION - NEW! */}
+                    <div style={{ 
+                      fontSize: '0.875rem', 
+                      color: '#1f2937',
+                      fontWeight: 500,
+                      marginTop: '0.5rem',
+                      padding: '0.5rem',
+                      background: '#f9fafb',
+                      borderRadius: '6px',
+                      borderLeft: '3px solid #0077a2'
+                    }}>
+                      {getArticleDescription(mov.codice_articolo)}
                     </div>
                   </div>
 

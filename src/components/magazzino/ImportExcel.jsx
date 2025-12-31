@@ -201,7 +201,7 @@ const ImportExcel = ({ onImportComplete }) => {
         });
         console.log('📂 Category distribution:', categorias);
 
-        // CALL FIREBASE IMPORT
+        // CALL FIREBASE IMPORT (with automatic movements reset)
         console.log('🔥 Starting Firebase import...');
         const result = await importArticoliFromExcel(transformedData);
         console.log('✅ Firebase import completed:', result);
@@ -376,7 +376,7 @@ const ImportExcel = ({ onImportComplete }) => {
           <div className="wms-loading-state" style={{ padding: '4rem' }}>
             <div className="wms-spinner"></div>
             <h3 style={{ margin: '1rem 0 0.5rem 0', color: '#1f2937' }}>Importing SAP data...</h3>
-            <p style={{ color: '#6b7280', margin: 0 }}>Processing articles and saving to Firebase</p>
+            <p style={{ color: '#6b7280', margin: 0 }}>Processing articles and resetting movements</p>
           </div>
         </div>
       )}
@@ -438,6 +438,21 @@ const ImportExcel = ({ onImportComplete }) => {
                   {importResult.aggiornati}
                 </div>
               </div>
+
+              {/* NEW: Movements Deleted */}
+              <div style={{
+                background: '#fee2e2',
+                padding: '1.5rem',
+                borderRadius: '8px',
+                border: '1px solid #fca5a5'
+              }}>
+                <div style={{ fontSize: '0.9rem', color: '#6b7280', fontWeight: 500, marginBottom: '0.5rem' }}>
+                  Movements Reset:
+                </div>
+                <div style={{ fontSize: '2rem', fontWeight: 700, color: '#ef4444' }}>
+                  {importResult.movementsDeleted || 0}
+                </div>
+              </div>
             </div>
 
             {importResult.categorias && (
@@ -473,11 +488,32 @@ const ImportExcel = ({ onImportComplete }) => {
                 </div>
               </div>
             )}
+
+            {/* NEW: Important Notice */}
+            <div style={{
+              background: '#fef2f2',
+              border: '2px solid #fca5a5',
+              padding: '1.5rem',
+              borderRadius: '8px',
+              marginTop: '2rem',
+              textAlign: 'left'
+            }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '0.75rem' }}>
+                <AlertCircle size={24} style={{ color: '#dc2626' }} />
+                <h4 style={{ margin: 0, color: '#dc2626', fontSize: '1.1rem' }}>
+                  Important: All Movements Reset
+                </h4>
+              </div>
+              <p style={{ margin: 0, fontSize: '0.95rem', color: '#6b7280', lineHeight: '1.6' }}>
+                ⚠️ This import has <strong>deleted all {importResult.movementsDeleted} warehouse movements</strong> and reset stock to match the new SAP data. 
+                The warehouse stock now equals the SAP stock, and movement tracking starts fresh from this point.
+              </p>
+            </div>
           </div>
         </div>
       )}
 
-      {/* ====== LOAD HISTORY SECTION (INTEGRATED) ====== */}
+      {/* Load History Section */}
       {loadingHistory ? (
         <div className="wms-panel-card">
           <div className="wms-panel-header">
@@ -487,7 +523,7 @@ const ImportExcel = ({ onImportComplete }) => {
             </h2>
           </div>
           <div style={{ padding: '2rem', textAlign: 'center' }}>
-            <div className="spinner" style={{
+            <div className="wms-spinner" style={{
               border: '4px solid #f3f4f6',
               borderTop: '4px solid #0077a2',
               borderRadius: '50%',
@@ -521,11 +557,9 @@ const ImportExcel = ({ onImportComplete }) => {
           <div className="wms-panel-header">
             <h2 className="wms-panel-title">
               <Clock size={24} />
-              SAP Database Load History
+              Last Import Information
             </h2>
-            <p className="wms-panel-subtitle">
-              Last database synchronization with SAP
-            </p>
+            <p className="wms-panel-subtitle">Previous SAP data import details</p>
           </div>
 
           <div style={{ padding: '2rem' }}>
@@ -552,12 +586,12 @@ const ImportExcel = ({ onImportComplete }) => {
             </div>
 
             {/* Import Details Grid */}
-            <div style={{
+            <div style={{ 
               display: 'grid',
               gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))',
               gap: '1.5rem'
             }}>
-              {/* Date & Time */}
+              {/* Import Date */}
               <div style={{
                 background: 'linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%)',
                 borderRadius: '12px',
@@ -613,17 +647,17 @@ const ImportExcel = ({ onImportComplete }) => {
               }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '0.75rem' }}>
                   <Package size={20} style={{ color: '#d97706' }} />
-                  <h4 style={{ margin: 0, color: '#b45309', fontSize: '0.9rem', fontWeight: 600 }}>
+                  <h4 style={{ margin: 0, color: '#92400e', fontSize: '0.9rem', fontWeight: 600 }}>
                     TOTAL ARTICLES
                   </h4>
                 </div>
                 <p style={{ 
                   margin: 0, 
-                  color: '#92400e', 
-                  fontSize: '1.8rem', 
+                  color: '#78350f', 
+                  fontSize: '1.1rem', 
                   fontWeight: 700
                 }}>
-                  {lastImport.totale_articoli.toLocaleString()}
+                  {lastImport.totale_articoli?.toLocaleString() || 0}
                 </p>
               </div>
             </div>
@@ -658,11 +692,11 @@ const ImportExcel = ({ onImportComplete }) => {
                   }}>
                     <span style={{ color: '#6b7280', fontSize: '0.9rem' }}>New Articles</span>
                     <span style={{ 
-                      color: '#059669', 
+                      color: '#10b981', 
                       fontSize: '1.3rem', 
                       fontWeight: 700 
                     }}>
-                      +{lastImport.articoli_nuovi}
+                      {lastImport.articoli_nuovi}
                     </span>
                   </div>
                   <div style={{ 
@@ -713,17 +747,17 @@ const ImportExcel = ({ onImportComplete }) => {
               </div>
             </div>
 
-            {/* Info Banner */}
+            {/* Info Banner - UPDATED */}
             <div style={{
-              background: '#eff6ff',
+              background: '#fef2f2',
               padding: '1rem',
               borderRadius: '8px',
               marginTop: '2rem',
-              borderLeft: '4px solid #0077a2'
+              borderLeft: '4px solid #ef4444'
             }}>
-              <p style={{ margin: 0, fontSize: '0.9rem', color: '#1e40af' }}>
-                <strong>ℹ️ Note:</strong> This import updated SAP stock values but preserved all warehouse movements. 
-                The system maintains separate tracking for SAP inventory and warehouse adjustments.
+              <p style={{ margin: 0, fontSize: '0.9rem', color: '#991b1b' }}>
+                <strong>⚠️ Note:</strong> This import reset all warehouse movements ({lastImport.movimenti_resettati || 0} movements deleted) and synchronized stock with SAP data. 
+                Movement tracking started fresh from this import.
               </p>
             </div>
           </div>

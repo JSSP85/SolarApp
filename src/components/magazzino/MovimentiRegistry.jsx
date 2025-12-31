@@ -11,9 +11,11 @@ import {
   Filter,
   RefreshCw,
   Clock,
-  Activity
+  Activity,
+  Trash2,
+  X
 } from 'lucide-react';
-import { getMovimenti, getMovimentiStats, getAllArticoli } from '../../firebase/magazzinoService';
+import { getMovimenti, getMovimentiStats, getAllArticoli, deleteMovimento } from '../../firebase/magazzinoService';
 
 const MovimentiRegistry = () => {
   const [movements, setMovements] = useState([]);
@@ -23,6 +25,8 @@ const MovimentiRegistry = () => {
   const [loading, setLoading] = useState(true);
   const [stats, setStats] = useState(null);
   const [lastUpdate, setLastUpdate] = useState(new Date());
+  const [deletingId, setDeletingId] = useState(null);
+  const [confirmDelete, setConfirmDelete] = useState(null);
   
   // Filters
   const [filters, setFilters] = useState({
@@ -195,6 +199,24 @@ const MovimentiRegistry = () => {
   const getArticleDescription = (codice) => {
     const articolo = articoliMap.get(codice);
     return articolo?.descrizione || 'No description';
+  };
+
+  // Handle delete movement
+  const handleDeleteMovement = async (movimentoId) => {
+    try {
+      setDeletingId(movimentoId);
+      await deleteMovimento(movimentoId);
+      
+      // Refresh movements
+      await loadData(true);
+      
+      setConfirmDelete(null);
+      setDeletingId(null);
+    } catch (error) {
+      console.error('Error deleting movement:', error);
+      alert('Error deleting movement. Please try again.');
+      setDeletingId(null);
+    }
   };
 
   return (
@@ -430,8 +452,46 @@ const MovimentiRegistry = () => {
           ) : (
             <div className="wms-movements-grid">
               {filteredMovements.map((mov, idx) => (
-                <div key={mov.firebaseId || idx} className="wms-movement-card">
-                  <div className="wms-movement-header">
+                <div key={mov.firebaseId || idx} className="wms-movement-card" style={{ position: 'relative' }}>
+                  {/* Delete Button */}
+                  <button
+                    onClick={() => setConfirmDelete(mov.firebaseId)}
+                    disabled={deletingId === mov.firebaseId}
+                    style={{
+                      position: 'absolute',
+                      top: '0.75rem',
+                      right: '0.75rem',
+                      background: 'rgba(239, 68, 68, 0.1)',
+                      border: '1px solid rgba(239, 68, 68, 0.3)',
+                      borderRadius: '6px',
+                      padding: '0.5rem',
+                      cursor: deletingId === mov.firebaseId ? 'not-allowed' : 'pointer',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      transition: 'all 0.2s',
+                      opacity: deletingId === mov.firebaseId ? 0.5 : 1
+                    }}
+                    onMouseOver={(e) => {
+                      if (deletingId !== mov.firebaseId) {
+                        e.currentTarget.style.background = 'rgba(239, 68, 68, 0.2)';
+                        e.currentTarget.style.borderColor = '#ef4444';
+                      }
+                    }}
+                    onMouseOut={(e) => {
+                      e.currentTarget.style.background = 'rgba(239, 68, 68, 0.1)';
+                      e.currentTarget.style.borderColor = 'rgba(239, 68, 68, 0.3)';
+                    }}
+                    title="Delete this movement notification"
+                  >
+                    {deletingId === mov.firebaseId ? (
+                      <div className="wms-spinner" style={{ width: '16px', height: '16px', borderWidth: '2px' }}></div>
+                    ) : (
+                      <Trash2 size={16} style={{ color: '#ef4444' }} />
+                    )}
+                  </button>
+
+                  <div className="wms-movement-header" style={{ paddingRight: '3rem' }}>
                     <div>
                       {mov.tipo === 'ENTRATA' ? (
                         <span className="wms-type-badge entry">
@@ -517,6 +577,98 @@ const MovimentiRegistry = () => {
           )}
         </div>
       </div>
+
+      {/* Delete Confirmation Modal */}
+      {confirmDelete && (
+        <div style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          background: 'rgba(0, 0, 0, 0.5)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          zIndex: 9999
+        }}>
+          <div style={{
+            background: 'white',
+            borderRadius: '12px',
+            padding: '2rem',
+            maxWidth: '400px',
+            width: '90%',
+            boxShadow: '0 10px 40px rgba(0, 0, 0, 0.3)'
+          }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginBottom: '1.5rem' }}>
+              <div style={{
+                width: '48px',
+                height: '48px',
+                borderRadius: '50%',
+                background: 'rgba(239, 68, 68, 0.1)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center'
+              }}>
+                <Trash2 size={24} style={{ color: '#ef4444' }} />
+              </div>
+              <h3 style={{ margin: 0, color: '#1f2937', fontSize: '1.25rem' }}>Delete Movement?</h3>
+            </div>
+            
+            <p style={{ color: '#6b7280', margin: '0 0 1.5rem 0', lineHeight: '1.5' }}>
+              This will permanently delete this movement notification. This action cannot be undone.
+            </p>
+            
+            <div style={{ display: 'flex', gap: '1rem', justifyContent: 'flex-end' }}>
+              <button
+                onClick={() => setConfirmDelete(null)}
+                disabled={deletingId}
+                style={{
+                  padding: '0.75rem 1.5rem',
+                  borderRadius: '8px',
+                  border: '1px solid #d1d5db',
+                  background: 'white',
+                  color: '#374151',
+                  fontWeight: 600,
+                  cursor: deletingId ? 'not-allowed' : 'pointer',
+                  opacity: deletingId ? 0.5 : 1
+                }}
+              >
+                Cancel
+              </button>
+              <button
+                onClick={() => handleDeleteMovement(confirmDelete)}
+                disabled={deletingId}
+                style={{
+                  padding: '0.75rem 1.5rem',
+                  borderRadius: '8px',
+                  border: 'none',
+                  background: '#ef4444',
+                  color: 'white',
+                  fontWeight: 600,
+                  cursor: deletingId ? 'not-allowed' : 'pointer',
+                  opacity: deletingId ? 0.5 : 1,
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '0.5rem'
+                }}
+              >
+                {deletingId ? (
+                  <>
+                    <div className="wms-spinner" style={{ width: '16px', height: '16px', borderWidth: '2px' }}></div>
+                    Deleting...
+                  </>
+                ) : (
+                  <>
+                    <Trash2 size={16} />
+                    Delete
+                  </>
+                )}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </>
   );
 };

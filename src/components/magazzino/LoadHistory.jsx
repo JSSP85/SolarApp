@@ -288,8 +288,8 @@ const LoadHistory = () => {
           borderLeft: '4px solid #0077a2'
         }}>
           <p style={{ margin: 0, fontSize: '0.9rem', color: '#1e40af' }}>
-            <strong>ℹ️ Note:</strong> This import updated SAP stock values but preserved all warehouse movements. 
-            The system maintains separate tracking for SAP inventory and warehouse adjustments.
+            <strong>⚠️ Important:</strong> This import loaded new SAP stock quantities and RESET all warehouse movements to 0.
+SAP quantities already include previous adjustments, so movements start fresh from this baseline.
           </p>
         </div>
       </div>

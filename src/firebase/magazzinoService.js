@@ -21,118 +21,21 @@ import {
 import { db } from './config';
 
 // ============================================================================
-// RESET ALL MOVEMENTS (Called on SAP Import)
-// ============================================================================
-
-/**
- * Reset all movements and reset movimenti_totali to 0 for all articles
- * This is called when importing new SAP data to start fresh
- * 
- * @returns {number} - Number of movements deleted
- */
-export const resetAllMovements = async () => {
-  try {
-    console.log('🔄 RESETTING ALL MOVEMENTS...');
-    
-    // 1. Get all movements
-    const movimentiRef = collection(db, 'movimenti');
-    const movimentiSnapshot = await getDocs(movimentiRef);
-    
-    console.log(`📝 Found ${movimentiSnapshot.size} movements to delete`);
-    
-    // 2. Delete all movements in batches
-    const batchSize = 500; // Firestore batch limit
-    let batch = writeBatch(db);
-    let operationCount = 0;
-    let deletedCount = 0;
-    
-    for (const movDoc of movimentiSnapshot.docs) {
-      batch.delete(movDoc.ref);
-      operationCount++;
-      deletedCount++;
-      
-      // Commit batch every 500 operations
-      if (operationCount >= batchSize) {
-        await batch.commit();
-        batch = writeBatch(db);
-        operationCount = 0;
-        console.log(`✅ Deleted ${deletedCount} movements so far...`);
-      }
-    }
-    
-    // Commit remaining operations
-    if (operationCount > 0) {
-      await batch.commit();
-    }
-    
-    console.log(`✅ Deleted total of ${deletedCount} movements`);
-    
-    // 3. Reset movimenti_totali to 0 for ALL articles
-    const articoliRef = collection(db, 'articoli');
-    const articoliSnapshot = await getDocs(articoliRef);
-    
-    batch = writeBatch(db);
-    operationCount = 0;
-    let articlesResetCount = 0;
-    
-    for (const artDoc of articoliSnapshot.docs) {
-      const artData = artDoc.data();
-      
-      // Reset movimenti_totali to 0 and recalculate giacenza
-      batch.update(artDoc.ref, {
-        movimenti_totali: 0,
-        giacenza_attuale_magazino: artData.giacenza_sap || 0,
-        ultima_modifica: serverTimestamp()
-      });
-      
-      operationCount++;
-      articlesResetCount++;
-      
-      if (operationCount >= batchSize) {
-        await batch.commit();
-        batch = writeBatch(db);
-        operationCount = 0;
-        console.log(`✅ Reset ${articlesResetCount} articles so far...`);
-      }
-    }
-    
-    if (operationCount > 0) {
-      await batch.commit();
-    }
-    
-    console.log(`✅ Reset ${articlesResetCount} articles`);
-    console.log('🎉 ALL MOVEMENTS RESET COMPLETED');
-    
-    return deletedCount;
-    
-  } catch (error) {
-    console.error('❌ Error resetting movements:', error);
-    throw error;
-  }
-};
-
-// ============================================================================
-// IMPORT EXCEL (SAP DATABASE) - UPDATED WITH RESET
+// IMPORT EXCEL (SAP DATABASE)
 // ============================================================================
 
 /**
  * Import articles from Excel (SAP export)
- * This RESETS all movements and starts fresh with new SAP data
+ * This OVERWRITES the SAP data and RESETS movements to 0
+ * 
+ * IMPORTANT: SAP Excel already includes all previous warehouse movements
+ * in the stock quantities, so we must reset movements to 0 to avoid duplication
  * 
  * @param {Array} excelData - Array of objects from Excel
- * @param {boolean} resetMovements - If true, delete all movements before import (default: true)
  * @returns {Object} - Import result with stats
  */
-export const importArticoliFromExcel = async (excelData, resetMovements = true) => {
+export const importArticoliFromExcel = async (excelData) => {
   try {
-    console.log('🚀 STARTING SAP IMPORT...');
-    
-    // STEP 1: Reset all movements if requested
-    let movementsDeleted = 0;
-    if (resetMovements) {
-      movementsDeleted = await resetAllMovements();
-    }
-    
     console.log('🚀 OPTIMIZED: Loading ALL existing articles in ONE query...');
     
     const batch = writeBatch(db);
@@ -152,20 +55,20 @@ export const importArticoliFromExcel = async (excelData, resetMovements = true) 
     let nuovi = 0;
     let aggiornati = 0;
     
-    // STEP 2: Process articles
+    // Now process without await in loop
     for (const row of excelData) {
       const articoloRef = doc(articoliRef, row.codice);
       
-      // Check if article exists in Map
+      // Check if article exists in Map (NO AWAIT!)
       const exists = existingArticlesMap.has(row.codice);
       
-      // Prepare data - Since we reset movements, movimenti_totali = 0
+      // Prepare data - RESET movimenti_totali to 0 (SAP already includes previous movements)
       const articleData = {
         codice: row.codice,
         descrizione: row.descrizione || '',
         categoria: row.categoria || 'Altri',
         unita_misura: row.unita_misura || 'pz',
-        giacenza_sap: parseInt(row.giacenza_attuale) || 0,  // From Excel
+        giacenza_sap: parseInt(row.giacenza_attuale) || 0,  // From Excel (already includes all previous movements)
         giacenza_minima: parseInt(row.giacenza_minima) || 10,
         giacenza_massima: parseInt(row.giacenza_massima) || 100,
         ubicazione: row.ubicazione || '',
@@ -173,10 +76,11 @@ export const importArticoliFromExcel = async (excelData, resetMovements = true) 
         prezzo_unitario: parseFloat(row.prezzo_unitario) || 0,
         codice_qr: row.codice_qr || '',
         
-        // RESET: movimenti_totali = 0 because we deleted all movements
+        // IMPORTANT: Reset movements to 0 because SAP Excel already includes all adjustments
+        // If we kept old movimenti_totali, we would be counting movements twice
         movimenti_totali: 0,
         
-        // Stock = SAP stock (since movements are 0)
+        // Current magazino stock starts equal to SAP (movements start from 0)
         giacenza_attuale_magazino: parseInt(row.giacenza_attuale) || 0,
         
         // Timestamps
@@ -207,11 +111,10 @@ export const importArticoliFromExcel = async (excelData, resetMovements = true) 
     const importRef = collection(db, 'importazioni_sap');
     await addDoc(importRef, {
       data_importazione: importTimestamp,
-      utente: 'System',
+      utente: 'System', // You can pass user info as parameter
       totale_articoli: excelData.length,
       articoli_nuovi: nuovi,
       articoli_aggiornati: aggiornati,
-      movimenti_resettati: movementsDeleted,
       status: 'completato'
     });
     
@@ -219,8 +122,7 @@ export const importArticoliFromExcel = async (excelData, resetMovements = true) 
       success: true,
       totale: excelData.length,
       nuovi,
-      aggiornati,
-      movementsDeleted
+      aggiornati
     };
     
   } catch (error) {
@@ -352,6 +254,31 @@ export const getAllArticoli = async (filters = {}) => {
 };
 
 // ============================================================================
+// UPDATE ARTICLE
+// ============================================================================
+
+/**
+ * Update article fields
+ * 
+ * @param {string} codice - Article code
+ * @param {Object} updates - Fields to update
+ * @returns {boolean} - Success
+ */
+export const updateArticolo = async (codice, updates) => {
+  try {
+    const articoloRef = doc(db, 'articoli', codice);
+    await updateDoc(articoloRef, {
+      ...updates,
+      ultima_modifica: serverTimestamp()
+    });
+    return true;
+  } catch (error) {
+    console.error('Error updating article:', error);
+    throw error;
+  }
+};
+
+// ============================================================================
 // REGISTER MOVEMENT (Mobile App)
 // ============================================================================
 
@@ -470,7 +397,7 @@ export const getMovimenti = async (filters = {}) => {
     if (filters.tipo) {
       q = query(q, where('tipo', '==', filters.tipo));
     }
-  
+    
     // Order by timestamp descending
     q = query(q, orderBy('timestamp', 'desc'));
     
@@ -525,38 +452,6 @@ export const getMovimentiStats = async (dataInizio, dataFine) => {
 };
 
 // ============================================================================
-// DELETE MOVEMENT (Individual - for Movement Registry)
-// ============================================================================
-
-/**
- * Delete a single movement (used in Movement Registry as "dismiss notification")
- * Does NOT recalculate stock - this is just for UI cleanup
- * 
- * @param {string} movimentoId - Movement Firebase ID
- * @returns {boolean} - Success
- */
-export const deleteMovimento = async (movimentoId) => {
-  try {
-    const movimentoRef = doc(db, 'movimenti', movimentoId);
-    const movimentoSnap = await getDoc(movimentoRef);
-    
-    if (!movimentoSnap.exists()) {
-      throw new Error('Movement not found');
-    }
-    
-    // Just delete the movement document
-    // We don't recalculate stock because this is just for cleaning up notifications
-    await deleteDoc(movimentoRef);
-    
-    return true;
-    
-  } catch (error) {
-    console.error('Error deleting movement:', error);
-    throw error;
-  }
-};
-
-// ============================================================================
 // EXPORT FOR SAP UPDATE
 // ============================================================================
 
@@ -578,7 +473,7 @@ export const exportMovimentiForSAP = async (dataInizio, dataFine) => {
       if (!grouped[mov.codice_articolo]) {
         grouped[mov.codice_articolo] = {
           codice: mov.codice_articolo,
-          giacenza_sap_iniziale: mov.giacenza_sap_momento,
+          giacenza_sap_iniziale: mov.giacenza_sap_momento, // SAP at that time
           totale_movimenti: 0,
           num_movimenti: 0,
           entrate: 0,
@@ -681,6 +576,58 @@ export const getDashboardStats = async () => {
     
   } catch (error) {
     console.error('Error getting dashboard stats:', error);
+    throw error;
+  }
+};
+
+// ============================================================================
+// DELETE MOVEMENT (Admin only)
+// ============================================================================
+
+/**
+ * Delete a movement and recalculate article stock
+ * WARNING: Use carefully, this will recalculate stock
+ * 
+ * @param {string} movimentoId - Movement Firebase ID
+ * @returns {boolean} - Success
+ */
+export const deleteMovimento = async (movimentoId) => {
+  try {
+    const movimentoRef = doc(db, 'movimenti', movimentoId);
+    const movimentoSnap = await getDoc(movimentoRef);
+    
+    if (!movimentoSnap.exists()) {
+      throw new Error('Movement not found');
+    }
+    
+    const movData = movimentoSnap.data();
+    
+    // Get article
+    const articoloRef = doc(db, 'articoli', movData.codice_articolo);
+    const articoloSnap = await getDoc(articoloRef);
+    
+    if (articoloSnap.exists()) {
+      const artData = articoloSnap.data();
+      
+      // Recalculate: remove this movement from totals
+      const nuoviMovimentiTotali = (artData.movimenti_totali || 0) - movData.quantita;
+      const nuovaGiacenza = artData.giacenza_sap + nuoviMovimentiTotali;
+      
+      // Update article
+      await updateDoc(articoloRef, {
+        movimenti_totali: nuoviMovimentiTotali,
+        giacenza_attuale_magazino: nuovaGiacenza,
+        ultima_modifica: serverTimestamp()
+      });
+    }
+    
+    // Delete movement
+    await deleteDoc(movimentoRef);
+    
+    return true;
+    
+  } catch (error) {
+    console.error('Error deleting movement:', error);
     throw error;
   }
 };

@@ -12,21 +12,17 @@ import {
   RefreshCw,
   Clock,
   Activity,
-  Trash2,
-  X
+  Eye,
+  EyeOff
 } from 'lucide-react';
-import { getMovimenti, getMovimentiStats, getAllArticoli, deleteMovimento } from '../../firebase/magazzinoService';
+import { getMovimenti, getMovimentiStats, hideMovimentoNotification } from '../../firebase/magazzinoService';
 
 const MovimentiRegistry = () => {
   const [movements, setMovements] = useState([]);
   const [filteredMovements, setFilteredMovements] = useState([]);
-  const [articoli, setArticoli] = useState([]);
-  const [articoliMap, setArticoliMap] = useState(new Map());
   const [loading, setLoading] = useState(true);
   const [stats, setStats] = useState(null);
   const [lastUpdate, setLastUpdate] = useState(new Date());
-  const [deletingId, setDeletingId] = useState(null);
-  const [confirmDelete, setConfirmDelete] = useState(null);
   
   // Filters
   const [filters, setFilters] = useState({
@@ -38,10 +34,10 @@ const MovimentiRegistry = () => {
 
   // Auto-refresh every 30 seconds
   useEffect(() => {
-    loadData();
+    loadMovements();
     
     const interval = setInterval(() => {
-      loadData(true); // Silent refresh
+      loadMovements(true); // Silent refresh
     }, 30000); // 30 seconds
     
     return () => clearInterval(interval);
@@ -52,35 +48,11 @@ const MovimentiRegistry = () => {
     applyFilters();
   }, [movements, filters]);
 
-  // Load movements and articles from Firebase
-  const loadData = async (silent = false) => {
+  // Load movements from Firebase
+  const loadMovements = async (silent = false) => {
     try {
       if (!silent) setLoading(true);
       
-      // Load articles first (for descriptions)
-      const articlesData = await getAllArticoli();
-      setArticoli(articlesData);
-      
-      // Create Map for fast lookup: codice -> articolo
-      const map = new Map();
-      articlesData.forEach(art => {
-        map.set(art.codice, art);
-      });
-      setArticoliMap(map);
-      
-      // Then load movements
-      await loadMovements(true);
-      
-      if (!silent) setLoading(false);
-    } catch (error) {
-      console.error('Error loading data:', error);
-      setLoading(false);
-    }
-  };
-
-  // Load movements from Firebase
-  const loadMovements = async (skipLoading = false) => {
-    try {
       // Calculate date range
       const now = new Date();
       let dataInizio = new Date();
@@ -102,11 +74,12 @@ const MovimentiRegistry = () => {
           dataInizio.setHours(0, 0, 0, 0);
       }
       
-      // Get movements
+      // Get movements - INCLUDE ALL (hidden will show as transparent)
       const movData = await getMovimenti({
         dataInizio: dataInizio,
         dataFine: now,
-        limit: 100
+        limit: 100,
+        includeHidden: true  // Show all movements
       });
       
       // Get stats
@@ -118,8 +91,10 @@ const MovimentiRegistry = () => {
       setMovements(movData);
       setStats(statsData);
       setLastUpdate(new Date());
+      setLoading(false);
     } catch (error) {
       console.error('Error loading movements:', error);
+      setLoading(false);
     }
   };
 
@@ -130,15 +105,11 @@ const MovimentiRegistry = () => {
     // Search filter
     if (filters.searchTerm) {
       const term = filters.searchTerm.toLowerCase();
-      filtered = filtered.filter(mov => {
-        const articolo = articoliMap.get(mov.codice_articolo);
-        const descrizione = articolo?.descrizione || '';
-        
-        return mov.codice_articolo?.toLowerCase().includes(term) ||
-               descrizione.toLowerCase().includes(term) ||
-               mov.operatore?.toLowerCase().includes(term) ||
-               mov.motivo?.toLowerCase().includes(term);
-      });
+      filtered = filtered.filter(mov => 
+        mov.codice_articolo?.toLowerCase().includes(term) ||
+        mov.operatore?.toLowerCase().includes(term) ||
+        mov.motivo?.toLowerCase().includes(term)
+      );
     }
     
     // Operator filter
@@ -160,62 +131,39 @@ const MovimentiRegistry = () => {
     return operators.filter(o => o);
   };
 
-  // Format timestamp
+  // Format timestamp - ALWAYS SHOW EXACT TIME WITH SECONDS
   const formatTime = (timestamp) => {
     if (!timestamp) return '-';
     const date = timestamp instanceof Date ? timestamp : new Date(timestamp);
-    const now = new Date();
-    const diff = now - date;
     
-    // If less than 1 minute
-    if (diff < 60000) {
-      return 'Just now';
-    }
-    
-    // If less than 1 hour
-    if (diff < 3600000) {
-      const minutes = Math.floor(diff / 60000);
-      return `${minutes} min${minutes > 1 ? 's' : ''} ago`;
-    }
-    
+    // ALWAYS show exact time with seconds (no relative time)
     // If today
-    if (date.toDateString() === now.toDateString()) {
+    if (date.toDateString() === new Date().toDateString()) {
       return date.toLocaleTimeString('en-US', { 
         hour: '2-digit', 
-        minute: '2-digit' 
+        minute: '2-digit',
+        second: '2-digit'
       });
     }
     
-    // Otherwise full date
+    // Otherwise show full date with time and seconds
     return date.toLocaleString('en-US', {
       month: 'short',
       day: 'numeric',
       hour: '2-digit',
-      minute: '2-digit'
+      minute: '2-digit',
+      second: '2-digit'
     });
   };
 
-  // Get article description
-  const getArticleDescription = (codice) => {
-    const articolo = articoliMap.get(codice);
-    return articolo?.descrizione || 'No description';
-  };
-
-  // Handle delete movement
-  const handleDeleteMovement = async (movimentoId) => {
+  // Toggle hide/show notification
+  const handleToggleHide = async (movimentoId, currentHiddenState) => {
     try {
-      setDeletingId(movimentoId);
-      await deleteMovimento(movimentoId);
-      
-      // Refresh movements
-      await loadData(true);
-      
-      setConfirmDelete(null);
-      setDeletingId(null);
+      await hideMovimentoNotification(movimentoId);
+      // Reload movements to update the view
+      loadMovements(true);
     } catch (error) {
-      console.error('Error deleting movement:', error);
-      alert('Error deleting movement. Please try again.');
-      setDeletingId(null);
+      console.error('Error toggling notification:', error);
     }
   };
 
@@ -236,7 +184,7 @@ const MovimentiRegistry = () => {
               <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
                 <button 
                   className="wms-btn wms-btn-primary" 
-                  onClick={() => loadData()}
+                  onClick={() => loadMovements()}
                   disabled={loading}
                   style={{ padding: '0.5rem 1rem', fontSize: '0.875rem' }}
                 >
@@ -371,7 +319,7 @@ const MovimentiRegistry = () => {
             <Search size={18} className="wms-search-icon" />
             <input
               type="text"
-              placeholder="Search by code, description, operator, or reason..."
+              placeholder="Search by code, operator, or reason..."
               value={filters.searchTerm}
               onChange={(e) => setFilters({ ...filters, searchTerm: e.target.value })}
               className="wms-search-input"
@@ -451,224 +399,139 @@ const MovimentiRegistry = () => {
             </div>
           ) : (
             <div className="wms-movements-grid">
-              {filteredMovements.map((mov, idx) => (
-                <div key={mov.firebaseId || idx} className="wms-movement-card" style={{ position: 'relative' }}>
-                  {/* Delete Button */}
-                  <button
-                    onClick={() => setConfirmDelete(mov.firebaseId)}
-                    disabled={deletingId === mov.firebaseId}
+              {filteredMovements.map((mov, idx) => {
+                const isHidden = mov.hidden_from_notifications === true;
+                
+                return (
+                  <div 
+                    key={mov.firebaseId || idx} 
+                    className="wms-movement-card"
                     style={{
-                      position: 'absolute',
-                      top: '0.75rem',
-                      right: '0.75rem',
-                      background: 'rgba(239, 68, 68, 0.1)',
-                      border: '1px solid rgba(239, 68, 68, 0.3)',
-                      borderRadius: '6px',
-                      padding: '0.5rem',
-                      cursor: deletingId === mov.firebaseId ? 'not-allowed' : 'pointer',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      transition: 'all 0.2s',
-                      opacity: deletingId === mov.firebaseId ? 0.5 : 1
+                      opacity: isHidden ? 0.4 : 1,
+                      transition: 'opacity 0.3s ease'
                     }}
-                    onMouseOver={(e) => {
-                      if (deletingId !== mov.firebaseId) {
-                        e.currentTarget.style.background = 'rgba(239, 68, 68, 0.2)';
-                        e.currentTarget.style.borderColor = '#ef4444';
-                      }
-                    }}
-                    onMouseOut={(e) => {
-                      e.currentTarget.style.background = 'rgba(239, 68, 68, 0.1)';
-                      e.currentTarget.style.borderColor = 'rgba(239, 68, 68, 0.3)';
-                    }}
-                    title="Delete this movement notification"
                   >
-                    {deletingId === mov.firebaseId ? (
-                      <div className="wms-spinner" style={{ width: '16px', height: '16px', borderWidth: '2px' }}></div>
-                    ) : (
-                      <Trash2 size={16} style={{ color: '#ef4444' }} />
-                    )}
-                  </button>
+                    <div className="wms-movement-header">
+                      <div>
+                        {mov.tipo === 'ENTRATA' ? (
+                          <span className="wms-type-badge entry">
+                            <TrendingUp size={14} />
+                            ENTRY
+                          </span>
+                        ) : mov.tipo === 'USCITA' ? (
+                          <span className="wms-type-badge exit">
+                            <TrendingDown size={14} />
+                            EXIT
+                          </span>
+                        ) : (
+                          <span className="wms-type-badge adjustment">
+                            <RefreshCw size={14} />
+                            ADJUSTMENT
+                          </span>
+                        )}
+                      </div>
+                      <div className="wms-movement-time">{formatTime(mov.timestamp)}</div>
+                    </div>
 
-                  <div className="wms-movement-header" style={{ paddingRight: '3rem' }}>
-                    <div>
-                      {mov.tipo === 'ENTRATA' ? (
-                        <span className="wms-type-badge entry">
-                          <TrendingUp size={14} />
-                          ENTRY
-                        </span>
-                      ) : mov.tipo === 'USCITA' ? (
-                        <span className="wms-type-badge exit">
-                          <TrendingDown size={14} />
-                          EXIT
-                        </span>
-                      ) : (
-                        <span className="wms-type-badge adjustment">
-                          <RefreshCw size={14} />
-                          ADJUSTMENT
-                        </span>
+                    <div style={{ marginBottom: '1rem' }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                        <code className="wms-article-code">{mov.codice_articolo}</code>
+                        <div style={{ textAlign: 'right' }}>
+                          <div className={`wms-quantity-value ${mov.quantita > 0 ? 'positive' : 'negative'}`}>
+                            {mov.quantita > 0 ? '+' : ''}{mov.quantita}
+                          </div>
+                          <div style={{ fontSize: '0.75rem', color: '#6b7280', textTransform: 'uppercase' }}>units</div>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div style={{ fontSize: '0.875rem', color: '#4b5563', marginBottom: '0.75rem' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.5rem' }}>
+                        <User size={14} style={{ color: '#6b7280' }} />
+                        <span>{mov.operatore || 'Unknown'}</span>
+                      </div>
+                      {mov.motivo && (
+                        <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '0.5rem' }}>
+                          <span style={{ color: '#9ca3af', fontWeight: 500 }}>Reason:</span>
+                          <span>{mov.motivo}</span>
+                        </div>
+                      )}
+                      {mov.riferimento && (
+                        <div style={{ display: 'flex', gap: '0.5rem' }}>
+                          <span style={{ color: '#9ca3af', fontWeight: 500 }}>Ref:</span>
+                          <span>{mov.riferimento}</span>
+                        </div>
                       )}
                     </div>
-                    <div className="wms-movement-time">{formatTime(mov.timestamp)}</div>
-                  </div>
 
-                  <div style={{ marginBottom: '1rem' }}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.5rem' }}>
-                      <code className="wms-article-code">{mov.codice_articolo}</code>
-                      <div style={{ textAlign: 'right' }}>
-                        <div className={`wms-quantity-value ${mov.quantita > 0 ? 'positive' : 'negative'}`}>
-                          {mov.quantita > 0 ? '+' : ''}{mov.quantita}
-                        </div>
-                        <div style={{ fontSize: '0.75rem', color: '#6b7280', textTransform: 'uppercase' }}>units</div>
-                      </div>
-                    </div>
-                    
-                    {/* COMPONENT DESCRIPTION - NEW! */}
                     <div style={{ 
-                      fontSize: '0.875rem', 
-                      color: '#1f2937',
-                      fontWeight: 500,
-                      marginTop: '0.5rem',
-                      padding: '0.5rem',
-                      background: '#f9fafb',
-                      borderRadius: '6px',
-                      borderLeft: '3px solid #0077a2'
+                      paddingTop: '0.75rem', 
+                      borderTop: '1px solid #f3f4f6',
+                      display: 'flex',
+                      justifyContent: 'space-between',
+                      alignItems: 'center',
+                      gap: '0.5rem',
+                      fontSize: '0.875rem'
                     }}>
-                      {getArticleDescription(mov.codice_articolo)}
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                        <span style={{ color: '#6b7280', fontWeight: 500 }}>Stock:</span>
+                        <span style={{ fontWeight: 600, color: '#4b5563' }}>{mov.giacenza_precedente_magazino}</span>
+                        <span style={{ color: '#9ca3af' }}>→</span>
+                        <span style={{ fontWeight: 600, color: '#0077a2' }}>{mov.giacenza_nuova_magazino}</span>
+                      </div>
+                      
+                      <button
+                        onClick={() => handleToggleHide(mov.firebaseId, isHidden)}
+                        style={{
+                          background: isHidden ? '#f3f4f6' : 'transparent',
+                          border: '1px solid #e5e7eb',
+                          borderRadius: '4px',
+                          padding: '0.35rem 0.65rem',
+                          cursor: 'pointer',
+                          color: isHidden ? '#059669' : '#6b7280',
+                          fontSize: '0.75rem',
+                          fontWeight: 500,
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: '0.35rem',
+                          transition: 'all 0.2s'
+                        }}
+                        onMouseOver={(e) => {
+                          if (!isHidden) {
+                            e.currentTarget.style.background = '#fef3c7';
+                            e.currentTarget.style.borderColor = '#fcd34d';
+                            e.currentTarget.style.color = '#d97706';
+                          }
+                        }}
+                        onMouseOut={(e) => {
+                          if (!isHidden) {
+                            e.currentTarget.style.background = 'transparent';
+                            e.currentTarget.style.borderColor = '#e5e7eb';
+                            e.currentTarget.style.color = '#6b7280';
+                          }
+                        }}
+                        title={isHidden ? "Mark as unread" : "Mark as read"}
+                      >
+                        {isHidden ? (
+                          <>
+                            <Eye size={12} />
+                            Show
+                          </>
+                        ) : (
+                          <>
+                            <EyeOff size={12} />
+                            Hide
+                          </>
+                        )}
+                      </button>
                     </div>
                   </div>
-
-                  <div style={{ fontSize: '0.875rem', color: '#4b5563', marginBottom: '0.75rem' }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.5rem' }}>
-                      <User size={14} style={{ color: '#6b7280' }} />
-                      <span>{mov.operatore || 'Unknown'}</span>
-                    </div>
-                    {mov.motivo && (
-                      <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '0.5rem' }}>
-                        <span style={{ color: '#9ca3af', fontWeight: 500 }}>Reason:</span>
-                        <span>{mov.motivo}</span>
-                      </div>
-                    )}
-                    {mov.riferimento && (
-                      <div style={{ display: 'flex', gap: '0.5rem' }}>
-                        <span style={{ color: '#9ca3af', fontWeight: 500 }}>Ref:</span>
-                        <span>{mov.riferimento}</span>
-                      </div>
-                    )}
-                  </div>
-
-                  <div style={{ 
-                    paddingTop: '0.75rem', 
-                    borderTop: '1px solid #f3f4f6',
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '0.5rem',
-                    fontSize: '0.875rem'
-                  }}>
-                    <span style={{ color: '#6b7280', fontWeight: 500 }}>Stock:</span>
-                    <span style={{ fontWeight: 600, color: '#4b5563' }}>{mov.giacenza_precedente_magazino}</span>
-                    <span style={{ color: '#9ca3af' }}>→</span>
-                    <span style={{ fontWeight: 600, color: '#0077a2' }}>{mov.giacenza_nuova_magazino}</span>
-                  </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
           )}
         </div>
       </div>
-
-      {/* Delete Confirmation Modal */}
-      {confirmDelete && (
-        <div style={{
-          position: 'fixed',
-          top: 0,
-          left: 0,
-          right: 0,
-          bottom: 0,
-          background: 'rgba(0, 0, 0, 0.5)',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          zIndex: 9999
-        }}>
-          <div style={{
-            background: 'white',
-            borderRadius: '12px',
-            padding: '2rem',
-            maxWidth: '400px',
-            width: '90%',
-            boxShadow: '0 10px 40px rgba(0, 0, 0, 0.3)'
-          }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginBottom: '1.5rem' }}>
-              <div style={{
-                width: '48px',
-                height: '48px',
-                borderRadius: '50%',
-                background: 'rgba(239, 68, 68, 0.1)',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center'
-              }}>
-                <Trash2 size={24} style={{ color: '#ef4444' }} />
-              </div>
-              <h3 style={{ margin: 0, color: '#1f2937', fontSize: '1.25rem' }}>Delete Movement?</h3>
-            </div>
-            
-            <p style={{ color: '#6b7280', margin: '0 0 1.5rem 0', lineHeight: '1.5' }}>
-              This will permanently delete this movement notification. This action cannot be undone.
-            </p>
-            
-            <div style={{ display: 'flex', gap: '1rem', justifyContent: 'flex-end' }}>
-              <button
-                onClick={() => setConfirmDelete(null)}
-                disabled={deletingId}
-                style={{
-                  padding: '0.75rem 1.5rem',
-                  borderRadius: '8px',
-                  border: '1px solid #d1d5db',
-                  background: 'white',
-                  color: '#374151',
-                  fontWeight: 600,
-                  cursor: deletingId ? 'not-allowed' : 'pointer',
-                  opacity: deletingId ? 0.5 : 1
-                }}
-              >
-                Cancel
-              </button>
-              <button
-                onClick={() => handleDeleteMovement(confirmDelete)}
-                disabled={deletingId}
-                style={{
-                  padding: '0.75rem 1.5rem',
-                  borderRadius: '8px',
-                  border: 'none',
-                  background: '#ef4444',
-                  color: 'white',
-                  fontWeight: 600,
-                  cursor: deletingId ? 'not-allowed' : 'pointer',
-                  opacity: deletingId ? 0.5 : 1,
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '0.5rem'
-                }}
-              >
-                {deletingId ? (
-                  <>
-                    <div className="wms-spinner" style={{ width: '16px', height: '16px', borderWidth: '2px' }}></div>
-                    Deleting...
-                  </>
-                ) : (
-                  <>
-                    <Trash2 size={16} />
-                    Delete
-                  </>
-                )}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
     </>
   );
 };

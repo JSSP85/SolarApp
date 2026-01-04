@@ -2,7 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import { Upload, CheckCircle, AlertCircle, FileText, Database, Tag, Clock, Package, User, Calendar } from 'lucide-react';
 import * as XLSX from 'xlsx';
-import { importArticoliFromExcel, getLastImport, hideAllMovimentoNotifications } from '../../firebase/magazzinoService';
+import { importArticoliFromExcel, getLastImport, deleteAllMovimenti } from '../../firebase/magazzinoService';
 
 const ImportExcel = ({ onImportComplete }) => {
   const [file, setFile] = useState(null);
@@ -206,13 +206,13 @@ const ImportExcel = ({ onImportComplete }) => {
         const result = await importArticoliFromExcel(transformedData);
         console.log('✅ Firebase import completed:', result);
 
-        // Hide all movement notifications (they are no longer relevant after DB update)
-        console.log('🔄 Hiding all movement notifications...');
-        const notificationsHidden = await hideAllMovimentoNotifications();
-        console.log(`✅ Hidden ${notificationsHidden} movement notifications`);
+        // DELETE all movements from Firebase (they are no longer relevant after DB update)
+        console.log('🗑️ Deleting all movements from Firebase...');
+        const movementsDeleted = await deleteAllMovimenti();
+        console.log(`✅ Deleted ${movementsDeleted} movements from Firebase`);
 
         result.categorias = categorias;
-        result.notificationsHidden = notificationsHidden;
+        result.movementsDeleted = movementsDeleted;
 
         setImportResult(result);
         setImporting(false);
@@ -445,18 +445,18 @@ const ImportExcel = ({ onImportComplete }) => {
                 </div>
               </div>
 
-              {/* Notifications Hidden */}
+              {/* Movements Deleted */}
               <div style={{
-                background: '#fef3c7',
+                background: '#fee2e2',
                 padding: '1.5rem',
                 borderRadius: '8px',
-                border: '1px solid #fde68a'
+                border: '1px solid #fca5a5'
               }}>
                 <div style={{ fontSize: '0.9rem', color: '#6b7280', fontWeight: 500, marginBottom: '0.5rem' }}>
-                  Notifications Cleared:
+                  Movements Deleted:
                 </div>
-                <div style={{ fontSize: '2rem', fontWeight: 700, color: '#f59e0b' }}>
-                  {importResult.notificationsHidden || 0}
+                <div style={{ fontSize: '2rem', fontWeight: 700, color: '#ef4444' }}>
+                  {importResult.movementsDeleted || 0}
                 </div>
               </div>
             </div>
@@ -497,22 +497,22 @@ const ImportExcel = ({ onImportComplete }) => {
 
             {/* Important Notice */}
             <div style={{
-              background: '#fffbeb',
-              border: '2px solid #fcd34d',
+              background: '#fef2f2',
+              border: '2px solid #fca5a5',
               padding: '1.5rem',
               borderRadius: '8px',
               marginTop: '2rem',
               textAlign: 'left'
             }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '0.75rem' }}>
-                <AlertCircle size={24} style={{ color: '#f59e0b' }} />
-                <h4 style={{ margin: 0, color: '#d97706', fontSize: '1.1rem' }}>
-                  Important: Movement Notifications Cleared
+                <AlertCircle size={24} style={{ color: '#dc2626' }} />
+                <h4 style={{ margin: 0, color: '#dc2626', fontSize: '1.1rem' }}>
+                  Important: All Movements Deleted
                 </h4>
               </div>
               <p style={{ margin: 0, fontSize: '0.95rem', color: '#6b7280', lineHeight: '1.6' }}>
-                ✅ This import has successfully <strong>cleared all {importResult.notificationsHidden || 0} movement notification cards</strong> from Movement History.
-                The warehouse stock has been synchronized with the new SAP data, and old notifications are no longer relevant.
+                🗑️ This import has <strong>permanently deleted all {importResult.movementsDeleted || 0} movement records</strong> from Firebase.
+                The warehouse stock has been synchronized with the new SAP data. Movement Registry and Movement History have been completely cleared to free up storage space.
               </p>
             </div>
           </div>
@@ -755,15 +755,15 @@ const ImportExcel = ({ onImportComplete }) => {
 
             {/* Info Banner */}
             <div style={{
-              background: '#fffbeb',
+              background: '#fef2f2',
               padding: '1rem',
               borderRadius: '8px',
               marginTop: '2rem',
-              borderLeft: '4px solid #f59e0b'
+              borderLeft: '4px solid #ef4444'
             }}>
-              <p style={{ margin: 0, fontSize: '0.9rem', color: '#78350f' }}>
-                <strong>ℹ️ Note:</strong> This import cleared all movement notification cards from Movement History and synchronized stock with SAP data.
-                The warehouse stock now matches SAP, and movement tracking continues from this point.
+              <p style={{ margin: 0, fontSize: '0.9rem', color: '#991b1b' }}>
+                <strong>⚠️ Note:</strong> This import permanently deleted all movement records from Firebase and synchronized stock with SAP data.
+                Movement Registry has been completely cleared. Movement tracking starts fresh from this import.
               </p>
             </div>
           </div>

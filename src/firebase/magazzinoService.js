@@ -464,40 +464,46 @@ export const hideMovimentoNotification = async (movimentoId) => {
 };
 
 /**
- * Hide ALL movement notifications
+ * DELETE ALL movements from Firebase
  * This is called when a new SAP Excel is imported
- * Marks all movements as hidden since they are no longer relevant after DB update
+ * Completely removes all movement records since they are no longer relevant after DB update
+ * This frees up Firebase storage space
  *
- * @returns {number} - Number of movements hidden
+ * @returns {number} - Number of movements deleted
  */
-export const hideAllMovimentoNotifications = async () => {
+export const deleteAllMovimenti = async () => {
   try {
-    console.log('🔄 Hiding all movement notifications...');
+    console.log('🗑️ Deleting all movements from Firebase...');
 
     const movimentiRef = collection(db, 'movimenti');
-    const batch = writeBatch(db);
 
-    // Get ALL movements that are not already hidden
-    const q = query(movimentiRef, where('hidden_from_notifications', '==', false));
-    const snapshot = await getDocs(q);
+    // Get ALL movements
+    const snapshot = await getDocs(movimentiRef);
 
-    console.log(`📋 Found ${snapshot.size} visible movement notifications to hide`);
+    console.log(`📋 Found ${snapshot.size} movements to delete`);
 
-    // Mark all as hidden in batch
-    snapshot.docs.forEach(doc => {
-      batch.update(doc.ref, {
-        hidden_from_notifications: true
+    // Delete in batches (Firestore batch limit is 500 operations)
+    const batchSize = 500;
+    let deletedCount = 0;
+
+    for (let i = 0; i < snapshot.docs.length; i += batchSize) {
+      const batch = writeBatch(db);
+      const batchDocs = snapshot.docs.slice(i, i + batchSize);
+
+      batchDocs.forEach(doc => {
+        batch.delete(doc.ref);
       });
-    });
 
-    // Commit batch
-    await batch.commit();
+      await batch.commit();
+      deletedCount += batchDocs.length;
+      console.log(`🗑️ Deleted batch: ${deletedCount}/${snapshot.size} movements`);
+    }
 
-    console.log(`✅ Successfully hidden ${snapshot.size} movement notifications`);
-    return snapshot.size;
+    console.log(`✅ Successfully deleted ${deletedCount} movements from Firebase`);
+    return deletedCount;
 
   } catch (error) {
-    console.error('Error hiding all movement notifications:', error);
+    console.error('Error deleting all movements:', error);
     throw error;
   }
 };

@@ -436,7 +436,7 @@ export const getMovimenti = async (filters = {}) => {
 /**
  * Hide a movement from Movement History notifications
  * This does NOT delete the movement or affect stock - only hides the notification card
- * 
+ *
  * @param {string} movimentoId - Movement Firebase ID
  * @returns {boolean} - Success
  */
@@ -444,21 +444,66 @@ export const hideMovimentoNotification = async (movimentoId) => {
   try {
     const movimentoRef = doc(db, 'movimenti', movimentoId);
     const movimentoSnap = await getDoc(movimentoRef);
-    
+
     if (!movimentoSnap.exists()) {
       throw new Error('Movement not found');
     }
-    
+
     // Simply mark as hidden - DO NOT modify stock or delete anything
     await updateDoc(movimentoRef, {
       hidden_from_notifications: true
     });
-    
+
     console.log(`✅ Movement ${movimentoId} hidden from notifications (stock unchanged)`);
     return true;
-    
+
   } catch (error) {
     console.error('Error hiding movement notification:', error);
+    throw error;
+  }
+};
+
+/**
+ * DELETE ALL movements from Firebase
+ * This is called when a new SAP Excel is imported
+ * Completely removes all movement records since they are no longer relevant after DB update
+ * This frees up Firebase storage space
+ *
+ * @returns {number} - Number of movements deleted
+ */
+export const deleteAllMovimenti = async () => {
+  try {
+    console.log('🗑️ Deleting all movements from Firebase...');
+
+    const movimentiRef = collection(db, 'movimenti');
+
+    // Get ALL movements
+    const snapshot = await getDocs(movimentiRef);
+
+    console.log(`📋 Found ${snapshot.size} movements to delete`);
+
+    // Delete in batches (Firestore batch limit is 500 operations)
+    const batchSize = 500;
+    let deletedCount = 0;
+
+    for (let i = 0; i < snapshot.docs.length; i += batchSize) {
+      const batch = writeBatch(db);
+      const batchDocs = snapshot.docs.slice(i, i + batchSize);
+
+      batchDocs.forEach(doc => {
+        batch.delete(doc.ref);
+      });
+
+      await batch.commit();
+      deletedCount += batchDocs.length;
+      console.log(`🗑️ Deleted batch: ${deletedCount}/${snapshot.size} movements`);
+    }
+
+    console.log(`✅ Successfully deleted ${deletedCount} movements from Firebase`);
+    return deletedCount;
+
+  } catch (error) {
+    console.error('Error deleting all movements:', error);
     throw error;
   }
 };

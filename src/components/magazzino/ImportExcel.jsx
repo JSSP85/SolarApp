@@ -2,7 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import { Upload, CheckCircle, AlertCircle, FileText, Database, Tag, Clock, Package, User, Calendar } from 'lucide-react';
 import * as XLSX from 'xlsx';
-import { importArticoliFromExcel, getLastImport } from '../../firebase/magazzinoService';
+import { importArticoliFromExcel, getLastImport, deleteAllMovimenti } from '../../firebase/magazzinoService';
 
 const ImportExcel = ({ onImportComplete }) => {
   const [file, setFile] = useState(null);
@@ -205,12 +205,18 @@ const ImportExcel = ({ onImportComplete }) => {
         console.log('🔥 Starting Firebase import...');
         const result = await importArticoliFromExcel(transformedData);
         console.log('✅ Firebase import completed:', result);
-        
+
+        // DELETE all movements from Firebase (they are no longer relevant after DB update)
+        console.log('🗑️ Deleting all movements from Firebase...');
+        const movementsDeleted = await deleteAllMovimenti();
+        console.log(`✅ Deleted ${movementsDeleted} movements from Firebase`);
+
         result.categorias = categorias;
-        
+        result.movementsDeleted = movementsDeleted;
+
         setImportResult(result);
         setImporting(false);
-        
+
         if (onImportComplete) {
           onImportComplete(result);
         }
@@ -439,7 +445,7 @@ const ImportExcel = ({ onImportComplete }) => {
                 </div>
               </div>
 
-              {/* NEW: Movements Deleted */}
+              {/* Movements Deleted */}
               <div style={{
                 background: '#fee2e2',
                 padding: '1.5rem',
@@ -447,7 +453,7 @@ const ImportExcel = ({ onImportComplete }) => {
                 border: '1px solid #fca5a5'
               }}>
                 <div style={{ fontSize: '0.9rem', color: '#6b7280', fontWeight: 500, marginBottom: '0.5rem' }}>
-                  Movements Reset:
+                  Movements Deleted:
                 </div>
                 <div style={{ fontSize: '2rem', fontWeight: 700, color: '#ef4444' }}>
                   {importResult.movementsDeleted || 0}
@@ -489,7 +495,7 @@ const ImportExcel = ({ onImportComplete }) => {
               </div>
             )}
 
-            {/* NEW: Important Notice */}
+            {/* Important Notice */}
             <div style={{
               background: '#fef2f2',
               border: '2px solid #fca5a5',
@@ -501,12 +507,12 @@ const ImportExcel = ({ onImportComplete }) => {
               <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '0.75rem' }}>
                 <AlertCircle size={24} style={{ color: '#dc2626' }} />
                 <h4 style={{ margin: 0, color: '#dc2626', fontSize: '1.1rem' }}>
-                  Important: All Movements Reset
+                  Important: All Movements Deleted
                 </h4>
               </div>
               <p style={{ margin: 0, fontSize: '0.95rem', color: '#6b7280', lineHeight: '1.6' }}>
-                ⚠️ This import has <strong>deleted all {importResult.movementsDeleted} warehouse movements</strong> and reset stock to match the new SAP data. 
-                The warehouse stock now equals the SAP stock, and movement tracking starts fresh from this point.
+                🗑️ This import has <strong>permanently deleted all {importResult.movementsDeleted || 0} movement records</strong> from Firebase.
+                The warehouse stock has been synchronized with the new SAP data. Movement Registry and Movement History have been completely cleared to free up storage space.
               </p>
             </div>
           </div>
@@ -747,7 +753,7 @@ const ImportExcel = ({ onImportComplete }) => {
               </div>
             </div>
 
-            {/* Info Banner - UPDATED */}
+            {/* Info Banner */}
             <div style={{
               background: '#fef2f2',
               padding: '1rem',
@@ -756,8 +762,8 @@ const ImportExcel = ({ onImportComplete }) => {
               borderLeft: '4px solid #ef4444'
             }}>
               <p style={{ margin: 0, fontSize: '0.9rem', color: '#991b1b' }}>
-                <strong>⚠️ Note:</strong> This import reset all warehouse movements ({lastImport.movimenti_resettati || 0} movements deleted) and synchronized stock with SAP data. 
-                Movement tracking started fresh from this import.
+                <strong>⚠️ Note:</strong> This import permanently deleted all movement records from Firebase and synchronized stock with SAP data.
+                Movement Registry has been completely cleared. Movement tracking starts fresh from this import.
               </p>
             </div>
           </div>

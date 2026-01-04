@@ -436,7 +436,7 @@ export const getMovimenti = async (filters = {}) => {
 /**
  * Hide a movement from Movement History notifications
  * This does NOT delete the movement or affect stock - only hides the notification card
- * 
+ *
  * @param {string} movimentoId - Movement Firebase ID
  * @returns {boolean} - Success
  */
@@ -444,21 +444,60 @@ export const hideMovimentoNotification = async (movimentoId) => {
   try {
     const movimentoRef = doc(db, 'movimenti', movimentoId);
     const movimentoSnap = await getDoc(movimentoRef);
-    
+
     if (!movimentoSnap.exists()) {
       throw new Error('Movement not found');
     }
-    
+
     // Simply mark as hidden - DO NOT modify stock or delete anything
     await updateDoc(movimentoRef, {
       hidden_from_notifications: true
     });
-    
+
     console.log(`✅ Movement ${movimentoId} hidden from notifications (stock unchanged)`);
     return true;
-    
+
   } catch (error) {
     console.error('Error hiding movement notification:', error);
+    throw error;
+  }
+};
+
+/**
+ * Hide ALL movement notifications
+ * This is called when a new SAP Excel is imported
+ * Marks all movements as hidden since they are no longer relevant after DB update
+ *
+ * @returns {number} - Number of movements hidden
+ */
+export const hideAllMovimentoNotifications = async () => {
+  try {
+    console.log('🔄 Hiding all movement notifications...');
+
+    const movimentiRef = collection(db, 'movimenti');
+    const batch = writeBatch(db);
+
+    // Get ALL movements that are not already hidden
+    const q = query(movimentiRef, where('hidden_from_notifications', '==', false));
+    const snapshot = await getDocs(q);
+
+    console.log(`📋 Found ${snapshot.size} visible movement notifications to hide`);
+
+    // Mark all as hidden in batch
+    snapshot.docs.forEach(doc => {
+      batch.update(doc.ref, {
+        hidden_from_notifications: true
+      });
+    });
+
+    // Commit batch
+    await batch.commit();
+
+    console.log(`✅ Successfully hidden ${snapshot.size} movement notifications`);
+    return snapshot.size;
+
+  } catch (error) {
+    console.error('Error hiding all movement notifications:', error);
     throw error;
   }
 };

@@ -337,7 +337,10 @@ export const registraMovimento = async (movimento) => {
       // Metadata
       dispositivo: movimento.dispositivo || 'Unknown',
       sincronizzato: true,
-      foto_url: movimento.foto_url || ''
+      foto_url: movimento.foto_url || '',
+      
+      // Notification control - NEW
+      hidden_from_notifications: false  // By default, visible in Movement History
     };
     
     // Add movement to collection
@@ -398,6 +401,13 @@ export const getMovimenti = async (filters = {}) => {
       q = query(q, where('tipo', '==', filters.tipo));
     }
     
+    // NEW: Filter hidden notifications (for Movement History view)
+    // If includeHidden is false or not specified, exclude hidden movements
+    if (filters.includeHidden === false) {
+      q = query(q, where('hidden_from_notifications', '==', false));
+    }
+    // If includeHidden is true, return all movements (for Dashboard)
+    
     // Order by timestamp descending
     q = query(q, orderBy('timestamp', 'desc'));
     
@@ -420,6 +430,40 @@ export const getMovimenti = async (filters = {}) => {
 };
 
 // ============================================================================
+// HIDE MOVEMENT NOTIFICATION
+// ============================================================================
+
+/**
+ * Hide a movement from Movement History notifications
+ * This does NOT delete the movement or affect stock - only hides the notification card
+ * 
+ * @param {string} movimentoId - Movement Firebase ID
+ * @returns {boolean} - Success
+ */
+export const hideMovimentoNotification = async (movimentoId) => {
+  try {
+    const movimentoRef = doc(db, 'movimenti', movimentoId);
+    const movimentoSnap = await getDoc(movimentoRef);
+    
+    if (!movimentoSnap.exists()) {
+      throw new Error('Movement not found');
+    }
+    
+    // Simply mark as hidden - DO NOT modify stock or delete anything
+    await updateDoc(movimentoRef, {
+      hidden_from_notifications: true
+    });
+    
+    console.log(`✅ Movement ${movimentoId} hidden from notifications (stock unchanged)`);
+    return true;
+    
+  } catch (error) {
+    console.error('Error hiding movement notification:', error);
+    throw error;
+  }
+};
+
+// ============================================================================
 // GET MOVEMENT STATS
 // ============================================================================
 
@@ -432,7 +476,12 @@ export const getMovimenti = async (filters = {}) => {
  */
 export const getMovimentiStats = async (dataInizio, dataFine) => {
   try {
-    const movimenti = await getMovimenti({ dataInizio, dataFine });
+    // For stats, include ALL movements (even hidden ones)
+    const movimenti = await getMovimenti({ 
+      dataInizio, 
+      dataFine,
+      includeHidden: true  // Include all movements for accurate stats
+    });
     
     const stats = {
       totale: movimenti.length,
@@ -464,7 +513,12 @@ export const getMovimentiStats = async (dataInizio, dataFine) => {
  */
 export const exportMovimentiForSAP = async (dataInizio, dataFine) => {
   try {
-    const movimenti = await getMovimenti({ dataInizio, dataFine });
+    // For export, include ALL movements (even hidden ones)
+    const movimenti = await getMovimenti({ 
+      dataInizio, 
+      dataFine,
+      includeHidden: true  // Include all movements for accurate export
+    });
     
     // Group by article code
     const grouped = {};
@@ -551,10 +605,13 @@ export const getDashboardStats = async () => {
     // Get all articles
     const articoli = await getAllArticoli();
     
-    // Get today's movements
+    // Get today's movements (include ALL, even hidden)
     const oggi = new Date();
     oggi.setHours(0, 0, 0, 0);
-    const movimentiOggi = await getMovimenti({ dataInizio: oggi });
+    const movimentiOggi = await getMovimenti({ 
+      dataInizio: oggi,
+      includeHidden: true  // Include all movements for accurate stats
+    });
     
     // Get low stock articles
     const stockBasso = await getArticoliStockBasso();
@@ -581,53 +638,16 @@ export const getDashboardStats = async () => {
 };
 
 // ============================================================================
-// DELETE MOVEMENT (Admin only)
+// DELETE MOVEMENT (Legacy function - kept for compatibility but not recommended)
 // ============================================================================
 
 /**
- * Delete a movement and recalculate article stock
- * WARNING: Use carefully, this will recalculate stock
+ * @deprecated Use hideMovimentoNotification() instead
  * 
- * @param {string} movimentoId - Movement Firebase ID
- * @returns {boolean} - Success
+ * This function is kept for backward compatibility but should NOT be used.
+ * Use hideMovimentoNotification() to hide notification cards without affecting stock.
  */
 export const deleteMovimento = async (movimentoId) => {
-  try {
-    const movimentoRef = doc(db, 'movimenti', movimentoId);
-    const movimentoSnap = await getDoc(movimentoRef);
-    
-    if (!movimentoSnap.exists()) {
-      throw new Error('Movement not found');
-    }
-    
-    const movData = movimentoSnap.data();
-    
-    // Get article
-    const articoloRef = doc(db, 'articoli', movData.codice_articolo);
-    const articoloSnap = await getDoc(articoloRef);
-    
-    if (articoloSnap.exists()) {
-      const artData = articoloSnap.data();
-      
-      // Recalculate: remove this movement from totals
-      const nuoviMovimentiTotali = (artData.movimenti_totali || 0) - movData.quantita;
-      const nuovaGiacenza = artData.giacenza_sap + nuoviMovimentiTotali;
-      
-      // Update article
-      await updateDoc(articoloRef, {
-        movimenti_totali: nuoviMovimentiTotali,
-        giacenza_attuale_magazino: nuovaGiacenza,
-        ultima_modifica: serverTimestamp()
-      });
-    }
-    
-    // Delete movement
-    await deleteDoc(movimentoRef);
-    
-    return true;
-    
-  } catch (error) {
-    console.error('Error deleting movement:', error);
-    throw error;
-  }
+  console.warn('⚠️ deleteMovimento() is deprecated. Use hideMovimentoNotification() instead.');
+  return hideMovimentoNotification(movimentoId);
 };

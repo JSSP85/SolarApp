@@ -3,10 +3,10 @@ import React, { useState } from 'react';
 import styles from './MainMenu.module.css';
 
 // Import icons from lucide-react
-import { 
-  ChevronRight, 
-  Shield, 
-  LayoutDashboard, 
+import {
+  ChevronRight,
+  Shield,
+  LayoutDashboard,
   ArrowLeft,
   Ruler,
   Cpu,
@@ -22,7 +22,10 @@ import {
   LogOut,
   User,
   Building2,
-  Package  // ← AÑADIDO: Ícono para Warehouse Management
+  Package,  // Ícono para Warehouse Management
+  ClipboardCheck,  // Ícono para Quality Module
+  Factory,  // Ícono para Production Module
+  Gauge  // Ícono para Measurement Instruments
 } from 'lucide-react';
 
 // Importar el contexto de autenticación
@@ -167,6 +170,43 @@ const MainMenu = () => {
       return (
         <div className="warehouse-management-wrapper">
           <MagazzinoSystem onBack={() => setSelectedOption(null)} />
+        </div>
+      );
+
+    // ← AÑADIDO: Case para Measurement Instruments Management
+    case 'measurement-instruments':
+      return (
+        <div className={styles.mainMenuContainer}>
+          <div className={styles.mainMenuContent}>
+            <div className={`${styles.mainMenuSection} ${styles.mainMenuFadeIn}`}>
+              <div className={`${styles.mainMenuSectionBody} text-center p-8`}>
+                <h2 className={styles.mainMenuCardTitle} style={{ fontSize: '1.75rem', marginBottom: '1.5rem' }}>
+                  Module Under Construction
+                </h2>
+                <p className={styles.mainMenuCardDescription} style={{ fontSize: '1.1rem', marginBottom: '2rem' }}>
+                  Measurement Instruments Management module is currently in development.
+                </p>
+                <button
+                  onClick={() => setSelectedOption(null)}
+                  style={{
+                    background: 'linear-gradient(to right, #0077a2, #005F83)',
+                    color: 'white',
+                    border: 'none',
+                    padding: '0.75rem 1.5rem',
+                    borderRadius: '8px',
+                    fontWeight: 600,
+                    cursor: 'pointer',
+                    boxShadow: '0 4px 6px rgba(0, 95, 131, 0.3)',
+                    transition: 'all 0.2s ease',
+                  }}
+                  onMouseOver={(e) => e.target.style.transform = 'translateY(-2px)'}
+                  onMouseOut={(e) => e.target.style.transform = 'translateY(0)'}
+                >
+                  Return to Main Menu
+                </button>
+              </div>
+            </div>
+          </div>
         </div>
       );
 
@@ -407,13 +447,13 @@ const MainMenu = () => {
             </div>
           </div>
 
-          {/* Sección Manager module - Solo visible si el usuario tiene permisos */}
-          {(hasPermission('non-conformity-manager') || hasPermission('inspection-dashboard') || hasPermission('quality-database') || hasPermission('quality-book') || hasPermission('warehouse-management')) && (
+          {/* Sección Quality Module - Solo visible si el usuario tiene permisos */}
+          {(hasPermission('non-conformity-manager') || hasPermission('inspection-dashboard') || hasPermission('quality-database') || hasPermission('quality-book') || hasPermission('measurement-instruments')) && (
             <div className={`${styles.mainMenuSection} ${styles.mainMenuStagger2}`} style={{ marginTop: '2rem' }}>
-              <div className={styles.mainMenuSectionHeader} style={{ background: 'rgba(0, 80, 120, 0.8)' }}>
+              <div className={styles.mainMenuSectionHeader} style={{ background: 'rgba(99, 102, 241, 0.8)' }}>
                 <h2 className={styles.mainMenuSectionTitle}>
-                  <UserCog size={20} />
-                  Manager Module Selection
+                  <ClipboardCheck size={20} />
+                  Quality Module Selection
                 </h2>
               </div>
               <div className={styles.mainMenuSectionBody}>
@@ -486,7 +526,7 @@ const MainMenu = () => {
 
                   {/* Quality Book Generator */}
                   {hasPermission('quality-book') && (
-                    <div 
+                    <div
                       className={`${styles.mainMenuCard} ${styles.mainMenuStagger4}`}
                       onClick={() => handleOptionSelect('quality-book')}
                     >
@@ -506,15 +546,55 @@ const MainMenu = () => {
                     </div>
                   )}
 
-                  {/* ← AÑADIDO: Warehouse Management Card */}
-                  {hasPermission('warehouse-management') && (
-                    <div 
+                  {/* Measurement Instruments Management Card */}
+                  {hasPermission('measurement-instruments') && (
+                    <div
                       className={`${styles.mainMenuCard} ${styles.mainMenuStagger5}`}
+                      onClick={() => handleOptionSelect('measurement-instruments')}
+                    >
+                      <div className={styles.mainMenuCardBody}>
+                        <div
+                          className={styles.mainMenuCardIconContainer}
+                          style={{ background: 'rgba(147, 51, 234, 0.1)', border: '1px solid rgba(147, 51, 234, 0.2)' }}
+                        >
+                          <Gauge size={32} className={styles.mainMenuCardIcon} />
+                        </div>
+                        <h3 className={styles.mainMenuCardTitle}>Measurement Instruments Management</h3>
+                        <p className={styles.mainMenuCardDescription}>
+                          Calibration tracking and management system for measuring instruments
+                        </p>
+                        <div className={styles.mainMenuCardFooter}>
+                          <div className={`${styles.mainMenuBadge} ${styles.mainMenuBadgeWarning}`}>Under Construction</div>
+                          <ChevronRight className={styles.mainMenuCardArrow} size={20} />
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Sección Production Module - Solo visible si el usuario tiene permisos */}
+          {hasPermission('warehouse-management') && (
+            <div className={`${styles.mainMenuSection} ${styles.mainMenuStagger3}`} style={{ marginTop: '2rem' }}>
+              <div className={styles.mainMenuSectionHeader} style={{ background: 'rgba(194, 120, 3, 0.8)' }}>
+                <h2 className={styles.mainMenuSectionTitle}>
+                  <Factory size={20} />
+                  Production Module Selection
+                </h2>
+              </div>
+              <div className={styles.mainMenuSectionBody}>
+                <div className={styles.mainMenuCards}>
+                  {/* Warehouse Management Card */}
+                  {hasPermission('warehouse-management') && (
+                    <div
+                      className={`${styles.mainMenuCard} ${styles.mainMenuStagger1}`}
                       onClick={() => handleOptionSelect('warehouse-management')}
                     >
                       <div className={styles.mainMenuCardBody}>
-                        <div 
-                          className={styles.mainMenuCardIconContainer} 
+                        <div
+                          className={styles.mainMenuCardIconContainer}
                           style={{ background: 'rgba(251, 146, 60, 0.1)', border: '1px solid rgba(251, 146, 60, 0.2)' }}
                         >
                           <Package size={32} className={styles.mainMenuCardIcon} />

@@ -31,10 +31,11 @@ const MeasurementInstrumentsSystem = ({ onBack }) => {
     with_people: 0
   });
   const [loading, setLoading] = useState(true);
+  const [refreshKey, setRefreshKey] = useState(0);
 
   useEffect(() => {
     loadStats();
-  }, []);
+  }, [refreshKey]);
 
   const loadStats = async () => {
     try {
@@ -53,6 +54,11 @@ const MeasurementInstrumentsSystem = ({ onBack }) => {
     if (view === 'dashboard') {
       loadStats();
     }
+  };
+
+  const handleRefresh = () => {
+    setRefreshKey(prev => prev + 1);
+    loadStats();
   };
 
   const getViewTitle = () => {
@@ -138,13 +144,13 @@ const MeasurementInstrumentsSystem = ({ onBack }) => {
 
           <div className="mims-content-body">
             {activeView === 'dashboard' && (
-              <InstrumentDashboard stats={stats} onRefresh={loadStats} />
+              <InstrumentDashboard key={refreshKey} stats={stats} onRefresh={handleRefresh} />
             )}
             {activeView === 'management' && (
-              <InstrumentManagement onRefresh={loadStats} />
+              <InstrumentManagement onRefresh={handleRefresh} />
             )}
             {activeView === 'alerts' && (
-              <CalibrationAlerts stats={stats} onRefresh={loadStats} />
+              <CalibrationAlerts key={refreshKey} stats={stats} onRefresh={handleRefresh} />
             )}
           </div>
         </div>

@@ -243,14 +243,14 @@ const InstrumentModal = ({ instrument, onClose, onSuccess }) => {
         </div>
 
         <form onSubmit={handleSubmit}>
-          <div className="mims-modal-body" style={{ maxHeight: '70vh', overflowY: 'auto' }}>
+          <div className="mims-modal-body" style={{ maxHeight: '70vh', overflowY: 'auto', background: '#f9fafb' }}>
 
             {/* Basic Information */}
             <div style={{ marginBottom: '2rem' }}>
               <h3 style={{ fontSize: '1.1rem', fontWeight: 600, marginBottom: '1rem', color: '#1f2937', borderBottom: '2px solid #e5e7eb', paddingBottom: '0.5rem' }}>
                 Basic Information
               </h3>
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+              <div style={{ display: 'grid', gridTemplateColumns: '200px 1fr', gap: '1rem' }}>
                 <div className="mims-form-group">
                   <label className="mims-form-label">Instrument Number *</label>
                   <input
@@ -311,7 +311,7 @@ const InstrumentModal = ({ instrument, onClose, onSuccess }) => {
               <h3 style={{ fontSize: '1.1rem', fontWeight: 600, marginBottom: '1rem', color: '#1f2937', borderBottom: '2px solid #e5e7eb', paddingBottom: '0.5rem' }}>
                 Technical Data
               </h3>
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 200px', gap: '1rem' }}>
                 <div className="mims-form-group">
                   <label className="mims-form-label">Manufacturer</label>
                   <input
@@ -349,7 +349,7 @@ const InstrumentModal = ({ instrument, onClose, onSuccess }) => {
                     value={formData.department}
                     onChange={handleChange}
                     className="mims-form-input"
-                    placeholder="e.g., PROD, O&M, SAT"
+                    placeholder="e.g., PROD, O&M"
                   />
                 </div>
               </div>
@@ -360,7 +360,7 @@ const InstrumentModal = ({ instrument, onClose, onSuccess }) => {
               <h3 style={{ fontSize: '1.1rem', fontWeight: 600, marginBottom: '1rem', color: '#1f2937', borderBottom: '2px solid #e5e7eb', paddingBottom: '0.5rem' }}>
                 Location
               </h3>
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+              <div style={{ display: 'grid', gridTemplateColumns: '200px 1fr', gap: '1rem' }}>
                 <div className="mims-form-group">
                   <label className="mims-form-label">Location Type *</label>
                   <select
@@ -444,7 +444,7 @@ const InstrumentModal = ({ instrument, onClose, onSuccess }) => {
                   <h4 style={{ fontSize: '0.95rem', fontWeight: 600, marginBottom: '0.75rem', color: '#1e40af' }}>
                     Add New Calibration Record
                   </h4>
-                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr auto', gap: '1rem', alignItems: 'end' }}>
                     <div className="mims-form-group" style={{ marginBottom: 0 }}>
                       <label className="mims-form-label">New Calibration Date</label>
                       <input
@@ -459,18 +459,16 @@ const InstrumentModal = ({ instrument, onClose, onSuccess }) => {
                         </div>
                       )}
                     </div>
-                    <div style={{ display: 'flex', alignItems: 'flex-end' }}>
-                      <button
-                        type="button"
-                        onClick={handleAddCalibration}
-                        disabled={!newCalibrationDate || loading}
-                        className="mims-btn mims-btn-primary"
-                        style={{ width: '100%' }}
-                      >
-                        <Save size={18} />
-                        Add Calibration
-                      </button>
-                    </div>
+                    <button
+                      type="button"
+                      onClick={handleAddCalibration}
+                      disabled={!newCalibrationDate || loading}
+                      className="mims-btn mims-btn-primary"
+                      style={{ whiteSpace: 'nowrap' }}
+                    >
+                      <Save size={18} />
+                      Add Calibration
+                    </button>
                   </div>
                 </div>
               </div>
@@ -482,7 +480,7 @@ const InstrumentModal = ({ instrument, onClose, onSuccess }) => {
                 <h3 style={{ fontSize: '1.1rem', fontWeight: 600, marginBottom: '1rem', color: '#1f2937', borderBottom: '2px solid #e5e7eb', paddingBottom: '0.5rem' }}>
                   Initial Calibration
                 </h3>
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+                <div style={{ display: 'grid', gridTemplateColumns: '200px 1fr', gap: '1rem' }}>
                   <div className="mims-form-group">
                     <label className="mims-form-label">Calibration Date</label>
                     <input
@@ -500,7 +498,7 @@ const InstrumentModal = ({ instrument, onClose, onSuccess }) => {
                       value={calculateExpirationDate(formData.current_calibration_date, formData.category)}
                       className="mims-form-input"
                       disabled
-                      style={{ background: '#f3f4f6', color: '#6b7280' }}
+                      style={{ background: '#e5e7eb', color: '#6b7280' }}
                     />
                   </div>
                 </div>
@@ -514,10 +512,10 @@ const InstrumentModal = ({ instrument, onClose, onSuccess }) => {
               </h3>
 
               {/* Certificate PDF */}
-              <div style={{ marginBottom: '1rem', padding: '1rem', background: '#f9fafb', borderRadius: '8px', border: '1px solid #e5e7eb' }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.75rem' }}>
+              <div style={{ marginBottom: '1rem', padding: '1.25rem', background: 'white', borderRadius: '8px', border: '1px solid #d1d5db' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                    <FileText size={18} style={{ color: '#6b7280' }} />
+                    <FileText size={18} style={{ color: '#0077a2' }} />
                     <span style={{ fontWeight: 600, color: '#1f2937' }}>Calibration Certificate (PDF)</span>
                   </div>
                   {instrument?.certificate_pdf_url && (
@@ -529,16 +527,16 @@ const InstrumentModal = ({ instrument, onClose, onSuccess }) => {
                 </div>
 
                 {instrument?.certificate_pdf_url && (
-                  <div style={{ marginBottom: '0.75rem', padding: '0.5rem', background: '#d1fae5', borderRadius: '6px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                    <span style={{ fontSize: '0.85rem', color: '#065f46' }}>
-                      {instrument.certificate_pdf_url.split('/').pop().split('?')[0].substring(0, 40)}...
+                  <div style={{ marginBottom: '1rem', padding: '0.75rem', background: '#d1fae5', borderRadius: '6px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <span style={{ fontSize: '0.85rem', color: '#065f46', fontWeight: 500 }}>
+                      📄 {instrument.certificate_pdf_url.split('/').pop().split('?')[0].substring(0, 35)}...
                     </span>
                     <a
                       href={instrument.certificate_pdf_url}
                       target="_blank"
                       rel="noopener noreferrer"
                       className="mims-btn mims-btn-secondary"
-                      style={{ padding: '0.35rem 0.75rem', fontSize: '0.8rem' }}
+                      style={{ padding: '0.4rem 0.85rem', fontSize: '0.8rem' }}
                     >
                       <Download size={14} />
                       Download
@@ -546,32 +544,41 @@ const InstrumentModal = ({ instrument, onClose, onSuccess }) => {
                   </div>
                 )}
 
-                <div style={{ display: 'flex', gap: '0.5rem' }}>
+                <div style={{ display: 'flex', gap: '0.75rem', alignItems: 'center' }}>
                   <input
                     type="file"
                     accept=".pdf"
                     onChange={(e) => setCertificateFile(e.target.files[0])}
-                    style={{ flex: 1, fontSize: '0.85rem' }}
+                    id="cert-file-input"
+                    style={{ display: 'none' }}
                   />
+                  <label
+                    htmlFor="cert-file-input"
+                    className="mims-btn mims-btn-secondary"
+                    style={{ cursor: 'pointer', marginBottom: 0 }}
+                  >
+                    <Upload size={16} />
+                    {certificateFile ? certificateFile.name.substring(0, 25) + '...' : 'Choose File'}
+                  </label>
                   {isEditMode && certificateFile && (
                     <button
                       type="button"
                       onClick={handleCertificateUpload}
                       disabled={uploadingCertificate}
                       className="mims-btn mims-btn-primary"
-                      style={{ padding: '0.5rem 1rem' }}
+                      style={{ whiteSpace: 'nowrap' }}
                     >
-                      {uploadingCertificate ? 'Uploading...' : 'Upload'}
+                      {uploadingCertificate ? 'Uploading...' : 'Upload PDF'}
                     </button>
                   )}
                 </div>
               </div>
 
               {/* Photo */}
-              <div style={{ padding: '1rem', background: '#f9fafb', borderRadius: '8px', border: '1px solid #e5e7eb' }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.75rem' }}>
+              <div style={{ padding: '1.25rem', background: 'white', borderRadius: '8px', border: '1px solid #d1d5db' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                    <ImageIcon size={18} style={{ color: '#6b7280' }} />
+                    <ImageIcon size={18} style={{ color: '#0077a2' }} />
                     <span style={{ fontWeight: 600, color: '#1f2937' }}>Instrument Photo</span>
                   </div>
                   {instrument?.instrument_photo_url && (
@@ -583,16 +590,16 @@ const InstrumentModal = ({ instrument, onClose, onSuccess }) => {
                 </div>
 
                 {instrument?.instrument_photo_url && (
-                  <div style={{ marginBottom: '0.75rem', padding: '0.5rem', background: '#d1fae5', borderRadius: '6px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                    <span style={{ fontSize: '0.85rem', color: '#065f46' }}>
-                      {instrument.instrument_photo_url.split('/').pop().split('?')[0].substring(0, 40)}...
+                  <div style={{ marginBottom: '1rem', padding: '0.75rem', background: '#d1fae5', borderRadius: '6px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <span style={{ fontSize: '0.85rem', color: '#065f46', fontWeight: 500 }}>
+                      📸 {instrument.instrument_photo_url.split('/').pop().split('?')[0].substring(0, 35)}...
                     </span>
                     <a
                       href={instrument.instrument_photo_url}
                       target="_blank"
                       rel="noopener noreferrer"
                       className="mims-btn mims-btn-secondary"
-                      style={{ padding: '0.35rem 0.75rem', fontSize: '0.8rem' }}
+                      style={{ padding: '0.4rem 0.85rem', fontSize: '0.8rem' }}
                     >
                       <Download size={14} />
                       View
@@ -600,22 +607,31 @@ const InstrumentModal = ({ instrument, onClose, onSuccess }) => {
                   </div>
                 )}
 
-                <div style={{ display: 'flex', gap: '0.5rem' }}>
+                <div style={{ display: 'flex', gap: '0.75rem', alignItems: 'center' }}>
                   <input
                     type="file"
                     accept="image/*"
                     onChange={(e) => setPhotoFile(e.target.files[0])}
-                    style={{ flex: 1, fontSize: '0.85rem' }}
+                    id="photo-file-input"
+                    style={{ display: 'none' }}
                   />
+                  <label
+                    htmlFor="photo-file-input"
+                    className="mims-btn mims-btn-secondary"
+                    style={{ cursor: 'pointer', marginBottom: 0 }}
+                  >
+                    <Upload size={16} />
+                    {photoFile ? photoFile.name.substring(0, 25) + '...' : 'Choose File'}
+                  </label>
                   {isEditMode && photoFile && (
                     <button
                       type="button"
                       onClick={handlePhotoUpload}
                       disabled={uploadingPhoto}
                       className="mims-btn mims-btn-primary"
-                      style={{ padding: '0.5rem 1rem' }}
+                      style={{ whiteSpace: 'nowrap' }}
                     >
-                      {uploadingPhoto ? 'Uploading...' : 'Upload'}
+                      {uploadingPhoto ? 'Uploading...' : 'Upload Photo'}
                     </button>
                   )}
                 </div>

@@ -47,6 +47,9 @@ import InspectionDashboard from './components/inspection-dashboard/InspectionDas
 // ← AÑADIDO: Import Warehouse Management System
 import MagazzinoSystem from './components/magazzino/MagazzinoSystem';
 
+// ← AÑADIDO: Import Measurement Instruments Management System
+import MeasurementInstrumentsSystem from './components/measurement-instruments/MeasurementInstrumentsSystem';
+
 // Custom SVG para hardware components
 const ScrewIcon = () => (
   <svg 
@@ -176,37 +179,8 @@ const MainMenu = () => {
     // ← AÑADIDO: Case para Measurement Instruments Management
     case 'measurement-instruments':
       return (
-        <div className={styles.mainMenuContainer}>
-          <div className={styles.mainMenuContent}>
-            <div className={`${styles.mainMenuSection} ${styles.mainMenuFadeIn}`}>
-              <div className={`${styles.mainMenuSectionBody} text-center p-8`}>
-                <h2 className={styles.mainMenuCardTitle} style={{ fontSize: '1.75rem', marginBottom: '1.5rem' }}>
-                  Module Under Construction
-                </h2>
-                <p className={styles.mainMenuCardDescription} style={{ fontSize: '1.1rem', marginBottom: '2rem' }}>
-                  Measurement Instruments Management module is currently in development.
-                </p>
-                <button
-                  onClick={() => setSelectedOption(null)}
-                  style={{
-                    background: 'linear-gradient(to right, #0077a2, #005F83)',
-                    color: 'white',
-                    border: 'none',
-                    padding: '0.75rem 1.5rem',
-                    borderRadius: '8px',
-                    fontWeight: 600,
-                    cursor: 'pointer',
-                    boxShadow: '0 4px 6px rgba(0, 95, 131, 0.3)',
-                    transition: 'all 0.2s ease',
-                  }}
-                  onMouseOver={(e) => e.target.style.transform = 'translateY(-2px)'}
-                  onMouseOut={(e) => e.target.style.transform = 'translateY(0)'}
-                >
-                  Return to Main Menu
-                </button>
-              </div>
-            </div>
-          </div>
+        <div className="measurement-instruments-wrapper">
+          <MeasurementInstrumentsSystem onBack={() => setSelectedOption(null)} />
         </div>
       );
 
@@ -564,7 +538,7 @@ const MainMenu = () => {
                           Calibration tracking and management system for measuring instruments
                         </p>
                         <div className={styles.mainMenuCardFooter}>
-                          <div className={`${styles.mainMenuBadge} ${styles.mainMenuBadgeWarning}`}>Under Construction</div>
+                          <div className={`${styles.mainMenuBadge} ${styles.mainMenuBadgeInfo}`}>Available</div>
                           <ChevronRight className={styles.mainMenuCardArrow} size={20} />
                         </div>
                       </div>

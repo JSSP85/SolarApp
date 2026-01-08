@@ -266,8 +266,11 @@ const MagazzinoSystem = ({ onBack }) => {
                                   const statusLabel = isCritical ? 'CRITICAL' : 'LOW';
                                   const statusColor = isCritical ? '#ef4444' : '#f59e0b';
 
+                                  // Use _firebaseId (internal composite ID) or create unique key
+                                  const uniqueKey = article._firebaseId || article.id || `${article.codice}_${article.ubicazione || 'MAIN'}_${idx}`;
+
                                   return (
-                                    <tr key={article.id || article.codice || idx}>
+                                    <tr key={uniqueKey}>
                                       <td><code className="wms-article-code">{article.codice}</code></td>
                                       <td>{article.descrizione}</td>
                                       <td><strong style={{ color: statusColor }}>

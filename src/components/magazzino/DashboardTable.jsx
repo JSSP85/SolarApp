@@ -387,9 +387,12 @@ const DashboardTable = () => {
                 filteredArticoli.map((article, index) => {
                   const hasMovements = article.movimenti_totali !== 0;
 
+                  // Use _firebaseId (internal composite ID) or create unique key from code + location
+                  const uniqueKey = article._firebaseId || article.id || `${article.codice}_${article.ubicazione || 'MAIN'}`;
+
                   return (
                     <tr
-                      key={article.id || article.codice}
+                      key={uniqueKey}
                       style={{
                         background: index % 2 === 0 ? 'white' : '#f9fafb',
                         transition: 'background 0.2s'

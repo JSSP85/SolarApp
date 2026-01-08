@@ -67,6 +67,7 @@ export const importArticoliFromExcel = async (excelData) => {
         codice: row.codice,
         descrizione: row.descrizione || '',
         categoria: row.categoria || 'Altri',
+        material_group: row.material_group || '', // NEW: Material Group from SAP
         unita_misura: row.unita_misura || 'pz',
         giacenza_sap: parseInt(row.giacenza_attuale) || 0,  // From Excel (already includes all previous movements)
         giacenza_minima: parseInt(row.giacenza_minima) || 10,
@@ -75,18 +76,18 @@ export const importArticoliFromExcel = async (excelData) => {
         fornitore_principale: row.fornitore_principale || '',
         prezzo_unitario: parseFloat(row.prezzo_unitario) || 0,
         codice_qr: row.codice_qr || '',
-        
+
         // IMPORTANT: Reset movements to 0 because SAP Excel already includes all adjustments
         // If we kept old movimenti_totali, we would be counting movements twice
         movimenti_totali: 0,
-        
+
         // Current magazino stock starts equal to SAP (movements start from 0)
         giacenza_attuale_magazino: parseInt(row.giacenza_attuale) || 0,
-        
+
         // Timestamps
         ultima_importazione_sap: importTimestamp,
         ultima_modifica: serverTimestamp(),
-        
+
         // Flag
         attivo: true
       };

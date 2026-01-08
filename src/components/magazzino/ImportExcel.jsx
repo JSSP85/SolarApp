@@ -167,18 +167,27 @@ const ImportExcel = ({ onImportComplete }) => {
           .map(row => {
             const descrizione = String(row['Material Description'] || '').trim();
             const giacenza = parseFloat(row['Stock Quantity on Period End']) || 0;
-            
+
+            // Extract new columns from Excel (SAP export)
+            // Column D: Storage Location
+            const storageLocation = String(row['Storage Location'] || row['Sloc'] || row['Stor. Loc.'] || '').trim();
+            // Column G: Supplier
+            const supplier = String(row['Supplier'] || row['Vendor'] || '').trim();
+            // Column R: Material Group
+            const materialGroup = String(row['Material Group'] || row['Matl Group'] || '').trim();
+
             return {
               codice: String(row['Material'] || '').trim(),
               codice_vecchio: String(row['Old material number'] || '').trim(),
               descrizione: descrizione,
               giacenza_attuale: giacenza,
               categoria: classifyArticle(descrizione),
+              material_group: materialGroup, // NEW: Material Group from column R
               unita_misura: 'pz',
               giacenza_minima: 10,
               giacenza_massima: Math.max(100, giacenza * 2),
-              ubicazione: '',
-              fornitore_principale: '',
+              ubicazione: storageLocation, // NEW: Storage Location from column D
+              fornitore_principale: supplier, // NEW: Supplier from column G
               prezzo_unitario: 0,
               codice_qr: JSON.stringify({
                 codigo: String(row['Material'] || '').trim(),

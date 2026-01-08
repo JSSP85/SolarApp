@@ -67,16 +67,16 @@ const DashboardTable = () => {
     const exportData = filteredArticoli.map(art => ({
       'Material': art.codice,
       'Material Description': art.descrizione,
-      'Category': art.categoria,
+      'Storage Location': art.ubicazione || '',
+      'Supplier': art.fornitore_principale || '',
+      'Material Group': art.material_group || '',
       'SAP Stock': art.giacenza_sap || 0,
       'Warehouse Movements': art.movimenti_totali || 0,
       'Current Warehouse Stock': art.giacenza_attuale_magazino || 0,
       'Stock Difference': art.movimenti_totali || 0,
       'Unit': art.unita_misura || 'pz',
       'Min Stock': art.giacenza_minima || 0,
-      'Max Stock': art.giacenza_massima || 0,
-      'Status': art.giacenza_attuale_magazino === 0 ? 'OUT OF STOCK' : 
-                art.giacenza_attuale_magazino <= art.giacenza_minima ? 'LOW STOCK' : 'OK'
+      'Max Stock': art.giacenza_massima || 0
     }));
 
     const ws = XLSX.utils.json_to_sheet(exportData);
@@ -88,29 +88,20 @@ const DashboardTable = () => {
     ws['!cols'] = [
       { wch: 10 }, // Material
       { wch: Math.min(maxWidth, 50) }, // Description
-      { wch: 20 }, // Category
+      { wch: 15 }, // Storage Location
+      { wch: 20 }, // Supplier
+      { wch: 15 }, // Material Group
       { wch: 12 }, // SAP Stock
       { wch: 18 }, // Movements
       { wch: 20 }, // Current Stock
       { wch: 15 }, // Difference
       { wch: 8 },  // Unit
       { wch: 10 }, // Min
-      { wch: 10 }, // Max
-      { wch: 15 }  // Status
+      { wch: 10 }  // Max
     ];
 
     const timestamp = new Date().toISOString().slice(0, 19).replace(/:/g, '-');
     XLSX.writeFile(wb, `Warehouse_Inventory_${timestamp}.xlsx`);
-  };
-
-  const getStockStatus = (article) => {
-    if (article.giacenza_attuale_magazino === 0) {
-      return { label: 'OUT OF STOCK', color: '#ef4444', bg: '#fee2e2' };
-    }
-    if (article.giacenza_attuale_magazino <= article.giacenza_minima) {
-      return { label: 'LOW STOCK', color: '#f59e0b', bg: '#fef3c7' };
-    }
-    return { label: 'OK', color: '#10b981', bg: '#d1fae5' };
   };
 
   const categories = [...new Set(articoli.map(a => a.categoria))].sort();
@@ -347,7 +338,21 @@ const DashboardTable = () => {
                   color: 'white',
                   fontWeight: 600,
                   borderBottom: '2px solid #93c5fd'
-                }}>Category</th>
+                }}>Storage Location</th>
+                <th style={{
+                  padding: '1rem',
+                  textAlign: 'left',
+                  color: 'white',
+                  fontWeight: 600,
+                  borderBottom: '2px solid #93c5fd'
+                }}>Supplier</th>
+                <th style={{
+                  padding: '1rem',
+                  textAlign: 'left',
+                  color: 'white',
+                  fontWeight: 600,
+                  borderBottom: '2px solid #93c5fd'
+                }}>Material Group</th>
                 <th style={{
                   padding: '1rem',
                   textAlign: 'center',
@@ -369,29 +374,21 @@ const DashboardTable = () => {
                   fontWeight: 600,
                   borderBottom: '2px solid #93c5fd'
                 }}>Current Stock</th>
-                <th style={{
-                  padding: '1rem',
-                  textAlign: 'center',
-                  color: 'white',
-                  fontWeight: 600,
-                  borderBottom: '2px solid #93c5fd'
-                }}>Status</th>
               </tr>
             </thead>
             <tbody>
               {filteredArticoli.length === 0 ? (
                 <tr>
-                  <td colSpan="7" style={{ padding: '3rem', textAlign: 'center', color: '#9ca3af' }}>
+                  <td colSpan="8" style={{ padding: '3rem', textAlign: 'center', color: '#9ca3af' }}>
                     No articles found
                   </td>
                 </tr>
               ) : (
                 filteredArticoli.map((article, index) => {
-                  const status = getStockStatus(article);
                   const hasMovements = article.movimenti_totali !== 0;
-                  
+
                   return (
-                    <tr 
+                    <tr
                       key={article.codice}
                       style={{
                         background: index % 2 === 0 ? 'white' : '#f9fafb',
@@ -418,6 +415,22 @@ const DashboardTable = () => {
                       </td>
                       <td style={{
                         padding: '1rem',
+                        borderBottom: '1px solid #e5e7eb',
+                        color: '#4b5563',
+                        fontSize: '0.9rem'
+                      }}>
+                        {article.ubicazione || '-'}
+                      </td>
+                      <td style={{
+                        padding: '1rem',
+                        borderBottom: '1px solid #e5e7eb',
+                        color: '#4b5563',
+                        fontSize: '0.9rem'
+                      }}>
+                        {article.fornitore_principale || '-'}
+                      </td>
+                      <td style={{
+                        padding: '1rem',
                         borderBottom: '1px solid #e5e7eb'
                       }}>
                         <span style={{
@@ -428,7 +441,7 @@ const DashboardTable = () => {
                           color: '#374151',
                           fontWeight: 500
                         }}>
-                          {article.categoria}
+                          {article.material_group || '-'}
                         </span>
                       </td>
                       <td style={{
@@ -485,24 +498,6 @@ const DashboardTable = () => {
                         color: '#1f2937'
                       }}>
                         {(article.giacenza_attuale_magazino || 0).toLocaleString()}
-                      </td>
-                      <td style={{
-                        padding: '1rem',
-                        borderBottom: '1px solid #e5e7eb',
-                        textAlign: 'center'
-                      }}>
-                        <span style={{
-                          background: status.bg,
-                          color: status.color,
-                          padding: '0.4rem 0.8rem',
-                          borderRadius: '6px',
-                          fontSize: '0.8rem',
-                          fontWeight: 700,
-                          display: 'inline-block',
-                          minWidth: '100px'
-                        }}>
-                          {status.label}
-                        </span>
                       </td>
                     </tr>
                   );

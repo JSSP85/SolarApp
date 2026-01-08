@@ -389,7 +389,7 @@ const DashboardTable = () => {
 
                   return (
                     <tr
-                      key={article.codice}
+                      key={article.id || article.codice}
                       style={{
                         background: index % 2 === 0 ? 'white' : '#f9fafb',
                         transition: 'background 0.2s'

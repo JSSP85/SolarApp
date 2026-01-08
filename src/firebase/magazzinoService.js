@@ -57,14 +57,17 @@ export const importArticoliFromExcel = async (excelData) => {
     
     // Now process without await in loop
     for (const row of excelData) {
-      const articoloRef = doc(articoliRef, row.codice);
-      
+      // Use composite ID (code + location) to allow same material in multiple locations
+      const compositeId = row.id || row.codice; // Fallback to codice if id not provided
+      const articoloRef = doc(articoliRef, compositeId);
+
       // Check if article exists in Map (NO AWAIT!)
-      const exists = existingArticlesMap.has(row.codice);
-      
+      const exists = existingArticlesMap.has(compositeId);
+
       // Prepare data - RESET movimenti_totali to 0 (SAP already includes previous movements)
       const articleData = {
-        codice: row.codice,
+        id: compositeId, // Composite ID (code + location)
+        codice: row.codice, // Original material code
         descrizione: row.descrizione || '',
         categoria: row.categoria || 'Altri',
         material_group: row.material_group || '', // NEW: Material Group from SAP
@@ -91,9 +94,9 @@ export const importArticoliFromExcel = async (excelData) => {
         // Flag
         attivo: true
       };
-      
+
       batch.set(articoloRef, articleData, { merge: true });
-      
+
       if (exists) {
         aggiornati++;
       } else {
@@ -166,26 +169,65 @@ export const getLastImport = async () => {
 // ============================================================================
 
 /**
- * Get article by code (for QR scanner)
- * 
- * @param {string} codice - Article code
+ * Get article by ID or code (for QR scanner)
+ * If searching by simple code, returns first match
+ * If searching by composite ID (code_location), returns exact match
+ *
+ * @param {string} codeOrId - Article code or composite ID
  * @returns {Object|null} - Article data or null
  */
-export const getArticoloByCodice = async (codice) => {
+export const getArticoloByCodice = async (codeOrId) => {
   try {
-    const articoloRef = doc(db, 'articoli', codice);
+    // First try to get by exact ID (composite or simple)
+    const articoloRef = doc(db, 'articoli', codeOrId);
     const articoloSnap = await getDoc(articoloRef);
-    
+
     if (articoloSnap.exists()) {
       return {
         id: articoloSnap.id,
         ...articoloSnap.data()
       };
     }
-    
+
+    // If not found and it doesn't contain underscore, try to search by codice field
+    if (!codeOrId.includes('_')) {
+      const articoliRef = collection(db, 'articoli');
+      const q = query(articoliRef, where('codice', '==', codeOrId), limit(1));
+      const snapshot = await getDocs(q);
+
+      if (!snapshot.empty) {
+        return {
+          id: snapshot.docs[0].id,
+          ...snapshot.docs[0].data()
+        };
+      }
+    }
+
     return null;
   } catch (error) {
     console.error('Error getting article:', error);
+    throw error;
+  }
+};
+
+/**
+ * Get all articles with the same material code (different locations)
+ *
+ * @param {string} codice - Material code
+ * @returns {Array} - Array of articles
+ */
+export const getArticolosByMaterialCode = async (codice) => {
+  try {
+    const articoliRef = collection(db, 'articoli');
+    const q = query(articoliRef, where('codice', '==', codice));
+    const snapshot = await getDocs(q);
+
+    return snapshot.docs.map(doc => ({
+      id: doc.id,
+      ...doc.data()
+    }));
+  } catch (error) {
+    console.error('Error getting articles by material code:', error);
     throw error;
   }
 };
@@ -196,7 +238,8 @@ export const getArticoloByCodice = async (codice) => {
 
 /**
  * Search articles by code or description
- * 
+ * Now searches by material code field (not composite ID)
+ *
  * @param {string} searchTerm - Search term
  * @param {number} maxResults - Max results to return
  * @returns {Array} - Array of articles
@@ -204,18 +247,18 @@ export const getArticoloByCodice = async (codice) => {
 export const searchArticoli = async (searchTerm, maxResults = 20) => {
   try {
     const articoliRef = collection(db, 'articoli');
-    
-    // Search by code (exact or starts with)
+
+    // Search by material code field (this will return all locations for matching codes)
     const queryByCode = query(
       articoliRef,
       where('codice', '>=', searchTerm),
       where('codice', '<=', searchTerm + '\uf8ff'),
       limit(maxResults)
     );
-    
+
     const snapshot = await getDocs(queryByCode);
     return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-    
+
   } catch (error) {
     console.error('Error searching articles:', error);
     throw error;
@@ -260,14 +303,23 @@ export const getAllArticoli = async (filters = {}) => {
 
 /**
  * Update article fields
- * 
- * @param {string} codice - Article code
+ * Can accept either composite ID or simple code
+ * If simple code is provided and multiple locations exist, updates first match
+ *
+ * @param {string} codeOrId - Article code or composite ID
  * @param {Object} updates - Fields to update
  * @returns {boolean} - Success
  */
-export const updateArticolo = async (codice, updates) => {
+export const updateArticolo = async (codeOrId, updates) => {
   try {
-    const articoloRef = doc(db, 'articoli', codice);
+    // Try to get article by code or ID
+    const articolo = await getArticoloByCodice(codeOrId);
+
+    if (!articolo) {
+      throw new Error('Article not found');
+    }
+
+    const articoloRef = doc(db, 'articoli', articolo.id);
     await updateDoc(articoloRef, {
       ...updates,
       ultima_modifica: serverTimestamp()
@@ -286,20 +338,21 @@ export const updateArticolo = async (codice, updates) => {
 /**
  * Register a movement from mobile app
  * This updates the magazino stock but NOT the SAP stock
- * 
- * @param {Object} movimento - Movement data
+ *
+ * @param {Object} movimento - Movement data (codice_articolo can be code or composite ID)
  * @returns {string} - Movement ID
  */
 export const registraMovimento = async (movimento) => {
   try {
-    const articoloRef = doc(db, 'articoli', movimento.codice_articolo);
-    const articoloSnap = await getDoc(articoloRef);
-    
-    if (!articoloSnap.exists()) {
+    // Get article by code or composite ID
+    const articolo = await getArticoloByCodice(movimento.codice_articolo);
+
+    if (!articolo) {
       throw new Error('Article not found');
     }
-    
-    const articoloData = articoloSnap.data();
+
+    const articoloRef = doc(db, 'articoli', articolo.id);
+    const articoloData = articolo;
     
     // Calculate quantities
     const giacenzaSAP = articoloData.giacenza_sap || 0;
@@ -319,27 +372,28 @@ export const registraMovimento = async (movimento) => {
     const movimentoData = {
       id: movimentoId,
       timestamp: Timestamp.fromDate(timestamp),
-      codice_articolo: movimento.codice_articolo,
+      codice_articolo: articolo.id, // Use composite ID (code + location)
+      codice_material: articolo.codice, // Original material code
       tipo: movimento.tipo, // 'ENTRATA', 'USCITA', 'AGGIUSTAMENTO'
       quantita: quantitaMovimento,
-      
+
       // Stock snapshots
       giacenza_sap_momento: giacenzaSAP,
       giacenza_precedente_magazino: giacenzaPrecedenteMagazzino,
       giacenza_nuova_magazino: nuovaGiacenzaMagazzino,
-      
+
       // Details
       operatore: movimento.operatore || 'Unknown',
       motivo: movimento.motivo || '',
       riferimento: movimento.riferimento || '',
       ubicazione: movimento.ubicazione || articoloData.ubicazione || '',
       note: movimento.note || '',
-      
+
       // Metadata
       dispositivo: movimento.dispositivo || 'Unknown',
       sincronizzato: true,
       foto_url: movimento.foto_url || '',
-      
+
       // Notification control - NEW
       hidden_from_notifications: false  // By default, visible in Movement History
     };

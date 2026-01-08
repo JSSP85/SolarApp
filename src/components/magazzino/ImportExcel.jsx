@@ -176,8 +176,15 @@ const ImportExcel = ({ onImportComplete }) => {
             // Column R: Material Group
             const materialGroup = String(row['Material Group'] || row['Matl Group'] || '').trim();
 
+            // Create composite ID: code + storage location
+            // This allows same material code to exist in multiple locations
+            const codice = String(row['Material'] || '').trim();
+            const locationSanitized = storageLocation.replace(/[^a-zA-Z0-9]/g, '_').toUpperCase() || 'MAIN';
+            const compositeId = `${codice}_${locationSanitized}`;
+
             return {
-              codice: String(row['Material'] || '').trim(),
+              id: compositeId, // NEW: Composite ID (code + location)
+              codice: codice, // Original material code
               codice_vecchio: String(row['Old material number'] || '').trim(),
               descrizione: descrizione,
               giacenza_attuale: giacenza,
@@ -190,8 +197,9 @@ const ImportExcel = ({ onImportComplete }) => {
               fornitore_principale: supplier, // NEW: Supplier from column G
               prezzo_unitario: 0,
               codice_qr: JSON.stringify({
-                codigo: String(row['Material'] || '').trim(),
+                codigo: compositeId, // Use composite ID for QR
                 descripcion: descrizione.substring(0, 50),
+                ubicacion: storageLocation,
                 tipo: 'inventario',
                 timestamp: new Date().toISOString()
               })

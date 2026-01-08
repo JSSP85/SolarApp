@@ -267,7 +267,7 @@ const MagazzinoSystem = ({ onBack }) => {
                                   const statusColor = isCritical ? '#ef4444' : '#f59e0b';
 
                                   return (
-                                    <tr key={idx}>
+                                    <tr key={article.id || article.codice || idx}>
                                       <td><code className="wms-article-code">{article.codice}</code></td>
                                       <td>{article.descrizione}</td>
                                       <td><strong style={{ color: statusColor }}>

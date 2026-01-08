@@ -40,9 +40,12 @@ const MagazzinoSystem = ({ onBack }) => {
       setLoading(true);
       const dashboardStats = await getDashboardStats();
       const lowStock = await getArticoliStockBasso();
-      
+
+      // Filter to show only articles with < 10 stock (Low and Critical)
+      const filteredLowStock = lowStock.filter(art => art.giacenza_attuale_magazino < 10);
+
       setStats(dashboardStats);
-      setLowStockArticles(lowStock.slice(0, 5));
+      setLowStockArticles(filteredLowStock); // Show ALL items with < 10 stock
       setLoading(false);
     } catch (error) {
       console.error('Error loading stats:', error);
@@ -242,6 +245,9 @@ const MagazzinoSystem = ({ onBack }) => {
                             <AlertCircle size={24} />
                             Critical Stock Alerts
                           </h2>
+                          <p className="wms-panel-subtitle">
+                            All components with less than 10 units in stock
+                          </p>
                         </div>
                         <div style={{ padding: '2rem' }}>
                           <div className="wms-table-container">
@@ -251,26 +257,33 @@ const MagazzinoSystem = ({ onBack }) => {
                                   <th>Code</th>
                                   <th>Description</th>
                                   <th>Current Stock</th>
-                                  <th>Minimum</th>
                                   <th>Status</th>
                                 </tr>
                               </thead>
                               <tbody>
-                                {lowStockArticles.map((article, idx) => (
-                                  <tr key={idx}>
-                                    <td><code className="wms-article-code">{article.codice}</code></td>
-                                    <td>{article.descrizione}</td>
-                                    <td><strong style={{ color: article.giacenza_attuale_magazino === 0 ? '#ef4444' : '#f59e0b' }}>
-                                      {article.giacenza_attuale_magazino}
-                                    </strong></td>
-                                    <td>{article.giacenza_minima}</td>
-                                    <td>
-                                      <span className={`wms-alert-badge ${article.giacenza_attuale_magazino === 0 ? 'critical' : 'warning'}`}>
-                                        {article.giacenza_attuale_magazino === 0 ? 'OUT OF STOCK' : 'LOW'}
-                                      </span>
-                                    </td>
-                                  </tr>
-                                ))}
+                                {lowStockArticles.map((article, idx) => {
+                                  const isCritical = article.giacenza_attuale_magazino < 5;
+                                  const statusLabel = isCritical ? 'CRITICAL' : 'LOW';
+                                  const statusColor = isCritical ? '#ef4444' : '#f59e0b';
+
+                                  // Use _firebaseId (internal composite ID) or create unique key
+                                  const uniqueKey = article._firebaseId || article.id || `${article.codice}_${article.ubicazione || 'MAIN'}_${idx}`;
+
+                                  return (
+                                    <tr key={uniqueKey}>
+                                      <td><code className="wms-article-code">{article.codice}</code></td>
+                                      <td>{article.descrizione}</td>
+                                      <td><strong style={{ color: statusColor }}>
+                                        {article.giacenza_attuale_magazino}
+                                      </strong></td>
+                                      <td>
+                                        <span className={`wms-alert-badge ${isCritical ? 'critical' : 'warning'}`}>
+                                          {statusLabel}
+                                        </span>
+                                      </td>
+                                    </tr>
+                                  );
+                                })}
                               </tbody>
                             </table>
                           </div>

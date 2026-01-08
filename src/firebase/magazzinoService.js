@@ -57,42 +57,47 @@ export const importArticoliFromExcel = async (excelData) => {
     
     // Now process without await in loop
     for (const row of excelData) {
-      const articoloRef = doc(articoliRef, row.codice);
-      
+      // Use composite ID (code + location) ONLY as Firestore document ID
+      // This is internal - we don't expose this ID to the user
+      const compositeId = row.id || row.codice; // Fallback to codice if id not provided
+      const articoloRef = doc(articoliRef, compositeId);
+
       // Check if article exists in Map (NO AWAIT!)
-      const exists = existingArticlesMap.has(row.codice);
-      
+      const exists = existingArticlesMap.has(compositeId);
+
       // Prepare data - RESET movimenti_totali to 0 (SAP already includes previous movements)
       const articleData = {
-        codice: row.codice,
+        // DON'T store 'id' field - we work with codice + ubicacion
+        codice: row.codice, // Material code
         descrizione: row.descrizione || '',
         categoria: row.categoria || 'Altri',
+        material_group: row.material_group || '', // NEW: Material Group from SAP
         unita_misura: row.unita_misura || 'pz',
         giacenza_sap: parseInt(row.giacenza_attuale) || 0,  // From Excel (already includes all previous movements)
         giacenza_minima: parseInt(row.giacenza_minima) || 10,
         giacenza_massima: parseInt(row.giacenza_massima) || 100,
-        ubicazione: row.ubicazione || '',
+        ubicazione: row.ubicazione || '', // Storage location
         fornitore_principale: row.fornitore_principale || '',
         prezzo_unitario: parseFloat(row.prezzo_unitario) || 0,
         codice_qr: row.codice_qr || '',
-        
+
         // IMPORTANT: Reset movements to 0 because SAP Excel already includes all adjustments
         // If we kept old movimenti_totali, we would be counting movements twice
         movimenti_totali: 0,
-        
+
         // Current magazino stock starts equal to SAP (movements start from 0)
         giacenza_attuale_magazino: parseInt(row.giacenza_attuale) || 0,
-        
+
         // Timestamps
         ultima_importazione_sap: importTimestamp,
         ultima_modifica: serverTimestamp(),
-        
+
         // Flag
         attivo: true
       };
-      
+
       batch.set(articoloRef, articleData, { merge: true });
-      
+
       if (exists) {
         aggiornati++;
       } else {
@@ -161,30 +166,68 @@ export const getLastImport = async () => {
 };
 
 // ============================================================================
-// GET ARTICLE BY CODE (For QR Scan)
+// GET ARTICLE BY CODE (For QR Scan and Mobile App)
 // ============================================================================
 
 /**
- * Get article by code (for QR scanner)
- * 
- * @param {string} codice - Article code
- * @returns {Object|null} - Article data or null
+ * Get articles by material code (for QR scanner)
+ * Returns ALL locations for the given code
+ *
+ * IMPORTANT: When QR scans "7000936", this returns an array with ALL locations:
+ * [
+ *   { codice: "7000936", ubicacion: "WH-01", giacenza: 50, ... },
+ *   { codice: "7000936", ubicacion: "WH-02", giacenza: 30, ... },
+ *   { codice: "7000936", ubicacion: "WH-03", giacenza: 20, ... }
+ * ]
+ *
+ * Mobile app should then show a selector if array.length > 1
+ *
+ * @param {string} codice - Material code from QR
+ * @returns {Array} - Array of articles (may contain multiple locations)
  */
 export const getArticoloByCodice = async (codice) => {
   try {
-    const articoloRef = doc(db, 'articoli', codice);
+    const articoliRef = collection(db, 'articoli');
+    const q = query(articoliRef, where('codice', '==', codice));
+    const snapshot = await getDocs(q);
+
+    return snapshot.docs.map(doc => ({
+      _firebaseId: doc.id, // Internal Firebase ID (code_location)
+      ...doc.data()
+    }));
+  } catch (error) {
+    console.error('Error getting articles by code:', error);
+    throw error;
+  }
+};
+
+/**
+ * Get a specific article by code + location
+ * Use this when you need a specific location
+ *
+ * @param {string} codice - Material code
+ * @param {string} ubicacion - Storage location
+ * @returns {Object|null} - Article or null
+ */
+export const getArticoloByCodeAndLocation = async (codice, ubicacion) => {
+  try {
+    // Build composite ID to get exact document
+    const locationSanitized = ubicacion.replace(/[^a-zA-Z0-9]/g, '_').toUpperCase() || 'MAIN';
+    const compositeId = `${codice}_${locationSanitized}`;
+
+    const articoloRef = doc(db, 'articoli', compositeId);
     const articoloSnap = await getDoc(articoloRef);
-    
+
     if (articoloSnap.exists()) {
       return {
-        id: articoloSnap.id,
+        _firebaseId: articoloSnap.id,
         ...articoloSnap.data()
       };
     }
-    
+
     return null;
   } catch (error) {
-    console.error('Error getting article:', error);
+    console.error('Error getting article by code and location:', error);
     throw error;
   }
 };
@@ -195,26 +238,30 @@ export const getArticoloByCodice = async (codice) => {
 
 /**
  * Search articles by code or description
- * 
+ * Searches by material code field (returns all locations for matching codes)
+ *
  * @param {string} searchTerm - Search term
  * @param {number} maxResults - Max results to return
- * @returns {Array} - Array of articles
+ * @returns {Array} - Array of articles (may include same code with different locations)
  */
 export const searchArticoli = async (searchTerm, maxResults = 20) => {
   try {
     const articoliRef = collection(db, 'articoli');
-    
-    // Search by code (exact or starts with)
+
+    // Search by material code field (this will return all locations for matching codes)
     const queryByCode = query(
       articoliRef,
       where('codice', '>=', searchTerm),
       where('codice', '<=', searchTerm + '\uf8ff'),
       limit(maxResults)
     );
-    
+
     const snapshot = await getDocs(queryByCode);
-    return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-    
+    return snapshot.docs.map(doc => ({
+      _firebaseId: doc.id, // Internal Firestore document ID
+      ...doc.data()
+    }));
+
   } catch (error) {
     console.error('Error searching articles:', error);
     throw error;
@@ -227,26 +274,29 @@ export const searchArticoli = async (searchTerm, maxResults = 20) => {
 
 /**
  * Get all articles with optional filters
- * 
+ *
  * @param {Object} filters - Filter options
- * @returns {Array} - Array of articles
+ * @returns {Array} - Array of articles with codice and ubicazione
  */
 export const getAllArticoli = async (filters = {}) => {
   try {
     const articoliRef = collection(db, 'articoli');
     let q = query(articoliRef);
-    
+
     // Filter by category
     if (filters.categoria) {
       q = query(q, where('categoria', '==', filters.categoria));
     }
-    
+
     // Order by code
     q = query(q, orderBy('codice', 'asc'));
-    
+
     const snapshot = await getDocs(q);
-    return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-    
+    return snapshot.docs.map(doc => ({
+      _firebaseId: doc.id, // Internal Firestore document ID (code_location)
+      ...doc.data()
+    }));
+
   } catch (error) {
     console.error('Error getting articles:', error);
     throw error;
@@ -259,14 +309,23 @@ export const getAllArticoli = async (filters = {}) => {
 
 /**
  * Update article fields
- * 
- * @param {string} codice - Article code
+ * Requires both code and location to identify the specific article
+ *
+ * @param {string} codice - Material code
+ * @param {string} ubicacion - Storage location
  * @param {Object} updates - Fields to update
  * @returns {boolean} - Success
  */
-export const updateArticolo = async (codice, updates) => {
+export const updateArticolo = async (codice, ubicacion, updates) => {
   try {
-    const articoloRef = doc(db, 'articoli', codice);
+    // Get specific article by code + location
+    const articolo = await getArticoloByCodeAndLocation(codice, ubicacion);
+
+    if (!articolo) {
+      throw new Error(`Article not found: ${codice} at ${ubicacion}`);
+    }
+
+    const articoloRef = doc(db, 'articoli', articolo._firebaseId);
     await updateDoc(articoloRef, {
       ...updates,
       ultima_modifica: serverTimestamp()
@@ -285,60 +344,69 @@ export const updateArticolo = async (codice, updates) => {
 /**
  * Register a movement from mobile app
  * This updates the magazino stock but NOT the SAP stock
- * 
- * @param {Object} movimento - Movement data
+ *
+ * @param {Object} movimento - Movement data with:
+ *   - codice_articolo: Material code
+ *   - ubicazione: Storage location (required if multiple locations exist)
+ *   - quantita: Quantity (positive for ENTRATA, negative for USCITA)
+ *   - tipo: 'ENTRATA', 'USCITA', 'AGGIUSTAMENTO'
+ *   - operatore, motivo, etc.
  * @returns {string} - Movement ID
  */
 export const registraMovimento = async (movimento) => {
   try {
-    const articoloRef = doc(db, 'articoli', movimento.codice_articolo);
-    const articoloSnap = await getDoc(articoloRef);
-    
-    if (!articoloSnap.exists()) {
-      throw new Error('Article not found');
+    // Get specific article by code + location
+    const articolo = await getArticoloByCodeAndLocation(
+      movimento.codice_articolo,
+      movimento.ubicazione || ''
+    );
+
+    if (!articolo) {
+      throw new Error(`Article not found: ${movimento.codice_articolo} at ${movimento.ubicazione || 'default location'}`);
     }
-    
-    const articoloData = articoloSnap.data();
-    
+
+    const articoloRef = doc(db, 'articoli', articolo._firebaseId);
+    const articoloData = articolo;
+
     // Calculate quantities
     const giacenzaSAP = articoloData.giacenza_sap || 0;
     const movimentiTotaliPrecedenti = articoloData.movimenti_totali || 0;
     const giacenzaPrecedenteMagazzino = articoloData.giacenza_attuale_magazino || giacenzaSAP;
-    
+
     // New quantities
     const quantitaMovimento = movimento.quantita; // Can be positive or negative
     const nuoviMovimentiTotali = movimentiTotaliPrecedenti + quantitaMovimento;
     const nuovaGiacenzaMagazzino = giacenzaSAP + nuoviMovimentiTotali;
-    
+
     // Generate movement ID
     const timestamp = new Date();
     const movimentoId = `MOV-${timestamp.getFullYear()}-${String(timestamp.getMonth() + 1).padStart(2, '0')}-${String(timestamp.getDate()).padStart(2, '0')}-${String(timestamp.getTime()).slice(-6)}`;
-    
+
     // Create movement document
     const movimentoData = {
       id: movimentoId,
       timestamp: Timestamp.fromDate(timestamp),
-      codice_articolo: movimento.codice_articolo,
+      codice_articolo: articolo.codice, // Material code (NOT composite ID)
+      ubicazione: articoloData.ubicazione || '', // Storage location
       tipo: movimento.tipo, // 'ENTRATA', 'USCITA', 'AGGIUSTAMENTO'
       quantita: quantitaMovimento,
-      
+
       // Stock snapshots
       giacenza_sap_momento: giacenzaSAP,
       giacenza_precedente_magazino: giacenzaPrecedenteMagazzino,
       giacenza_nuova_magazino: nuovaGiacenzaMagazzino,
-      
+
       // Details
       operatore: movimento.operatore || 'Unknown',
       motivo: movimento.motivo || '',
       riferimento: movimento.riferimento || '',
-      ubicazione: movimento.ubicazione || articoloData.ubicazione || '',
       note: movimento.note || '',
-      
+
       // Metadata
       dispositivo: movimento.dispositivo || 'Unknown',
       sincronizzato: true,
       foto_url: movimento.foto_url || '',
-      
+
       // Notification control - NEW
       hidden_from_notifications: false  // By default, visible in Movement History
     };
@@ -613,23 +681,27 @@ export const exportMovimentiForSAP = async (dataInizio, dataFine) => {
 
 /**
  * Get articles with stock below minimum
- * 
- * @returns {Array} - Articles with low stock
+ * Returns all locations with low stock
+ *
+ * @returns {Array} - Articles with low stock (each location treated separately)
  */
 export const getArticoliStockBasso = async () => {
   try {
     const articoliRef = collection(db, 'articoli');
     const snapshot = await getDocs(articoliRef);
-    
-    const articoli = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-    
+
+    const articoli = snapshot.docs.map(doc => ({
+      _firebaseId: doc.id, // Internal Firestore document ID
+      ...doc.data()
+    }));
+
     // Filter manually (Firestore doesn't support comparing two fields in query)
-    return articoli.filter(art => 
+    return articoli.filter(art =>
       art.giacenza_attuale_magazino <= art.giacenza_minima
-    ).sort((a, b) => 
+    ).sort((a, b) =>
       a.giacenza_attuale_magazino - b.giacenza_attuale_magazino
     );
-    
+
   } catch (error) {
     console.error('Error getting low stock articles:', error);
     throw error;

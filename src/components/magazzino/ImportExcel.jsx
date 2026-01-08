@@ -167,22 +167,39 @@ const ImportExcel = ({ onImportComplete }) => {
           .map(row => {
             const descrizione = String(row['Material Description'] || '').trim();
             const giacenza = parseFloat(row['Stock Quantity on Period End']) || 0;
-            
+
+            // Extract new columns from Excel (SAP export)
+            // Column D: Storage Location
+            const storageLocation = String(row['Storage Location'] || row['Sloc'] || row['Stor. Loc.'] || '').trim();
+            // Column G: Supplier
+            const supplier = String(row['Supplier'] || row['Vendor'] || '').trim();
+            // Column R: Material Group
+            const materialGroup = String(row['Material Group'] || row['Matl Group'] || '').trim();
+
+            // Create composite ID: code + storage location
+            // This allows same material code to exist in multiple locations
+            const codice = String(row['Material'] || '').trim();
+            const locationSanitized = storageLocation.replace(/[^a-zA-Z0-9]/g, '_').toUpperCase() || 'MAIN';
+            const compositeId = `${codice}_${locationSanitized}`;
+
             return {
-              codice: String(row['Material'] || '').trim(),
+              id: compositeId, // NEW: Composite ID (code + location)
+              codice: codice, // Original material code
               codice_vecchio: String(row['Old material number'] || '').trim(),
               descrizione: descrizione,
               giacenza_attuale: giacenza,
               categoria: classifyArticle(descrizione),
+              material_group: materialGroup, // NEW: Material Group from column R
               unita_misura: 'pz',
               giacenza_minima: 10,
               giacenza_massima: Math.max(100, giacenza * 2),
-              ubicazione: '',
-              fornitore_principale: '',
+              ubicazione: storageLocation, // NEW: Storage Location from column D
+              fornitore_principale: supplier, // NEW: Supplier from column G
               prezzo_unitario: 0,
               codice_qr: JSON.stringify({
-                codigo: String(row['Material'] || '').trim(),
+                codigo: compositeId, // Use composite ID for QR
                 descripcion: descrizione.substring(0, 50),
+                ubicacion: storageLocation,
                 tipo: 'inventario',
                 timestamp: new Date().toISOString()
               })

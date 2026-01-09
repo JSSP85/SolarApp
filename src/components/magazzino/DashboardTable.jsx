@@ -311,11 +311,12 @@ const DashboardTable = () => {
           <span style={{ color: '#374151', fontSize: '0.95rem', fontWeight: 600 }}>
             Showing {filteredArticoli.length.toLocaleString()} of {articoli.length.toLocaleString()} articles
           </span>
-          {searchTerm || categoryFilter !== 'all' || stockFilter !== 'all' ? (
+          {searchTerm || materialGroupFilter !== 'all' || locationFilter !== 'all' || stockFilter !== 'all' ? (
             <button
               onClick={() => {
                 setSearchTerm('');
-                setCategoryFilter('all');
+                setMaterialGroupFilter('all');
+                setLocationFilter('all');
                 setStockFilter('all');
               }}
               style={{

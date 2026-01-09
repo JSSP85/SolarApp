@@ -1,19 +1,22 @@
 // src/components/magazzino/MagazzinoSystem.jsx
 import React, { useState, useEffect } from 'react';
-import { 
-  Package, 
-  Upload, 
-  List, 
-  AlertCircle, 
+import {
+  Package,
+  Upload,
+  List,
+  AlertCircle,
   Smartphone,
   TrendingUp,
   Database,
   Activity,
-  Clock
+  Clock,
+  ClipboardList,
+  PlusCircle
 } from 'lucide-react';
 import ImportExcel from './ImportExcel';
 import MovimentiRegistry from './MovimentiRegistry';
 import DashboardTable from './DashboardTable';
+import SalesOrderSystem from './SalesOrderSystem';
 import { getDashboardStats, getArticoliStockBasso } from '../../firebase/magazzinoService';
 import BackButton from '../common/BackButton';
 import '../../styles/magazzino.css';
@@ -65,6 +68,7 @@ const MagazzinoSystem = ({ onBack }) => {
       case 'dashboard': return 'Dashboard';
       case 'import': return 'Import from SAP';
       case 'movements': return 'Movement Registry';
+      case 'sales-orders': return 'Sales Orders';
       case 'mobile': return 'Mobile App';
       default: return 'Dashboard';
     }
@@ -116,7 +120,7 @@ const MagazzinoSystem = ({ onBack }) => {
               {activeView === 'import' && <div className="wms-nav-indicator"></div>}
             </div>
 
-            <div 
+            <div
               className={`wms-nav-item ${activeView === 'movements' ? 'wms-active' : ''}`}
               onClick={() => handleViewChange('movements')}
             >
@@ -124,6 +128,21 @@ const MagazzinoSystem = ({ onBack }) => {
               <span className="wms-nav-text">Movement Registry</span>
               <span className="wms-nav-badge">{stats.movimenti_oggi}</span>
               {activeView === 'movements' && <div className="wms-nav-indicator"></div>}
+            </div>
+
+            <div className="wms-sidebar-divider"></div>
+
+            <div className="wms-sidebar-section-title">
+              📦 Sales Orders
+            </div>
+
+            <div
+              className={`wms-nav-item ${activeView === 'sales-orders' ? 'wms-active' : ''}`}
+              onClick={() => handleViewChange('sales-orders')}
+            >
+              <span className="wms-nav-icon">📋</span>
+              <span className="wms-nav-text">Sales Orders</span>
+              {activeView === 'sales-orders' && <div className="wms-nav-indicator"></div>}
             </div>
 
             <div className="wms-sidebar-divider"></div>
@@ -242,6 +261,11 @@ const MagazzinoSystem = ({ onBack }) => {
             {/* Movement Registry View */}
             {activeView === 'movements' && (
               <MovimentiRegistry />
+            )}
+
+            {/* Sales Orders View */}
+            {activeView === 'sales-orders' && (
+              <SalesOrderSystem onBack={() => setActiveView('dashboard')} />
             )}
 
             {/* Mobile App View */}

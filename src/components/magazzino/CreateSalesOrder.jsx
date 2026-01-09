@@ -29,10 +29,9 @@ const CreateSalesOrder = ({ onOrderCreated }) => {
   const [deadline, setDeadline] = useState('');
   const [showConfirmation, setShowConfirmation] = useState(false);
   const [importSuccess, setImportSuccess] = useState(false);
+  const [isDragging, setIsDragging] = useState(false);
 
-  const handleFileChange = (e) => {
-    const selectedFile = e.target.files[0];
-
+  const validateAndProcessFile = (selectedFile) => {
     if (!selectedFile) return;
 
     const validTypes = [
@@ -51,6 +50,37 @@ const CreateSalesOrder = ({ onOrderCreated }) => {
     previewExcel(selectedFile);
   };
 
+  const handleFileChange = (e) => {
+    const selectedFile = e.target.files[0];
+    validateAndProcessFile(selectedFile);
+  };
+
+  const handleDragEnter = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragging(true);
+  };
+
+  const handleDragLeave = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragging(false);
+  };
+
+  const handleDragOver = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+  };
+
+  const handleDrop = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragging(false);
+
+    const droppedFile = e.dataTransfer.files[0];
+    validateAndProcessFile(droppedFile);
+  };
+
   const previewExcel = async (file) => {
     const reader = new FileReader();
 
@@ -59,9 +89,14 @@ const CreateSalesOrder = ({ onOrderCreated }) => {
         const data = new Uint8Array(e.target.result);
         const workbook = XLSX.read(data, { type: 'array' });
         const firstSheet = workbook.Sheets[workbook.SheetNames[0]];
-        const jsonData = XLSX.utils.sheet_to_json(firstSheet, { header: 'A' });
 
-        console.log('📊 Raw Excel data:', jsonData.slice(0, 5));
+        // Parse with column letters (A, B, C...) and skip first row (header)
+        const jsonData = XLSX.utils.sheet_to_json(firstSheet, {
+          header: 'A',
+          range: 1 // Skip first row (row 0 is header)
+        });
+
+        console.log('📊 Raw Excel data (first 5 rows):', jsonData.slice(0, 5));
 
         // Parse sales orders from Excel
         const parsedOrders = await parseSalesOrderFromExcel(jsonData);
@@ -170,24 +205,40 @@ const CreateSalesOrder = ({ onOrderCreated }) => {
       <div className="wms-card-content">
         {/* File Upload Section */}
         <div className="wms-upload-section">
-          <div className="wms-upload-area">
-            <Upload size={48} />
-            <h3>Upload Sales Order Excel</h3>
-            <p>Select an Excel file (.xlsx or .xls)</p>
+          <div
+            className={`so-upload-dropzone ${isDragging ? 'dragging' : ''} ${file ? 'has-file' : ''}`}
+            onDragEnter={handleDragEnter}
+            onDragOver={handleDragOver}
+            onDragLeave={handleDragLeave}
+            onDrop={handleDrop}
+          >
+            <div className="so-upload-icon">
+              <Upload size={56} />
+            </div>
+            <h3 className="so-upload-title">Upload Sales Order Excel</h3>
+            <p className="so-upload-subtitle">
+              {isDragging
+                ? 'Drop file here to upload'
+                : 'Drag & drop your Excel file here, or click to browse'}
+            </p>
             <input
               type="file"
               accept=".xlsx,.xls"
               onChange={handleFileChange}
-              className="wms-file-input"
+              className="so-file-input"
               id="sales-order-file"
             />
-            <label htmlFor="sales-order-file" className="wms-upload-button">
+            <label htmlFor="sales-order-file" className="so-upload-button">
+              <Upload size={18} />
               Choose File
             </label>
             {file && (
-              <div className="wms-file-info">
-                <FileText size={16} />
-                <span>{file.name}</span>
+              <div className="so-file-info">
+                <FileText size={18} />
+                <span className="so-file-name">{file.name}</span>
+                <span className="so-file-size">
+                  ({(file.size / 1024).toFixed(2)} KB)
+                </span>
               </div>
             )}
           </div>

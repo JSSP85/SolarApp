@@ -145,7 +145,7 @@ const ActiveOrders = ({ onOrderUpdate }) => {
         </button>
       </div>
 
-      {/* Orders Grid */}
+      {/* Orders List - Compact Cards */}
       {filteredOrders.length === 0 ? (
         <div className="so-empty-state">
           <Package size={64} />
@@ -153,7 +153,7 @@ const ActiveOrders = ({ onOrderUpdate }) => {
           <p>Create a new sales order to get started</p>
         </div>
       ) : (
-        <div className="so-cards-grid">
+        <div className="so-orders-list">
           {filteredOrders.map(order => {
             const statusBadge = getStatusBadge(order.status);
             const StatusIcon = statusBadge.icon;
@@ -161,140 +161,167 @@ const ActiveOrders = ({ onOrderUpdate }) => {
             const overdue = isOverdue(order.deadline, order.status);
 
             return (
-              <div key={order.id} className={`so-card ${order.status}`}>
-                {/* Card Header */}
-                <div className="so-card-header">
-                  <div className="so-card-title-section">
-                    <h3 className="so-card-title">{order.salesOrderNumber}</h3>
-                    <div
-                      className="so-status-badge"
-                      style={{ backgroundColor: statusBadge.bg, color: statusBadge.color }}
+              <div key={order.id} className={`so-order-wrapper ${isExpanded ? 'expanded' : ''}`}>
+                {/* Compact Card - "Carátula" */}
+                <div className={`so-card-compact ${order.status}`}>
+                  <div className="so-compact-header">
+                    <div className="so-compact-title-section">
+                      <h3 className="so-compact-title">{order.salesOrderNumber}</h3>
+                      <div
+                        className="so-status-badge"
+                        style={{ backgroundColor: statusBadge.bg, color: statusBadge.color }}
+                      >
+                        <StatusIcon size={14} />
+                        <span>{statusBadge.label}</span>
+                      </div>
+                    </div>
+                    <button
+                      className="so-delete-btn"
+                      onClick={() => handleDeleteOrder(order.id, order.salesOrderNumber)}
+                      title="Delete order"
                     >
-                      <StatusIcon size={14} />
-                      <span>{statusBadge.label}</span>
+                      <Trash2 size={18} />
+                    </button>
+                  </div>
+
+                  <div className="so-compact-details">
+                    <div className="so-compact-info">
+                      <div className="so-compact-row">
+                        <User size={16} />
+                        <span className="so-compact-label">Customer:</span>
+                        <span className="so-compact-value">{order.cliente}</span>
+                      </div>
+                      <div className="so-compact-row">
+                        <Package size={16} />
+                        <span className="so-compact-label">Project:</span>
+                        <span className="so-compact-value">{order.nombreProyecto}</span>
+                      </div>
+                      <div className="so-compact-row">
+                        <Calendar size={16} />
+                        <span className="so-compact-label">Deadline:</span>
+                        <span className={`so-compact-value ${overdue ? 'so-overdue' : ''}`}>
+                          {order.deadline ? new Date(order.deadline).toLocaleDateString() : 'No deadline'}
+                          {overdue && <AlertCircle size={14} style={{ marginLeft: '4px' }} />}
+                        </span>
+                      </div>
+                    </div>
+
+                    <div className="so-compact-progress">
+                      <div className="so-progress-header">
+                        <span className="so-progress-label">Progress</span>
+                        <span className="so-progress-percentage">{order.progress || 0}%</span>
+                      </div>
+                      <div className="so-progress-bar">
+                        <div
+                          className="so-progress-fill"
+                          style={{
+                            width: `${order.progress || 0}%`,
+                            backgroundColor: order.progress === 100 ? '#10b981' :
+                                           order.progress > 0 ? '#0077a2' : '#9ca3af'
+                          }}
+                        ></div>
+                      </div>
                     </div>
                   </div>
-                  <button
-                    className="so-delete-btn"
-                    onClick={() => handleDeleteOrder(order.id, order.salesOrderNumber)}
-                    title="Delete order"
-                  >
-                    <Trash2 size={18} />
-                  </button>
-                </div>
 
-                {/* Card Info */}
-                <div className="so-card-info">
-                  <div className="so-info-row">
-                    <User size={16} />
-                    <span className="so-info-label">Customer:</span>
-                    <span className="so-info-value">{order.cliente}</span>
-                  </div>
-                  <div className="so-info-row">
-                    <Package size={16} />
-                    <span className="so-info-label">Project:</span>
-                    <span className="so-info-value">{order.nombreProyecto}</span>
-                  </div>
-                  <div className="so-info-row">
-                    <Calendar size={16} />
-                    <span className="so-info-label">Deadline:</span>
-                    <span className={`so-info-value ${overdue ? 'so-overdue' : ''}`}>
-                      {order.deadline ? new Date(order.deadline).toLocaleDateString() : 'No deadline'}
-                      {overdue && <AlertCircle size={14} style={{ marginLeft: '4px' }} />}
-                    </span>
-                  </div>
-                </div>
+                  <div className="so-compact-footer">
+                    <button
+                      className="so-expand-items-btn"
+                      onClick={() => toggleOrderExpand(order.id)}
+                    >
+                      <Package size={16} />
+                      <span>View {order.items?.length || 0} Items</span>
+                      {isExpanded ? <ChevronUp size={18} /> : <ChevronDown size={18} />}
+                    </button>
 
-                {/* Progress Bar */}
-                <div className="so-progress-section">
-                  <div className="so-progress-header">
-                    <span className="so-progress-label">Progress</span>
-                    <span className="so-progress-percentage">{order.progress || 0}%</span>
-                  </div>
-                  <div className="so-progress-bar">
-                    <div
-                      className="so-progress-fill"
-                      style={{
-                        width: `${order.progress || 0}%`,
-                        backgroundColor: order.progress === 100 ? '#10b981' :
-                                       order.progress > 0 ? '#0077a2' : '#9ca3af'
-                      }}
-                    ></div>
+                    {order.status !== 'completed' && (
+                      <div className="so-compact-actions">
+                        {order.status === 'pending' && (
+                          <button
+                            className="so-action-btn-compact so-btn-start"
+                            onClick={() => handleStatusChange(order.id, 'in-progress')}
+                          >
+                            <PlayCircle size={16} />
+                            Start
+                          </button>
+                        )}
+                        {order.status === 'in-progress' && (
+                          <button
+                            className="so-action-btn-compact so-btn-complete"
+                            onClick={() => handleStatusChange(order.id, 'completed')}
+                          >
+                            <CheckCircle size={16} />
+                            Complete
+                          </button>
+                        )}
+                      </div>
+                    )}
                   </div>
                 </div>
 
-                {/* Items Summary */}
-                <div className="so-items-summary">
-                  <button
-                    className="so-expand-btn"
-                    onClick={() => toggleOrderExpand(order.id)}
-                  >
-                    <Package size={16} />
-                    <span>{order.items?.length || 0} items</span>
-                    {isExpanded ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
-                  </button>
-                </div>
-
-                {/* Expanded Items List */}
+                {/* Expanded Items Table - Full Width */}
                 {isExpanded && (
-                  <div className="so-items-list">
-                    <table className="so-items-table">
-                      <thead>
-                        <tr>
-                          <th>Material</th>
-                          <th>Description</th>
-                          <th>Required</th>
-                          <th>Prepared</th>
-                          <th>Stock</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {order.items?.map((item, idx) => (
-                          <tr key={idx}>
-                            <td className="so-material">{item.materialCode}</td>
-                            <td className="so-desc">{item.description}</td>
-                            <td>{item.quantityRequired}</td>
-                            <td style={{
-                              color: item.quantityPrepared >= item.quantityRequired ? '#10b981' :
-                                     item.quantityPrepared > 0 ? '#f59e0b' : '#6b7280',
-                              fontWeight: 'bold'
-                            }}>
-                              {item.quantityPrepared || 0}
-                            </td>
-                            <td style={{
-                              color: (item.currentStock || 0) >= item.quantityRequired ? '#10b981' :
-                                     (item.currentStock || 0) > 0 ? '#f59e0b' : '#ef4444'
-                            }}>
-                              {item.currentStock || 0}
-                            </td>
+                  <div className="so-items-expanded">
+                    <div className="so-items-table-wrapper">
+                      <table className="so-items-table-full">
+                        <thead>
+                          <tr>
+                            <th>Line Item</th>
+                            <th>Material Code</th>
+                            <th>Description</th>
+                            <th>Qty Required</th>
+                            <th>Qty Prepared</th>
+                            <th>Current Stock</th>
+                            <th>Status</th>
                           </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
-                )}
+                        </thead>
+                        <tbody>
+                          {order.items?.map((item, idx) => {
+                            const preparedPercent = item.quantityRequired > 0
+                              ? (item.quantityPrepared / item.quantityRequired) * 100
+                              : 0;
 
-                {/* Status Actions */}
-                {order.status !== 'completed' && (
-                  <div className="so-card-actions">
-                    {order.status === 'pending' && (
-                      <button
-                        className="so-action-btn so-btn-start"
-                        onClick={() => handleStatusChange(order.id, 'in-progress')}
-                      >
-                        <PlayCircle size={16} />
-                        Start Order
-                      </button>
-                    )}
-                    {order.status === 'in-progress' && (
-                      <button
-                        className="so-action-btn so-btn-complete"
-                        onClick={() => handleStatusChange(order.id, 'completed')}
-                      >
-                        <CheckCircle size={16} />
-                        Mark Complete
-                      </button>
-                    )}
+                            return (
+                              <tr key={idx}>
+                                <td className="so-line-item">{item.lineItem || idx + 1}</td>
+                                <td className="so-material-code">{item.materialCode}</td>
+                                <td className="so-description">{item.description}</td>
+                                <td className="so-qty-required">{item.quantityRequired}</td>
+                                <td className="so-qty-prepared" style={{
+                                  color: preparedPercent >= 100 ? '#10b981' :
+                                         preparedPercent > 0 ? '#f59e0b' : '#6b7280',
+                                  fontWeight: 'bold'
+                                }}>
+                                  {item.quantityPrepared || 0}
+                                </td>
+                                <td className="so-current-stock" style={{
+                                  color: (item.currentStock || 0) >= item.quantityRequired ? '#10b981' :
+                                         (item.currentStock || 0) > 0 ? '#f59e0b' : '#ef4444',
+                                  fontWeight: 'bold'
+                                }}>
+                                  {item.currentStock || 0}
+                                </td>
+                                <td>
+                                  {preparedPercent >= 100 ? (
+                                    <span className="so-item-status complete">
+                                      <CheckCircle size={14} /> Complete
+                                    </span>
+                                  ) : preparedPercent > 0 ? (
+                                    <span className="so-item-status partial">
+                                      <Clock size={14} /> {Math.round(preparedPercent)}%
+                                    </span>
+                                  ) : (
+                                    <span className="so-item-status pending">
+                                      <AlertCircle size={14} /> Pending
+                                    </span>
+                                  )}
+                                </td>
+                              </tr>
+                            );
+                          })}
+                        </tbody>
+                      </table>
+                    </div>
                   </div>
                 )}
               </div>

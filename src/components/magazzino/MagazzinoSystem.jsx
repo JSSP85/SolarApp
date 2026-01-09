@@ -28,7 +28,6 @@ const MagazzinoSystem = ({ onBack }) => {
     ultima_sincronizzazione: null,
     categorie: 0
   });
-  const [lowStockArticles, setLowStockArticles] = useState([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -39,13 +38,7 @@ const MagazzinoSystem = ({ onBack }) => {
     try {
       setLoading(true);
       const dashboardStats = await getDashboardStats();
-      const lowStock = await getArticoliStockBasso();
-
-      // Filter to show only articles with < 10 stock (Low and Critical)
-      const filteredLowStock = lowStock.filter(art => art.giacenza_attuale_magazino < 10);
-
       setStats(dashboardStats);
-      setLowStockArticles(filteredLowStock); // Show ALL items with < 10 stock
       setLoading(false);
     } catch (error) {
       console.error('Error loading stats:', error);
@@ -236,60 +229,6 @@ const MagazzinoSystem = ({ onBack }) => {
 
                     {/* Full Inventory Table */}
                     <DashboardTable />
-
-                    {/* Low Stock Alert */}
-                    {lowStockArticles.length > 0 && (
-                      <div className="wms-panel-card">
-                        <div className="wms-panel-header">
-                          <h2 className="wms-panel-title">
-                            <AlertCircle size={24} />
-                            Critical Stock Alerts
-                          </h2>
-                          <p className="wms-panel-subtitle">
-                            All components with less than 10 units in stock
-                          </p>
-                        </div>
-                        <div style={{ padding: '2rem' }}>
-                          <div className="wms-table-container">
-                            <table className="wms-table">
-                              <thead>
-                                <tr>
-                                  <th>Code</th>
-                                  <th>Description</th>
-                                  <th>Current Stock</th>
-                                  <th>Status</th>
-                                </tr>
-                              </thead>
-                              <tbody>
-                                {lowStockArticles.map((article, idx) => {
-                                  const isCritical = article.giacenza_attuale_magazino < 5;
-                                  const statusLabel = isCritical ? 'CRITICAL' : 'LOW';
-                                  const statusColor = isCritical ? '#ef4444' : '#f59e0b';
-
-                                  // Use _firebaseId (internal composite ID) or create unique key
-                                  const uniqueKey = article._firebaseId || article.id || `${article.codice}_${article.ubicazione || 'MAIN'}_${idx}`;
-
-                                  return (
-                                    <tr key={uniqueKey}>
-                                      <td><code className="wms-article-code">{article.codice}</code></td>
-                                      <td>{article.descrizione}</td>
-                                      <td><strong style={{ color: statusColor }}>
-                                        {article.giacenza_attuale_magazino}
-                                      </strong></td>
-                                      <td>
-                                        <span className={`wms-alert-badge ${isCritical ? 'critical' : 'warning'}`}>
-                                          {statusLabel}
-                                        </span>
-                                      </td>
-                                    </tr>
-                                  );
-                                })}
-                              </tbody>
-                            </table>
-                          </div>
-                        </div>
-                      </div>
-                    )}
                   </>
                 )}
               </>

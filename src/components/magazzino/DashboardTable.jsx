@@ -498,7 +498,11 @@ const DashboardTable = () => {
                         fontFamily: 'monospace',
                         fontSize: '1.1rem',
                         fontWeight: 700,
-                        color: '#1f2937'
+                        color: article.giacenza_attuale_magazino <= 5
+                          ? '#ef4444'  // Red for critical (<=5)
+                          : article.giacenza_attuale_magazino <= 10
+                          ? '#f59e0b'  // Orange for low (<=10)
+                          : '#1f2937' // Normal black for OK (>10)
                       }}>
                         {(article.giacenza_attuale_magazino || 0).toLocaleString()}
                       </td>
@@ -521,7 +525,7 @@ const DashboardTable = () => {
           <h4 style={{ margin: '0 0 1rem 0', color: '#374151', fontSize: '0.95rem', fontWeight: 600 }}>
             📊 Column Explanation
           </h4>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: '0.75rem' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: '0.75rem', marginBottom: '1rem' }}>
             <div style={{ fontSize: '0.85rem', color: '#6b7280' }}>
               <strong style={{ color: '#374151' }}>SAP Stock:</strong> Original quantity from SAP export
             </div>
@@ -530,6 +534,50 @@ const DashboardTable = () => {
             </div>
             <div style={{ fontSize: '0.85rem', color: '#6b7280' }}>
               <strong style={{ color: '#374151' }}>Current Stock:</strong> SAP Stock + Movements
+            </div>
+          </div>
+          <div style={{
+            borderTop: '1px solid #e5e7eb',
+            paddingTop: '1rem',
+            display: 'flex',
+            gap: '1.5rem',
+            flexWrap: 'wrap'
+          }}>
+            <div style={{ fontSize: '0.85rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+              <span style={{
+                width: '20px',
+                height: '20px',
+                background: '#ef4444',
+                borderRadius: '4px',
+                display: 'inline-block'
+              }}></span>
+              <span style={{ color: '#6b7280' }}>
+                <strong style={{ color: '#ef4444' }}>Critical:</strong> Stock ≤ 5 units
+              </span>
+            </div>
+            <div style={{ fontSize: '0.85rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+              <span style={{
+                width: '20px',
+                height: '20px',
+                background: '#f59e0b',
+                borderRadius: '4px',
+                display: 'inline-block'
+              }}></span>
+              <span style={{ color: '#6b7280' }}>
+                <strong style={{ color: '#f59e0b' }}>Low:</strong> Stock ≤ 10 units
+              </span>
+            </div>
+            <div style={{ fontSize: '0.85rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+              <span style={{
+                width: '20px',
+                height: '20px',
+                background: '#1f2937',
+                borderRadius: '4px',
+                display: 'inline-block'
+              }}></span>
+              <span style={{ color: '#6b7280' }}>
+                <strong style={{ color: '#1f2937' }}>OK:</strong> Stock > 10 units
+              </span>
             </div>
           </div>
         </div>

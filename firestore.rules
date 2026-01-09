@@ -1,92 +1,70 @@
 rules_version = '2';
-
 service cloud.firestore {
   match /databases/{database}/documents {
 
-    // Helper function to check if user is authenticated
-    function isAuthenticated() {
-      return request.auth != null;
+    // ✅ REGLA EXISTENTE PARA INSPECCIONES
+    match /inspections/{document=**} {
+      allow read, write: if true;
     }
 
-    // ============================================
-    // ARTICOLI (Warehouse Inventory)
-    // ============================================
-    match /articoli/{articleId} {
-      allow read: if isAuthenticated();
-      allow write: if isAuthenticated();
+    // ✅ REGLA PARA NO CONFORMIDADES
+    match /nonConformities/{document=**} {
+      allow read, write: if true;
     }
 
-    // ============================================
-    // MOVIMENTI (Inventory Movements)
-    // ============================================
-    match /movimenti/{movimentoId} {
-      allow read: if isAuthenticated();
-      allow write: if isAuthenticated();
+    // ✅ REGLA PARA NC REGISTRY (ya existe)
+    match /nc_registry/{document=**} {
+      allow read, write: if true;
     }
 
-    // ============================================
-    // IMPORTAZIONI SAP (SAP Import History)
-    // ============================================
-    match /importazioni_sap/{importId} {
-      allow read: if isAuthenticated();
-      allow write: if isAuthenticated();
+    // ✅ REGLA PARA CLIENT NC REGISTRY
+    match /client_nc_registry/{document=**} {
+      allow read, write: if true;
     }
 
-    // ============================================
-    // SALES ORDERS - NEW
-    // ============================================
-    match /sales_orders/{orderId} {
-      allow read: if isAuthenticated();
-      allow create: if isAuthenticated();
-      allow update: if isAuthenticated();
-      allow delete: if isAuthenticated();
+    // ✅ REGLA PARA SUPPLIER EVALUATIONS
+    match /supplierEvaluations/{document=**} {
+      allow read, write: if true;
     }
 
-    // ============================================
-    // SALES ORDER ACTIVITY (Activity Log) - NEW
-    // ============================================
-    match /sales_order_activity/{activityId} {
-      allow read: if isAuthenticated();
-      allow write: if isAuthenticated();
-    }
-
-    // ============================================
-    // USERS
-    // ============================================
+    // ✅ REGLAS ADICIONALES
     match /users/{userId} {
-      allow read: if isAuthenticated();
-      allow write: if isAuthenticated() && request.auth.uid == userId;
+      allow read, write: if true;
     }
 
-    // ============================================
-    // NON-CONFORMITIES
-    // ============================================
-    match /non_conformities/{ncId} {
-      allow read: if isAuthenticated();
-      allow write: if isAuthenticated();
+    match /projects/{document} {
+      allow read, write: if true;
     }
 
-    // ============================================
-    // SUPPLIER EVALUATIONS
-    // ============================================
-    match /supplier_evaluations/{evalId} {
-      allow read: if isAuthenticated();
-      allow write: if isAuthenticated();
+    match /suppliers/{document} {
+      allow read, write: if true;
     }
 
-    // ============================================
-    // SUPPLIERS
-    // ============================================
-    match /suppliers/{supplierId} {
-      allow read: if isAuthenticated();
-      allow write: if isAuthenticated();
+    // ✅ WAREHOUSE MANAGEMENT
+    match /articoli/{document=**} {
+      allow read, write: if true;
     }
 
-    // ============================================
-    // OTHER COLLECTIONS (add as needed)
-    // ============================================
-    match /{document=**} {
-      allow read, write: if isAuthenticated();
+    match /importazioni_sap/{document=**} {
+      allow read, write: if true;
+    }
+
+    match /movimenti/{document=**} {
+      allow read, write: if true;
+    }
+
+    // 🆕 SALES ORDERS - NUEVAS REGLAS
+    match /sales_orders/{document=**} {
+      allow read, write: if true;
+    }
+
+    match /sales_order_activity/{document=**} {
+      allow read, write: if true;
+    }
+
+    // ✅ MEASUREMENT INSTRUMENTS MANAGEMENT
+    match /measurement_instruments/{document=**} {
+      allow read, write: if true;
     }
   }
 }

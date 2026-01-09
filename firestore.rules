@@ -1,0 +1,92 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Helper function to check if user is authenticated
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    // ============================================
+    // ARTICOLI (Warehouse Inventory)
+    // ============================================
+    match /articoli/{articleId} {
+      allow read: if isAuthenticated();
+      allow write: if isAuthenticated();
+    }
+
+    // ============================================
+    // MOVIMENTI (Inventory Movements)
+    // ============================================
+    match /movimenti/{movimentoId} {
+      allow read: if isAuthenticated();
+      allow write: if isAuthenticated();
+    }
+
+    // ============================================
+    // IMPORTAZIONI SAP (SAP Import History)
+    // ============================================
+    match /importazioni_sap/{importId} {
+      allow read: if isAuthenticated();
+      allow write: if isAuthenticated();
+    }
+
+    // ============================================
+    // SALES ORDERS - NEW
+    // ============================================
+    match /sales_orders/{orderId} {
+      allow read: if isAuthenticated();
+      allow create: if isAuthenticated();
+      allow update: if isAuthenticated();
+      allow delete: if isAuthenticated();
+    }
+
+    // ============================================
+    // SALES ORDER ACTIVITY (Activity Log) - NEW
+    // ============================================
+    match /sales_order_activity/{activityId} {
+      allow read: if isAuthenticated();
+      allow write: if isAuthenticated();
+    }
+
+    // ============================================
+    // USERS
+    // ============================================
+    match /users/{userId} {
+      allow read: if isAuthenticated();
+      allow write: if isAuthenticated() && request.auth.uid == userId;
+    }
+
+    // ============================================
+    // NON-CONFORMITIES
+    // ============================================
+    match /non_conformities/{ncId} {
+      allow read: if isAuthenticated();
+      allow write: if isAuthenticated();
+    }
+
+    // ============================================
+    // SUPPLIER EVALUATIONS
+    // ============================================
+    match /supplier_evaluations/{evalId} {
+      allow read: if isAuthenticated();
+      allow write: if isAuthenticated();
+    }
+
+    // ============================================
+    // SUPPLIERS
+    // ============================================
+    match /suppliers/{supplierId} {
+      allow read: if isAuthenticated();
+      allow write: if isAuthenticated();
+    }
+
+    // ============================================
+    // OTHER COLLECTIONS (add as needed)
+    // ============================================
+    match /{document=**} {
+      allow read, write: if isAuthenticated();
+    }
+  }
+}

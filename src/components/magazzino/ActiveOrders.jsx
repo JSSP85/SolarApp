@@ -11,12 +11,16 @@ import {
   ChevronDown,
   ChevronUp,
   Trash2,
-  TrendingUp
+  TrendingUp,
+  Edit2,
+  X,
+  Save
 } from 'lucide-react';
 import {
   getAllSalesOrders,
   deleteSalesOrder,
-  updateSalesOrderStatus
+  updateSalesOrderStatus,
+  updateSalesOrderItems
 } from '../../firebase/salesOrderService';
 
 const ActiveOrders = ({ onOrderUpdate }) => {
@@ -24,6 +28,9 @@ const ActiveOrders = ({ onOrderUpdate }) => {
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState('all'); // all | pending | in-progress | completed
   const [expandedOrders, setExpandedOrders] = useState(new Set());
+
+  // Edit/Delete modes per order
+  const [editModes, setEditModes] = useState({}); // { orderId: { mode: 'edit'|'delete', selectedItems: Set(), editedItems: {} } }
 
   useEffect(() => {
     loadOrders();
@@ -72,11 +79,159 @@ const ActiveOrders = ({ onOrderUpdate }) => {
       const newSet = new Set(prev);
       if (newSet.has(orderId)) {
         newSet.delete(orderId);
+        // Clear edit mode when collapsing
+        setEditModes(prevModes => {
+          const newModes = { ...prevModes };
+          delete newModes[orderId];
+          return newModes;
+        });
       } else {
         newSet.add(orderId);
       }
       return newSet;
     });
+  };
+
+  // Edit mode functions
+  const enterEditMode = (orderId) => {
+    setEditModes(prev => ({
+      ...prev,
+      [orderId]: {
+        mode: 'edit',
+        selectedItems: new Set(),
+        editedItems: {}
+      }
+    }));
+  };
+
+  const enterDeleteMode = (orderId) => {
+    setEditModes(prev => ({
+      ...prev,
+      [orderId]: {
+        mode: 'delete',
+        selectedItems: new Set()
+      }
+    }));
+  };
+
+  const cancelEditMode = (orderId) => {
+    setEditModes(prev => {
+      const newModes = { ...prev };
+      delete newModes[orderId];
+      return newModes;
+    });
+  };
+
+  const toggleItemSelection = (orderId, itemIndex) => {
+    setEditModes(prev => {
+      const mode = prev[orderId];
+      if (!mode) return prev;
+
+      const newSelected = new Set(mode.selectedItems);
+      if (newSelected.has(itemIndex)) {
+        newSelected.delete(itemIndex);
+      } else {
+        newSelected.add(itemIndex);
+      }
+
+      return {
+        ...prev,
+        [orderId]: {
+          ...mode,
+          selectedItems: newSelected
+        }
+      };
+    });
+  };
+
+  const handleCellEdit = (orderId, itemIndex, field, value) => {
+    setEditModes(prev => {
+      const mode = prev[orderId];
+      if (!mode || mode.mode !== 'edit') return prev;
+
+      return {
+        ...prev,
+        [orderId]: {
+          ...mode,
+          editedItems: {
+            ...mode.editedItems,
+            [itemIndex]: {
+              ...(mode.editedItems[itemIndex] || {}),
+              [field]: value
+            }
+          }
+        }
+      };
+    });
+  };
+
+  const confirmEdit = async (orderId) => {
+    const mode = editModes[orderId];
+    if (!mode || mode.selectedItems.size === 0) {
+      alert('Please select at least one item to edit');
+      return;
+    }
+
+    try {
+      const order = orders.find(o => o.id === orderId);
+      if (!order) return;
+
+      // Apply edits to selected items
+      const updatedItems = order.items.map((item, index) => {
+        if (mode.selectedItems.has(index)) {
+          const edits = mode.editedItems[index] || {};
+          return {
+            ...item,
+            ...edits,
+            // Convert numeric fields
+            quantityRequired: edits.quantityRequired ? parseInt(edits.quantityRequired) : item.quantityRequired,
+            quantityPrepared: edits.quantityPrepared ? parseInt(edits.quantityPrepared) : item.quantityPrepared
+          };
+        }
+        return item;
+      });
+
+      await updateSalesOrderItems(orderId, updatedItems);
+      await loadOrders();
+      if (onOrderUpdate) onOrderUpdate();
+      cancelEditMode(orderId);
+    } catch (error) {
+      console.error('Error updating items:', error);
+      alert('Failed to update items');
+    }
+  };
+
+  const confirmDelete = async (orderId) => {
+    const mode = editModes[orderId];
+    if (!mode || mode.selectedItems.size === 0) {
+      alert('Please select at least one item to delete');
+      return;
+    }
+
+    if (!window.confirm(`Are you sure you want to delete ${mode.selectedItems.size} item(s)?`)) {
+      return;
+    }
+
+    try {
+      const order = orders.find(o => o.id === orderId);
+      if (!order) return;
+
+      // Remove selected items
+      const updatedItems = order.items.filter((item, index) => !mode.selectedItems.has(index));
+
+      if (updatedItems.length === 0) {
+        alert('Cannot delete all items. Please delete the entire order instead.');
+        return;
+      }
+
+      await updateSalesOrderItems(orderId, updatedItems);
+      await loadOrders();
+      if (onOrderUpdate) onOrderUpdate();
+      cancelEditMode(orderId);
+    } catch (error) {
+      console.error('Error deleting items:', error);
+      alert('Failed to delete items');
+    }
   };
 
   const getStatusBadge = (status) => {
@@ -262,10 +417,59 @@ const ActiveOrders = ({ onOrderUpdate }) => {
                 {/* Expanded Items Table - Full Width */}
                 {isExpanded && (
                   <div className="so-items-expanded">
+                    {/* Edit/Delete Action Buttons */}
+                    <div className="so-items-actions-bar">
+                      {!editModes[order.id] ? (
+                        <>
+                          <button
+                            className="so-items-action-btn edit"
+                            onClick={() => enterEditMode(order.id)}
+                            title="Edit items"
+                          >
+                            <Edit2 size={18} />
+                            <span>Edit Items</span>
+                          </button>
+                          <button
+                            className="so-items-action-btn delete"
+                            onClick={() => enterDeleteMode(order.id)}
+                            title="Delete items"
+                          >
+                            <Trash2 size={18} />
+                            <span>Delete Items</span>
+                          </button>
+                        </>
+                      ) : (
+                        <div className="so-items-edit-actions">
+                          <span className="so-edit-mode-label">
+                            {editModes[order.id].mode === 'edit' ? '✏️ Edit Mode' : '🗑️ Delete Mode'}
+                            {' - '}
+                            {editModes[order.id].selectedItems.size} item(s) selected
+                          </span>
+                          <div className="so-edit-buttons">
+                            <button
+                              className="so-edit-confirm-btn"
+                              onClick={() => editModes[order.id].mode === 'edit' ? confirmEdit(order.id) : confirmDelete(order.id)}
+                            >
+                              <Save size={16} />
+                              {editModes[order.id].mode === 'edit' ? 'Save Changes' : 'Confirm Delete'}
+                            </button>
+                            <button
+                              className="so-edit-cancel-btn"
+                              onClick={() => cancelEditMode(order.id)}
+                            >
+                              <X size={16} />
+                              Cancel
+                            </button>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+
                     <div className="so-items-table-wrapper">
                       <table className="so-items-table-full">
                         <thead>
                           <tr>
+                            {editModes[order.id] && <th className="so-checkbox-col">Select</th>}
                             <th>Line Item</th>
                             <th>Material Code</th>
                             <th>Description</th>
@@ -280,19 +484,86 @@ const ActiveOrders = ({ onOrderUpdate }) => {
                             const preparedPercent = item.quantityRequired > 0
                               ? (item.quantityPrepared / item.quantityRequired) * 100
                               : 0;
+                            const editMode = editModes[order.id];
+                            const isSelected = editMode?.selectedItems.has(idx);
+                            const isEditable = editMode?.mode === 'edit' && isSelected;
+                            const editedData = editMode?.editedItems[idx] || {};
 
                             return (
-                              <tr key={idx}>
-                                <td className="so-line-item">{item.lineItem || idx + 1}</td>
-                                <td className="so-material-code">{item.materialCode}</td>
-                                <td className="so-description">{item.description}</td>
-                                <td className="so-qty-required">{item.quantityRequired}</td>
+                              <tr key={idx} className={isSelected ? 'so-row-selected' : ''}>
+                                {editMode && (
+                                  <td className="so-checkbox-col">
+                                    <input
+                                      type="checkbox"
+                                      checked={isSelected}
+                                      onChange={() => toggleItemSelection(order.id, idx)}
+                                      className="so-item-checkbox"
+                                    />
+                                  </td>
+                                )}
+                                <td className="so-line-item">
+                                  {isEditable ? (
+                                    <input
+                                      type="text"
+                                      value={editedData.lineItem ?? item.lineItem ?? idx + 1}
+                                      onChange={(e) => handleCellEdit(order.id, idx, 'lineItem', e.target.value)}
+                                      className="so-cell-input"
+                                    />
+                                  ) : (
+                                    item.lineItem || idx + 1
+                                  )}
+                                </td>
+                                <td className="so-material-code">
+                                  {isEditable ? (
+                                    <input
+                                      type="text"
+                                      value={editedData.materialCode ?? item.materialCode}
+                                      onChange={(e) => handleCellEdit(order.id, idx, 'materialCode', e.target.value)}
+                                      className="so-cell-input"
+                                    />
+                                  ) : (
+                                    item.materialCode
+                                  )}
+                                </td>
+                                <td className="so-description">
+                                  {isEditable ? (
+                                    <input
+                                      type="text"
+                                      value={editedData.description ?? item.description}
+                                      onChange={(e) => handleCellEdit(order.id, idx, 'description', e.target.value)}
+                                      className="so-cell-input"
+                                    />
+                                  ) : (
+                                    item.description
+                                  )}
+                                </td>
+                                <td className="so-qty-required">
+                                  {isEditable ? (
+                                    <input
+                                      type="number"
+                                      value={editedData.quantityRequired ?? item.quantityRequired}
+                                      onChange={(e) => handleCellEdit(order.id, idx, 'quantityRequired', e.target.value)}
+                                      className="so-cell-input so-cell-number"
+                                    />
+                                  ) : (
+                                    item.quantityRequired
+                                  )}
+                                </td>
                                 <td className="so-qty-prepared" style={{
                                   color: preparedPercent >= 100 ? '#10b981' :
                                          preparedPercent > 0 ? '#f59e0b' : '#6b7280',
                                   fontWeight: 'bold'
                                 }}>
-                                  {item.quantityPrepared || 0}
+                                  {isEditable ? (
+                                    <input
+                                      type="number"
+                                      value={editedData.quantityPrepared ?? item.quantityPrepared ?? 0}
+                                      onChange={(e) => handleCellEdit(order.id, idx, 'quantityPrepared', e.target.value)}
+                                      className="so-cell-input so-cell-number"
+                                    />
+                                  ) : (
+                                    item.quantityPrepared || 0
+                                  )}
                                 </td>
                                 <td className="so-current-stock" style={{
                                   color: (item.currentStock || 0) >= item.quantityRequired ? '#10b981' :

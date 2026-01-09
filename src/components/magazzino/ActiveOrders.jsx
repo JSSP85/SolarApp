@@ -253,7 +253,8 @@ const ActiveOrders = ({ onOrderUpdate }) => {
     return new Date(deadline) < new Date();
   };
 
-  const filteredOrders = orders.filter(order => {
+  const filteredOrders = (orders || []).filter(order => {
+    if (!order) return false;
     if (filter === 'all') return true;
     return order.status === filter;
   });
@@ -275,28 +276,28 @@ const ActiveOrders = ({ onOrderUpdate }) => {
           className={`so-filter-tab ${filter === 'all' ? 'active' : ''}`}
           onClick={() => setFilter('all')}
         >
-          All Orders ({orders.length})
+          All Orders ({(orders || []).length})
         </button>
         <button
           className={`so-filter-tab ${filter === 'pending' ? 'active' : ''}`}
           onClick={() => setFilter('pending')}
         >
           <Clock size={16} />
-          Pending ({orders.filter(o => o.status === 'pending').length})
+          Pending ({(orders || []).filter(o => o && o.status === 'pending').length})
         </button>
         <button
           className={`so-filter-tab ${filter === 'in-progress' ? 'active' : ''}`}
           onClick={() => setFilter('in-progress')}
         >
           <PlayCircle size={16} />
-          In Progress ({orders.filter(o => o.status === 'in-progress').length})
+          In Progress ({(orders || []).filter(o => o && o.status === 'in-progress').length})
         </button>
         <button
           className={`so-filter-tab ${filter === 'completed' ? 'active' : ''}`}
           onClick={() => setFilter('completed')}
         >
           <CheckCircle size={16} />
-          Completed ({orders.filter(o => o.status === 'completed').length})
+          Completed ({(orders || []).filter(o => o && o.status === 'completed').length})
         </button>
       </div>
 
@@ -480,14 +481,14 @@ const ActiveOrders = ({ onOrderUpdate }) => {
                           </tr>
                         </thead>
                         <tbody>
-                          {order.items?.map((item, idx) => {
+                          {(order.items || []).map((item, idx) => {
                             const preparedPercent = item.quantityRequired > 0
                               ? (item.quantityPrepared / item.quantityRequired) * 100
                               : 0;
                             const editMode = editModes[order.id];
-                            const isSelected = editMode?.selectedItems.has(idx);
+                            const isSelected = editMode?.selectedItems?.has(idx) || false;
                             const isEditable = editMode?.mode === 'edit' && isSelected;
-                            const editedData = editMode?.editedItems[idx] || {};
+                            const editedData = editMode?.editedItems?.[idx] || {};
 
                             return (
                               <tr key={idx} className={isSelected ? 'so-row-selected' : ''}>

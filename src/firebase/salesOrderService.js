@@ -418,6 +418,58 @@ export const deleteSalesOrder = async (orderId) => {
 };
 
 // ============================================================================
+// UPDATE SALES ORDER ITEMS
+// ============================================================================
+
+/**
+ * Update the items array of a sales order
+ * Used for editing or deleting line items
+ *
+ * @param {string} orderId - Sales order Firebase ID
+ * @param {Array} items - Updated items array
+ * @returns {boolean} - Success
+ */
+export const updateSalesOrderItems = async (orderId, items) => {
+  try {
+    const orderRef = doc(db, 'sales_orders', orderId);
+
+    // Recalculate progress
+    const totalQuantity = items.reduce((sum, item) => sum + item.quantityRequired, 0);
+    const preparedQuantity = items.reduce((sum, item) => sum + (item.quantityPrepared || 0), 0);
+    const progress = totalQuantity > 0 ? (preparedQuantity / totalQuantity) * 100 : 0;
+
+    // Determine status based on progress
+    let status = 'pending';
+    if (progress > 0 && progress < 100) {
+      status = 'in-progress';
+    } else if (progress === 100) {
+      status = 'completed';
+    }
+
+    const updates = {
+      items,
+      progress: Math.round(progress),
+      status,
+      updatedAt: serverTimestamp()
+    };
+
+    if (status === 'completed') {
+      updates.completedAt = serverTimestamp();
+    } else {
+      updates.completedAt = null;
+    }
+
+    await updateDoc(orderRef, updates);
+    console.log(`✅ Sales Order items updated: ${orderId}`);
+    return true;
+
+  } catch (error) {
+    console.error('Error updating sales order items:', error);
+    throw error;
+  }
+};
+
+// ============================================================================
 // LOG SALES ORDER ACTIVITY
 // ============================================================================
 

@@ -1,0 +1,718 @@
+/* src/styles/salesOrders.css */
+/* Sales Order Management System - Extends magazzino.css styles */
+
+/* ============================================
+   SALES ORDER COLUMN INFO
+   ============================================ */
+
+.so-column-info {
+  background: rgba(59, 130, 246, 0.05);
+  border: 1px solid rgba(59, 130, 246, 0.2);
+  border-radius: 8px;
+  padding: 1.25rem;
+  margin-top: 1.5rem;
+}
+
+.so-column-info h4 {
+  margin: 0 0 0.75rem 0;
+  font-size: 0.95rem;
+  color: #0077a2;
+  font-weight: 600;
+}
+
+.so-column-info ul {
+  margin: 0;
+  padding-left: 1.5rem;
+}
+
+.so-column-info li {
+  margin-bottom: 0.5rem;
+  font-size: 0.875rem;
+  color: #374151;
+  line-height: 1.5;
+}
+
+.so-column-info strong {
+  color: #0077a2;
+  font-weight: 600;
+}
+
+/* ============================================
+   ORDER HEADER INFO
+   ============================================ */
+
+.so-header-info {
+  background: linear-gradient(135deg, rgba(0, 119, 162, 0.05) 0%, rgba(59, 130, 246, 0.05) 100%);
+  border: 1px solid rgba(0, 119, 162, 0.2);
+  border-radius: 8px;
+  padding: 1.5rem;
+  margin-bottom: 1.5rem;
+}
+
+.so-info-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 1.25rem;
+}
+
+.so-info-item {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.so-info-label {
+  font-size: 0.8rem;
+  color: #6b7280;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.so-info-value {
+  font-size: 1.1rem;
+  color: #111827;
+  font-weight: 600;
+}
+
+/* ============================================
+   DEADLINE SECTION
+   ============================================ */
+
+.so-deadline-section {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 1rem;
+  background: rgba(245, 158, 11, 0.05);
+  border: 1px solid rgba(245, 158, 11, 0.2);
+  border-radius: 8px;
+  margin-bottom: 1.5rem;
+}
+
+.so-deadline-label {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: #374151;
+  min-width: 140px;
+}
+
+.so-deadline-input {
+  flex: 1;
+  max-width: 250px;
+  padding: 0.65rem 1rem;
+  border: 2px solid rgba(0, 119, 162, 0.2);
+  border-radius: 6px;
+  font-size: 0.95rem;
+  color: #111827;
+  background: white;
+  transition: all 0.2s ease;
+}
+
+.so-deadline-input:focus {
+  outline: none;
+  border-color: #0077a2;
+  box-shadow: 0 0 0 3px rgba(0, 119, 162, 0.1);
+}
+
+/* ============================================
+   PREVIEW SECTION
+   ============================================ */
+
+.so-preview-section {
+  margin-top: 1.5rem;
+}
+
+.so-preview-title {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin-bottom: 1rem;
+  font-size: 1.1rem;
+  color: #111827;
+  font-weight: 600;
+}
+
+.so-table-container {
+  overflow-x: auto;
+  border-radius: 8px;
+  border: 1px solid rgba(0, 119, 162, 0.2);
+  background: white;
+}
+
+.so-preview-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.875rem;
+}
+
+.so-preview-table thead {
+  background: linear-gradient(135deg, rgba(0, 119, 162, 0.08) 0%, rgba(59, 130, 246, 0.08) 100%);
+}
+
+.so-preview-table th {
+  padding: 0.875rem 1rem;
+  text-align: left;
+  font-weight: 600;
+  color: #374151;
+  text-transform: uppercase;
+  font-size: 0.75rem;
+  letter-spacing: 0.5px;
+  border-bottom: 2px solid rgba(0, 119, 162, 0.2);
+}
+
+.so-preview-table tbody tr {
+  border-bottom: 1px solid rgba(0, 119, 162, 0.1);
+  transition: background-color 0.2s ease;
+}
+
+.so-preview-table tbody tr:hover {
+  background-color: rgba(0, 119, 162, 0.03);
+}
+
+.so-preview-table td {
+  padding: 0.875rem 1rem;
+  color: #374151;
+}
+
+.so-material-code {
+  font-family: 'Courier New', monospace;
+  font-weight: 600;
+  color: #0077a2;
+}
+
+.so-description {
+  max-width: 300px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.so-quantity,
+.so-stock {
+  font-weight: 600;
+  text-align: center;
+}
+
+.so-stock-indicator {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.8rem;
+  font-weight: 600;
+}
+
+/* ============================================
+   ACTION BUTTONS
+   ============================================ */
+
+.so-actions {
+  margin-top: 2rem;
+  display: flex;
+  justify-content: flex-end;
+}
+
+.so-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.75rem 1.5rem;
+  border: none;
+  border-radius: 6px;
+  font-size: 0.95rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.so-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+}
+
+.so-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.so-btn-primary {
+  background: linear-gradient(135deg, #0077a2 0%, #005F83 100%);
+  color: white;
+}
+
+.so-btn-secondary {
+  background: #e5e7eb;
+  color: #374151;
+}
+
+.so-btn-success {
+  background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+  color: white;
+}
+
+/* ============================================
+   CONFIRMATION SECTION
+   ============================================ */
+
+.so-confirmation {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+  padding: 1.5rem;
+  background: rgba(245, 158, 11, 0.05);
+  border: 2px solid rgba(245, 158, 11, 0.3);
+  border-radius: 8px;
+}
+
+.so-confirmation-message {
+  display: flex;
+  align-items: flex-start;
+  gap: 1rem;
+  color: #92400e;
+}
+
+.so-confirmation-message h4 {
+  margin: 0 0 0.5rem 0;
+  font-size: 1rem;
+  color: #78350f;
+}
+
+.so-confirmation-message p {
+  margin: 0;
+  font-size: 0.9rem;
+  line-height: 1.5;
+  color: #92400e;
+}
+
+.so-confirmation-actions {
+  display: flex;
+  gap: 1rem;
+  justify-content: flex-end;
+}
+
+/* ============================================
+   ACTIVE ORDERS - FILTER TABS
+   ============================================ */
+
+.so-active-orders {
+  width: 100%;
+}
+
+.so-filter-tabs {
+  display: flex;
+  gap: 0.5rem;
+  margin-bottom: 1.5rem;
+  padding: 0.5rem;
+  background: rgba(255, 255, 255, 0.95);
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.so-filter-tab {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 0.75rem 1rem;
+  border: none;
+  background: transparent;
+  color: #6b7280;
+  font-size: 0.875rem;
+  font-weight: 500;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.so-filter-tab:hover {
+  background: rgba(0, 119, 162, 0.05);
+  color: #0077a2;
+}
+
+.so-filter-tab.active {
+  background: linear-gradient(135deg, #0077a2 0%, #005F83 100%);
+  color: white;
+  box-shadow: 0 2px 4px rgba(0, 119, 162, 0.3);
+}
+
+/* ============================================
+   ACTIVE ORDERS - CARDS GRID
+   ============================================ */
+
+.so-cards-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(400px, 1fr));
+  gap: 1.5rem;
+}
+
+.so-card {
+  background: rgba(255, 255, 255, 0.95);
+  border-radius: 12px;
+  padding: 1.5rem;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  border: 2px solid transparent;
+  transition: all 0.3s ease;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.so-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
+}
+
+.so-card.pending {
+  border-color: rgba(245, 158, 11, 0.3);
+}
+
+.so-card.in-progress {
+  border-color: rgba(16, 185, 129, 0.3);
+}
+
+.so-card.completed {
+  border-color: rgba(0, 119, 162, 0.3);
+}
+
+/* Card Header */
+.so-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+}
+
+.so-card-title-section {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.so-card-title {
+  margin: 0;
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: #111827;
+}
+
+.so-status-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.375rem 0.75rem;
+  border-radius: 6px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  width: fit-content;
+}
+
+.so-delete-btn {
+  background: transparent;
+  border: none;
+  color: #ef4444;
+  cursor: pointer;
+  padding: 0.5rem;
+  border-radius: 6px;
+  transition: all 0.2s ease;
+}
+
+.so-delete-btn:hover {
+  background: rgba(239, 68, 68, 0.1);
+  transform: scale(1.1);
+}
+
+/* Card Info */
+.so-card-info {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  padding: 1rem 0;
+  border-top: 1px solid rgba(0, 119, 162, 0.1);
+  border-bottom: 1px solid rgba(0, 119, 162, 0.1);
+}
+
+.so-info-row {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  font-size: 0.875rem;
+}
+
+.so-info-row svg {
+  color: #0077a2;
+  flex-shrink: 0;
+}
+
+.so-info-row .so-info-label {
+  color: #6b7280;
+  font-weight: 500;
+  min-width: 80px;
+}
+
+.so-info-row .so-info-value {
+  color: #111827;
+  font-weight: 600;
+  flex: 1;
+}
+
+.so-overdue {
+  color: #ef4444 !important;
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+}
+
+/* Progress Section */
+.so-progress-section {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.so-progress-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 0.875rem;
+}
+
+.so-progress-label {
+  color: #6b7280;
+  font-weight: 500;
+}
+
+.so-progress-percentage {
+  color: #111827;
+  font-weight: 700;
+  font-size: 0.95rem;
+}
+
+.so-progress-bar {
+  width: 100%;
+  height: 12px;
+  background: #e5e7eb;
+  border-radius: 6px;
+  overflow: hidden;
+}
+
+.so-progress-fill {
+  height: 100%;
+  border-radius: 6px;
+  transition: width 0.3s ease;
+  background: linear-gradient(90deg, #0077a2 0%, #00a4e0 100%);
+}
+
+/* Items Summary */
+.so-items-summary {
+  margin-top: 0.5rem;
+}
+
+.so-expand-btn {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.75rem 1rem;
+  background: rgba(0, 119, 162, 0.05);
+  border: 1px solid rgba(0, 119, 162, 0.2);
+  border-radius: 6px;
+  color: #0077a2;
+  font-weight: 600;
+  font-size: 0.875rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.so-expand-btn:hover {
+  background: rgba(0, 119, 162, 0.1);
+}
+
+.so-expand-btn span:first-of-type {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+/* Items List */
+.so-items-list {
+  margin-top: 1rem;
+  border: 1px solid rgba(0, 119, 162, 0.2);
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.so-items-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.8rem;
+}
+
+.so-items-table thead {
+  background: rgba(0, 119, 162, 0.08);
+}
+
+.so-items-table th {
+  padding: 0.65rem 0.75rem;
+  text-align: left;
+  font-weight: 600;
+  color: #374151;
+  text-transform: uppercase;
+  font-size: 0.7rem;
+  letter-spacing: 0.5px;
+}
+
+.so-items-table tbody tr {
+  border-top: 1px solid rgba(0, 119, 162, 0.1);
+}
+
+.so-items-table td {
+  padding: 0.65rem 0.75rem;
+  color: #374151;
+}
+
+.so-items-table .so-material {
+  font-family: 'Courier New', monospace;
+  font-weight: 600;
+  color: #0077a2;
+}
+
+.so-items-table .so-desc {
+  max-width: 150px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Card Actions */
+.so-card-actions {
+  display: flex;
+  gap: 0.75rem;
+  margin-top: 0.5rem;
+}
+
+.so-action-btn {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 0.75rem 1rem;
+  border: none;
+  border-radius: 6px;
+  font-size: 0.875rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.so-action-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+}
+
+.so-btn-start {
+  background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+  color: white;
+}
+
+.so-btn-complete {
+  background: linear-gradient(135deg, #0077a2 0%, #005F83 100%);
+  color: white;
+}
+
+/* Empty State */
+.so-empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 4rem 2rem;
+  background: rgba(255, 255, 255, 0.95);
+  border-radius: 12px;
+  text-align: center;
+}
+
+.so-empty-state svg {
+  color: #9ca3af;
+  margin-bottom: 1rem;
+}
+
+.so-empty-state h3 {
+  margin: 0 0 0.5rem 0;
+  font-size: 1.25rem;
+  color: #374151;
+}
+
+.so-empty-state p {
+  margin: 0;
+  color: #6b7280;
+  font-size: 0.95rem;
+}
+
+/* Loading State */
+.so-loading {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 4rem 2rem;
+  background: rgba(255, 255, 255, 0.95);
+  border-radius: 12px;
+}
+
+.so-loading svg {
+  color: #0077a2;
+  animation: spin 2s linear infinite;
+}
+
+.so-loading p {
+  margin-top: 1rem;
+  color: #374151;
+  font-size: 0.95rem;
+}
+
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* ============================================
+   RESPONSIVE DESIGN
+   ============================================ */
+
+@media (max-width: 768px) {
+  .so-cards-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .so-filter-tabs {
+    flex-wrap: wrap;
+  }
+
+  .so-info-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .so-table-container {
+    overflow-x: scroll;
+  }
+
+  .so-confirmation-actions {
+    flex-direction: column;
+  }
+
+  .so-confirmation-actions .so-btn {
+    width: 100%;
+  }
+}

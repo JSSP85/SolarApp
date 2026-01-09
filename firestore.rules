@@ -1,0 +1,70 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // ✅ REGLA EXISTENTE PARA INSPECCIONES
+    match /inspections/{document=**} {
+      allow read, write: if true;
+    }
+
+    // ✅ REGLA PARA NO CONFORMIDADES
+    match /nonConformities/{document=**} {
+      allow read, write: if true;
+    }
+
+    // ✅ REGLA PARA NC REGISTRY (ya existe)
+    match /nc_registry/{document=**} {
+      allow read, write: if true;
+    }
+
+    // ✅ REGLA PARA CLIENT NC REGISTRY
+    match /client_nc_registry/{document=**} {
+      allow read, write: if true;
+    }
+
+    // ✅ REGLA PARA SUPPLIER EVALUATIONS
+    match /supplierEvaluations/{document=**} {
+      allow read, write: if true;
+    }
+
+    // ✅ REGLAS ADICIONALES
+    match /users/{userId} {
+      allow read, write: if true;
+    }
+
+    match /projects/{document} {
+      allow read, write: if true;
+    }
+
+    match /suppliers/{document} {
+      allow read, write: if true;
+    }
+
+    // ✅ WAREHOUSE MANAGEMENT
+    match /articoli/{document=**} {
+      allow read, write: if true;
+    }
+
+    match /importazioni_sap/{document=**} {
+      allow read, write: if true;
+    }
+
+    match /movimenti/{document=**} {
+      allow read, write: if true;
+    }
+
+    // 🆕 SALES ORDERS - NUEVAS REGLAS
+    match /sales_orders/{document=**} {
+      allow read, write: if true;
+    }
+
+    match /sales_order_activity/{document=**} {
+      allow read, write: if true;
+    }
+
+    // ✅ MEASUREMENT INSTRUMENTS MANAGEMENT
+    match /measurement_instruments/{document=**} {
+      allow read, write: if true;
+    }
+  }
+}

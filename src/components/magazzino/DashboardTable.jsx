@@ -9,7 +9,8 @@ const DashboardTable = () => {
   const [filteredArticoli, setFilteredArticoli] = useState([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
-  const [categoryFilter, setCategoryFilter] = useState('all');
+  const [materialGroupFilter, setMaterialGroupFilter] = useState('all');
+  const [locationFilter, setLocationFilter] = useState('all');
   const [stockFilter, setStockFilter] = useState('all');
 
   useEffect(() => {
@@ -18,7 +19,7 @@ const DashboardTable = () => {
 
   useEffect(() => {
     applyFilters();
-  }, [searchTerm, categoryFilter, stockFilter, articoli]);
+  }, [searchTerm, materialGroupFilter, locationFilter, stockFilter, articoli]);
 
   const loadArticoli = async () => {
     try {
@@ -38,20 +39,25 @@ const DashboardTable = () => {
 
     // Search filter
     if (searchTerm) {
-      filtered = filtered.filter(art => 
+      filtered = filtered.filter(art =>
         art.codice.toLowerCase().includes(searchTerm.toLowerCase()) ||
         art.descrizione.toLowerCase().includes(searchTerm.toLowerCase())
       );
     }
 
-    // Category filter
-    if (categoryFilter !== 'all') {
-      filtered = filtered.filter(art => art.categoria === categoryFilter);
+    // Material Group filter
+    if (materialGroupFilter !== 'all') {
+      filtered = filtered.filter(art => art.material_group === materialGroupFilter);
+    }
+
+    // Storage Location filter
+    if (locationFilter !== 'all') {
+      filtered = filtered.filter(art => art.ubicazione === locationFilter);
     }
 
     // Stock filter
     if (stockFilter === 'low') {
-      filtered = filtered.filter(art => 
+      filtered = filtered.filter(art =>
         art.giacenza_attuale_magazino <= art.giacenza_minima && art.giacenza_attuale_magazino > 0
       );
     } else if (stockFilter === 'out') {
@@ -104,7 +110,9 @@ const DashboardTable = () => {
     XLSX.writeFile(wb, `Warehouse_Inventory_${timestamp}.xlsx`);
   };
 
-  const categories = [...new Set(articoli.map(a => a.categoria))].sort();
+  // Get unique material groups and locations for filters
+  const materialGroups = [...new Set(articoli.map(a => a.material_group).filter(Boolean))].sort();
+  const storageLocations = [...new Set(articoli.map(a => a.ubicazione).filter(Boolean))].sort();
 
   if (loading) {
     return (
@@ -173,7 +181,7 @@ const DashboardTable = () => {
             />
           </div>
 
-          {/* Category Filter */}
+          {/* Material Group Filter */}
           <div style={{ position: 'relative' }}>
             <Filter size={18} style={{
               position: 'absolute',
@@ -183,8 +191,8 @@ const DashboardTable = () => {
               color: '#9ca3af'
             }} />
             <select
-              value={categoryFilter}
-              onChange={(e) => setCategoryFilter(e.target.value)}
+              value={materialGroupFilter}
+              onChange={(e) => setMaterialGroupFilter(e.target.value)}
               style={{
                 width: '100%',
                 padding: '0.75rem 0.75rem 0.75rem 2.5rem',
@@ -196,9 +204,39 @@ const DashboardTable = () => {
                 background: 'white'
               }}
             >
-              <option value="all">All Categories</option>
-              {categories.map(cat => (
-                <option key={cat} value={cat}>{cat}</option>
+              <option value="all">All Material Groups</option>
+              {materialGroups.map(group => (
+                <option key={group} value={group}>{group}</option>
+              ))}
+            </select>
+          </div>
+
+          {/* Storage Location Filter */}
+          <div style={{ position: 'relative' }}>
+            <Package size={18} style={{
+              position: 'absolute',
+              left: '12px',
+              top: '50%',
+              transform: 'translateY(-50%)',
+              color: '#9ca3af'
+            }} />
+            <select
+              value={locationFilter}
+              onChange={(e) => setLocationFilter(e.target.value)}
+              style={{
+                width: '100%',
+                padding: '0.75rem 0.75rem 0.75rem 2.5rem',
+                border: '2px solid #e5e7eb',
+                borderRadius: '8px',
+                fontSize: '0.95rem',
+                outline: 'none',
+                cursor: 'pointer',
+                background: 'white'
+              }}
+            >
+              <option value="all">All Storage Locations</option>
+              {storageLocations.map(loc => (
+                <option key={loc} value={loc}>{loc}</option>
               ))}
             </select>
           </div>
